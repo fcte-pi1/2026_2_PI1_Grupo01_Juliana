@@ -27,6 +27,14 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - Sistema web de telemetria em tempo real, capaz de exibir o tipo do labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão e status do desafio.
 - Banco de dados para armazenamento do histórico de execuções, permitindo consultas específicas ou gerais de todos os labirintos.
 
+#### Atividades Incluídas no Escopo
+
+- Levantamento de requisitos e desenvolvimento do projeto conceitual das quatro frentes da engenharia envolvidas (Estrutura, Energia, Hardware e Software).
+- Integração física e lógica entre todos os subsistemas do robô.
+- Construção de uma pista simplificada de dimensões 4x4 para a realização de testes análogos aos da competição.
+- Execução de testes isolados de cada subsistema e de integração, com análise e correção de falhas.
+- Gerenciamento contínuo das atividades e versionamento de código, esquemáticos e documentação utilizando as ferramentas GitHub e GitHub Projects, com issues limitadas a até dois responsáveis.
+
 ### _Stakeholders_
 
 *Equipe de desenvolvimento (Grupo 01):* responsável pelo projeto, desenvolvimento e testes do micromouse e do sistema de telemetria/banco de dados. Interesse direto na aprovação e no bom desempenho do produto.
