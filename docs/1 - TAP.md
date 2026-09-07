@@ -20,7 +20,9 @@ Insira o texto aqui
 
 ### _Stakeholders_
 
-Insiram o texto aqui
+*Equipe de desenvolvimento (Grupo 01):* responsável pelo projeto, desenvolvimento e testes do micromouse e do sistema de telemetria/banco de dados. Interesse direto na aprovação e no bom desempenho do produto.
+
+*Professores da disciplina PI1:* acompanham o desenvolvimento do projeto, avaliam as entregas ao longo do semestre e atuam como banca nos testes de integração e na apresentação final.
 
 ## Recursos do Projeto
 
