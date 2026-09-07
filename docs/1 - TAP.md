@@ -16,7 +16,16 @@ Insira o texto aqui
 
 ### Escopo do Projeto
 
-Insira o texto aqui
+O projeto compreende o desenvolvimento, a integração, os testes e a documentação de um sistema Micromouse autônomo capaz de solucionar os labirintos estabelecidos pela disciplina e disponibilizar os dados de telemetria exigidos.
+
+#### Escopo do Produto
+
+- Estrutura física do Micromouse, que não pode exceder as dimensões de 16,5 cm de comprimento ou largura.
+- Sistema eletrônico/hardware dedicado, englobando a placa de circuito impresso customizada, microcontrolador, sensoriamento do labirinto e acionamento mecânico.
+- Sistema de energia para alimentação autônoma e segura dos componentes embarcados.
+- Software embarcado para operação 100% autônoma, contemplando o mapeamento, descoberta de paredes, localização e navegação.
+- Sistema web de telemetria em tempo real, capaz de exibir o tipo do labirinto, trajeto, consumo de bateria, velocidade média, tempo de conclusão e status do desafio.
+- Banco de dados para armazenamento do histórico de execuções, permitindo consultas específicas ou gerais de todos os labirintos.
 
 ### _Stakeholders_
 
