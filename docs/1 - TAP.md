@@ -13,6 +13,7 @@ O projeto aborda o desafio de desenvolver um robô móvel autônomo (*Micromouse
 ### Objetivos
 
 Desenvolver um robô Micromouse autônomo, capaz de mapear e solucionar labirintos de diferentes dimensões, integrado a um sistema web de telemetria para acompanhamento e armazenamento dos dados de execução.
+
 ### Escopo do Projeto
 
 O projeto compreende o desenvolvimento, a integração, os testes e a documentação de um sistema Micromouse autônomo capaz de solucionar os labirintos estabelecidos pela disciplina e disponibilizar os dados de telemetria exigidos.
@@ -33,6 +34,15 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - Construção de uma pista simplificada de dimensões 4x4 para a realização de testes análogos aos da competição.
 - Execução de testes isolados de cada subsistema e de integração, com análise e correção de falhas.
 - Gerenciamento contínuo das atividades e versionamento de código, esquemáticos e documentação utilizando as ferramentas GitHub e GitHub Projects, com issues limitadas a até dois responsáveis.
+
+#### Limites e Restrições
+
+- O Micromouse deve ser capaz de operar nos labirintos padronizados da disciplina, cujas células possuem 18 cm de lado e paredes com 5 cm de altura e 1,2 cm de espessura (chão preto com paredes brancas de topo vermelho).
+- O sistema deve ser desenvolvido integralmente pela equipe, sendo proibido o uso de soluções prontas comerciais (kits de mercado).
+- São proibidos sistemas de locomoção por propulsão a combustão ou foguete, e comportamentos como voar, pular ou escalar.
+- Durante a operação no labirinto, o código-fonte e a memória não poderão ser alterados em tempo de execução.
+- São proibidas intervenções humanas durante a corrida, exceto em casos de colisão ou mau funcionamento, permitindo-se apenas pequenos reparos (como limpeza de rodas) com o robô em repouso.
+- O robô terá um limite de tempo estabelecido de 10 minutos para tentar resolver cada desafio durante os testes de integração e apresentação final.
 
 #### Fora de Escopo
 
