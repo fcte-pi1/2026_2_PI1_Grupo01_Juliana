@@ -43,6 +43,13 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - **Mapeamento LiDAR ou Visão Computacional Avançada:** O uso de sensores de escaneamento a laser complexos ou processamento de imagem por câmeras para o mapeamento do labirinto.
 - **Operação Teleoperada:** Qualquer tipo de controle remoto ou manual do trajeto do robô.
 
+#### Critérios de Aceite
+
+- O Micromouse deve partir de um canto do labirinto e encontrar de forma autônoma a área de objetivo localizada no canto diametralmente oposto.
+- O robô deve ser capaz de resolver com sucesso os três modelos propostos de labirinto: 4x4 (72x72 cm²), 8x4 (144x72 cm²) e 12x4 (216x72 cm²).
+- Os dados telemétricos devem ser obrigatoriamente enviados e exibidos no sistema web; o não cumprimento desta funcionalidade penaliza a nota de avaliação do desafio em 25%.
+
+
 ### _Stakeholders_
 
 *Equipe de desenvolvimento (Grupo 01):* responsável pelo projeto, desenvolvimento e testes do micromouse e do sistema de telemetria/banco de dados. Interesse direto na aprovação e no bom desempenho do produto.
