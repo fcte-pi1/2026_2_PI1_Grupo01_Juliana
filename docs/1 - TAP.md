@@ -8,7 +8,7 @@
 
 ### Descrição do Problema
 
-Insira o texto aqui
+O projeto aborda o desafio de desenvolver um robô móvel autônomo (*Micromouse*) capaz de navegar e resolver labirintos com precisão, contornando limitações sensoriais e de processamento embarcado. Além disso, busca resolver a falta de visibilidade em tempo real dos estados do robô (leitura de sensores, estimativa de posição e consumo de bateria) através da integração de um sistema de telemetria sem fio e persistência de dados.
 
 ### Objetivos
 
