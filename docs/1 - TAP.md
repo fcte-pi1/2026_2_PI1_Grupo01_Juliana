@@ -12,8 +12,7 @@ O projeto aborda o desafio de desenvolver um robô móvel autônomo (*Micromouse
 
 ### Objetivos
 
-Insira o texto aqui
-
+Desenvolver um robô Micromouse autônomo, capaz de mapear e solucionar labirintos de diferentes dimensões, integrado a um sistema web de telemetria para acompanhamento e armazenamento dos dados de execução.
 ### Escopo do Projeto
 
 O projeto compreende o desenvolvimento, a integração, os testes e a documentação de um sistema Micromouse autônomo capaz de solucionar os labirintos estabelecidos pela disciplina e disponibilizar os dados de telemetria exigidos.
