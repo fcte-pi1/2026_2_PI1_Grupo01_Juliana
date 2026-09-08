@@ -35,6 +35,14 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - Execução de testes isolados de cada subsistema e de integração, com análise e correção de falhas.
 - Gerenciamento contínuo das atividades e versionamento de código, esquemáticos e documentação utilizando as ferramentas GitHub e GitHub Projects, com issues limitadas a até dois responsáveis.
 
+#### Fora de Escopo
+
+- **Aplicativos Móveis Nativos:** O desenvolvimento de aplicativos dedicados para Android ou iOS para visualização da telemetria (o escopo restringe-se ao sistema Web).
+- **Fabricação das Pistas em Escala Maior:** A construção física das pistas em tamanho 8x4 e 12x4 para testes da equipe.
+- **Base de Recarga Autônoma:** O robô não possuirá sistema de retorno automático a uma base (dock) de carregamento; o gerenciamento da bateria será feito de forma manual.
+- **Mapeamento LiDAR ou Visão Computacional Avançada:** O uso de sensores de escaneamento a laser complexos ou processamento de imagem por câmeras para o mapeamento do labirinto.
+- **Operação Teleoperada:** Qualquer tipo de controle remoto ou manual do trajeto do robô.
+
 ### _Stakeholders_
 
 *Equipe de desenvolvimento (Grupo 01):* responsável pelo projeto, desenvolvimento e testes do micromouse e do sistema de telemetria/banco de dados. Interesse direto na aprovação e no bom desempenho do produto.
