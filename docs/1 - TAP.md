@@ -1,4 +1,5 @@
 # Termo de Abertura do Projeto
+> Termo de abertura do projeto / Project Charter. Um documento publicado pelo iniciador ou patrocinador do projeto que autoriza formalmente a existência de um projeto e fornece ao gerente do projeto a autoridade para aplicar os recursos organizacionais nas atividades do projeto.
 
 - **Nome do Projeto: Ratatouille**
 - **Data de Início: 02/09/2026**
@@ -18,7 +19,7 @@ O objetivo do projeto é desenvolver um micromouse autônomo — capaz de mapear
 
 - **Específico:** projetar e construir um micromouse composto por estrutura mecânica, fonte de energia, hardware de sensoriamento/atuação e firmware de navegação, capaz de percorrer um labirinto até a saída, com um sistema de telemetria que registre os dados de cada percurso em um banco de dados.
 - **Mensurável:** o robô deve completar o percurso do labirinto proposto, e o sistema de telemetria deve registrar corretamente os dados de navegação (como trajetória, tempo de percurso e leituras de sensores) de cada tentativa.
-- **Acordado:** definido e validado entre a equipe de desenvolvimento (frentes de estrutura, energia, hardware, firmware e software) e os professores da disciplina PI1, responsáveis por avaliar as entregas.
+- **Acordado:** definido e validado entre a equipe de desenvolvimento (frentes de estrutura, energia, hardware e software) e os professores da disciplina PI1, responsáveis por avaliar as entregas.
 - **Realista:** compatível com o orçamento e os componentes disponíveis para a equipe, bem como com o tempo e a carga horária previstos para o semestre.
 - **Limitado no tempo:** protótipo funcional e documentação do projeto concluídos até 12/12/2026, data de término definida para o projeto.
 
@@ -76,6 +77,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 ## Recursos do Projeto
 
 ### Membros da Equipe
+
 | **Nome** | **Matrícula** | **Curso** | **E-mail** | **Funções** |
 |----------|---------------|-----------|------------|-------------|
 | [Luiza Pugas](https://github.com/Luizaxx) | 222025843 | Engenharia de Software | silvaluiza308@gmail.com | Software, Firmware |
@@ -96,6 +98,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 | [João Vitor Santos de Oliveira](https://github.com/Jauzimm) | 221022337 | Engenharia de Software | joaovitorso071@gmail.com | Eletrônica |
 
 ***Gerentes***
+
 | **Gerentes**                  | **Frente**   |
 |-------------------------------|--------------|
 | [Luiza Pugas](https://github.com/Luizaxx)           | Geral        |
