@@ -1,6 +1,7 @@
 # Termo de Abertura do Projeto
+> Termo de abertura do projeto / Project Charter. Um documento publicado pelo iniciador ou patrocinador do projeto que autoriza formalmente a existência de um projeto e fornece ao gerente do projeto a autoridade para aplicar os recursos organizacionais nas atividades do projeto.
 
-- **Nome do Projeto: Ratatouille**
+- **Nome do Projeto:**
 - **Data de Início: 02/09/2026**
 - **Data de Término: 12/12/2026**
 
@@ -18,7 +19,7 @@ O objetivo do projeto é desenvolver um micromouse autônomo — capaz de mapear
 
 - **Específico:** projetar e construir um micromouse composto por estrutura mecânica, fonte de energia, hardware de sensoriamento/atuação e firmware de navegação, capaz de percorrer um labirinto até a saída, com um sistema de telemetria que registre os dados de cada percurso em um banco de dados.
 - **Mensurável:** o robô deve completar o percurso do labirinto proposto, e o sistema de telemetria deve registrar corretamente os dados de navegação (como trajetória, tempo de percurso e leituras de sensores) de cada tentativa.
-- **Acordado:** definido e validado entre a equipe de desenvolvimento (frentes de estrutura, energia, hardware, firmware e software) e os professores da disciplina PI1, responsáveis por avaliar as entregas.
+- **Acordado:** definido e validado entre a equipe de desenvolvimento (frentes de estrutura, energia, hardware e software) e os professores da disciplina PI1, responsáveis por avaliar as entregas.
 - **Realista:** compatível com o orçamento e os componentes disponíveis para a equipe, bem como com o tempo e a carga horária previstos para o semestre.
 - **Limitado no tempo:** protótipo funcional e documentação do projeto concluídos até 12/12/2026, data de término definida para o projeto.
 
@@ -67,7 +68,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - Os dados telemétricos devem ser obrigatoriamente enviados e exibidos no sistema web; o não cumprimento desta funcionalidade penaliza a nota de avaliação do desafio em 25%.
 
 
-### Stakeholders
+### _Stakeholders_
 
 *Equipe de desenvolvimento (Grupo 01):* responsável pelo projeto, desenvolvimento e testes do micromouse e do sistema de telemetria/banco de dados. Interesse direto na aprovação e no bom desempenho do produto.
 
@@ -76,66 +77,31 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 ## Recursos do Projeto
 
 ### Membros da Equipe
+
 | **Nome** | **Matrícula** | **Curso** | **E-mail** | **Funções** |
 |----------|---------------|-----------|------------|-------------|
-| [Luiza Pugas](https://github.com/Luizaxx) | 222025843 | Engenharia de Software | silvaluiza308@gmail.com | Software, Firmware |
-| [Geovana de Souza Braga](https://github.com/Bygeo57) | 202023707 | Engenharia Automotiva | gsb.souza.dara2001@gmail.com | Estrutura |
-| [Júlio César da Costa Santos](https://github.com/DeNNis715) | 222008922 | Engenharia Automotiva | juliocesar7152@gmail.com | Estrutura |
-| [João Marcos M. de Andrade](https://github.com/JJOAMARCOSS) | 222006113 | Engenharia de Software | andramas.10@gmail.com | Energia, Software |
-| [Karoline Luz do Conceição](https://github.com/KarolineLuz) | 222006267 | Engenharia de Software | karolluz491@gmail.com | Software, Front |
-| [Ana Victória Guedes](https://github.com/navicgc) | 222002046 | Engenharia de Software | anaguedescosta009@gmail.com | Eletrônica |
-| [Anderson Luiz da Silva Maciel](https://github.com/leicamAnd) | 222021055 | Engenharia Eletrônica | andersonmaciel722@gmail.com | Eletrônica |
-| [Fábio Santos Araújo](https://github.com/fabiofonteles1) | 222022082 | Engenharia de Software | fabioofonteles1@gmail.com | Hardware |
-| [Marcus Vinicius Pereira dos Santos](https://github.com/MarcusVRezende) | 232038335 | Engenharia de Software | marcusviniciusxmvr@gmail.com | Eletrônica |
-| [Juan Costa Sandinano](https://github.com/IndianoDev) | 242075648 | Engenharia de Software | juan75indiano@gmail.com | Eletrônica |
-| [Jefferson de Souza Reis](https://github.com/232014469) | 23201469 | Engenharia de Software | oliveira.jefferson@aluno.unb.br | Estruturas |
-| [Murilo Vieira Ataíde Pimentel](https://github.com/MuriloPi13) | 242024487 | Engenharia Automotiva | murilofpimentel@gmail.com | Estruturas |
-| [Amanda de Moura](https://github.com/AmandaaMoura) | 221022220 | Engenharia de Software | amandademoura10@gmail.com | Software, Back/Front |
-| [Giovana Martins de Brito](https://github.com/Giih-martins) | 231038081 | Engenharia de Software | martins.giovana24@gmail.com | Energia |
-| [Wanjo Christopher Pacheco Escobar](https://github.com/wChrstphr) | 222037620 | Engenharia de Software | wanjo.christopher@gmail.com | Software, Back/Firmware |
-| [João Vitor Santos de Oliveira](https://github.com/Jauzimm) | 221022337 | Engenharia de Software | joaovitorso071@gmail.com | Eletrônica |
-
-***Gerentes***
-| **Gerentes**                  | **Frente**   |
-|-------------------------------|--------------|
-| [Luiza Pugas](https://github.com/Luizaxx)           | Geral        |
-| [Amanda Moura](https://github.com/AmandaaMoura)               | Software     |
-| [Giovana Martins](https://github.com/Giih-martins)      | Energia      |
-| [Murilo Ataíde](https://github.com/MuriloPi13) | Estruturas   |
-| [Anderson Maciel](https://github.com/leicamAnd) | Eletrônica   |
+| Luiza da S. Pugas | 222025843 | Engenharia de Software | silvaluiza308@gmail.com | Software, Firmware |
+| Geovana de Souza Braga | 202023707 | Engenharia Automotiva | gsb.souza.dara2001@gmail.com | Estrutura |
+| Júlio César da Costa Santos | 222008922 | Engenharia Automotiva | juliocesar7152@gmail.com | Estrutura |
+| João Marcos M. de Andrade | 222006113 | Engenharia de Software | andramas.10@gmail.com | Energia, Software |
+| Karoline Luz do Conceição | 222006267 | Engenharia de Software | karolluz491@gmail.com | Software, Front |
+| Ana Victória Guedes | 222002046 | Engenharia de Software | anaguedescosta009@gmail.com | Eletrônica |
+| Anderson Luiz da Silva Maciel | 222021055 | Engenharia Eletrônica | andersonmaciel722@gmail.com | Eletrônica |
+| Fábio Santos Araújo | 222022082 | Engenharia de Software | fabioofonteles1@gmail.com | Hardware |
+| Marcus Vinicius Pereira dos Santos | 232038335 | Engenharia de Software | marcusviniciusxmvr@gmail.com | Eletrônica |
+| Juan Costa Sandinano | 242075648 | | juan75indiano@gmail.com | |
+| Jefferson de Souza Reis | 23201469 | | oliveira.jefferson@aluno.unb.br | |
+| Murilo Vieira Ataíde Pimentel | 242024487 | | murilofpimentel@gmail.com | |
+| Amanda de Moura | 221022220 | Engenharia de Software | amandademoura10@gmail.com | Software, Back/Front |
+| Giovana Martins de Brito | 231038081 | | | |
+| Wanjo Christopher Pacheco Escobar | 222037620 | Engenharia de Software | wanjo.christopher@gmail.com | Software, Back/Firmware |
+| João Vitor Santos de Oliveira | 221022337 | Engenharia de Software | joaovitorso071@gmail.com | Eletrônica |
 
 **Orientador:** Profa. Juliana Petrocchi Rodrigues
 
 ### Orçamento estimado (R$)
 
- <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/feature/docs-adicionar-esforco-estimado/docs/figs/legenda-micro-mouse.png?raw=true" alt="" width=""> 
-
-**Tabela de precificação:**
-
-| Nº | Componente | Fornecedor | Modelo | Preço | Frete | Subtotal |
-|:--:|---|---|---|---:|---:|---:|
-| 1 | Sensor IF esquerdo | Eletrogate | HW-201 | R$ 5,90 | R$ 21,65 | **R$ 27,55** |
-| 2 | Sensor infravermelho dianteiro esquerdo | Eletrogate | HW-201 | R$ 5,90 | R$ 21,65 | **R$ 27,55** |
-| 3 | Suporte de pilhas AA (4 AA) | Eletrogate | — | R$ 5,90 | R$ 21,65 | **R$ 27,55** |
-| 4 | 2 Pilhas AA ON/OFF | Usinainfo | — | R$ 23,70 | R$ 22,55 | **R$ 46,25** |
-| 5 | Motor de passo esquerdo | Mercado Livre | Nema 11 | R$ 182,00 | R$ 0,00 | **R$ 182,00** |
-| 6 | Interruptores configuráveis para software de controle | Mercado Livre | DIP Switch 4 vias | R$ 20,82 | R$ 0,00 | **R$ 20,82** |
-| 7 | Conector para o motor direito | Mercado Livre | JST 4 vias | R$ 20,00 | R$ 0,00 | **R$ 20,00** |
-| 8 | Sensor IF direito | Mercado Livre | LM393 | R$ 19,00 | R$ 0,00 | **R$ 19,00** |
-| 9 | Sensor IF dianteiro direito | Mercado Livre | HW-201 | R$ 8,50 | R$ 18,00 | **R$ 26,50** |
-| 10 | Conector Bluetooth (módulo não incluído) | Mercado Livre | HM-10 BLE 4.0 | R$ 48,00 | R$ 0,00 | **R$ 48,00** |
-| 11 | Pino LED 13 / Buzzer (buzzer não incluído) | Mercado Livre | Ativo | R$ 6,50 | R$ 15,00 | **R$ 21,50** |
-| 12 | Chave LED ON/OFF | Mercado Livre | Gangorra c/ LED | R$ 12,00 | R$ 15,00 | **R$ 27,00** |
-| 13 | Jumper para seleção de pilhas AA / bateria LiPo | — | Jumper padrão | R$ 2,00 | R$ 0,00 | **R$ 2,00** |
-| 14 | Motor de passo direito | Mercado Livre | Nema 11 | R$ 182,00 | R$ 0,00 | **R$ 182,00** |
-| 15 | Chave bateria LiPo ON/OFF | — | Slide Switch SPDT/SP3T | R$ 11,94 | R$ 0,00 | **R$ 11,94** |
-| 16 | Conector para o motor esquerdo | Mercado Livre | JST 4 vias | R$ 20,00 | R$ 0,00 | **R$ 20,00** |
-| 17 | Placa PCB | — | FR4 dupla face | R$ 100,00 | R$ 50,00 | **R$ 150,00** |
-| 18 | Rodinhas | — | 2 × 40 mm + 1 giratória | R$ 20,00 | R$ 10,00 | **R$ 30,00** |
-
-**Total: R$ 889,66**
-
-
+Discutam dentro da equipe a verba possível disponível para o desenvolvimento do projeto, com base na complexidade do projeto, na quantidade de membros e na realidade de cada um.
 
 ### Esforço estimado (horas)
 
