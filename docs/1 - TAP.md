@@ -101,7 +101,34 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 
 ### Orçamento estimado (R$)
 
-Discutam dentro da equipe a verba possível disponível para o desenvolvimento do projeto, com base na complexidade do projeto, na quantidade de membros e na realidade de cada um.
+ <img src="https://raw.githubusercontent.com/fcte-pi1/template/refs/heads/main/docs/figs/legenda-micro-mouse.png" alt="" width="450"> 
+
+| Componente | Fornecedor | Modelo | Preço | Frete | Subtotal |
+| ----- | ----- | ----- | :---: | :---: | :---: |
+| 1.Sensor IF esquerdo | Eletrogate | HW-201 | R$5,90 | R$21,65 | R$27,55 |
+| 2.Sensor infravermelho dianteiro esquerdo | Eletrogate | HW-201 | R$5,90 | R$21,65 | R$27,55 |
+| 3.Suporte de pilhas AA(4- AA) | Eletrogate |  | R$5,90 | R$21,65 | R$27,55 |
+| 4\. 2 Pilhas AA ON/OFF | Usinainfo |  | R$23,70 | R$22,55 | R$46,25 |
+| 5.Motor de passo esquerdo | Mercado livre | Nema 11 | R$182 | R$0 | R$182 |
+| 6.Interruptores configuráveis para software de controle | Mercado livre | Dip Switch 4 vias | R$20,82 | R$0 | R$20,82 |
+| 7.Conector para o motor direito | Mercado livre | JST 4 vias | R$20 | R$0 | R$20 |
+| 8.Sensor IF direito | Mercado livre | Lm 393 | R$19 | R$0 | R$19 |
+| 9.Sendor IF dianteiro direito | Mercado livre | HW\_201 | R$8,50 | R$18,00 | R$26,5 |
+| 10.Conector Bluetooth (módulo não incluído) | Mercado livre | HM\_10 BLE 4.0 | R$48,00 | R$0 | R$48 |
+| 11.Pino LED 13/Buzzer (Buzzer não incluído) | Mercado livre | Ativo | R$6,50 | R$15,00 | R$21,5 |
+
+| 12.Chave LED ON/OFF | Mercado livre | Gangorra c/ LED | R$12,00 | R$15,00 | R$27 |
+| :---- | ----- | ----- | :---: | :---: | :---: |
+| 13.Jumper para seleção de pilhas AA/bateria LiPo |  | Jumper padrão | R$2,00 | R$0 | R$2 |
+| 14.Motor de passo direito | Mercado livre | Nema 11 | R$182 | R$0 | R$182 |
+| 15.Chave Bateria LiPo ON/OFF |  | Slide Switch SPDT/SP3T | R$11,94 | R$0 | R$11,94 |
+| 16.Conector para o motor esquerdo | Mercado livre | JST 4 vias | R$20 | R$0 | R$20 |
+| 17.Placa PCB |  | FR4 Dupla face | R$ 100 | R$ 50 | R$ 150 |
+| 18.Rodinhas |  | 2 (40 mm) e 1 giratória | R$20 | R$10 | R$ 30 |
+
+**Total: R$ 889,66**
+
+
 
 ### Esforço estimado (horas)
 
