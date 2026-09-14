@@ -46,37 +46,27 @@
 | RF11 | Calcular consumo de bateria  | O sistema deve calcular o consumo de bateria da corrida a partir das leituras recebidas, informando o nível atual e o total consumido desde o início.  | Must have | Backend  | Slide 11\. Unidade (% ou mAh) depende do sensor escolhido pela equipe de energia.  |
 | RF12 | Calcular velocidade média  | O sistema deve calcular a velocidade média do micromouse, dividindo a distância percorrida pelo tempo decorrido.  | Must Have | Backend  | Slide 11\. Distância estimada por nº de células percorridas × 18 cm (slide 9\) ou obtida dos encoders, se o hardware enviar.  |
 | RF13 | Calcular tempo de conclusão  | O sistema deve calcular o tempo total da corrida, do início até a chegada à área de objetivo.  | Must Have | Backend  | Slide 11\. Usar uma única fonte de relógio (micromouse ou servidor) para evitar erros de sincronização.  |
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-| RF30  | Encerrar execução em andamento  | O sistema deve permitir que o operador encerre uma execução em andamento, registrando-a como "failed" com o motivo informado  | Must Have  | Backend  | Sem este requisito, uma execução travada em "running" impede o início da próxima tentativa pelo RF18. Slide 10 permite intervenção em caso de colisão ou mau funcionamento.  |
-| RF31  | Detectar perda de comunicação  | O sistema deve detectar a ausência de mensagens de telemetria por um intervalo configurável e sinalizar a execução como sem comunicação.  | Must Have  | Backend  | Permite diferenciar "micromouse parado" de "conexão perdida". Sustenta o RF04 do frontend, que exibe o tempo desde a última atualização.  |
-| RF32  | Detectar estouro do tempo limite  | O sistema deve monitorar a duração da execução e encerrá-la como "failed" com motivo time\_exceeded ao ultrapassar o limite de 10 minutos.  | Must Have  | Backend  | Slides 21 e 22\.  |
-| RF33  | Armazenar os dados finais da execução  | Ao término da execução, o sistema deve gravar em banco de dados o tipo do labirinto, o trajeto, o consumo de bateria, a velocidade média, o tempo de conclusão, o status, o motivo da falha (quando houver), o número da tentativa e a data/hora.  | Must Have  | Backend  | Slide 12, que exige explicitamente o armazenamento em banco de dados para consultas.  |
-| RF34  | Consultar execuções de um labirinto  | O sistema deve permitir consultar as execuções de um labirinto escolhido pelo usuário, exibindo os dados específicos daquele labirinto.  | Must Have  | Backend  | Slide 12\.  |
-| RF35  | Consultar execuções de todos os labirintos  | O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição.  | Must Have  | Backend  | Slide 12\. |
-| RF36  | Consultar detalhes de uma execução  | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso.  | Must Have | Backend  | Sustenta o RF02 e o RF06 do frontend.  |
-| RF37  | Registrar paredes detectadas  | O sistema deve receber e armazenar as paredes detectadas pelo micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto.  | Could Have  | Backend  | Não exigido na telemetria do slide 11, mas o mapeamento é requisito do robô (slide 7\) e enriquece a visualização do trajeto.  |
-
-| Requisitos Não Funcionais |  |  |  |  |  |
-
-| RNF05  | Persistência dos dados  | Os dados das execuções devem permanecer disponíveis após a reinicialização do servidor ou do computador que o hospeda.  | Must Have  | Backend  | Slide 12\. |
-| RNF06  | Não interferência na corrida  | Durante a execução, o sistema não deve enviar comandos ao micromouse nem alterar seu código ou sua memória sobre o labirinto; a comunicação deve ser apenas de recebimento.  | Must Have  | Backend  | Slide 10\.  |
-| RNF07  | Independência da execução  | Uma falha no backend ou na rede não deve interromper a execução do micromouse, que deve continuar resolvendo o labirinto de forma autônoma.  | Must Have  | Backend  | Slide 7\.  |
-| RNF08  | Tolerância a perda de conexão  | Em caso de queda de comunicação, o sistema deve aceitar a reconexão do micromouse e manter os dados da execução já recebidos.  | Must Have  | Backend  | Slide 23: não mostrar os dados no software multiplica a nota do labirinto por 0,75.  |
-| RNF9  | Funcionamento em rede local  | O sistema deve funcionar em rede local, sem depender de acesso à internet, no local definido pelos professores.  | Should Have  | Backend  | Slide 20\. |
-| RNF10  | Capacidade de processamento da telemetria  | O sistema deve processar pelo menos 10 mensagens de telemetria por segundo sem atraso acumulado.  | Should Have  | Backend  |  |
-| RNF11  | Desenvolvimento próprio  | O backend deve ser desenvolvido pela equipe, sem uso de plataformas prontas de telemetria ou dashboard.  | Must Have  | Backend  | Slide 13\. |
-| RNF12  | Documentação da API  | Os endpoints e o formato das mensagens de telemetria devem estar documentados no repositório do projeto.  | Should Have  | Backend  | Slides 14 e 15\. |
+| RF14 | Calcular comparação de tempo gasto entre execuções | O sistema deve calcular, a partir do melhor tempo já executado em um caminho completo, uma comparação em porcentagem do quanto melhor foi o tempo gasto na última execução. | Should Have | Backend | Ajudará na análise sobre a evolução do Micromouse a cada execução, já que há um limite de tempo para a prova. |
+| RF15 | Registrar informações sobre a falha de uma execução | O sistema deve registrar nos dados de uma execução em qual célula ocorreu uma falha no trajeto e o motivo da falha. | Must Have | Backend | Ex.: failed: collision / time_exceeded / stuck / out_of_track. |
+| RF16 | Registrar os status de uma execução | O sistema deve registrar nos dados de telemetria o status de uma execução, podendo ser: "health-check", "running", "success", "failed". | Must Have | Backend | "Health-check": não começou o trajeto, mas já iniciou a execução. "Running": iniciou o trajeto. "Success": executou o trajeto até o objetivo. "Failed": executou o trajeto, mas não chegou até o objetivo. |
+| RF17 | Garantir unicidade entre as execuções | O sistema deve registrar cada execução, independente do seu status, com um número identificador único. | Must Have | Backend | Conexão com a integridade dos dados RNF01. |
+| RF18 | Registrar uma única execução por vez | O sistema não deve registrar os dados de uma nova execução caso ainda haja uma em andamento (status diferente de "success" ou "failed"). | Must Have | Backend | Garantir a integridade dos dados advindos de uma execução. |
+| RF19 | Enviar feedback de execução recusada | O sistema deve informar de forma clara quando uma execução solicitada foi negada, registrando o evento como uma tentativa rejeitada. | Must Have | Backend | |
+| RF20 | Detectar paredes e obstáculos | O sistema deve detectar paredes/obstáculos ao redor do Micromouse em tempo real. | Must Have | Firmware | Pré-requisito para a navegação autônoma. Relação com o sensoriamento da Eletrônica a alinhar com aquela equipe. |
+| RF21 | Controlar a movimentação do Micromouse | O sistema deve controlar a movimentação do Micromouse (avançar, curvar, parar). | Must Have | Firmware | |
+| RF22 | Calcular velocidade do Micromouse | O sistema deve calcular a velocidade do Micromouse a partir dos dados de movimento disponíveis. | Must Have | Firmware | Campo de telemetria exigido. |
+| RF23 | Monitorar bateria | O sistema deve monitorar o nível/consumo de bateria. | Must Have | Firmware | Campo de telemetria exigido; evita parada sem aviso durante a corrida. |
+| RF24 | Transmitir telemetria para o sistema web | O sistema deve transmitir os dados de telemetria (bateria, velocidade, trajeto) para o sistema web. | Must Have | Firmware | Envio obrigatório especificado; ausência penaliza a nota em 25%. Protocolo/formato a definir. |
+| RF25 | Sinalizar estado do robô | O sistema deve sinalizar visual e sonoramente o estado do robô (início, erro/colisão, conclusão). | Could Have | Firmware | Apoia depuração e acompanhamento da corrida pela equipe e pela banca. |
+| RF26 | Detectar chegada ao objetivo | O sistema deve detectar quando o Micromouse alcançou a área de objetivo. | Must Have | Firmware | Sustenta o critério de aceite e o campo de telemetria "desafio cumprido (S/N)". |
+| RF27 | Configurar modo de operação | O sistema deve permitir configurar o modo de operação do robô sem necessidade de reprogramação. | Could Have | Firmware | Facilita reaproveitar tentativas anteriores; forma de configuração a definir. |
+| RF28 | Rastrear localização e trajeto no labirinto | O sistema deve monitorar a localização do Micromouse e registrar a sequência de células percorridas no labirinto. | Must Have | Firmware | Relacionado ao monitoramento da localização e ao mapeamento do labirinto. |
+| RF29 | Realizar um health-check antes de uma execução | O sistema deve realizar um health-check que busca garantir que todos os componentes essenciais para uma execução estejam de acordo, para evitar falhas no meio do processo. | Should Have | Firmware | Verificar funcionamento adequado entre software e hardware, nível de bateria e mobilidade das rodas para curvas. |
+| RF30 | Encerrar execução em andamento | O sistema deve permitir que o operador encerre uma execução em andamento, registrando-a como "failed" com o motivo informado. | Must Have | Backend | Sem este requisito, uma execução travada em "running" impede o início da próxima tentativa pelo RF18. |
+| RF31 | Detectar perda de comunicação | O sistema deve detectar a ausência de mensagens de telemetria por um intervalo configurável e sinalizar a execução como sem comunicação. | Must Have | Backend | Permite diferenciar "Micromouse parado" de "conexão perdida". Sustenta o RF04 do frontend. |
+| RF32 | Detectar estouro do tempo limite | O sistema deve monitorar a duração da execução e encerrá-la como "failed" com motivo `time_exceeded` ao ultrapassar o limite de 10 minutos. | Must Have | Backend | Relacionado aos critérios de tempo máximo da prova. |
+| RF33 | Armazenar os dados finais da execução | Ao término da execução, o sistema deve gravar em banco de dados o tipo do labirinto, o trajeto, o consumo de bateria, a velocidade média, o tempo de conclusão, o status, o motivo da falha (quando houver), o número da tentativa e a data/hora. | Must Have | Backend | Exige armazenamento em banco de dados para consultas. |
+| RF34 | Consultar execuções de um labirinto | O sistema deve permitir consultar as execuções de um labirinto escolhido pelo usuário, exibindo os dados específicos daquele labirinto. | Must Have | Backend | |
+| RF35 | Consultar execuções de todos os labirintos | O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição. | Must Have | Backend | |
+| RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF06 do frontend. |
+| RF37 | Registrar paredes detectadas | O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto. | Could Have | Backend | Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto. |
