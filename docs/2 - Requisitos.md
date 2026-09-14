@@ -2,7 +2,16 @@
 
 ## ESTRURAS
 
-
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| 1 | Envelope Dimensional Limite | A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.  | Alta | Estrutura | Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm). |
+| 2 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso preto de MDF e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
+| 3 | Atrito e Tração das Rodas   | Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.   | Alta | Estrutura |  Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.  |
+| 4 | Suporte e Posicionamento dos Sensores  | A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.   | Alta | Estrutura |  O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.  |
+| 5 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
+| 6 | Facilidade de Manutenção e Acesso   | Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.   | Alta | Estrutura | Pequenos reparos e limpeza das rodas são permitidos em repouso.    |
+| 7 | Modelagem  e Manufatura   | Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.  | Média | Estrutura | Obrigatório para documentação do projeto conceitual de estruturas (AP5).  |
+| 8 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   | |
 
 ## ENERGIA
 
