@@ -2,7 +2,16 @@
 
 ## ESTRURAS
 
-
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| 1 | Envelope Dimensional Limite | A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.  | Alta | Estrutura | Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm). |
+| 2 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso preto de MDF e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
+| 3 | Atrito e Tração das Rodas   | Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.   | Alta | Estrutura |  Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.  |
+| 4 | Suporte e Posicionamento dos Sensores  | A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.   | Alta | Estrutura |  O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.  |
+| 5 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
+| 6 | Facilidade de Manutenção e Acesso   | Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.   | Alta | Estrutura | Pequenos reparos e limpeza das rodas são permitidos em repouso.    |
+| 7 | Modelagem  e Manufatura   | Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.  | Média | Estrutura | Obrigatório para documentação do projeto conceitual de estruturas (AP5).  |
+| 8 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   | |
 
 ## ENERGIA
 
@@ -34,7 +43,34 @@
 
 ## ELETRÔNICA
 
+### Requisitos funcionais
 
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RF1 | Detecção de paredes | O sistema eletrônico deve detectar a presença de paredes ao redor do Micromouse por meio dos sensores, disponibilizando essas informações ao sistema de controle para auxiliar no mapeamento e na navegação pelo labirinto. | Must Have | Eletrônica | Deve funcionar considerando as características da pista (chão preto, paredes brancas com topo vermelho, 5 cm de altura, células de 18 cm). Os testes de detecção devem ocorrer antes da integração. |
+| RF2 | Controle dos motores | O sistema eletrônico deve acionar e controlar os motores do Micromouse, permitindo sua movimentação, realização de curvas e paradas durante a navegação, garantindo compatibilidade elétrica entre microcontrolador, drivers e motores. | Must Have | Eletrônica | Deve ser validado por testes de movimento, curvas e paradas. |
+| RF3 | Aquisição de dados de telemetria | O sistema eletrônico deve integrar circuito de leitura da tensão da bateria e disponibilizar ao sistema de controle os dados necessários à telemetria e monitoramento de movimento. | Must Have | Eletrônica | Inclui divisor de tensão para leitura da bateria no ADC. Os dados devem ser disponibilizados ao software/firmware para envio ao sistema web. |
+| RF4 | Comunicação sem fio com a telemetria | O sistema eletrônico deve transmitir os dados coletados (bateria, velocidade, trajeto) via módulo Bluetooth para o sistema web de telemetria, garantindo o envio correto das informações a cada tentativa. | Must Have | Eletrônica | Módulo Bluetooth previsto no orçamento (item 10 do TAP). Complementa o RF3 (aquisição/disponibilização interna dos dados) e sustenta o RF24 do Firmware. |
+| RF5 | Sinalização de estado do robô | O sistema eletrônico deve acionar indicadores visuais e sonoros (LED e buzzer) para sinalizar o estado do Micromouse (início do percurso, erro/colisão, conclusão do labirinto). | Should Have | Eletrônica | Relaciona-se ao RF25 do Firmware. |
+| RF6 | Interface de sinais para odometria dos motores | O sistema eletrônico deve rotear as linhas de pulso de passo e direção (STEP/DIR) entre microcontrolador e drivers, viabilizando o cálculo de passos, distância e velocidade pelo firmware. | Must Have | Eletrônica | Sustenta o RF3 e o RF22 do Firmware. Como os motores são de passo (open-loop), a contagem é feita pelo firmware a partir dos pulsos enviados ao driver (RF7). |
+| RF7 | Driver dos motores de passo | O sistema eletrônico deve incluir circuitos driver dedicados para os motores de passo, responsáveis por fornecer a corrente e a sequência de acionamento de fases necessárias ao movimento, com proteção contra sobrecorrente nos enrolamentos. | Must Have | Eletrônica | Complementa o RF2. Corrente nominal do driver deve ser compatível com os motores Nema 11 (itens 5 e 14 do orçamento). |
+| RF8 | Condicionamento de sinal dos sensores | O sistema eletrônico deve condicionar (amplificar/filtrar) os sinais dos sensores infravermelhos antes da leitura pelo microcontrolador, garantindo distinção confiável entre piso preto, paredes brancas e topo vermelho. | Must Have | Eletrônica | Sensores previstos nos itens 1, 2, 8 e 9 do orçamento. O limiar de leitura deve ser ajustável para calibração, sustentando o RF1. |
+| RF9 | Interface do DIP switch de configuração | O sistema eletrônico deve conectar o DIP switch de 4 vias a entradas digitais do microcontrolador, permitindo ao firmware ler a configuração de modo de operação sem reprogramação. | Should Have | Eletrônica | Viabiliza o RF27 do Software, que deixa essa forma de configuração em aberto. Componente já previsto no item 6 do orçamento. |
+| RF10 | Driver dos indicadores visuais e sonoros | O sistema eletrônico deve fornecer o circuito de acionamento (resistor limitador e/ou estágio de chaveamento) do LED e do buzzer, evitando corrente excessiva nas saídas digitais do microcontrolador. | Should Have | Eletrônica | Suporta o RF5. Componentes previstos no item 11 do orçamento. |
+
+### Requisitos não funcionais
+
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RNF1 | Confiabilidade elétrica | O sistema eletrônico deve operar durante o desafio sem reinicializações ou falhas elétricas não planejadas (causadas por ruído, quedas de tensão ou mau contato) que interrompam o funcionamento do Micromouse. | Must Have | Eletrônica | Deve ser verificado em testes contínuos e nos testes de integração. O sistema deve permanecer operacional pelos 10 minutos do desafio. |
+| RNF2 | Estabilidade da alimentação | Os níveis de tensão entregues a cada subsistema eletrônico (lógica do microcontrolador, sensores e drivers dos motores) devem ser validados e mantidos dentro da faixa de operação de cada componente, inclusive durante os picos de corrente dos motores. | Must Have | Eletrônica | A regulação e a estabilidade da tensão propriamente ditas são responsabilidade da energia (itens 2 e 12). Este requisito cobre a validação, no lado da eletrônica, de que cada componente recebe tensão compatível com sua especificação. |
+| RNF3 | Integração e compactação | Os componentes eletrônicos (PCB, sensores, conexões e drivers) devem ser organizados fisicamente de forma compacta e segura sobre a estrutura do robô, de modo que a disposição também permita a montagem e a manutenção dos componentes. | Must Have | Eletrônica | Trata da organização/arranjo dos componentes. |
+| RNF4 | Restrição dimensional do hardware | A placa de circuito impresso (PCB) deve ser projetada com dimensões reduzidas (máximo de 12 cm de comprimento por 12 cm de largura), garantindo que o robô montado com sensores e rodas não ultrapasse o limite de 16,5 cm definido pela Estrutura. | Must Have | Eletrônica | Garante margem física para manobras dentro da célula de 18 cm × 18 cm sem colisão mecânica. |
+| RNF5 | Proteção dos pinos de sensoriamento | O sistema eletrônico deve proteger as entradas digitais/analógicas do microcontrolador contra picos de tensão e descargas eletrostáticas vindas de sensores e conectores externos. | Should Have | Eletrônica | Foco na integridade dos sinais de sensoriamento, distinto das proteções de linha de potência já cobertas pela Energia (itens 13 e 14). |
+| RNF6 | Temporizador de watchdog | O sistema eletrônico deve implementar um circuito ou função de watchdog capaz de reiniciar automaticamente o microcontrolador caso o firmware trave durante a tentativa. | Must Have | Eletrônica | Reforça o RNF1 e o RNF07 do Software. Crítico diante do limite de 10 minutos por tentativa. É uma reinicialização controlada, diferente das falhas não planejadas que o RNF1 busca evitar. |
+| RNF7 | Padronização de conectores | O sistema eletrônico deve padronizar os conectores entre PCB, motores, sensores e fonte de energia, evitando inversão de conexão e facilitando a manutenção nas pausas entre tentativas. | Should Have | Eletrônica | Conectores JST previstos nos itens 7 e 16 do orçamento. Relaciona-se ao requisito 6 de Estrutura. |
+| RNF8 | Documentação do esquemático elétrico | Todo o circuito eletrônico (PCB, conexões e drivers) deve ser documentado em esquemático elétrico e diagrama de conexões, versionado no repositório do projeto. | Must Have | Eletrônica | Equivalente ao requisito 7 de Estrutura. Necessário para o projeto conceitual (AP5) e alinhado à RNF13 do Software. É mais um requisito de processo/entrega do que de comportamento do sistema em si. |
+| RNF9 | Capacidade de I/O do microcontrolador | O microcontrolador selecionado deve possuir pinos digitais/analógicos suficientes para os sensores de parede/linha, os drivers dos motores, o módulo Bluetooth, o DIP switch, o LED e o buzzer, sem necessidade de multiplexação adicional. | Must Have | Eletrônica | Requisito de dimensionamento a ser validado na escolha do microcontrolador durante o projeto conceitual. |
 
 ## SOFTWARE
 
