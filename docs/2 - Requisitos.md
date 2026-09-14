@@ -33,8 +33,8 @@
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
-| RF01 |  |  |  |  |  |
-| RF02 |  |  |  |  |  |
+| RF01 | Visualizar telemetria do robô | O sistema web deve permitir ao usuário visualizar os dados de telemetria do Micromouse durante e após a execução, como velocidade, bateria, tempo de percurso e status| Must Have |Frontend  | Requisito essencial para o acompanhamento da execução do robô. |
+| RF02 | Visualizar os Dados da Execução | O sistema deve permitir ao usuário visualizar os principais dados de uma execução após sua finalização, incluindo tempo, velocidade e desempenho.  |  Must Have | Frontend | As informações devem ser apresentadas de forma organizada em ordem cronológica de execução. |
 | RF03 | Visualizar histórico de execuções | O sistema deve apresentar para o usuário uma seção na aplicação que forneça o histórico de todas as execuções já realizadas. | Must Have | Frontend | Em ordem decrescente de execução (da última para a primeira). |
 | RF04 | Visualizar execução em tempo real | Caso haja uma execução com o status "health-check" ou "running", o sistema deve fornecer ao usuário os dados dessa execução na tela inicial, com o tempo da última atualização. | Should Have | Frontend | Ex.: mensagem "última atualização há 4 segundos". Sistema de polling. |
 | RF05 | Visualizar os dados captados no health-check | O sistema deve fornecer ao usuário, durante a execução e após o término da mesma, os dados coletados quando o status for "health-check" em uma área específica, separada do resto dos dados coletados na página da execução específica. | Must Have | Frontend | Conectado ao RNF03. |
