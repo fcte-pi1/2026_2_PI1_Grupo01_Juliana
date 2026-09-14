@@ -25,7 +25,7 @@
 | 15 | Dimensionamento da Capacidade (Cálculo de mAh)  | A capacidade nominal da bateria escolhida deve ser justificada por cálculo prévio de consumo máximo e médio de todos os subsistemas, assegurando a autonomia de 10 minutos (com margem de segurança para tentativas extras).  | Média (Should Have)  | Energia  |  |
 | 16 | Gerenciamento Térmico de Reguladores  | Os componentes de regulação de tensão (step-down/lineares) e os drivers de potência devem possuir margem térmica segura, utilizando dissipadores ou áreas de dissipação na PCB se o cálculo térmico exigir.  | Média (Should Have)  | Energia  |  |
 
-# ELETRÔNICA
+## ELETRÔNICA
 
 ### Requisitos funcionais
 
