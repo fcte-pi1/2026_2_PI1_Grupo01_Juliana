@@ -31,4 +31,13 @@
 
 ## SOFTWARE
 
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RF01 |  |  |  |  |  |
+| RF02 |  |  |  |  |  |
+| RF03 | Visualizar histórico de execuções | O sistema deve apresentar para o usuário uma seção na aplicação que forneça o histórico de todas as execuções já realizadas. | Alta (Must Have) | Frontend | Em ordem decrescente de execução (da última para a primeira). |
+| RF04 | Visualizar execução em tempo real | Caso haja uma execução com o status "health-check" ou "running", o sistema deve fornecer ao usuário os dados dessa execução na tela inicial, com o tempo da última atualização. | Média (Should Have) | Frontend | Ex.: mensagem "última atualização há 4 segundos". Sistema de polling. |
+| RF05 | Visualizar os dados captados no health-check | O sistema deve fornecer ao usuário, durante a execução e após o término da mesma, os dados coletados quando o status for "health-check" em uma área específica, separada do resto dos dados coletados na página da execução específica. | Alta (Must Have) | Frontend | Conectado ao RNF03. |
+| RF06 | Fornecer dados de uma execução em tempo real | O sistema deve ser capaz de consumir os dados de telemetria de uma execução em status "health-check" ou "running". | Média (Should Have) | Backend |  |
+
 
