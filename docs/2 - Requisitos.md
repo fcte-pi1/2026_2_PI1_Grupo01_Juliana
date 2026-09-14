@@ -7,7 +7,7 @@
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
 | RF01 | Envelope Dimensional Limite | A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.  | Alta | Estrutura | Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm). |
-| RF02 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso preto de MDF e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
+| RF02 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso (Chão preto) e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
 | RF03 | Atrito e Tração das Rodas   | Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.   | Alta | Estrutura |  Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.  |
 | RF04 | Suporte e Posicionamento dos Sensores  | A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.   | Alta | Estrutura |  O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.  |
 | RF05 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
