@@ -70,3 +70,21 @@
 | RF35 | Consultar execuções de todos os labirintos | O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição. | Must Have | Backend | |
 | RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF06 do frontend. |
 | RF37 | Registrar paredes detectadas | O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto. | Could Have | Backend | Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto. |
+
+# Requisitos Não Funcionais
+
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+|---|---|---|---|---|---|
+| RNF01 | Integridade dos dados | A aplicação web deve apresentar os dados de telemetria recebidos sem alterações ou arredondamentos que comprometam sua interpretação, mantendo a unidade de medida do sistema. | Must Have | Frontend | Fundamental para evitar que o usuário interprete dados incorretos durante a execução. |
+| RNF02 | Tempo de resposta da interface | A interface web deve apresentar os novos dados de telemetria em até 2 segundos após o recebimento das informações do sistema. | Must Have | Frontend | Requisito de desempenho para visualização da telemetria. |
+| RNF03 | Arquitetura das informações | A interface web deve possuir uma arquitetura das informações de uma execução organizada de forma simples e objetiva, a fim de ajudar na rapidez do entendimento e não estressar o usuário com informações não prioritárias. | Must Have | Frontend | Nenhuma informação será omitida, apenas melhor organizada analisando o que precisará ser visto com mais frequência. |
+| RNF04 | Latência no acompanhamento em tempo real | Durante uma execução em tempo real, a última atualização dos dados não deverá passar de 3s-5s para garantir que a equipe consiga acompanhar com melhor fidelidade os dados da execução. | Should Have | Backend | Alinhar com o RNF02 do frontend (2 s), para que o atraso total fim a fim fique definido. |
+| RNF05 | Persistência dos dados | Os dados das execuções devem permanecer disponíveis após a reinicialização do servidor ou do computador que o hospeda. | Must Have | Backend | |
+| RNF06 | Não interferência na corrida | Durante a execução, o sistema não deve enviar comandos ao Micromouse nem alterar seu código ou sua memória sobre o labirinto; a comunicação deve ser apenas de recebimento. | Must Have | Backend | |
+| RNF07 | Independência da execução | Uma falha no backend ou na rede não deve interromper a execução do Micromouse, que deve continuar resolvendo o labirinto de forma autônoma. | Must Have | Backend | |
+| RNF08 | Tolerância a perda de conexão | Em caso de queda de comunicação, o sistema deve aceitar a reconexão do Micromouse e manter os dados da execução já recebidos. | Must Have | Backend | |
+| RNF09 | Validação dos dados recebidos | O sistema deve validar as mensagens de telemetria recebidas (formato, campos obrigatórios e faixas válidas, como célula dentro dos limites do labirinto) e descartar as inválidas sem interromper o serviço. | Must Have | Backend | Evita que uma leitura corrompida derrube o sistema durante a apresentação. |
+| RNF10 | Funcionamento em rede local | O sistema deve funcionar em rede local, sem depender de acesso à internet, no local definido pelos professores. | Should Have | Backend | |
+| RNF11 | Capacidade de processamento da telemetria | O sistema deve processar pelo menos 10 mensagens de telemetria por segundo sem atraso acumulado. | Should Have | Backend | |
+| RNF12 | Desenvolvimento próprio | O backend deve ser desenvolvido pela equipe, sem uso de plataformas prontas de telemetria ou dashboard. | Must Have | Backend | |
+| RNF13 | Documentação da API | Os endpoints e o formato das mensagens de telemetria devem estar documentados no repositório do projeto. | Should Have | Backend | |
