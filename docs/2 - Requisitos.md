@@ -6,24 +6,31 @@
 
 ## ENERGIA
 
-| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
-| :---: | :---- | :---- | :---: | :---- | :---- |
-| 1 | Alimentação autônoma embarcada  | O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas.  | Must Have | Energia  | Operação 100% autônoma exigida no slide 7\.  |
-| 2 | Regulação das tensões de operação  | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema (lógica do microcontrolador, sensores e drivers dos motores).  | Must Have | Energia  |  |
-| 3 | Seleção da fonte de energia  | O sistema de energia deve permitir alternar, por jumper, entre o suporte de pilhas AA e a bateria LiPo, sem alteração de solda ou troca de componentes.  | Should Have | Energia  | Já previsto no orçamento (item 13 do TAP). Garantir que as duas fontes nunca fiquem ligadas ao mesmo tempo.  |
-| 4 | Separação entre potência e lógica  | O sistema de energia deve isolar a linha de alimentação dos motores da linha de alimentação da lógica, de modo que picos de corrente dos motores não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores.  | Must Have | Energia |  |
-| 5 | Acionamento geral de energia  | O sistema de energia deve possuir uma chave liga/desliga geral, acessível com o robô montado, que corte a alimentação de todos os subsistemas.  | Must Have | Energia  | Itens 12 e 15 do orçamento.  |
-| 6 | Medição do nível de carga  | O sistema de energia deve disponibilizar ao microcontrolador um sinal proporcional à carga restante da fonte, permitindo o cálculo do nível e do consumo de bateria.  | Must Have | Energia  | Alimenta o dado de telemetria "consumo de bateria" (slide 11).  |
-| 7 | Sinalização do estado de energia  | O sistema de energia deve indicar visualmente que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação.  | Could Have | Energia  | Evita iniciar uma tentativa com carga insuficiente; usa o LED já previsto no orçamento.  |
-| 8 | Proteção contra sobrecorrente e curto-circuito  | O sistema de energia deve interromper a alimentação em caso de curto-circuito ou corrente acima do limite de projeto, protegendo bateria e componentes.  | Must Have | Energia  | Fusível, PTC ou limitação por driver, a definir no projeto conceitual. |
-| 9 | Proteção contra inversão de polaridade  | O sistema de energia deve impedir danos aos componentes caso a fonte seja conectada com polaridade invertida.  | Should Have | Energia  | Risco real durante a troca de pilhas entre tentativas.  |
-| 10 | Troca e recarga sem desmontagem  | O sistema de energia deve permitir a troca das pilhas ou a recarga da bateria sem desmontar a estrutura do Micromouse nem desconectar a PCB.  | Should Have | Energia  | Seria um pequeno reparo. |
-| 11 | Autonomia de operação  | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, os 10 minutos de uma tentativa, com margem para três tentativas consecutivas sem troca ou recarga.  | Must Have | Energia  | Slides 21 e 22\.  |
-| 12 | Estabilidade da tensão sob carga  | A tensão de alimentação da lógica não deve variar além de ±5% do valor nominal durante os picos de corrente dos motores, e o microcontrolador não deve reiniciar em nenhuma manobra.  | Must Have | Energia  |   |
-| 13 | Proteção da Bateria LiPo (BMS/Undervoltage)  | O sistema elétrico deve contar com circuito de proteção específico para impedir descarga profunda (abaixo da tensão mínima por célula) e sobrecarga da bateria LiPo, prevenindo danos permanentes e risco de incêndio.  | Must Have | Energia  |  |
-| 14 | Filtragem e Desacoplamento de Ruído  | O circuito deve prever capacitores de desacoplamento e/ou filtros na linha de alimentação dos motores para mitigar ruídos elétricos (EMI) gerados pelo acionamento mecânico.  | Must Have | Energia  |  |
-| 15 | Dimensionamento da Capacidade (Cálculo de mAh)  | A capacidade nominal da bateria escolhida deve ser justificada por cálculo prévio de consumo máximo e médio de todos os subsistemas, assegurando a autonomia de 10 minutos (com margem de segurança para tentativas extras).  | Should Have | Energia  |  |
-| 16 | Gerenciamento Térmico de Reguladores  | Os componentes de regulação de tensão (step-down/lineares) e os drivers de potência devem possuir margem térmica segura, utilizando dissipadores ou áreas de dissipação na PCB se o cálculo térmico exigir.  | Should Have | Energia  |  |
+# Requisitos Funcionais
+
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável |
+|---|---|---|---|---|
+| RF01 | Alimentação autônoma embarcada | O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas. | — | Energia |
+| RF02 | Regulação das tensões de operação | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema (lógica do microcontrolador, sensores e drivers dos motores). | — | Energia |
+| RF03 | Compatibilidade com Múltiplas Fontes de Energia | O sistema de energia deve prover um meio de comutação manual para selecionar a fonte de alimentação ativa a partir de entradas de energia alternativas, sem alterações físicas na placa. | — | Energia |
+| RF04 | Medição do nível de carga | O sistema de energia deve disponibilizar ao microcontrolador um sinal proporcional à carga restante da fonte, permitindo o cálculo do nível e do consumo de bateria. | — | Energia |
+| RF05 | Sinalização do estado de energia | O sistema de energia deve indicar visualmente que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação. | Could Have | Energia |
+| RF06 | Proteção contra sobrecorrente e curto-circuito | O sistema de energia deve interromper a alimentação em caso de curto-circuito ou corrente acima do limite de projeto, protegendo bateria e componentes. | — | Energia |
+| RF07 | Proteção da Bateria LiPo (BMS/Undervoltage) | O sistema elétrico deve contar com circuito de proteção específico para impedir descarga profunda (abaixo da tensão mínima por célula) e sobrecarga da bateria LiPo, prevenindo danos permanentes e risco de incêndio. | Alta (Must Have) | Energia |
+
+
+# Requisitos Não Funcionais
+
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável |
+|---|---|---|---|---|
+| RNF01 | Separação entre potência e lógica | O sistema de energia deve isolar a linha de alimentação dos motores da linha de alimentação da lógica, de modo que picos de corrente dos motores não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores. | — | Energia |
+| RNF02 | Proteção contra inversão de polaridade | O sistema de energia deve impedir danos aos componentes caso a fonte seja conectada com polaridade invertida. | — | Energia |
+| RNF03 | Troca e recarga sem desmontagem | O sistema de energia deve permitir a troca das pilhas ou a recarga da bateria sem desmontar a estrutura do Micromouse nem desconectar a PCB. | — | Energia |
+| RNF04 | Autonomia de operação | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, os 10 minutos de uma tentativa, com margem para três tentativas consecutivas sem troca ou recarga. | — | Energia |
+| RNF05 | Estabilidade da tensão sob carga | A tensão de alimentação da lógica não deve variar além de ±5% do valor nominal durante os picos de corrente dos motores, e o microcontrolador não deve reiniciar em nenhuma manobra. | — | Energia |
+| RNF06 | Filtragem e Desacoplamento de Ruído | O circuito deve prever capacitores de desacoplamento e/ou filtros na linha de alimentação dos motores para mitigar ruídos elétricos (EMI) gerados pelo acionamento mecânico. | Alta (Must Have) | Energia |
+| RNF07 | Dimensionamento da Capacidade (Cálculo de mAh) | A capacidade nominal da bateria escolhida deve ser justificada por cálculo prévio de consumo máximo e médio de todos os subsistemas, assegurando a autonomia de 10 minutos (com margem de segurança para tentativas extras). | Média (Should Have) | Energia |
+| RNF08 | Gerenciamento Térmico de Reguladores | Os componentes de regulação de tensão (step-down/lineares) e os drivers de potência devem possuir margem térmica segura, utilizando dissipadores ou áreas de dissipação na PCB se o cálculo térmico exigir. | Média (Should Have) | Energia |
 
 ## ELETRÔNICA
 
