@@ -27,8 +27,24 @@
 
 ## ELETRÔNICA
 
+### Requisitos funcionais
 
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RF1 | Detecção de paredes | O sistema eletrônico deve detectar a presença de paredes ao redor do Micromouse por meio dos sensores, disponibilizando essas informações ao sistema de controle para auxiliar no mapeamento e na navegação pelo labirinto. | Must Have | Eletrônica | Deve funcionar considerando as características da pista (chão preto, paredes brancas com topo vermelho, 5 cm de altura, células de 18 cm). Os testes de detecção devem ocorrer antes da integração. |
+| RF2 | Controle dos motores | O sistema eletrônico deve acionar e controlar os motores do Micromouse, permitindo sua movimentação, realização de curvas e paradas durante a navegação, garantindo compatibilidade elétrica entre microcontrolador, drivers e motores. | Must Have | Eletrônica | Deve ser validado por testes de movimento, curvas e paradas. |
+| RF3 | Aquisição de dados de telemetria | O sistema eletrônico deve adquirir e disponibilizar ao sistema de controle os dados necessários à telemetria, como nível/consumo da bateria e dados de movimento (passos dos motores) utilizados para determinar a velocidade. | Must Have | Eletrônica | Os dados devem ser disponibilizados ao software/firmware para envio ao sistema web. Frequência de aquisição e formato devem ser definidos durante o projeto. |
+| RF4 | Comunicação sem fio com a telemetria | O sistema eletrônico deve transmitir os dados coletados (bateria, velocidade, trajeto) via módulo Bluetooth para o sistema web de telemetria, garantindo o envio correto das informações a cada tentativa. | Must Have | Eletrônica | Módulo Bluetooth previsto no orçamento (item 10 do TAP). Complementa o RF3 (aquisição/disponibilização interna dos dados) e sustenta o RF24 do Firmware. |
+| RF5 | Sinalização de estado do robô | O sistema eletrônico deve acionar indicadores visuais e sonoros (LED e buzzer) para sinalizar o estado do Micromouse (início do percurso, erro/colisão, conclusão do labirinto). | Should Have | Eletrônica | Relaciona-se ao RF25 do Firmware. |
+| RF6 | Aquisição de dados de passo dos motores (odometria) | O sistema eletrônico deve fornecer ao microcontrolador a contagem de passos executados por cada motor, permitindo o cálculo da distância percorrida e da velocidade do Micromouse. | Must Have | Eletrônica | Sustenta o RF3 e o RF22 do Firmware. Como os motores são de passo (open-loop), a contagem pode ser feita pelo próprio firmware a partir dos pulsos enviados ao driver (RF11), sem sensor adicional (encoder). |
+
+### Requisitos não funcionais
+
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RNF1 | Confiabilidade elétrica | O sistema eletrônico deve operar durante o desafio sem reinicializações ou falhas elétricas não planejadas (causadas por ruído, quedas de tensão ou mau contato) que interrompam o funcionamento do Micromouse. | Must Have | Eletrônica | Deve ser verificado em testes contínuos e nos testes de integração. O sistema deve permanecer operacional pelos 10 minutos do desafio. |
+| RNF2 | Estabilidade da alimentação | Os níveis de tensão entregues a cada subsistema eletrônico (lógica do microcontrolador, sensores e drivers dos motores) devem ser validados e mantidos dentro da faixa de operação de cada componente, inclusive durante os picos de corrente dos motores. | Must Have | Eletrônica | A regulação e a estabilidade da tensão propriamente ditas são responsabilidade da energia (itens 2 e 12). Este requisito cobre a validação, no lado da eletrônica, de que cada componente recebe tensão compatível com sua especificação. |
+| RNF3 | Integração e compactação | Os componentes eletrônicos (PCB, sensores, conexões e drivers) devem ser organizados fisicamente de forma compacta e segura sobre a estrutura do robô, de modo que a disposição também permita a montagem e a manutenção dos componentes. | Must Have | Eletrônica | Trata da organização/arranjo dos componentes. |
 
 ## SOFTWARE
-
 
