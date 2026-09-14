@@ -19,29 +19,23 @@
 
 ### Requisitos Funcionais
 
-| ID | Nome do Requisito | Descrição | Prioridade | Responsável |
-|---|---|---|---|---|
-| RF01 | Alimentação autônoma embarcada | O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas. | — | Energia |
-| RF02 | Regulação das tensões de operação | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema (lógica do microcontrolador, sensores e drivers dos motores). | — | Energia |
-| RF03 | Compatibilidade com Múltiplas Fontes de Energia | O sistema de energia deve prover um meio de comutação manual para selecionar a fonte de alimentação ativa a partir de entradas de energia alternativas, sem alterações físicas na placa. | — | Energia |
-| RF04 | Medição do nível de carga | O sistema de energia deve disponibilizar ao microcontrolador um sinal proporcional à carga restante da fonte, permitindo o cálculo do nível e do consumo de bateria. | — | Energia |
-| RF05 | Sinalização do estado de energia | O sistema de energia deve indicar visualmente que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação. | Could Have | Energia |
-| RF06 | Proteção contra sobrecorrente e curto-circuito | O sistema de energia deve interromper a alimentação em caso de curto-circuito ou corrente acima do limite de projeto, protegendo bateria e componentes. | — | Energia |
-| RF07 | Proteção da Bateria LiPo (BMS/Undervoltage) | O sistema elétrico deve contar com circuito de proteção específico para impedir descarga profunda (abaixo da tensão mínima por célula) e sobrecarga da bateria LiPo, prevenindo danos permanentes e risco de incêndio. | Alta (Must Have) | Energia |
-
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RF01 | Alimentação autônoma embarcada | O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas. | Must Have | Energia | Operação 100% autônoma exigida no slide 7. |
+| RF02 | Regulação das tensões de operação | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema, mantendo-os dentro da faixa de operação especificada pelos respectivos componentes. | Must Have | Energia | Faixas a definir com a Eletrônica após a escolha do microcontrolador e dos drivers. |
+| RF03 | Compatibilidade com Múltiplas Fontes de Energia | O sistema de energia deve prover um meio de comutação manual para selecionar a fonte de alimentação ativa a partir de entradas de energia alternativas, sem alterações físicas na placa. | Should Have | Energia | Permite operar com fontes de químicas ou especificações diferentes sem reprojeto. |
+| RF04 | Medição do nível de carga | O sistema de energia deve disponibilizar ao microcontrolador uma grandeza elétrica que permita estimar a carga restante da fonte, sem impor um método específico de medição. | Must Have | Energia | Alimenta o dado de telemetria "consumo de bateria" (slide 11). |
+| RF05 | Sinalização do estado de energia | O sistema de energia deve indicar que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação. | Should Have | Energia | Evita iniciar uma tentativa com carga insuficiente. |
+| RF06 | Troca e recarga sem desmontagem | O sistema de energia deve permitir a troca ou a recarga da fonte sem desmontar a estrutura do Micromouse. | Must Have | Energia | Entre tentativas só são permitidos pequenos reparos com o robô em repouso (slide 10). |
+| RF07 | Instalação e remoção da fonte de energia | O sistema de energia deve permitir instalar e remover a fonte de energia sem ferramentas especiais, mantendo-a fixada à estrutura durante todo o percurso, sem deslocamento em curvas, vibração ou colisão. | Must Have | Energia | A fonte solta pode interromper a alimentação no meio da corrida; colisões são previstas no slide 10. |
 
 ### Requisitos Não Funcionais
 
-| ID | Nome do Requisito | Descrição | Prioridade | Responsável |
-|---|---|---|---|---|
-| RNF01 | Separação entre potência e lógica | O sistema de energia deve isolar a linha de alimentação dos motores da linha de alimentação da lógica, de modo que picos de corrente dos motores não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores. | — | Energia |
-| RNF02 | Proteção contra inversão de polaridade | O sistema de energia deve impedir danos aos componentes caso a fonte seja conectada com polaridade invertida. | — | Energia |
-| RNF03 | Troca e recarga sem desmontagem | O sistema de energia deve permitir a troca das pilhas ou a recarga da bateria sem desmontar a estrutura do Micromouse nem desconectar a PCB. | — | Energia |
-| RNF04 | Autonomia de operação | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, os 10 minutos de uma tentativa, com margem para três tentativas consecutivas sem troca ou recarga. | — | Energia |
-| RNF05 | Estabilidade da tensão sob carga | A tensão de alimentação da lógica não deve variar além de ±5% do valor nominal durante os picos de corrente dos motores, e o microcontrolador não deve reiniciar em nenhuma manobra. | — | Energia |
-| RNF06 | Filtragem e Desacoplamento de Ruído | O circuito deve prever capacitores de desacoplamento e/ou filtros na linha de alimentação dos motores para mitigar ruídos elétricos (EMI) gerados pelo acionamento mecânico. | Alta (Must Have) | Energia |
-| RNF07 | Dimensionamento da Capacidade (Cálculo de mAh) | A capacidade nominal da bateria escolhida deve ser justificada por cálculo prévio de consumo máximo e médio de todos os subsistemas, assegurando a autonomia de 10 minutos (com margem de segurança para tentativas extras). | Média (Should Have) | Energia |
-| RNF08 | Gerenciamento Térmico de Reguladores | Os componentes de regulação de tensão (step-down/lineares) e os drivers de potência devem possuir margem térmica segura, utilizando dissipadores ou áreas de dissipação na PCB se o cálculo térmico exigir. | Média (Should Have) | Energia |
+| ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
+| :---: | :---- | :---- | :---: | :---- | :---- |
+| RNF01 | Separação entre potência e lógica | O sistema de energia deve manter a alimentação dos motores independente da alimentação da lógica, seja por fontes distintas, seja por barramentos regulados separados, de modo que os picos de corrente do acionamento não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores. | Must Have | Energia | |
+| RNF02 | Autonomia de operação | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, 30 minutos, equivalentes às três tentativas previstas para um desafio, sem troca nem recarga. | Must Have | Energia | Slides 21, 22 e 23: cada tentativa tem 10 minutos e a nota considera até três tentativas. |
+| RNF03 | Dimensionamento da capacidade da fonte | A capacidade da fonte escolhida deve ser justificada por cálculo prévio do consumo médio e de pico de todos os subsistemas, considerando a autonomia exigida, a parcela realmente utilizável da capacidade nominal e uma margem de segurança mínima de 30%. | Must Have | Energia | Margem de 25% a 30% é a prática usual em robótica móvel. |
 
 ## ELETRÔNICA
 
