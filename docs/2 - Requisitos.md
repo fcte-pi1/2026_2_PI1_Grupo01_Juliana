@@ -2,20 +2,22 @@
 
 ## ESTRURAS
 
+### Requisitos Funcionais
+
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
-| 1 | Envelope Dimensional Limite | A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.  | Alta | Estrutura | Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm). |
-| 2 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso preto de MDF e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
-| 3 | Atrito e Tração das Rodas   | Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.   | Alta | Estrutura |  Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.  |
-| 4 | Suporte e Posicionamento dos Sensores  | A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.   | Alta | Estrutura |  O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.  |
-| 5 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
-| 6 | Facilidade de Manutenção e Acesso   | Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.   | Alta | Estrutura | Pequenos reparos e limpeza das rodas são permitidos em repouso.    |
-| 7 | Modelagem  e Manufatura   | Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.  | Média | Estrutura | Obrigatório para documentação do projeto conceitual de estruturas (AP5).  |
-| 8 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   | |
+| RF01 | Envelope Dimensional Limite | A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.  | Alta | Estrutura | Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm). |
+| RF02 | Compatibilidade com o Chão e Paredes | O chassi/rodas deve operar em chassi de piso preto de MDF e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.  | Alta | Estrutura | Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.  |
+| RF03 | Atrito e Tração das Rodas   | Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.   | Alta | Estrutura |  Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.  |
+| RF04 | Suporte e Posicionamento dos Sensores  | A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.   | Alta | Estrutura |  O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.  |
+| RF05 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
+| RF06 | Facilidade de Manutenção e Acesso   | Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.   | Alta | Estrutura | Pequenos reparos e limpeza das rodas são permitidos em repouso.    |
+| RF07 | Modelagem  e Manufatura   | Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.  | Média | Estrutura | Obrigatório para documentação do projeto conceitual de estruturas (AP5).  |
+| RF08 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   | |
 
 ## ENERGIA
 
-# Requisitos Funcionais
+### Requisitos Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável |
 |---|---|---|---|---|
@@ -28,7 +30,7 @@
 | RF07 | Proteção da Bateria LiPo (BMS/Undervoltage) | O sistema elétrico deve contar com circuito de proteção específico para impedir descarga profunda (abaixo da tensão mínima por célula) e sobrecarga da bateria LiPo, prevenindo danos permanentes e risco de incêndio. | Alta (Must Have) | Energia |
 
 
-# Requisitos Não Funcionais
+### Requisitos Não Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável |
 |---|---|---|---|---|
@@ -43,7 +45,7 @@
 
 ## ELETRÔNICA
 
-### Requisitos funcionais
+### Requisitos Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
@@ -58,7 +60,7 @@
 | RF9 | Interface do DIP switch de configuração | O sistema eletrônico deve conectar o DIP switch de 4 vias a entradas digitais do microcontrolador, permitindo ao firmware ler a configuração de modo de operação sem reprogramação. | Should Have | Eletrônica | Viabiliza o RF27 do Software, que deixa essa forma de configuração em aberto. Componente já previsto no item 6 do orçamento. |
 | RF10 | Driver dos indicadores visuais e sonoros | O sistema eletrônico deve fornecer o circuito de acionamento (resistor limitador e/ou estágio de chaveamento) do LED e do buzzer, evitando corrente excessiva nas saídas digitais do microcontrolador. | Should Have | Eletrônica | Suporta o RF5. Componentes previstos no item 11 do orçamento. |
 
-### Requisitos não funcionais
+### Requisitos Não Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
@@ -73,6 +75,8 @@
 | RNF9 | Capacidade de I/O do microcontrolador | O microcontrolador selecionado deve possuir pinos digitais/analógicos suficientes para os sensores de parede/linha, os drivers dos motores, o módulo Bluetooth, o DIP switch, o LED e o buzzer, sem necessidade de multiplexação adicional. | Must Have | Eletrônica | Requisito de dimensionamento a ser validado na escolha do microcontrolador durante o projeto conceitual. |
 
 ## SOFTWARE
+
+### Requisitos Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
@@ -114,7 +118,7 @@
 | RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF06 do frontend. |
 | RF37 | Registrar paredes detectadas | O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto. | Could Have | Backend | Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto. |
 
-# Requisitos Não Funcionais
+### Requisitos Não Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 |---|---|---|---|---|---|
