@@ -19,6 +19,8 @@
 
  <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/docs-eap-energia/docs/figs/PI1%20Micromouse%20-%20EAP.jpg" alt="" width=""> 
 
+| **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
+|:------:|----------------|---------------|--------------------|-----------------|
 | 3 | **Sub-sistema: Hardware** | | | |
 | 3.1 | Processamento | | | |
 | 3.2 | Sensor 1 | | | |
