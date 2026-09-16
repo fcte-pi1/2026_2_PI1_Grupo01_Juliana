@@ -6,11 +6,13 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentação do projeto Ratatouille — Micromouse autônomo com telemetria. Disciplina PI1, Grupo 01, 2026.2.">
+        <meta name="description" content="Documentação técnica do projeto Ratatouille, um Micromouse autônomo para solução de labirintos e registro de telemetria.">
       
       
+        <meta name="author" content="Grupo Ratatouille — PI1 2026.2">
       
-        <link rel="canonical" href="https://fcte-pi1.github.io/2026_2_PI1_Grupo01_Juliana/2%20-%20Requisitos/">
+      
+        <link rel="canonical" href="https://pi1-2026-2.github.io/2026_2_PI1_Grupo01_Juliana/2%20-%20Requisitos/">
       
       
         <link rel="prev" href="../1%20-%20TAP/">
@@ -19,22 +21,19 @@
         <link rel="next" href="../3%20-%20EAP/">
       
       
-        
-      
-      
-      <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <link rel="icon" href="../assets/brand/ratatouille-mark.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
     
     
       
-        <title>2. Requisitos - 🐭 Ratatouille — Micromouse PI1</title>
+        <title>Requisitos - Ratatouille | Micromouse</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -48,8 +47,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i%7CFira+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Lato";--md-code-font:"Fira Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
     
@@ -59,6 +58,7 @@
     
       
 
+    
     
     
   </head>
@@ -81,7 +81,7 @@
       
         
         <a href="#requisitos" class="md-skip">
-          Ir para o conteúdo
+          Pular para conteúdo
         </a>
       
     </div>
@@ -94,10 +94,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
-    <a href=".." title="🐭 Ratatouille — Micromouse PI1" class="md-header__button md-logo" aria-label="🐭 Ratatouille — Micromouse PI1" data-md-component="logo">
+    <a href=".." title="Ratatouille | Micromouse" class="md-header__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -108,13 +107,13 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            🐭 Ratatouille — Micromouse PI1
+            Ratatouille | Micromouse
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              2. Requisitos
+              Requisitos
             
           </span>
         </div>
@@ -127,7 +126,21 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Ativar tema escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Ativar tema claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
     
   
 </form>
@@ -138,13 +151,11 @@
     
     
     
-      
-      
-        <label class="md-header__button md-icon" for="__search">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        </label>
-        <div class="md-search" data-md-component="search" role="dialog">
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
@@ -163,12 +174,14 @@
         </button>
       </nav>
       
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Inicializando a pesquisa
+            Inicializando busca
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -176,17 +189,16 @@
     </div>
   </div>
 </div>
-      
     
     
       <div class="md-header__source">
-        <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana" title="Ir ao repositório" class="md-source" data-md-component="source">
+        <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
   </div>
   <div class="md-source__repository">
-    fcte-pi1/Ratatouille
+    PI1-2026-2 / Ratatouille
   </div>
 </a>
       </div>
@@ -209,11 +221,9 @@
   
   
   
-  
     <li class="md-tabs__item">
       <a href=".." class="md-tabs__link">
         
-  
   
     
   
@@ -227,7 +237,6 @@
         
   
   
-  
     
   
   
@@ -237,12 +246,70 @@
         <a href="../1%20-%20TAP/" class="md-tabs__link">
           
   
+    
   
-  Documentos
+  Projeto
 
         </a>
       </li>
     
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../5%20-%20Cronograma/" class="md-tabs__link">
+          
+  
+    
+  
+  Acompanhamento
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-tabs__link">
+          
+  
+    
+  
+  Validação
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-tabs__link">
+        
+  
+    
+  
+  Encerramento
+
+      </a>
+    </li>
   
 
       
@@ -266,27 +333,24 @@
   
 
 
-  
-
-<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navegação" data-md-level="0">
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navegação" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="🐭 Ratatouille — Micromouse PI1" class="md-nav__button md-logo" aria-label="🐭 Ratatouille — Micromouse PI1" data-md-component="logo">
+    <a href=".." title="Ratatouille | Micromouse" class="md-nav__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
 
     </a>
-    🐭 Ratatouille — Micromouse PI1
+    Ratatouille | Micromouse
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana" title="Ir ao repositório" class="md-source" data-md-component="source">
+      <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
   </div>
   <div class="md-source__repository">
-    fcte-pi1/Ratatouille
+    PI1-2026-2 / Ratatouille
   </div>
 </a>
     </div>
@@ -303,16 +367,10 @@
       <a href=".." class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
     Início
-  
-
     
   </span>
-  
   
 
       </a>
@@ -330,12 +388,23 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
       
         
         
       
+      
+        
       
     
     
@@ -349,16 +418,10 @@
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
-    
-  
-    Documentos
-  
-
+    Projeto
     
   </span>
-  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -367,11 +430,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            
-  
-    Documentos
-  
-
+            Projeto
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -385,16 +444,10 @@
       <a href="../1%20-%20TAP/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    1. TAP
-  
-
+    Termo de abertura
     
   </span>
-  
   
 
       </a>
@@ -419,22 +472,170 @@
         
       
       
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
   
   <span class="md-ellipsis">
-    
-  
-    2. Requisitos
-  
-
+    Requisitos
     
   </span>
   
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Requisitos
+    
+  </span>
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#estruturas" class="md-nav__link">
+    <span class="md-ellipsis">
+      ESTRUTURAS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ESTRUTURAS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#energia" class="md-nav__link">
+    <span class="md-ellipsis">
+      ENERGIA
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ENERGIA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eletronica" class="md-nav__link">
+    <span class="md-ellipsis">
+      ELETRÔNICA
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ELETRÔNICA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#software" class="md-nav__link">
+    <span class="md-ellipsis">
+      SOFTWARE
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SOFTWARE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -451,16 +652,10 @@
       <a href="../3%20-%20EAP/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    3. EAP
-  
-
+    Estrutura analítica
     
   </span>
-  
   
 
       </a>
@@ -477,32 +672,40 @@
   
     
     
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
       
       
+        
+          
+          
+        
+      
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
         <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
             
   
-  
   <span class="md-ellipsis">
-    
-  
-    4. Projeto Conceitual
-  
-
+    Projeto conceitual
     
   </span>
-  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -511,11 +714,7 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_4">
             <span class="md-nav__icon md-icon"></span>
-            
-  
-    4. Projeto Conceitual
-  
-
+            Projeto conceitual
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -529,16 +728,10 @@
       <a href="../4.1%20-%20Projeto%20conceitual%20de%20estruturas/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
     Estruturas
-  
-
     
   </span>
-  
   
 
       </a>
@@ -557,16 +750,10 @@
       <a href="../4.2%20-%20Projeto%20conceitual%20de%20energia/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
     Energia
-  
-
     
   </span>
-  
   
 
       </a>
@@ -585,16 +772,10 @@
       <a href="../4.3%20-%20Projeto%20conceitual%20de%20hardware/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
     Hardware
-  
-
     
   </span>
-  
   
 
       </a>
@@ -613,16 +794,10 @@
       <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
     Software
-  
-
     
   </span>
-  
   
 
       </a>
@@ -639,6 +814,60 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Acompanhamento
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Acompanhamento
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -649,16 +878,10 @@
       <a href="../5%20-%20Cronograma/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    5. Cronograma
-  
-
+    Cronograma
     
   </span>
-  
   
 
       </a>
@@ -677,16 +900,10 @@
       <a href="../6%20-%20Or%C3%A7amento/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    6. Orçamento
-  
-
+    Orçamento
     
   </span>
-  
   
 
       </a>
@@ -695,17 +912,39 @@
 
               
             
-              
-                
+          </ul>
+        </nav>
+      
+    </li>
   
-  
-  
-  
+
     
-    
+      
+      
+  
+  
+  
+  
     
     
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+        
       
     
     
@@ -713,35 +952,25 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
-  
   <span class="md-ellipsis">
-    
-  
-    7. Testes
-  
-
+    Validação
     
   </span>
-  
   
 
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            
-  
-    7. Testes
-  
-
+            Validação
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -755,16 +984,10 @@
       <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    Estrutura
-  
-
+    Testes de estrutura
     
   </span>
-  
   
 
       </a>
@@ -783,16 +1006,10 @@
       <a href="../7.2%20-%20Testes%20de%20energia/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    Energia
-  
-
+    Testes de energia
     
   </span>
-  
   
 
       </a>
@@ -811,16 +1028,10 @@
       <a href="../7.3%20-%20Testes%20de%20hardware/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    Hardware
-  
-
+    Testes de hardware
     
   </span>
-  
   
 
       </a>
@@ -839,16 +1050,10 @@
       <a href="../7.4%20-%20Testes%20de%20software/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    Software
-  
-
+    Testes de software
     
   </span>
-  
   
 
       </a>
@@ -867,27 +1072,13 @@
       <a href="../7.5%20-%20Testes%20de%20integra%C3%A7%C3%A3o/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    Integração
-  
-
+    Testes de integração
     
   </span>
   
-  
 
       </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -903,44 +1094,10 @@
       <a href="../8%20-%20Avalia%C3%A7%C3%A3o%20de%20desempenho/" class="md-nav__link">
         
   
-  
   <span class="md-ellipsis">
-    
-  
-    8. Avaliação de Desempenho
-  
-
+    Avaliação de desempenho
     
   </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    9. Relatório de Encerramento
-  
-
-    
-  </span>
-  
   
 
       </a>
@@ -956,6 +1113,27 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Encerramento
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -963,163 +1141,982 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#estruturas" class="md-nav__link">
+    <span class="md-ellipsis">
+      ESTRUTURAS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ESTRUTURAS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#energia" class="md-nav__link">
+    <span class="md-ellipsis">
+      ENERGIA
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ENERGIA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#eletronica" class="md-nav__link">
+    <span class="md-ellipsis">
+      ELETRÔNICA
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ELETRÔNICA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#software" class="md-nav__link">
+    <span class="md-ellipsis">
+      SOFTWARE
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SOFTWARE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-funcionais_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requisitos-nao-funcionais_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requisitos Não Funcionais
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           
             <div class="md-content" data-md-component="content">
-              
               <article class="md-content__inner md-typeset">
                 
                   
 
 
   
-    <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/edit/main/docs/2 - Requisitos.md" title="Editar esta página" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/edit/main/docs/2 - Requisitos.md" title="Editar esta página" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
   
   
+    
+      
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/raw/main/docs/2 - Requisitos.md" title="Exibir fonte desta página" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
 
 
-<h1 id="requisitos">Requisitos</h1>
+<h1 id="requisitos">Requisitos<a class="headerlink" href="#requisitos" title="Permanent link">&para;</a></h1>
+<h2 id="estruturas">ESTRUTURAS<a class="headerlink" href="#estruturas" title="Permanent link">&para;</a></h2>
+<h3 id="requisitos-funcionais">Requisitos Funcionais<a class="headerlink" href="#requisitos-funcionais" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th style="text-align: center;"><strong>ID</strong></th>
-<th><strong>Nome do Requisito</strong></th>
-<th><strong>Descrição</strong></th>
-<th style="text-align: center;"><strong>Prioridade</strong></th>
-<th><strong>Responsável</strong></th>
-<th><strong>Observações</strong></th>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: center;">1</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td style="text-align: center;">RF01</td>
+<td style="text-align: left;">Envelope Dimensional Limite</td>
+<td style="text-align: left;">A estrutura não pode exceder 16,5 cm de comprimento nem 16,5 cm de largura. Não há limite para a altura.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Restrição física estrita da competição. Recomendado projetar com margem de segurança.  (ex:14 cm X 14 cm).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF02</td>
+<td style="text-align: left;">Compatibilidade com o Chão e Paredes</td>
+<td style="text-align: left;">O chassi/rodas deve operar em chassi de piso (Chão preto) e interagir com paredes de 5 cm de altura e 1,2 cm de espessura.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Garantir vão livre em relação ao solo adequado e evitar colisão do chassi com as paredes.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF03</td>
+<td style="text-align: left;">Atrito e Tração das Rodas</td>
+<td style="text-align: left;">Selecionar e integrar pneus/rodas com alto coeficiente de atrito com a superfície de piso pintada de preto.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Permite acelerações e frenagens sem derrapagem, garantindo a precisão da odometria.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF04</td>
+<td style="text-align: left;">Suporte e Posicionamento dos Sensores</td>
+<td style="text-align: left;">A estrutura deve fornecer suportes rígidos e calibrados para a fixação dos sensores de distância sensores de linha/cor.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">O alinhamento dos sensores deve ser fixo e resistente a vibrações para não comprometer o mapeamento.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF05</td>
+<td style="text-align: left;">Proteção contra Danos ao Labirinto</td>
+<td style="text-align: left;">O chassi deve possuir compartimentos adequados para fixação segura dos componentes.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Manter o centro de gravidade baixo para estabilidade em curvas rápidas.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF06</td>
+<td style="text-align: left;">Facilidade de Manutenção e Acesso</td>
+<td style="text-align: left;">Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.</td>
+<td style="text-align: center;">Alta</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Pequenos reparos e limpeza das rodas são permitidos em repouso.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF07</td>
+<td style="text-align: left;">Modelagem  e Manufatura</td>
+<td style="text-align: left;">Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.</td>
+<td style="text-align: center;">Média</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Obrigatório para documentação do projeto conceitual de estruturas (AP5).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF08</td>
+<td style="text-align: left;">Construção do Labirinto de Testes Local</td>
+<td style="text-align: left;">Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.</td>
+<td style="text-align: center;">Média</td>
+<td style="text-align: left;">Estrutura</td>
+<td style="text-align: left;">Exigência para validação local e teste de integração do grupo antes da entrega final.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="energia">ENERGIA<a class="headerlink" href="#energia" title="Permanent link">&para;</a></h2>
+<h3 id="requisitos-funcionais_1">Requisitos Funcionais<a class="headerlink" href="#requisitos-funcionais_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">RF01</td>
+<td style="text-align: left;">Alimentação autônoma embarcada</td>
+<td style="text-align: left;">O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Operação 100% autônoma exigida no slide 7.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF02</td>
+<td style="text-align: left;">Regulação das tensões de operação</td>
+<td style="text-align: left;">O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema, mantendo-os dentro da faixa de operação especificada pelos respectivos componentes.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Faixas a definir com a Eletrônica após a escolha do microcontrolador e dos drivers.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF03</td>
+<td style="text-align: left;">Compatibilidade com Múltiplas Fontes de Energia</td>
+<td style="text-align: left;">O sistema de energia deve prover um meio de comutação manual para selecionar a fonte de alimentação ativa a partir de entradas de energia alternativas, sem alterações físicas na placa.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Permite operar com fontes de químicas ou especificações diferentes sem reprojeto.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF04</td>
+<td style="text-align: left;">Medição do nível de carga</td>
+<td style="text-align: left;">O sistema de energia deve disponibilizar ao microcontrolador uma grandeza elétrica que permita estimar a carga restante da fonte, sem impor um método específico de medição.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Alimenta o dado de telemetria "consumo de bateria" (slide 11).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF05</td>
+<td style="text-align: left;">Sinalização do estado de energia</td>
+<td style="text-align: left;">O sistema de energia deve indicar que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Evita iniciar uma tentativa com carga insuficiente.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF06</td>
+<td style="text-align: left;">Troca e recarga sem desmontagem</td>
+<td style="text-align: left;">O sistema de energia deve permitir a troca ou a recarga da fonte sem desmontar a estrutura do Micromouse.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Entre tentativas só são permitidos pequenos reparos com o robô em repouso (slide 10).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF07</td>
+<td style="text-align: left;">Instalação e remoção da fonte de energia</td>
+<td style="text-align: left;">O sistema de energia deve permitir instalar e remover a fonte de energia sem ferramentas especiais, mantendo-a fixada à estrutura durante todo o percurso, sem deslocamento em curvas, vibração ou colisão.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">A fonte solta pode interromper a alimentação no meio da corrida; colisões são previstas no slide 10.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="requisitos-nao-funcionais">Requisitos Não Funcionais<a class="headerlink" href="#requisitos-nao-funcionais" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">RNF01</td>
+<td style="text-align: left;">Separação entre potência e lógica</td>
+<td style="text-align: left;">O sistema de energia deve manter a alimentação dos motores independente da alimentação da lógica, seja por fontes distintas, seja por barramentos regulados separados, de modo que os picos de corrente do acionamento não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF02</td>
+<td style="text-align: left;">Autonomia de operação</td>
+<td style="text-align: left;">A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, 30 minutos, equivalentes às três tentativas previstas para um desafio, sem troca nem recarga.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Slides 21, 22 e 23: cada tentativa tem 10 minutos e a nota considera até três tentativas.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF03</td>
+<td style="text-align: left;">Dimensionamento da capacidade da fonte</td>
+<td style="text-align: left;">A capacidade da fonte escolhida deve ser justificada por cálculo prévio do consumo médio e de pico de todos os subsistemas, considerando a autonomia exigida, a parcela realmente utilizável da capacidade nominal e uma margem de segurança mínima de 30%.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Energia</td>
+<td style="text-align: left;">Margem de 25% a 30% é a prática usual em robótica móvel.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="eletronica">ELETRÔNICA<a class="headerlink" href="#eletronica" title="Permanent link">&para;</a></h2>
+<h3 id="requisitos-funcionais_2">Requisitos Funcionais<a class="headerlink" href="#requisitos-funcionais_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">RF1</td>
+<td style="text-align: left;">Detecção de paredes</td>
+<td style="text-align: left;">O sistema eletrônico deve detectar a presença de paredes ao redor do Micromouse por meio dos sensores, disponibilizando essas informações ao sistema de controle para auxiliar no mapeamento e na navegação pelo labirinto.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Deve funcionar considerando as características da pista (chão preto, paredes brancas com topo vermelho, 5 cm de altura, células de 18 cm). Os testes de detecção devem ocorrer antes da integração.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF2</td>
+<td style="text-align: left;">Controle dos motores</td>
+<td style="text-align: left;">O sistema eletrônico deve acionar e controlar os motores do Micromouse, permitindo sua movimentação, realização de curvas e paradas durante a navegação, garantindo compatibilidade elétrica entre microcontrolador, drivers e motores.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Deve ser validado por testes de movimento, curvas e paradas.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF3</td>
+<td style="text-align: left;">Aquisição de dados de telemetria</td>
+<td style="text-align: left;">O sistema eletrônico deve integrar circuito de leitura da tensão da bateria e disponibilizar ao sistema de controle os dados necessários à telemetria e monitoramento de movimento.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Inclui divisor de tensão para leitura da bateria no ADC. Os dados devem ser disponibilizados ao software/firmware para envio ao sistema web.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF4</td>
+<td style="text-align: left;">Comunicação sem fio com a telemetria</td>
+<td style="text-align: left;">O sistema eletrônico deve transmitir os dados coletados (bateria, velocidade, trajeto) via módulo Bluetooth para o sistema web de telemetria, garantindo o envio correto das informações a cada tentativa.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Módulo Bluetooth previsto no orçamento (item 10 do TAP). Complementa o RF3 (aquisição/disponibilização interna dos dados) e sustenta o RF24 do Firmware.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF5</td>
+<td style="text-align: left;">Sinalização de estado do robô</td>
+<td style="text-align: left;">O sistema eletrônico deve acionar indicadores visuais e sonoros (LED e buzzer) para sinalizar o estado do Micromouse (início do percurso, erro/colisão, conclusão do labirinto).</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Relaciona-se ao RF25 do Firmware.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF6</td>
+<td style="text-align: left;">Interface de sinais para odometria dos motores</td>
+<td style="text-align: left;">O sistema eletrônico deve rotear as linhas de pulso de passo e direção (STEP/DIR) entre microcontrolador e drivers, viabilizando o cálculo de passos, distância e velocidade pelo firmware.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Sustenta o RF3 e o RF22 do Firmware. Como os motores são de passo (open-loop), a contagem é feita pelo firmware a partir dos pulsos enviados ao driver (RF7).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF7</td>
+<td style="text-align: left;">Driver dos motores de passo</td>
+<td style="text-align: left;">O sistema eletrônico deve incluir circuitos driver dedicados para os motores de passo, responsáveis por fornecer a corrente e a sequência de acionamento de fases necessárias ao movimento, com proteção contra sobrecorrente nos enrolamentos.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Complementa o RF2. Corrente nominal do driver deve ser compatível com os motores Nema 11 (itens 5 e 14 do orçamento).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF8</td>
+<td style="text-align: left;">Condicionamento de sinal dos sensores</td>
+<td style="text-align: left;">O sistema eletrônico deve condicionar (amplificar/filtrar) os sinais dos sensores infravermelhos antes da leitura pelo microcontrolador, garantindo distinção confiável entre piso preto, paredes brancas e topo vermelho.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Sensores previstos nos itens 1, 2, 8 e 9 do orçamento. O limiar de leitura deve ser ajustável para calibração, sustentando o RF1.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF9</td>
+<td style="text-align: left;">Interface do DIP switch de configuração</td>
+<td style="text-align: left;">O sistema eletrônico deve conectar o DIP switch de 4 vias a entradas digitais do microcontrolador, permitindo ao firmware ler a configuração de modo de operação sem reprogramação.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Viabiliza o RF27 do Software, que deixa essa forma de configuração em aberto. Componente já previsto no item 6 do orçamento.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF10</td>
+<td style="text-align: left;">Driver dos indicadores visuais e sonoros</td>
+<td style="text-align: left;">O sistema eletrônico deve fornecer o circuito de acionamento (resistor limitador e/ou estágio de chaveamento) do LED e do buzzer, evitando corrente excessiva nas saídas digitais do microcontrolador.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Suporta o RF5. Componentes previstos no item 11 do orçamento.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="requisitos-nao-funcionais_1">Requisitos Não Funcionais<a class="headerlink" href="#requisitos-nao-funcionais_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">RNF1</td>
+<td style="text-align: left;">Confiabilidade elétrica</td>
+<td style="text-align: left;">O sistema eletrônico deve operar durante o desafio sem reinicializações ou falhas elétricas não planejadas (causadas por ruído, quedas de tensão ou mau contato) que interrompam o funcionamento do Micromouse.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Deve ser verificado em testes contínuos e nos testes de integração. O sistema deve permanecer operacional pelos 10 minutos do desafio.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF2</td>
+<td style="text-align: left;">Estabilidade da alimentação</td>
+<td style="text-align: left;">Os níveis de tensão entregues a cada subsistema eletrônico (lógica do microcontrolador, sensores e drivers dos motores) devem ser validados e mantidos dentro da faixa de operação de cada componente, inclusive durante os picos de corrente dos motores.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">A regulação e a estabilidade da tensão propriamente ditas são responsabilidade da energia (itens 2 e 12). Este requisito cobre a validação, no lado da eletrônica, de que cada componente recebe tensão compatível com sua especificação.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF3</td>
+<td style="text-align: left;">Integração e compactação</td>
+<td style="text-align: left;">Os componentes eletrônicos (PCB, sensores, conexões e drivers) devem ser organizados fisicamente de forma compacta e segura sobre a estrutura do robô, de modo que a disposição também permita a montagem e a manutenção dos componentes.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Trata da organização/arranjo dos componentes.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF4</td>
+<td style="text-align: left;">Restrição dimensional do hardware</td>
+<td style="text-align: left;">A placa de circuito impresso (PCB) deve ser projetada com dimensões reduzidas (máximo de 12 cm de comprimento por 12 cm de largura), garantindo que o robô montado com sensores e rodas não ultrapasse o limite de 16,5 cm definido pela Estrutura.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Garante margem física para manobras dentro da célula de 18 cm × 18 cm sem colisão mecânica.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF5</td>
+<td style="text-align: left;">Proteção dos pinos de sensoriamento</td>
+<td style="text-align: left;">O sistema eletrônico deve proteger as entradas digitais/analógicas do microcontrolador contra picos de tensão e descargas eletrostáticas vindas de sensores e conectores externos.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Foco na integridade dos sinais de sensoriamento, distinto das proteções de linha de potência já cobertas pela Energia (itens 13 e 14).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF6</td>
+<td style="text-align: left;">Temporizador de watchdog</td>
+<td style="text-align: left;">O sistema eletrônico deve implementar um circuito ou função de watchdog capaz de reiniciar automaticamente o microcontrolador caso o firmware trave durante a tentativa.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Reforça o RNF1 e o RNF07 do Software. Crítico diante do limite de 10 minutos por tentativa. É uma reinicialização controlada, diferente das falhas não planejadas que o RNF1 busca evitar.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF7</td>
+<td style="text-align: left;">Padronização de conectores</td>
+<td style="text-align: left;">O sistema eletrônico deve padronizar os conectores entre PCB, motores, sensores e fonte de energia, evitando inversão de conexão e facilitando a manutenção nas pausas entre tentativas.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Conectores JST previstos nos itens 7 e 16 do orçamento. Relaciona-se ao requisito 6 de Estrutura.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF8</td>
+<td style="text-align: left;">Documentação do esquemático elétrico</td>
+<td style="text-align: left;">Todo o circuito eletrônico (PCB, conexões e drivers) deve ser documentado em esquemático elétrico e diagrama de conexões, versionado no repositório do projeto.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Equivalente ao requisito 7 de Estrutura. Necessário para o projeto conceitual (AP5) e alinhado à RNF13 do Software. É mais um requisito de processo/entrega do que de comportamento do sistema em si.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RNF9</td>
+<td style="text-align: left;">Capacidade de I/O do microcontrolador</td>
+<td style="text-align: left;">O microcontrolador selecionado deve possuir pinos digitais/analógicos suficientes para os sensores de parede/linha, os drivers dos motores, o módulo Bluetooth, o DIP switch, o LED e o buzzer, sem necessidade de multiplexação adicional.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Eletrônica</td>
+<td style="text-align: left;">Requisito de dimensionamento a ser validado na escolha do microcontrolador durante o projeto conceitual.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="software">SOFTWARE<a class="headerlink" href="#software" title="Permanent link">&para;</a></h2>
+<h3 id="requisitos-funcionais_3">Requisitos Funcionais<a class="headerlink" href="#requisitos-funcionais_3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Nome do Requisito</th>
+<th style="text-align: left;">Descrição</th>
+<th style="text-align: center;">Prioridade</th>
+<th style="text-align: left;">Responsável</th>
+<th style="text-align: left;">Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">RF01</td>
+<td style="text-align: left;">Visualizar telemetria do robô</td>
+<td style="text-align: left;">O sistema web deve permitir ao usuário visualizar os dados de telemetria do Micromouse durante e após a execução, como velocidade, bateria, tempo de percurso e status</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Frontend</td>
+<td style="text-align: left;">Requisito essencial para o acompanhamento da execução do robô.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF02</td>
+<td style="text-align: left;">Visualizar os Dados da Execução</td>
+<td style="text-align: left;">O sistema deve permitir ao usuário visualizar os principais dados de uma execução após sua finalização, incluindo tempo, velocidade e desempenho.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Frontend</td>
+<td style="text-align: left;">As informações devem ser apresentadas de forma organizada em ordem cronológica de execução.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF03</td>
+<td style="text-align: left;">Visualizar histórico de execuções</td>
+<td style="text-align: left;">O sistema deve apresentar para o usuário uma seção na aplicação que forneça o histórico de todas as execuções já realizadas.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Frontend</td>
+<td style="text-align: left;">Em ordem decrescente de execução (da última para a primeira).</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF04</td>
+<td style="text-align: left;">Visualizar execução em tempo real</td>
+<td style="text-align: left;">Caso haja uma execução com o status "health-check" ou "running", o sistema deve fornecer ao usuário os dados dessa execução na tela inicial, com o tempo da última atualização.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Frontend</td>
+<td style="text-align: left;">Ex.: mensagem "última atualização há 4 segundos". Sistema de polling.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF05</td>
+<td style="text-align: left;">Visualizar os dados captados no health-check</td>
+<td style="text-align: left;">O sistema deve fornecer ao usuário, durante a execução e após o término da mesma, os dados coletados quando o status for "health-check" em uma área específica, separada do resto dos dados coletados na página da execução específica.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Frontend</td>
+<td style="text-align: left;">Conectado ao RNF03.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF06</td>
+<td style="text-align: left;">Fornecer dados de uma execução em tempo real</td>
+<td style="text-align: left;">O sistema deve ser capaz de consumir os dados de telemetria de uma execução em status "health-check" ou "running".</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RF07</td>
+<td style="text-align: left;">Consulta ao histórico de execuções</td>
+<td style="text-align: left;">O sistema deve permitir ao usuário consultar as execuções anteriores do Micromouse, apresentando os dados registrados de cada tentativa para possibilitar a análise do desempenho.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">O histórico deve apresentar as informações de cada execução de forma organizada.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF08</td>
+<td style="text-align: left;">Receber telemetria do micromouse</td>
+<td style="text-align: left;">O sistema deve receber os dados de telemetria enviados pelo micromouse durante a corrida, contendo no mínimo a célula atual, o nível de bateria e o instante de envio (timestamp).</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slide 11. Protocolo (ex.: MQTT, WebSocket ou HTTP) e formato da mensagem (ex.: JSON) a definir com a equipe de hardware</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF09</td>
+<td style="text-align: left;">Registrar trajeto no labirinto</td>
+<td style="text-align: left;">O sistema deve armazenar, em ordem cronológica, a sequência de células visitadas pelo micromouse por execução, permitindo reconstruir o trajeto completo.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slide 11. Sugestão de representação: coluna + linha (ex.: A1, B2), igual aos exemplos do enunciado.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF10</td>
+<td style="text-align: left;">Registrar início de corrida</td>
+<td style="text-align: left;">O sistema deve criar um registro de corrida no momento em que ela começa, associando o tipo de labirinto (4x4, 8x4 ou 12x4), o número da tentativa e a data/hora de início.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slides 5, 11 e 23. Definir se o início é disparado pela primeira mensagem do micromouse ou pelo operador na interface web.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF11</td>
+<td style="text-align: left;">Calcular consumo de bateria</td>
+<td style="text-align: left;">O sistema deve calcular o consumo de bateria da corrida a partir das leituras recebidas, informando o nível atual e o total consumido desde o início.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slide 11. Unidade (% ou mAh) depende do sensor escolhido pela equipe de energia.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF12</td>
+<td style="text-align: left;">Calcular velocidade média</td>
+<td style="text-align: left;">O sistema deve calcular a velocidade média do micromouse, dividindo a distância percorrida pelo tempo decorrido.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slide 11. Distância estimada por nº de células percorridas × 18 cm (slide 9) ou obtida dos encoders, se o hardware enviar.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF13</td>
+<td style="text-align: left;">Calcular tempo de conclusão</td>
+<td style="text-align: left;">O sistema deve calcular o tempo total da corrida, do início até a chegada à área de objetivo.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Slide 11. Usar uma única fonte de relógio (micromouse ou servidor) para evitar erros de sincronização.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF14</td>
+<td style="text-align: left;">Calcular comparação de tempo gasto entre execuções</td>
+<td style="text-align: left;">O sistema deve calcular, a partir do melhor tempo já executado em um caminho completo, uma comparação em porcentagem do quanto melhor foi o tempo gasto na última execução.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Ajudará na análise sobre a evolução do Micromouse a cada execução, já que há um limite de tempo para a prova.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF15</td>
+<td style="text-align: left;">Registrar informações sobre a falha de uma execução</td>
+<td style="text-align: left;">O sistema deve registrar nos dados de uma execução em qual célula ocorreu uma falha no trajeto e o motivo da falha.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Ex.: failed: collision / time_exceeded / stuck / out_of_track.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF16</td>
+<td style="text-align: left;">Registrar os status de uma execução</td>
+<td style="text-align: left;">O sistema deve registrar nos dados de telemetria o status de uma execução, podendo ser: "health-check", "running", "success", "failed".</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">"Health-check": não começou o trajeto, mas já iniciou a execução. "Running": iniciou o trajeto. "Success": executou o trajeto até o objetivo. "Failed": executou o trajeto, mas não chegou até o objetivo.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF17</td>
+<td style="text-align: left;">Garantir unicidade entre as execuções</td>
+<td style="text-align: left;">O sistema deve registrar cada execução, independente do seu status, com um número identificador único.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Conexão com a integridade dos dados RNF01.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF18</td>
+<td style="text-align: left;">Registrar uma única execução por vez</td>
+<td style="text-align: left;">O sistema não deve registrar os dados de uma nova execução caso ainda haja uma em andamento (status diferente de "success" ou "failed").</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Garantir a integridade dos dados advindos de uma execução.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF19</td>
+<td style="text-align: left;">Enviar feedback de execução recusada</td>
+<td style="text-align: left;">O sistema deve informar de forma clara quando uma execução solicitada foi negada, registrando o evento como uma tentativa rejeitada.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RF20</td>
+<td style="text-align: left;">Detectar paredes e obstáculos</td>
+<td style="text-align: left;">O sistema deve detectar paredes/obstáculos ao redor do Micromouse em tempo real.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Pré-requisito para a navegação autônoma. Relação com o sensoriamento da Eletrônica a alinhar com aquela equipe.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF21</td>
+<td style="text-align: left;">Controlar a movimentação do Micromouse</td>
+<td style="text-align: left;">O sistema deve controlar a movimentação do Micromouse (avançar, curvar, parar).</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RF22</td>
+<td style="text-align: left;">Calcular velocidade do Micromouse</td>
+<td style="text-align: left;">O sistema deve calcular a velocidade do Micromouse a partir dos dados de movimento disponíveis.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Campo de telemetria exigido.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF23</td>
+<td style="text-align: left;">Monitorar bateria</td>
+<td style="text-align: left;">O sistema deve monitorar o nível/consumo de bateria.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Campo de telemetria exigido; evita parada sem aviso durante a corrida.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF24</td>
+<td style="text-align: left;">Transmitir telemetria para o sistema web</td>
+<td style="text-align: left;">O sistema deve transmitir os dados de telemetria (bateria, velocidade, trajeto) para o sistema web.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Envio obrigatório especificado; ausência penaliza a nota em 25%. Protocolo/formato a definir.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF25</td>
+<td style="text-align: left;">Sinalizar estado do robô</td>
+<td style="text-align: left;">O sistema deve sinalizar visual e sonoramente o estado do robô (início, erro/colisão, conclusão).</td>
+<td style="text-align: center;">Could Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Apoia depuração e acompanhamento da corrida pela equipe e pela banca.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF26</td>
+<td style="text-align: left;">Detectar chegada ao objetivo</td>
+<td style="text-align: left;">O sistema deve detectar quando o Micromouse alcançou a área de objetivo.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Sustenta o critério de aceite e o campo de telemetria "desafio cumprido (S/N)".</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF27</td>
+<td style="text-align: left;">Configurar modo de operação</td>
+<td style="text-align: left;">O sistema deve permitir configurar o modo de operação do robô sem necessidade de reprogramação.</td>
+<td style="text-align: center;">Could Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Facilita reaproveitar tentativas anteriores; forma de configuração a definir.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF28</td>
+<td style="text-align: left;">Rastrear localização e trajeto no labirinto</td>
+<td style="text-align: left;">O sistema deve monitorar a localização do Micromouse e registrar a sequência de células percorridas no labirinto.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Relacionado ao monitoramento da localização e ao mapeamento do labirinto.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF29</td>
+<td style="text-align: left;">Realizar um health-check antes de uma execução</td>
+<td style="text-align: left;">O sistema deve realizar um health-check que busca garantir que todos os componentes essenciais para uma execução estejam de acordo, para evitar falhas no meio do processo.</td>
+<td style="text-align: center;">Should Have</td>
+<td style="text-align: left;">Firmware</td>
+<td style="text-align: left;">Verificar funcionamento adequado entre software e hardware, nível de bateria e mobilidade das rodas para curvas.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF30</td>
+<td style="text-align: left;">Encerrar execução em andamento</td>
+<td style="text-align: left;">O sistema deve permitir que o operador encerre uma execução em andamento, registrando-a como "failed" com o motivo informado.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Sem este requisito, uma execução travada em "running" impede o início da próxima tentativa pelo RF18.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF31</td>
+<td style="text-align: left;">Detectar perda de comunicação</td>
+<td style="text-align: left;">O sistema deve detectar a ausência de mensagens de telemetria por um intervalo configurável e sinalizar a execução como sem comunicação.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Permite diferenciar "Micromouse parado" de "conexão perdida". Sustenta o RF04 do frontend.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF32</td>
+<td style="text-align: left;">Detectar estouro do tempo limite</td>
+<td style="text-align: left;">O sistema deve monitorar a duração da execução e encerrá-la como "failed" com motivo <code>time_exceeded</code> ao ultrapassar o limite de 10 minutos.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Relacionado aos critérios de tempo máximo da prova.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF33</td>
+<td style="text-align: left;">Armazenar os dados finais da execução</td>
+<td style="text-align: left;">Ao término da execução, o sistema deve gravar em banco de dados o tipo do labirinto, o trajeto, o consumo de bateria, a velocidade média, o tempo de conclusão, o status, o motivo da falha (quando houver), o número da tentativa e a data/hora.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Exige armazenamento em banco de dados para consultas.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF34</td>
+<td style="text-align: left;">Consultar execuções de um labirinto</td>
+<td style="text-align: left;">O sistema deve permitir consultar as execuções de um labirinto escolhido pelo usuário, exibindo os dados específicos daquele labirinto.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RF35</td>
+<td style="text-align: left;">Consultar execuções de todos os labirintos</td>
+<td style="text-align: left;">O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: center;">RF36</td>
+<td style="text-align: left;">Consultar detalhes de uma execução</td>
+<td style="text-align: left;">O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso.</td>
+<td style="text-align: center;">Must Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Sustenta o RF02 e o RF06 do frontend.</td>
+</tr>
+<tr>
+<td style="text-align: center;">RF37</td>
+<td style="text-align: left;">Registrar paredes detectadas</td>
+<td style="text-align: left;">O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto.</td>
+<td style="text-align: center;">Could Have</td>
+<td style="text-align: left;">Backend</td>
+<td style="text-align: left;">Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="requisitos-nao-funcionais_2">Requisitos Não Funcionais<a class="headerlink" href="#requisitos-nao-funcionais_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Nome do Requisito</th>
+<th>Descrição</th>
+<th>Prioridade</th>
+<th>Responsável</th>
+<th>Observações</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RNF01</td>
+<td>Integridade dos dados</td>
+<td>A aplicação web deve apresentar os dados de telemetria recebidos sem alterações ou arredondamentos que comprometam sua interpretação, mantendo a unidade de medida do sistema.</td>
+<td>Must Have</td>
+<td>Frontend</td>
+<td>Fundamental para evitar que o usuário interprete dados incorretos durante a execução.</td>
+</tr>
+<tr>
+<td>RNF02</td>
+<td>Tempo de resposta da interface</td>
+<td>A interface web deve apresentar os novos dados de telemetria em até 2 segundos após o recebimento das informações do sistema.</td>
+<td>Must Have</td>
+<td>Frontend</td>
+<td>Requisito de desempenho para visualização da telemetria.</td>
+</tr>
+<tr>
+<td>RNF03</td>
+<td>Arquitetura das informações</td>
+<td>A interface web deve possuir uma arquitetura das informações de uma execução organizada de forma simples e objetiva, a fim de ajudar na rapidez do entendimento e não estressar o usuário com informações não prioritárias.</td>
+<td>Must Have</td>
+<td>Frontend</td>
+<td>Nenhuma informação será omitida, apenas melhor organizada analisando o que precisará ser visto com mais frequência.</td>
+</tr>
+<tr>
+<td>RNF04</td>
+<td>Latência no acompanhamento em tempo real</td>
+<td>Durante uma execução em tempo real, a última atualização dos dados não deverá passar de 3s-5s para garantir que a equipe consiga acompanhar com melhor fidelidade os dados da execução.</td>
+<td>Should Have</td>
+<td>Backend</td>
+<td>Alinhar com o RNF02 do frontend (2 s), para que o atraso total fim a fim fique definido.</td>
+</tr>
+<tr>
+<td>RNF05</td>
+<td>Persistência dos dados</td>
+<td>Os dados das execuções devem permanecer disponíveis após a reinicialização do servidor ou do computador que o hospeda.</td>
+<td>Must Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">2</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">3</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF06</td>
+<td>Não interferência na corrida</td>
+<td>Durante a execução, o sistema não deve enviar comandos ao Micromouse nem alterar seu código ou sua memória sobre o labirinto; a comunicação deve ser apenas de recebimento.</td>
+<td>Must Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">4</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">5</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF07</td>
+<td>Independência da execução</td>
+<td>Uma falha no backend ou na rede não deve interromper a execução do Micromouse, que deve continuar resolvendo o labirinto de forma autônoma.</td>
+<td>Must Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">6</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">7</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF08</td>
+<td>Tolerância a perda de conexão</td>
+<td>Em caso de queda de comunicação, o sistema deve aceitar a reconexão do Micromouse e manter os dados da execução já recebidos.</td>
+<td>Must Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">8</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF09</td>
+<td>Validação dos dados recebidos</td>
+<td>O sistema deve validar as mensagens de telemetria recebidas (formato, campos obrigatórios e faixas válidas, como célula dentro dos limites do labirinto) e descartar as inválidas sem interromper o serviço.</td>
+<td>Must Have</td>
+<td>Backend</td>
+<td>Evita que uma leitura corrompida derrube o sistema durante a apresentação.</td>
+</tr>
+<tr>
+<td>RNF10</td>
+<td>Funcionamento em rede local</td>
+<td>O sistema deve funcionar em rede local, sem depender de acesso à internet, no local definido pelos professores.</td>
+<td>Should Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">9</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">10</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF11</td>
+<td>Capacidade de processamento da telemetria</td>
+<td>O sistema deve processar pelo menos 10 mensagens de telemetria por segundo sem atraso acumulado.</td>
+<td>Should Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">11</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">12</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF12</td>
+<td>Desenvolvimento próprio</td>
+<td>O backend deve ser desenvolvido pela equipe, sem uso de plataformas prontas de telemetria ou dashboard.</td>
+<td>Must Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 <tr>
-<td style="text-align: center;">13</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">14</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">15</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td style="text-align: center;">16</td>
-<td></td>
-<td></td>
-<td style="text-align: center;"></td>
-<td></td>
+<td>RNF13</td>
+<td>Documentação da API</td>
+<td>Os endpoints e o formato das mensagens de telemetria devem estar documentados no repositório do projeto.</td>
+<td>Should Have</td>
+<td>Backend</td>
 <td></td>
 </tr>
 </tbody>
@@ -1147,7 +2144,7 @@
           <button type="button" class="md-top md-icon" data-md-component="top" hidden>
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
-  Voltar ao topo
+  Voltar para o topo
 </button>
         
       </main>
@@ -1159,7 +2156,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Rodapé" >
         
           
-          <a href="../1%20-%20TAP/" class="md-footer__link md-footer__link--prev" aria-label="Anterior: 1. TAP">
+          <a href="../1%20-%20TAP/" class="md-footer__link md-footer__link--prev" aria-label="Anterior: Termo de abertura">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1169,20 +2166,20 @@
                 Anterior
               </span>
               <div class="md-ellipsis">
-                1. TAP
+                Termo de abertura
               </div>
             </div>
           </a>
         
         
           
-          <a href="../3%20-%20EAP/" class="md-footer__link md-footer__link--next" aria-label="Próximo: 3. EAP">
+          <a href="../3%20-%20EAP/" class="md-footer__link md-footer__link--next" aria-label="Próximo: Estrutura analítica">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Próximo
               </span>
               <div class="md-ellipsis">
-                3. EAP
+                Estrutura analítica
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1198,10 +2195,26 @@
     <div class="md-footer-meta__inner md-grid">
       <div class="md-copyright">
   
+    <div class="md-copyright__highlight">
+      Ratatouille · PI1 2026.2
+    </div>
+  
   
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
       Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" target="_blank" rel="noopener" title="Repositório no GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
     </a>
   
 </div>
@@ -1215,14 +2228,13 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
     
     
-      
-      
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.top", "navigation.footer", "toc.integrate", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "Mais 1 nesta p\u00e1gina", "search.result.more.other": "Mais # nesta p\u00e1gina", "search.result.none": "Nenhum resultado encontrado", "search.result.one": "1 resultado encontrado", "search.result.other": "# resultados encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
     
   </body>

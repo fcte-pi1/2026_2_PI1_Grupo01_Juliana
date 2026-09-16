@@ -1,5 +1,106 @@
-site_name: 2026.2 PI1 Grupo 01 Juliana
+site_name: Ratatouille | Micromouse
+site_description: Documentação técnica do projeto Ratatouille, um Micromouse autônomo para solução de labirintos e registro de telemetria.
+site_author: Grupo Ratatouille — PI1 2026.2
 site_url: https://pi1-2026-2.github.io/2026_2_PI1_Grupo01_Juliana/
 repo_url: https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana
+repo_name: PI1-2026-2 / Ratatouille
+edit_uri: edit/main/docs/
+copyright: Ratatouille · PI1 2026.2
+
 theme:
   name: material
+  language: pt-BR
+  logo: assets/brand/ratatouille-mark.svg
+  favicon: assets/brand/ratatouille-mark.svg
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Ativar tema escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Ativar tema claro
+
+plugins:
+  - search
+
+exclude_docs: |
+  README.md
+  figs/README.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana
+      name: Repositório no GitHub
+
+nav:
+  - Início: index.md
+  - Projeto:
+      - Termo de abertura: 1 - TAP.md
+      - Requisitos: 2 - Requisitos.md
+      - Estrutura analítica: 3 - EAP.md
+      - Projeto conceitual:
+          - Estruturas: 4.1 - Projeto conceitual de estruturas.md
+          - Energia: 4.2 - Projeto conceitual de energia.md
+          - Hardware: 4.3 - Projeto conceitual de hardware.md
+          - Software: 4.4 - Projeto conceitual de software.md
+  - Acompanhamento:
+      - Cronograma: 5 - Cronograma.md
+      - Orçamento: 6 - Orçamento.md
+  - Validação:
+      - Testes de estrutura: 7.1 - Testes de estrutura.md
+      - Testes de energia: 7.2 - Testes de energia.md
+      - Testes de hardware: 7.3 - Testes de hardware.md
+      - Testes de software: 7.4 - Testes de software.md
+      - Testes de integração: 7.5 - Testes de integração.md
+      - Avaliação de desempenho: 8 - Avaliação de desempenho.md
+  - Encerramento: 9 - Relatório de encerramento do projeto.md

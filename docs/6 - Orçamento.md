@@ -1,6 +1,9 @@
 # Orçamento
 
-Mande o **link público** da planilha de orçamento, e exporte em Markdown no formato a seguir:
+!!! info "Estimativa atual"
+    A estimativa detalhada de componentes, fornecedores e subtotal está registrada no [TAP](1 - TAP.md#orcamento-estimado-r). Esta página ainda aguarda a consolidação da planilha de orçamento.
+
+Mantenha nesta página o **link público** da planilha de orçamento e a tabela exportada em Markdown:
 
 | **ID** | **Item ou Serviço** | **Tipo** | **Previsto** | **Realizado** | **Responsável** |
 |:------:|---------------------|----------|-------------:|--------------:|-----------------|
