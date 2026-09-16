@@ -21,12 +21,6 @@
 
 # 3. Sub-sistema: Eletrônica/Hardware
 
-Sistema eletrônico embarcado do Micromouse Ratatouille, responsável pelo processamento, sensoriamento, acionamento e comunicação dos dados de navegação.
-
-**Dados Técnicos:** PCB própria de até 12 cm × 12 cm; conjunto montado dentro do limite de 16,5 cm de comprimento e largura do robô.
-
-**Comentários:** Integração com Estrutura, Energia e Software. Operação durante os 10 minutos de cada desafio sem falhas elétricas não planejadas (RNF1, RNF3 e RNF4).
-
 # 3.1 Unidade de processamento
 
 | ID | Nome | Descrição |
