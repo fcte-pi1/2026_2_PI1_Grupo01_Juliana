@@ -1,6 +1,6 @@
 # Requisitos
 
-## ESTRURAS
+## ESTRUTURAS
 
 ### Requisitos Funcionais
 
