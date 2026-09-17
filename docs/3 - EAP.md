@@ -2,7 +2,7 @@
 
 # EAP Geral do Micromouse
 
-<img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
+<img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-micromouse.png?raw=true" alt="" width="">
 
 ### Figura 1 – Estrutura Geral da EAP do Projeto Micromouse
 
@@ -167,6 +167,6 @@
 | 4.3.2.2 | Testes de navegação | Verificação dos algoritmos de navegação e resolução do labirinto. |
 | 4.3.2.3 | Testes de telemetria | Verificação do envio e recebimento das informações de telemetria. |
 
- <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/eap-software/docs/figs/eap-software.jpg?raw=true" alt="" width=""> 
+ <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-software.jpg?raw=true" alt="" width=""> 
 
 ### Figura 5 – EAP do Sub-sistema de Software
