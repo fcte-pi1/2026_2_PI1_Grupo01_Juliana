@@ -2,7 +2,6 @@
 
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
-<<<<<<< HEAD
 | 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô  | Dimensões:  103x 92 x 33mm. | Agrupa chassi, suportes, atuadores e rodagem. |
 | 1.1 | Chassi | Base estrutural impressa em 3D para suporte dos motores, circuitos, suporte de pilhas e sensores.  Material: PLA. | Fabricado via FDM.  Garante leveza, rigidez mecânica e pontos de fixação com furação para parafusos M2/M3.  | Funciona como base mecânica principal e suporte dos componentes.   |
 | 1.2 | Suporte | Compartimento de fixação e alojamento das pilhas.  | Transmissão direta no eixo dos motores Nema 8\. | Fixado diretamente sobre a estrutura do chassi. |
@@ -13,21 +12,6 @@
 
 <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
 
-| 2 | **Sub-sistema: Fonte Energética** | | | |
-| 2.1 | Alimentação | | | |
-| 2.2 | Eletrônica de Potência | | | |
-| 2.3 | Proteções | | | |
-| 2.4 | Gerenciamento de Energia | | | |
-| 2.5 | | | | |
-| 2.6 | | | | |
-=======
-| 1 | **Sub-sistema: Estrutura** | | | |
-| 1.1 | Chassi | | | |
-| 1.2 | Suporte | | | |
-| 1.3 | Carenagem | | | |
-| 1.4 | Atuadores | | | |
-| 1.5 | Transmissão | | | |
-| 1.6 | Rodas/Hélices | | | |
 | 2 | **Sub-sistema: Fonte Energética** | Conjunto responsável por armazenar, converter, proteger, distribuir e monitorar a energia que alimenta todos os demais subsistemas embarcados do Micromouse. | Autonomia mínima de 30 min de operação contínua; massa e volume dentro do envelope de 16,5 × 16,5 cm | Atende aos requisitos 1 a 10 da frente de Energia. |
 | 2.1 | Alimentação | Fonte primária de energia embarcada, transportada pelo próprio robô. Duas opções em avaliação: pack de pilhas AA e bateria LiPo, com seleção manual entre elas. | Pilhas: 4 × AA em série, 6,0 V nominais (alcalinas) ou 4,8 V (NiMH). LiPo: 2S (7,4 V) ou 3S (11,1 V). Capacidade alvo ≥ 1500 mAh | Capacidade obtida do consumo estimado (≈1,8 A médio) × 0,5 h, dividido pelos 80% de capacidade utilizável e acrescido de 30% de margem. Valor a confirmar após a medição real de consumo nos testes de energia (AP12). |
 | 2.2 | Eletrônica de Potência | Conversão e adequação da tensão da fonte para os níveis exigidos por cada subsistema, com barramentos separados para potência e lógica. | Barramento lógico regulado (5 V e/ou 3,3 V), corrente ≥ 1 A; barramento de potência dimensionado para o pico dos motores (estimado entre 2,7 A e 4 A) | O barramento lógico não pode compartilhar a linha dos motores, sob pena de reinicialização do microcontrolador. Fronteira com a Eletrônica a alinhar: os drivers dos motores podem ser alocados aqui ou no subsistema de Hardware. |
@@ -38,18 +22,60 @@
 
  <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/docs-eap-energia/docs/figs/PI1%20Micromouse%20-%20EAP.jpg" alt="" width=""> 
 
-| **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
-|:------:|----------------|---------------|--------------------|-----------------|
->>>>>>> origin/main
-| 3 | **Sub-sistema: Hardware** | | | |
-| 3.1 | Processamento | | | |
-| 3.2 | Sensor 1 | | | |
-| 3.3 | Sensor 2 | | | |
-| 3.4 | Controle 1 | | | |
-| 3.5 | Controle 2 | | | |
-| 3.6 | Comunicação 1 | | | |
-| 3.7 | Comunicação 2 | | | |
+# 3. Sub-sistema: Eletrônica/Hardware
 
+# 3.1 Unidade de processamento
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.1** | **Unidade de processamento** | Núcleo eletrônico que executa o firmware e interliga sensores, motores e telemetria.<br>**Dados Técnicos:** Microcontrolador, interfaces de entrada/saída e recurso de recuperação de travamentos.<br>**Comentários:** Modelo a definir no projeto conceitual conforme a quantidade de pinos, as interfaces e os níveis elétricos necessários. |
+| 3.1.1 | Microcontrolador | Componente responsável pela leitura dos sensores e geração dos sinais de controle e comunicação.<br>**Dados Técnicos:** Entradas digitais/analógicas para sensores, bateria e DIP switch; saídas para drivers, LED e buzzer; interface para Bluetooth, sem multiplexação adicional.<br>**Comentários:** Mapa de pinos e compatibilidade elétrica documentados; leitura dos sensores, acionamento dos motores e transmissão de telemetria funcionando simultaneamente durante 10 minutos, sem travamentos ou reinicializações não planejadas (RF1–RF6, RF9, RNF1 e RNF9). |
+| 3.1.2 | Recurso de watchdog | Circuito ou função de supervisão para recuperação do microcontrolador em caso de travamento do firmware.<br>**Dados Técnicos:** Watchdog interno ou externo, com configuração e tempo de atuação definidos com a equipe de Firmware.<br>**Comentários:** Recuperação verificada por travamento induzido em bancada; comportamento após reinicialização documentado (RNF6). |
+
+# 3.2 Conjunto de sensoriamento
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.2** | **Conjunto de sensoriamento** | Componentes e circuitos que disponibilizam informações do ambiente e da bateria ao microcontrolador.<br>**Dados Técnicos:** Sensores infravermelhos, condicionamento de sinais, proteção de entradas e interface de leitura da bateria.<br>**Comentários:** Montagem alinhada com Estrutura e grandeza de bateria alinhada com Energia (RF1, RF3 e RF8). |
+| 3.2.1 | Sensores infravermelhos de paredes | Sensores para detecção de paredes à esquerda, à direita e à frente do robô.<br>**Dados Técnicos:** Previsão do TAP: 1 sensor que será posicionado mais à frente da estrutura, abrangendo 180 graus. Referências preliminares HW-201 e módulo identificado como LM393.<br>**Comentários:** Detecção a validar em células de 18 cm, paredes de 5 cm de altura e 1,2 cm de espessura, brancas com topo vermelho e piso preto (RF1). |
+| 3.2.2 | Circuitos de condicionamento e proteção dos sensores | Circuitos que adequam os sinais dos sensores às entradas do microcontrolador.<br>**Dados Técnicos:** Filtragem, amplificação quando necessária, ajuste de limiar e proteção contra picos de tensão e descargas eletrostáticas; valores a dimensionar.<br>**Comentários:** Leituras estáveis e níveis elétricos compatíveis. A resposta às superfícies da pista deve ser verificada por calibração e testes (RF8 e RNF5). |
+| 3.2.3 | Interface de leitura da bateria | Circuito de aquisição do sinal de bateria para monitoramento e telemetria.<br>**Dados Técnicos:** Divisor de tensão ligado ao conversor analógico-digital (ADC), dimensionado conforme a tensão máxima da fonte e a faixa de entrada do microcontrolador.<br>**Comentários:** Leituras comparadas com instrumento de referência. Energia define a fonte e a grandeza disponível; Firmware trata os dados para estimativa de carga (RF3; Energia RF04; Software RF23). |
+
+# 3.3 Conjunto de acionamento dos motores
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.3** | **Conjunto de acionamento dos motores** | Eletrônica responsável pelo acionamento independente dos motores de passo e pelas interfaces usadas na estimativa de movimento.<br>**Dados Técnicos:** Dois canais de acionamento, compatíveis com os motores e com a alimentação fornecida por Energia.<br>**Comentários:** Avanço, curvas e paradas verificados em conjunto com Firmware e Estrutura (RF2). |
+| 3.3.1 | Drivers dos motores de passo | Circuitos dedicados ao fornecimento de corrente e à sequência de acionamento das fases de cada motor.<br>**Dados Técnicos:** Um canal por motor; corrente e tensão compatíveis com os motores previstos no TAP como Nema 11; proteção contra sobrecorrente nos enrolamentos.<br>**Comentários:** Modelo e dissipação a dimensionar pelas especificações dos motores escolhidos; funcionamento dentro dos limites elétricos e térmicos dos componentes (RF2 e RF7). |
+| 3.3.2 | Interface STEP/DIR | Conexões dos sinais de passo e direção entre microcontrolador e drivers.<br>**Dados Técnicos:** Linhas independentes para os dois motores, com níveis lógicos compatíveis e pinagem documentada.<br>**Comentários:** Firmware utiliza os pulsos enviados para estimar deslocamento e velocidade em malha aberta; esta interface não mede a rotação real das rodas (RF6; Software RF21 e RF22). |
+
+# 3.4 Comunicação e interface local
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.4** | **Comunicação e interface local** | Componentes de transmissão de telemetria, configuração prévia e sinalização do estado do robô.<br>**Dados Técnicos:** Módulo Bluetooth, DIP switch de quatro vias, LED, buzzer e circuitos de acionamento.<br>**Comentários:** Interfaces e comportamento definidos em conjunto com Software. |
+| 3.4.1 | Módulo Bluetooth de telemetria | Enlace sem fio para envio dos dados do microcontrolador ao dispositivo receptor integrado ao sistema web.<br>**Dados Técnicos:** HM-10 BLE 4.0 como referência preliminar do TAP; módulo, alimentação, interface com o microcontrolador e receptor a confirmar.<br>**Comentários:** Envio de dados reais validado de ponta a ponta. Protocolo, formato e conexão do receptor ao backend definidos com Software; navegação autônoma mesmo sem comunicação (RF4; Software RF24 e RNF07). |
+| 3.4.2 | DIP switch de configuração | Interface física para seleção do modo de operação sem reprogramação.<br>**Dados Técnicos:** Quatro vias conectadas a entradas digitais com níveis lógicos definidos; tabela de combinações a documentar com Firmware.<br>**Comentários:** Configuração lida antes da corrida, respeitando a restrição de intervenção durante o percurso (RF9; Software RF27). Prioridade Should Have na Eletrônica. |
+| 3.4.3 | Indicadores visuais e sonoros | LED e buzzer para indicação de início, erro/colisão e conclusão do percurso.<br>**Dados Técnicos:** Resistor limitador e/ou estágio de chaveamento dimensionado para a corrente dos indicadores e os limites das saídas do microcontrolador.<br>**Comentários:** Estados acionados e identificáveis durante os testes com Firmware (RF5 e RF10; Software RF25). Prioridade Should Have na Eletrônica. |
+
+# 3.5 Placa e interconexões
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.5** | **Placa e interconexões** | Base física e elétrica de integração dos componentes embarcados.<br>**Dados Técnicos:** Placa perfurada para personalização por soldagem.<br>**Comentários:** Disposição compacta, fixação segura e acesso para manutenção em conjunto com Estrutura (RNF3 e RNF4). |
+| 3.5.1 | Conectores e cabeamento | Interligações entre placa, sensores, motores e fonte de energia.<br>**Dados Técnicos:** Conectores padronizados, polaridade e pinagem identificadas; JST de quatro vias como referência preliminar para os motores.<br>**Comentários:** Conexões firmes e acessíveis, com prevenção de inversão e sem mau contato durante o movimento (RNF1, RNF3 e RNF7). |
+| 3.5.2 | Interface de alimentação da eletrônica | Conexões de entrada e distribuição local das tensões fornecidas por Energia aos componentes eletrônicos.<br>**Dados Técnicos:** Barramentos compatíveis com lógica, sensores e drivers; desacoplamento local e organização das conexões para reduzir interferências.<br>**Comentários:** Tensões nos componentes dentro das faixas especificadas, inclusive no acionamento dos motores; regulação, fonte e proteções de potência definidas por Energia (RNF1 e RNF2). |
+
+# 3.6 Documentação técnica do hardware
+
+| ID | Nome | Descrição |
+|---|---|---|
+| **3.6** | **Documentação técnica do hardware** | Conjunto de arquivos que descreve a eletrônica e permite reproduzir a montagem do produto.<br>**Dados Técnicos:** Diagrama de blocos, esquemático elétrico, pinagem, diagrama de conexões, layout da PCB e relação de componentes.<br>**Comentários:** Arquivos de hardware versionados em `hw/` e descrição no projeto conceitual de hardware; evidências de validação no documento de testes de hardware (RNF8). |
+| 3.6.1 | Diagramas e esquemático elétrico | Representação dos blocos funcionais e das ligações elétricas do hardware.<br>**Dados Técnicos:** Diagrama de blocos, símbolos e identificação dos componentes, alimentação, pinagem e conexões com sensores, drivers e módulo Bluetooth.<br>**Comentários:** Correspondência entre esquemático, mapa de pinos e montagem; interfaces com Energia e Firmware identificadas (RNF8). |
+| 3.6.2 | Layout da Placa Perfurada | Arquivo de projeto com a disposição dos componentes e o roteamento das trilhas da placa própria.<br>**Dados Técnicos:** Contorno de até 12 cm × 12 cm; posições de conectores e fixações; trilhas de potência e sinais organizadas para reduzir interferência nas leituras.<br>**Comentários:** Dimensões e montagem compatíveis com Estrutura; ligações coerentes com o esquemático; verificação de regras elétricas e de layout documentada, com eventuais exceções justificadas (RNF1, RNF3, RNF4 e RNF8). |
+| 3.6.3 | Relação de componentes e compatibilidade elétrica | Registro dos componentes selecionados, incluindo microcontrolador, drivers e demais circuitos integrados da placa.<br>**Dados Técnicos:** Referência no esquemático, modelo, quantidade, função, tensão de operação, corrente de consumo ou de acionamento e níveis de sinal aplicáveis; folhas de dados dos fabricantes como suporte.<br>**Comentários:** Componentes identificados e compatíveis entre si e com a alimentação; limites elétricos e térmicos registrados para orientar montagem, orçamento e testes (RF7, RNF2, RNF8 e RNF9). |
+
+![EAP do subsistema de Hardware](figs/eap-hardware.jpeg)
 
 # 4. Sub-sistema: Software
 
