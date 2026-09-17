@@ -4,6 +4,8 @@
 
 <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
 
+### Figura 1 – Estrutura Geral da EAP do Projeto Micromouse
+
 
 # 1. Sub-sistema: Estrutura
 
@@ -19,6 +21,8 @@
 
 <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
 
+### Figura 2 – EAP do Sub-sistema de Estrutura
+
 
 # 1. Sub-sistema: Energia
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
@@ -32,6 +36,8 @@
 | 2.6 | Suporte e Fixação da Fonte | Compartimento e fixação mecânica da fonte de energia à estrutura, permitindo instalação e remoção sem ferramentas especiais. | Fixação capaz de resistir a vibração e colisão sem deslocamento; acesso à fonte sem desmontar a estrutura. | Viabiliza a troca ou recarga entre tentativas, permitida apenas com o robô em repouso. Interface com a frente de Estruturas quanto ao ponto de fixação e à distribuição de massa. |
 
  <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-energia.jpeg?raw=true" alt="" width=""> 
+
+ ### Figura 3 – EAP do Sub-sistema de Fonte Energética
 
 
 # 3. Sub-sistema: Eletrônica/Hardware
@@ -89,6 +95,8 @@
 
 ![EAP do subsistema de Hardware](figs/eap-hardware.jpeg)
 
+### Figura 4 – EAP do Sub-sistema de Eletrônica/Hardware
+
 # 4. Sub-sistema: Software
 
 # 4.1 Gerenciamento
@@ -139,7 +147,7 @@
 | 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores. |
 | 4.2.3.1.2 | Sensores | Leitura e processamento das informações dos sensores. |
 | 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
-| 4.2.3.2.1 | Flood Fill | Algoritmo utilizado para determinar caminhos e distâncias no labirinto. |
+| 4.2.3.2.1 | DFS | Algoritmo utilizado para determinar caminhos e distâncias no labirinto. |
 | 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa do labirinto durante a execução. |
 | 4.2.3.3 | Telemetria | Gerenciamento das informações enviadas pelo Micromouse para acompanhamento externo. |
 | 4.2.3.3.1 | Envio | Envio dos dados de funcionamento, navegação e sensores. |
@@ -160,3 +168,5 @@
 | 4.3.2.3 | Testes de telemetria | Verificação do envio e recebimento das informações de telemetria. |
 
  <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/eap-software/docs/figs/eap-software.jpg?raw=true" alt="" width=""> 
+
+### Figura 5 – EAP do Sub-sistema de Software
