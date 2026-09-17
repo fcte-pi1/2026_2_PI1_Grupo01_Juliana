@@ -2,13 +2,16 @@
 
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
-| 1 | **Sub-sistema: Estrutura** | | | |
-| 1.1 | Chassi | | | |
-| 1.2 | Suporte | | | |
-| 1.3 | Carenagem | | | |
-| 1.4 | Atuadores | | | |
-| 1.5 | Transmissão | | | |
-| 1.6 | Rodas/Hélices | | | |
+| 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô  | Dimensões:  103x 92 x 33mm. | Agrupa chassi, suportes, atuadores e rodagem. |
+| 1.1 | Chassi | Base estrutural impressa em 3D para suporte dos motores, circuitos, suporte de pilhas e sensores.  Material: PLA. | Fabricado via FDM.  Garante leveza, rigidez mecânica e pontos de fixação com furação para parafusos M2/M3.  | Funciona como base mecânica principal e suporte dos componentes.   |
+| 1.2 | Suporte | Compartimento de fixação e alojamento das pilhas.  | Transmissão direta no eixo dos motores Nema 8\. | Fixado diretamente sobre a estrutura do chassi. |
+| 1.3 | Carenagem | Proteção externa da eletrônica e dos motores. | Estrutura aberta. | Não cotado no orçamento (chassi aberto exposto). |
+| 1.4 | Atuadores | Motores de passo para movimentação diferencial (Esquerdo e Direito). | 2x Nema 8\. | Responsáveis pela tração e precisão dos movimentos no labirinto. |
+| 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Transmissão direta no eixo dos motores Nema 11\. | Sem necessidade de caixas de redução adicionais ou correias  |
+| 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 40 mm (borracha silicone ou neoprene) \+ 1x Roda boba omnidirecional (caster).  | Garante o contato com o solo e o equilíbrio do robô. |
+
+<img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
+
 | 2 | **Sub-sistema: Fonte Energética** | Conjunto responsável por armazenar, converter, proteger, distribuir e monitorar a energia que alimenta todos os demais subsistemas embarcados do Micromouse. | Autonomia mínima de 30 min de operação contínua; massa e volume dentro do envelope de 16,5 × 16,5 cm | Atende aos requisitos 1 a 10 da frente de Energia. |
 | 2.1 | Alimentação | Fonte primária de energia embarcada, transportada pelo próprio robô. Duas opções em avaliação: pack de pilhas AA e bateria LiPo, com seleção manual entre elas. | Pilhas: 4 × AA em série, 6,0 V nominais (alcalinas) ou 4,8 V (NiMH). LiPo: 2S (7,4 V) ou 3S (11,1 V). Capacidade alvo ≥ 1500 mAh | Capacidade obtida do consumo estimado (≈1,8 A médio) × 0,5 h, dividido pelos 80% de capacidade utilizável e acrescido de 30% de margem. Valor a confirmar após a medição real de consumo nos testes de energia (AP12). |
 | 2.2 | Eletrônica de Potência | Conversão e adequação da tensão da fonte para os níveis exigidos por cada subsistema, com barramentos separados para potência e lógica. | Barramento lógico regulado (5 V e/ou 3,3 V), corrente ≥ 1 A; barramento de potência dimensionado para o pico dos motores (estimado entre 2,7 A e 4 A) | O barramento lógico não pode compartilhar a linha dos motores, sob pena de reinicialização do microcontrolador. Fronteira com a Eletrônica a alinhar: os drivers dos motores podem ser alocados aqui ou no subsistema de Hardware. |
@@ -71,7 +74,6 @@
 | 3.6.1 | Diagramas e esquemático elétrico | Representação dos blocos funcionais e das ligações elétricas do hardware.<br>**Dados Técnicos:** Diagrama de blocos, símbolos e identificação dos componentes, alimentação, pinagem e conexões com sensores, drivers e módulo Bluetooth.<br>**Comentários:** Correspondência entre esquemático, mapa de pinos e montagem; interfaces com Energia e Firmware identificadas (RNF8). |
 | 3.6.2 | Layout da Placa Perfurada | Arquivo de projeto com a disposição dos componentes e o roteamento das trilhas da placa própria.<br>**Dados Técnicos:** Contorno de até 12 cm × 12 cm; posições de conectores e fixações; trilhas de potência e sinais organizadas para reduzir interferência nas leituras.<br>**Comentários:** Dimensões e montagem compatíveis com Estrutura; ligações coerentes com o esquemático; verificação de regras elétricas e de layout documentada, com eventuais exceções justificadas (RNF1, RNF3, RNF4 e RNF8). |
 | 3.6.3 | Relação de componentes e compatibilidade elétrica | Registro dos componentes selecionados, incluindo microcontrolador, drivers e demais circuitos integrados da placa.<br>**Dados Técnicos:** Referência no esquemático, modelo, quantidade, função, tensão de operação, corrente de consumo ou de acionamento e níveis de sinal aplicáveis; folhas de dados dos fabricantes como suporte.<br>**Comentários:** Componentes identificados e compatíveis entre si e com a alimentação; limites elétricos e térmicos registrados para orientar montagem, orçamento e testes (RF7, RNF2, RNF8 e RNF9). |
-
 
 ![EAP do subsistema de Hardware](figs/eap-hardware.jpeg)
 
