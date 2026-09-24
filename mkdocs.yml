@@ -67,7 +67,11 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.keys
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -93,6 +97,7 @@ nav:
           - Energia: 4.2 - Projeto conceitual de energia.md
           - Hardware: 4.3 - Projeto conceitual de hardware.md
           - Software: 4.4 - Projeto conceitual de software.md
+      - Glossário: Glossário.md
   - Acompanhamento:
       - Cronograma: 5 - Cronograma.md
       - Orçamento: 6 - Orçamento.md
