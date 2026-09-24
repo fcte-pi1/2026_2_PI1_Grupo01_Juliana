@@ -111,6 +111,7 @@
 | RF35 | Consultar execuções de todos os labirintos | O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição. | Must Have | Backend | |
 | RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF06 do frontend. |
 | RF37 | Registrar paredes detectadas | O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto. | Could Have | Backend | Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto. |
+| RF38 | Retomar execução após falha de componente | Quando o Micromouse apresentar uma falha de componente e, em seguida, um health-check positivo no mesmo labirinto, o sistema deve tratar esse retorno como continuação da execução em andamento, registrando o evento de retomada com horário e célula. | Must Have | Backend | A execução só é dada como "failed" se ultrapassar o tempo limite (RF32). Um health-check de outro labirinto é registrado como tentativa rejeitada (RF19). |
 
 ### Requisitos Não Funcionais
 
