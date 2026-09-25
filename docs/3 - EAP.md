@@ -147,7 +147,7 @@
 | 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores. |
 | 4.2.3.1.2 | Sensores | Leitura e processamento das informações dos sensores. |
 | 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
-| 4.2.3.2.1 | DFS | Algoritmo utilizado para determinar caminhos e distâncias no labirinto. |
+| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução. |
 | 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa do labirinto durante a execução. |
 | 4.2.3.3 | Telemetria | Gerenciamento das informações enviadas pelo Micromouse para acompanhamento externo. |
 | 4.2.3.3.1 | Envio | Envio dos dados de funcionamento, navegação e sensores. |
