@@ -51,6 +51,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - São proibidos sistemas de locomoção por propulsão a combustão ou foguete, e comportamentos como voar, pular ou escalar.
 - Durante a operação no labirinto, o código-fonte e a memória não poderão ser alterados em tempo de execução.
 - São proibidas intervenções humanas durante a corrida, exceto em casos de colisão ou mau funcionamento, permitindo-se apenas pequenos reparos (como limpeza de rodas) com o robô em repouso.
+- **Exceção de comunicação (encerramento manual):** durante uma execução em andamento, é permitido **um único tipo de comando remoto** via Bluetooth, originado pelo sistema web após ação do operador: **encerrar a tentativa** (parar motores, registrar execução como falha manual). É **proibida** teleoperação do trajeto (avançar, girar, configurar rota ou alterar comportamento de navegação em tempo real). Demais downlinks não fazem parte do escopo.
 - O robô terá um limite de tempo estabelecido de 10 minutos para tentar resolver cada desafio durante os testes de integração e apresentação final.
 
 #### Fora de Escopo
@@ -59,7 +60,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 - **Fabricação das Pistas em Escala Maior:** A construção física das pistas em tamanho 8x4 e 12x4 para testes da equipe.
 - **Base de Recarga Autônoma:** O robô não possuirá sistema de retorno automático a uma base (dock) de carregamento; o gerenciamento da bateria será feito de forma manual.
 - **Mapeamento LiDAR ou Visão Computacional Avançada:** O uso de sensores de escaneamento a laser complexos ou processamento de imagem por câmeras para o mapeamento do labirinto.
-- **Operação Teleoperada:** Qualquer tipo de controle remoto ou manual do trajeto do robô.
+- **Operação teleoperada do trajeto:** Controle remoto ou manual do percurso (pilotagem célula a célula, alteração de rota ou de mapa durante a corrida). **Não se aplica** ao comando único de **encerramento de execução** via Bluetooth previsto nos limites do projeto (RF30 / UC24).
 
 #### Critérios de Aceite
 
