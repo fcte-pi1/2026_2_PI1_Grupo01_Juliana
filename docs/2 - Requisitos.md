@@ -1,6 +1,6 @@
 # Requisitos
 
-## ESTRURAS
+## ESTRUTURAS
 
 ### Requisitos Funcionais
 
@@ -13,7 +13,7 @@
 | RF05 | Proteção contra Danos ao Labirinto   |  O chassi deve possuir compartimentos adequados para fixação segura dos componentes. | Alta | Estrutura |  Manter o centro de gravidade baixo para estabilidade em curvas rápidas.   |
 | RF06 | Facilidade de Manutenção e Acesso   | Deve permitir rápido acesso/troca da bateria e facilidade de limpeza/manutenção das rodas durante as pausas.   | Alta | Estrutura | Pequenos reparos e limpeza das rodas são permitidos em repouso.    |
 | RF07 | Modelagem  e Manufatura   | Toda a estrutura do robô e componentes mecânicos deverão ser modelados em CAD 3D.  | Média | Estrutura | Obrigatório para documentação do projeto conceitual de estruturas (AP5).  |
-| RF08 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   | |
+| RF08 | Construção do Labirinto de Testes Local   |  Projetar e montar uma estrutura de pista de testes 4X4 células (72 X 72 cm²) com paredes brancas (5cm de altura) e topos vermelhos.  | Média | Estrutura | Exigência para validação local e teste de integração do grupo antes da entrega final.   |
 
 ## ENERGIA
 
@@ -109,7 +109,7 @@
 | RF33 | Armazenar os dados finais da execução | Ao término da execução, o sistema deve gravar em banco de dados o tipo do labirinto, o trajeto, o consumo de bateria, a velocidade média, o tempo de conclusão, o status, o motivo da falha (quando houver), o número da tentativa e a data/hora. | Must Have | Backend | Exige armazenamento em banco de dados para consultas. |
 | RF34 | Consultar execuções de um labirinto | O sistema deve permitir consultar as execuções de um labirinto escolhido pelo usuário, exibindo os dados específicos daquele labirinto. | Must Have | Backend | |
 | RF35 | Consultar execuções de todos os labirintos | O sistema deve permitir consultar as execuções de todos os labirintos em uma única exibição. | Must Have | Backend | |
-| RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF06 do frontend. |
+| RF36 | Consultar detalhes de uma execução | O sistema deve permitir consultar todos os dados de uma execução específica, incluindo o trajeto completo, para reexibição do percurso. | Must Have | Backend | Sustenta o RF02 e o RF05 do frontend. |
 | RF37 | Registrar paredes detectadas | O sistema deve receber e armazenar as paredes detectadas pelo Micromouse em cada célula, permitindo exibir o mapa descoberto do labirinto. | Could Have | Backend | Não exigido na telemetria, mas o mapeamento é requisito do robô e enriquece a visualização do trajeto. |
 | RF38 | Retomar execução após falha de componente | Quando o Micromouse apresentar uma falha de componente, refizer o health-check após 5 segundos e obtiver resultado positivo, o sistema deve tratar a mensagem (início "retomada") como continuação da execução em andamento, registrando o evento de retomada com horário, célula e componente que falhou. | Must Have | Backend | O robô continua de onde parou e o tempo segue contando (RF32). Se o novo health-check falhar, o robô envia "failed" com motivo falha_componente (RF15). Uma retomada sem execução em andamento, ou um início "nova" com outra execução em andamento, é registrado como tentativa rejeitada (RF19). |
 | RF39 | Enviar comandos de iniciar e parar | O sistema deve entregar ao Micromouse os comandos de iniciar e parar a execução na resposta à mensagem de telemetria seguinte, e indicar se o robô confirmou o comando (mudança para "running" ou "failed") em até 3 segundos. | Must Have | Backend | Enquanto aguarda o início, o robô envia health-checks a cada 1 segundo para receber o comando. São os únicos comandos permitidos pelo RNF06. |
@@ -122,9 +122,9 @@
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 |---|---|---|---|---|---|
 | RNF01 | Integridade dos dados | A aplicação web deve apresentar os dados de telemetria recebidos sem alterações ou arredondamentos que comprometam sua interpretação, mantendo a unidade de medida do sistema. | Must Have | Frontend | Fundamental para evitar que o usuário interprete dados incorretos durante a execução. |
-| RNF02 | Tempo de resposta da interface | A interface web deve apresentar os novos dados de telemetria em até 2 segundos após o recebimento das informações do sistema. | Must Have | Frontend | Requisito de desempenho para visualização da telemetria. |
-| RNF03 | Arquitetura das informações | A interface web deve possuir uma arquitetura das informações de uma execução organizada de forma simples e objetiva, a fim de ajudar na rapidez do entendimento e não estressar o usuário com informações não prioritárias. | Must Have | Frontend | Nenhuma informação será omitida, apenas melhor organizada analisando o que precisará ser visto com mais frequência. |
-| RNF04 | Latência no acompanhamento em tempo real | Durante uma execução em tempo real, a última atualização dos dados não deverá passar de 3s-5s para garantir que a equipe consiga acompanhar com melhor fidelidade os dados da execução. | Should Have | Backend | Alinhar com o RNF02 do frontend (2 s), para que o atraso total fim a fim fique definido. |
+| RNF02 | Tempo de resposta da interface | A interface web deve apresentar os novos dados de telemetria em até 2 segundos após o recebimento das informações do sistema. | Must Have | Frontend | Requisito de desempenho para visualização da telemetria. Compõe o orçamento de latência definido no RNF04. |
+| RNF03 | Arquitetura das informações | A interface web deve apresentar, sem rolagem e em resolução de 1366x768, os seguintes dados de uma execução: status, tempo decorrido, célula atual, nível de bateria e velocidade média. Os demais dados podem exigir rolagem. | Must Have | Frontend | Nenhuma informação é omitida, apenas organizada pelo que precisa ser visto com mais frequência. Verificável por inspeção na resolução de referência. |
+| RNF04 | Latência no acompanhamento em tempo real | Durante uma execução em tempo real, o intervalo entre o envio do dado pelo Micromouse e sua exibição na tela não deve passar de 3 segundos, distribuídos em até 1 segundo entre o recebimento pelo backend e a disponibilização do dado e em até 2 segundos entre essa disponibilização e a atualização da tela (RNF02). | Should Have | Backend | Limite único fim a fim, que substitui a faixa anterior de 3 a 5 segundos. Somada ao RNF02, a faixa anterior admitia até 7 segundos de atraso total. |
 | RNF05 | Persistência dos dados | Os dados das execuções devem permanecer disponíveis após a reinicialização do servidor ou do computador que o hospeda. | Must Have | Backend | |
 | RNF06 | Não interferência na corrida | O sistema não deve enviar ao Micromouse comandos de navegação nem alterar seu código ou sua memória sobre o labirinto. Os únicos comandos permitidos são iniciar e parar a execução (RF39). | Must Have | Backend | Iniciar e parar não é teleoperação: o trajeto continua decidido apenas pelo robô. |
 | RNF07 | Independência da execução | Uma falha no backend ou na rede não deve interromper a execução do Micromouse, que deve continuar resolvendo o labirinto de forma autônoma. | Must Have | Backend | |
@@ -134,3 +134,4 @@
 | RNF11 | Capacidade de processamento da telemetria | O sistema deve processar pelo menos 10 mensagens de telemetria por segundo sem atraso acumulado. | Should Have | Backend | |
 | RNF12 | Desenvolvimento próprio | O backend deve ser desenvolvido pela equipe, sem uso de plataformas prontas de telemetria ou dashboard. | Must Have | Backend | |
 | RNF13 | Documentação da API | Os endpoints e o formato das mensagens de telemetria devem estar documentados no repositório do projeto. | Should Have | Backend | |
+| RNF14 | Versionamento do código | Todo o código do software deve ser versionado no repositório GitHub do grupo, seguindo a organização do template da disciplina. | Must Have | Software | Repositório 2026_2_PI1_Grupo01_Juliana. Equivalente ao RNF8 da Eletrônica, que prevê o versionamento dos arquivos de hardware. |
