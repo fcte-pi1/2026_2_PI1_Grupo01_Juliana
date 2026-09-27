@@ -42,7 +42,7 @@ Além disso, o glossário busca:
 | **Tempo Limite** | Duração máxima de 10 minutos no total para cada tipo de labirinto, contada desde **Nova execução** e somando as até 3 tentativas da execução lógica e os intervalos entre elas. Ao ser ultrapassado, a tentativa aberta falha com o motivo time_exceeded e a execução lógica é cancelada. |
 | **Tentativa** | Cada passagem do Micromouse dentro de uma execução lógica, numerada de 1 a 3. Começa no health-check e termina em success ou failed. Evitar: corrida, run. |
 | **Tentativa Rejeitada** | Ação recusada pelo sistema por não corresponder ao estado da execução lógica (por exemplo, uma retomada sem tentativa em falha, uma quarta tentativa ou uma nova execução enquanto outra ainda está em andamento). Não é uma tentativa e não entra no histórico. Evitar: execução recusada, execução rejeitada. |
-| **Tipo de Labirinto** | Formato do labirinto (4x4, 8x4 ou 12x4). O Micromouse o descobre durante a execução pela extensão das células visitadas e o envia como "indeterminado" até lá. |
+| **Tipo de Labirinto** | Formato do labirinto (4x4, 8x4 ou 12x4). O Micromouse o descobre durante a execução pela extensão das células visitadas e o envia como "indeterminado" até lá. O operador também o informa em **Nova execução**, apenas no backend, para que a web desenhe a grade do labirinto; essa informação nunca é enviada ao robô. |
 | **Trajeto** | Sequência cronológica de células visitadas pelo Micromouse em uma execução, que permite reconstruir o percurso completo. |
 
 <font size="2"><p style="text-align: center">Fonte: [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr), 2026.</p></font>
@@ -61,4 +61,4 @@ Além disso, o glossário busca:
 | :----: | :--: | --------- | ----------- | ------ | :---: |
 | 1.0 | 23/09/2026 | Criação do glossário | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
 | 1.1 | 25/09/2026 | Atualização com a descoberta do labirinto em execução, a retomada, os comandos de iniciar e parar e o flood fill | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
-| 1.2 | 27/09/2026 | Alinhamento ao modelo de execução lógica com até 3 tentativas: inclusão de Execução Lógica, Tentativa e Interrupção; revisão de Canal do Micromouse, Encerrar, Execução, Failed, Motivo de Falha, Rejeitar, Retomada, Retomar, Sistema de Telemetria, Tempo Limite e Tentativa Rejeitada; estados passam a se referir à tentativa | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
+| 1.2 | 27/09/2026 | Alinhamento ao modelo de execução lógica com até 3 tentativas: inclusão de Execução Lógica, Tentativa e Interrupção; revisão de Canal do Micromouse, Encerrar, Execução, Failed, Motivo de Falha, Rejeitar, Retomada, Retomar, Sistema de Telemetria, Tempo Limite, Tentativa Rejeitada e Tipo de Labirinto; estados passam a se referir à tentativa | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
