@@ -2,7 +2,7 @@
 
 # EAP Geral do Micromouse
 
-<img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-micromouse.png?raw=true" alt="" width="">
+![EAP geral do projeto Micromouse](figs/eap-micromouse.png)
 
 ### Figura 1 – Estrutura Geral da EAP do Projeto Micromouse
 
@@ -142,17 +142,17 @@
 
 | ID | Nome | Descrição |
 |---|---|---|
-| **4.2.3** | **Software Embarcado** | Software executado no sistema embarcado do Micromouse para controlar o robô e realizar a navegação. |
+| **4.2.3** | **Software Embarcado (Firmware)** | Software executado no Micromouse para controlar o robô, navegar no labirinto e enviar telemetria. |
 | 4.2.3.1 | Controle | Controle da movimentação e dos componentes do robô. |
-| 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores. |
-| 4.2.3.1.2 | Sensores | Leitura e processamento das informações dos sensores. |
+| 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores de passo (RF21). |
+| 4.2.3.1.2 | Sensores | Leitura e processamento dos sensores de paredes e demais entradas usadas na navegação (RF20). |
 | 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
-| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução. |
-| 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa do labirinto durante a execução. |
+| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução (RF26, RF27). |
+| 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa de paredes durante a execução (RF28, RF42). |
 | 4.2.3.3 | Telemetria | Gerenciamento das informações enviadas pelo Micromouse para acompanhamento externo. |
-| 4.2.3.3.1 | Envio | Envio dos dados de funcionamento, navegação e sensores. |
-| 4.2.3.4 | Diagnóstico | Monitoramento do funcionamento do sistema e identificação de possíveis falhas. |
-| 4.2.3.5 | Comunicação | Comunicação do software embarcado com os demais componentes do sistema. |
+| 4.2.3.3.1 | Envio | Transmissão periódica de célula, bateria, status e demais dados ao backend (RF24). |
+| 4.2.3.4 | Diagnóstico | Monitoramento do funcionamento do sistema, health-check e identificação de falhas de componente (RF29). |
+| 4.2.3.5 | Comunicação | Enlace Bluetooth serial com o sistema web (RF24, RF39). |
 
 # 4.3 Validação
 
@@ -167,7 +167,7 @@
 | 4.3.2.2 | Testes de navegação | Verificação do **flood fill (método Adachi)** e do mapeamento em labirintos 4×4, 8×4 e 12×4 (RF26, RF27). |
 | 4.3.2.3 | Testes de telemetria | Verificação do envio e recebimento das informações de telemetria. |
 
- <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-software.jpg?raw=true" alt="" width=""> 
+![EAP do subsistema de Software](figs/eap-software.png)
 
 ### Figura 5 – EAP do Sub-sistema de Software
 
