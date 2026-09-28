@@ -2,6 +2,8 @@
 
 Material de apoio à escolha do algoritmo de navegação do Micromouse (seção "Algoritmo de navegação" do [Projeto conceitual de software](../../4.4%20-%20Projeto%20conceitual%20de%20software.md)).
 
+**Decisão do projeto:** **flood fill (método Adachi)** no firmware (EAP **4.2.3.2.1**). A DFS aparece nas fontes apenas como alternativa descartada na comparação.
+
 Todas as fontes abaixo foram conferidas manualmente pela equipe. Os PDFs desta pasta são de acesso aberto; as páginas web ficam apenas como link.
 
 ## Artigos (PDF nesta pasta)

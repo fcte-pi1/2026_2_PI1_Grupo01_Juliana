@@ -164,9 +164,17 @@
 | 4.3.1.2 | Backend–Sistema Embarcado | Integração entre o backend e o sistema embarcado. |
 | 4.3.2 | Testes | Testes para verificar o funcionamento e atendimento aos requisitos. |
 | 4.3.2.1 | Testes unitários | Verificação individual dos componentes de software. |
-| 4.3.2.2 | Testes de navegação | Verificação dos algoritmos de navegação e resolução do labirinto. |
+| 4.3.2.2 | Testes de navegação | Verificação do **flood fill (método Adachi)** e do mapeamento em labirintos 4×4, 8×4 e 12×4 (RF26, RF27). |
 | 4.3.2.3 | Testes de telemetria | Verificação do envio e recebimento das informações de telemetria. |
 
  <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-software.jpg?raw=true" alt="" width=""> 
 
 ### Figura 5 – EAP do Sub-sistema de Software
+
+> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-adachi).
+
+## Histórico de Versões (EAP — Software 4.2.3)
+
+| Versão | Data | Descrição | Autor(es) |
+| :----: | :--: | --------- | --------- |
+| 1.0 | 25/09/2026 | Item **4.2.3.2.1** atualizado de DFS para **Flood Fill (método Adachi)**, alinhado ao projeto conceitual de software (0.2) e ao glossário. | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) |

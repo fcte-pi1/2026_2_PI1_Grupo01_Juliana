@@ -1,4 +1,7 @@
 # _Firmware_
+
+A navegação autônoma do Micromouse segue **flood fill (método Adachi)**, conforme a EAP (**4.2.3.2.1**) e o [projeto conceitual de software](../../docs/4.4%20-%20Projeto%20conceitual%20de%20software.md).
+
 Esta pasta deverá armazenar arquivos referentes a:
 
 - Código-fonte para microcontroladores e SOCs: [Arduino](https://www.arduino.cc/), [ESP32](https://www.espressif.com/), [Raspberry Pi](https://www.raspberrypi.com/), dentre outros.
