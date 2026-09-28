@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Execução lógica" id="bpmn-execucao-logica">
-    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1700" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="p1-pool-operador" value="Operador" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="0" y="0" width="2560" height="260" as="geometry" />
+          <mxGeometry x="0" y="0" width="2560" height="340" as="geometry" />
         </mxCell>
         <mxCell id="p1-pool-telemetria" value="Sistema de Telemetria" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#E6F1FB;strokeColor=#185FA5;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="0" y="300" width="2560" height="780" as="geometry" />
+          <mxGeometry x="0" y="380" width="2560" height="780" as="geometry" />
         </mxCell>
         <mxCell id="p1-raia-frontend" value="Front-end" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FFFFFF;strokeColor=#185FA5;" vertex="1" parent="p1-pool-telemetria">
           <mxGeometry x="30" y="0" width="2530" height="260" as="geometry" />
@@ -21,7 +21,112 @@
           <mxGeometry x="30" y="520" width="2530" height="260" as="geometry" />
         </mxCell>
         <mxCell id="p1-pool-micromouse" value="Micromouse (firmware)" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FAEEDA;strokeColor=#854F0B;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="0" y="1120" width="2560" height="420" as="geometry" />
+          <mxGeometry x="0" y="1200" width="2560" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-inicio" value="Preparar labirinto" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;verticalLabelPosition=bottom;labelBackgroundColor=none;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=standard;symbol=general;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="60" y="150" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-nova-execucao" value="Acionar Nova execução e informar tipo de labirinto" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=user;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="140" y="135" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-posicionar" value="Posicionar e ligar o robô na largada" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=manual;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="520" y="135" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-acompanhar" value="Acompanhar a execução" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=user;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="900" y="135" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-gw-intervir" value="Intervir na tentativa?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1160" y="145" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-encerrar" value="Encerrar tentativa (motivo e observação) (RF30)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=user;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1300" y="30" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-boot" value="Parar o robô com o BOOT (RF41)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=manual;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1300" y="240" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-gw-juncao" value="" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1560" y="145" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-gw-retomar" value="Retomar a tentativa failed?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;align=center;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1680" y="145" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-recolocar" value="Recolocar o robô na célula da falha e religar" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=manual;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1800" y="30" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-retomar" value="Acionar Retomar tentativa (n/3) (RF38)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#5F5E5A;taskMarker=user;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="2060" y="30" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-fim" value="Acompanhamento encerrado" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;verticalLabelPosition=bottom;labelBackgroundColor=none;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
+          <mxGeometry x="1860" y="150" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-inicio" target="p1-op-nova-execucao">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-nova-execucao" target="p1-op-posicionar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-posicionar" target="p1-op-acompanhar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-acompanhar" target="p1-op-gw-intervir">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e5" value="encerrar pela web" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-intervir" target="p1-op-encerrar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1185" y="65" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-op-e6" value="parar sem rede" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-intervir" target="p1-op-boot">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1185" y="275" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-op-e7" value="não (fim automático)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-intervir" target="p1-op-gw-juncao">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-encerrar" target="p1-op-gw-juncao">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1585" y="65" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-op-e9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-boot" target="p1-op-gw-juncao">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1585" y="275" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-op-e10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-juncao" target="p1-op-gw-retomar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e11" value="sim (restam tentativas)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-retomar" target="p1-op-recolocar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="1705" y="65" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-op-e12" value="não" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-gw-retomar" target="p1-op-fim">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-recolocar" target="p1-op-retomar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-op-e14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-operador" source="p1-op-retomar" target="p1-op-acompanhar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="2150" y="12" /><mxPoint x="990" y="12" /></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-fe-formulario" value="Formulário Nova execução" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=user;" vertex="1" parent="p1-raia-frontend">
+          <mxGeometry x="110" y="95" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-fe-tempo-real" value="Exibir tempo real por SSE e Tentativa n/3 (RF01, RF04)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=none;" vertex="1" parent="p1-raia-frontend">
+          <mxGeometry x="870" y="95" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-fe-modal-encerrar" value="Modal Encerrar tentativa (RF30)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=user;" vertex="1" parent="p1-raia-frontend">
+          <mxGeometry x="1270" y="95" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-fe-botao-retomar" value="Botão Retomar tentativa (n/3) (RF38)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=user;" vertex="1" parent="p1-raia-frontend">
+          <mxGeometry x="2030" y="95" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-fe-aviso-recusa" value="Exibir aviso de recusa (RF19)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=none;" vertex="1" parent="p1-raia-frontend">
+          <mxGeometry x="2270" y="95" width="180" height="70" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
