@@ -143,12 +143,16 @@
 | ID | Nome | Descrição |
 |---|---|---|
 | **4.2.3** | **Software Embarcado (Firmware)** | Software executado no Micromouse para controlar o robô, navegar no labirinto e enviar telemetria. |
-| 4.2.3.1 | Controle dos motores | Controle de velocidade, direção e acionamento dos motores de passo (RF21). |
-| 4.2.3.2 | Leitura dos sensores | Leitura e processamento dos sensores de paredes e demais entradas usadas na navegação (RF20). |
-| 4.2.3.3 | Comunicação e diagnóstico | Enlace com o sistema web, health-check e identificação de falhas de componente (RF29, RF24). |
-| 4.2.3.4 | Navegação (Flood Fill) | Algoritmo Flood Fill para planejar caminhos e distâncias no labirinto conforme o mapa descoberto (RF26, RF27). |
-| 4.2.3.5 | Mapeamento | Construção e atualização do mapa de paredes durante a execução (RF28, RF42). |
-| 4.2.3.6 | Envio de telemetria | Transmissão periódica de célula, bateria, status e demais dados ao backend (RF24). |
+| 4.2.3.1 | Controle | Controle da movimentação e dos componentes do robô. |
+| 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores de passo (RF21). |
+| 4.2.3.1.2 | Sensores | Leitura e processamento dos sensores de paredes e demais entradas usadas na navegação (RF20). |
+| 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
+| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução (RF26, RF27). |
+| 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa de paredes durante a execução (RF28, RF42). |
+| 4.2.3.3 | Telemetria | Gerenciamento das informações enviadas pelo Micromouse para acompanhamento externo. |
+| 4.2.3.3.1 | Envio | Transmissão periódica de célula, bateria, status e demais dados ao backend (RF24). |
+| 4.2.3.4 | Diagnóstico | Monitoramento do funcionamento do sistema, health-check e identificação de falhas de componente (RF29). |
+| 4.2.3.5 | Comunicação | Enlace Bluetooth serial com o sistema web (RF24, RF39). |
 
 # 4.3 Validação
 
@@ -160,9 +164,17 @@
 | 4.3.1.2 | Backend–Sistema Embarcado | Integração entre o backend e o sistema embarcado. |
 | 4.3.2 | Testes | Testes para verificar o funcionamento e atendimento aos requisitos. |
 | 4.3.2.1 | Testes unitários | Verificação individual dos componentes de software. |
-| 4.3.2.2 | Testes de navegação | Verificação dos algoritmos de navegação e resolução do labirinto. |
+| 4.3.2.2 | Testes de navegação | Verificação do **flood fill (método Adachi)** e do mapeamento em labirintos 4×4, 8×4 e 12×4 (RF26, RF27). |
 | 4.3.2.3 | Testes de telemetria | Verificação do envio e recebimento das informações de telemetria. |
 
 ![EAP do subsistema de Software](figs/eap-software.png)
 
 ### Figura 5 – EAP do Sub-sistema de Software
+
+> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-adachi).
+
+## Histórico de Versões (EAP — Software 4.2.3)
+
+| Versão | Data | Descrição | Autor(es) |
+| :----: | :--: | --------- | --------- |
+| 1.0 | 25/09/2026 | Item **4.2.3.2.1** atualizado de DFS para **Flood Fill (método Adachi)**, alinhado ao projeto conceitual de software (0.2) e ao glossário. | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) |
