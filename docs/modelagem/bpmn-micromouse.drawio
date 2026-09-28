@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="Execução lógica" id="bpmn-execucao-logica">
+    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p1-pool-operador" value="Operador" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#F1EFE8;strokeColor=#5F5E5A;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="2560" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-pool-telemetria" value="Sistema de Telemetria" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#E6F1FB;strokeColor=#185FA5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="0" y="300" width="2560" height="780" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-raia-frontend" value="Front-end" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FFFFFF;strokeColor=#185FA5;" vertex="1" parent="p1-pool-telemetria">
+          <mxGeometry x="30" y="0" width="2530" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-raia-backend" value="Backend" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FFFFFF;strokeColor=#185FA5;" vertex="1" parent="p1-pool-telemetria">
+          <mxGeometry x="30" y="260" width="2530" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-raia-canal" value="Canal do Micromouse" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FFFFFF;strokeColor=#185FA5;" vertex="1" parent="p1-pool-telemetria">
+          <mxGeometry x="30" y="520" width="2530" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-pool-micromouse" value="Micromouse (firmware)" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FAEEDA;strokeColor=#854F0B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="0" y="1120" width="2560" height="420" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="Laço de navegação" id="bpmn-laco-navegacao">
+    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p2-pool-micromouse" value="Micromouse (firmware)" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FAEEDA;strokeColor=#854F0B;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="2160" height="560" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
