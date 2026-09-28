@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <mxfile host="app.diagrams.net">
   <diagram name="Execução lógica" id="bpmn-execucao-logica">
-    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3720" pageHeight="1900" math="0" shadow="0">
+    <mxGraphModel dx="2250" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3720" pageHeight="1950" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -21,7 +21,7 @@
           <mxGeometry x="30" y="720" width="3650" height="260" as="geometry" />
         </mxCell>
         <mxCell id="p1-pool-micromouse" value="Micromouse (firmware)" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FAEEDA;strokeColor=#854F0B;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="0" y="1400" width="3680" height="420" as="geometry" />
+          <mxGeometry x="0" y="1400" width="3680" height="470" as="geometry" />
         </mxCell>
         <mxCell id="p1-op-inicio" value="Preparar labirinto" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;verticalLabelPosition=bottom;labelBackgroundColor=none;verticalAlign=top;align=center;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=standard;symbol=general;fillColor=#FFFFFF;strokeColor=#5F5E5A;" vertex="1" parent="p1-pool-operador">
           <mxGeometry x="60" y="150" width="40" height="40" as="geometry" />
@@ -396,6 +396,152 @@
               <mxPoint x="3285" y="670" />
             </Array>
           </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-inicio" value="Robô ligado" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=standard;symbol=message;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="60" y="190" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-carregar" value="Carregar mapa, posição e estado da flash (RF42)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="130" y="175" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-gw-par" value="" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=parallel;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="350" y="185" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-hc" value="Executar health-check (RF29)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="460" y="175" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-gw-hc" value="Health-check aprovado?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="700" y="185" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-gw-junta" value="" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1100" y="185" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-navegar" value="Navegar com flood fill (Adachi) (RF20, RF21, RF26, RF27, RF28)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=none;isLoopSub=1;fontStyle=1;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1270" y="165" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-sucesso" value="Declarar sucesso e gravar tipo resolvido (RF26, RF42)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1640" y="175" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fim-sucesso" value="Tentativa concluída (success)" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=4;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1900" y="190" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fr-interrupcao" value="Interrupção recebida (RF39)" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=left;verticalLabelPosition=top;verticalAlign=bottom;align=right;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=boundInt;symbol=message;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1370" y="145" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fr-boot" value="Botão BOOT (RF41)" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=4;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=boundInt;symbol=signal;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1470" y="145" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fr-falha" value="Falha de componente" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=left;verticalLabelPosition=bottom;verticalAlign=top;align=right;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=boundInt;symbol=error;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1450" y="235" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-telemetria" value="Transmitir telemetria (outro núcleo) (RF24)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=send;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="460" y="40" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fim-telemetria" value="Robô desligado" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=4;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="700" y="55" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-parar" value="Parar e enviar failed (RF30, RF41)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=send;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1640" y="40" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fim-parado" value="Tentativa encerrada (failed)" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=4;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1900" y="55" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-fim-falha" value="Tentativa encerrada (failed)" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="540" y="335" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-enviar-falha" value="Enviar failed (falha_componente) (RF15)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=send;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="635" y="320" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-retomada" value="Enviar telemetria de retomada (RF38)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=send;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="860" y="320" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-gw-rehc" value="Health-check aprovado?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1210" y="330" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-aguardar" value="Aguardar 5 s e refazer o health-check" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p1-pool-micromouse">
+          <mxGeometry x="1380" y="320" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-inicio" target="p1-mm-carregar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-carregar" target="p1-mm-gw-par">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-par" target="p1-mm-hc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-par" target="p1-mm-telemetria">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="375" y="75" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-e5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-telemetria" target="p1-mm-fim-telemetria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-hc" target="p1-mm-gw-hc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e7" value="aprovado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-hc" target="p1-mm-gw-junta">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e8" value="reprovado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-hc" target="p1-mm-enviar-falha">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-junta" target="p1-mm-navegar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e10" value="objetivo confirmado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-navegar" target="p1-mm-sucesso">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-sucesso" target="p1-mm-fim-sucesso">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-fr-interrupcao" target="p1-mm-parar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1390" y="75" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.3333;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-fr-boot" target="p1-mm-parar">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1490" y="130" />
+              <mxPoint x="1700" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-e14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-parar" target="p1-mm-fim-parado">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-fr-falha" target="p1-mm-aguardar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-aguardar" target="p1-mm-gw-rehc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e17" value="aprovado (mesma tentativa)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-rehc" target="p1-mm-retomada">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-mm-e18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-retomada" target="p1-mm-gw-junta">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="950" y="290" />
+              <mxPoint x="1125" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-e19" value="reprovado" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="p1-pool-micromouse" source="p1-mm-gw-rehc" target="p1-mm-enviar-falha">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1235" y="435" />
+              <mxPoint x="725" y="435" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-mm-e20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p1-pool-micromouse" source="p1-mm-enviar-falha" target="p1-mm-fim-falha">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
