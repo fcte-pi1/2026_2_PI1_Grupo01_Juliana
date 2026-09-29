@@ -24,7 +24,7 @@
 ### Figura 2 – EAP do Sub-sistema de Estrutura
 
 
-# 1. Sub-sistema: Energia
+# 2. Sub-sistema: Energia
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
 | 2 | **Sub-sistema: Fonte Energética** | Conjunto responsável por armazenar, converter, proteger, distribuir e monitorar a energia que alimenta todos os demais subsistemas embarcados do Micromouse. | Autonomia mínima de 30 min de operação contínua; massa e volume dentro do envelope de 16,5 × 16,5 cm. | Atende aos requisitos 1 a 10 da frente de Energia. |
