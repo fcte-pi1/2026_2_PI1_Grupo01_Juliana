@@ -2,7 +2,7 @@
 
 Esta pasta deverá armazenar arquivos referentes a:
 
-- Código-fonte da interface: componentes, páginas, estilos e lógica de apresentação, organizados conforme o framework utilizado ([React](https://react.dev/), [Vue](https://vuejs.org/), [Angular](https://angular.io/) etc.).
+- Código-fonte da interface: componentes, páginas, estilos e lógica de apresentação em [React](https://react.dev/) com [TypeScript](https://www.typescriptlang.org/), conforme o [4.4 — Projeto conceitual de software](../../docs/4.4%20-%20Projeto%20conceitual%20de%20software.md).
 - Arquivos de marcação e estilo estáticos: `index.html`, arquivos `.css`, `.scss` ou `.sass` de estilização global.
 - Arquivos de definição de dependências: `package.json` e `package-lock.json` (ou `yarn.lock`) com todas as bibliotecas utilizadas.
 - Arquivos de configuração do bundler/toolchain: `vite.config.js`, `webpack.config.js`, `tsconfig.json` etc.
