@@ -11,13 +11,13 @@
 
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
-| 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô  | Dimensões:  103x 92 x 33mm. | Agrupa chassi, suportes, atuadores e rodagem. |
-| 1.1 | Chassi | Base estrutural impressa em 3D para suporte dos motores, circuitos, suporte de pilhas e sensores.  Material: PLA. | Fabricado via FDM.  Garante leveza, rigidez mecânica e pontos de fixação com furação para parafusos M2/M3.  | Funciona como base mecânica principal e suporte dos componentes.   |
-| 1.2 | Suporte | Compartimento de fixação e alojamento das pilhas.  | Transmissão direta no eixo dos motores Nema 8\. | Fixado diretamente sobre a estrutura do chassi. |
-| 1.3 | Carenagem | Proteção externa da eletrônica e dos motores. | Estrutura aberta. | Não cotado no orçamento (chassi aberto exposto). |
-| 1.4 | Atuadores | Motores de passo para movimentação diferencial (Esquerdo e Direito). | 2x Nema 8\. | Responsáveis pela tração e precisão dos movimentos no labirinto. |
-| 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Transmissão direta no eixo dos motores Nema 11\. | Sem necessidade de caixas de redução adicionais ou correias  |
-| 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 40 mm (borracha silicone ou neoprene) \+ 1x Roda boba omnidirecional (caster).  | Garante o contato com o solo e o equilíbrio do robô. |
+| 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô | Dimensões: 92 × 103 mm (placa base). | Agrupa chassi, suportes, atuadores e rodagem. |
+| 1.1 | Chassi | Placa monoplano que serve de base estrutural e suporte dos demais componentes. | Acrílico 3 mm (corte a laser) ou impressão 3D em PETG/PLA; 92 × 103 mm; furação para parafusos M2/M3. | Funciona como base mecânica principal; geometria ajustada para giros de 90° e 180° dentro da célula. |
+| 1.2 | Suporte | Berço para alojamento e fixação da bateria, e suporte/torre para os sensores de distância. | Suporte de bateria impresso em 3D (PLA/PETG); torre de sensores com fixação modular a 0° e ±45°, altura de 2,5 cm. | Bateria posicionada sobre o eixo de tração, concentrando massa sobre as rodas. |
+| 1.3 | Carenagem | Cobertura externa da eletrônica e dos motores. | Design aberto (sem carenagem); placa aparente. | Reduz massa, facilita dissipação térmica e manutenção. |
+| 1.4 | Atuadores | Motores para movimentação diferencial (esquerdo e direito). | 2x Micro Motores DC N20 com encoder, 6 V, 600 RPM, ≈30 g cada. | Tração diferencial com odometria em malha fechada; controle PID de velocidade por motor. |
+| 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Roda acoplada diretamente ao eixo de saída da caixa de redução do motor N20. | Sem correias ou engrenagens externas; folga interna da caixa de redução compensada pelo realinhamento com as paredes. |
+| 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 34 mm × 6,5 mm com borracha vulcanizada + 1x *Sphere Caster* de 10 mm (nylon) para apoio frontal. | Garante o contato com o solo, evita patinagem e permite apoio omnidirecional sem arrasto nos giros. |
 
 <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
 
