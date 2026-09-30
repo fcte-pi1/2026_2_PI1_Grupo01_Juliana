@@ -11,13 +11,13 @@
 
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
-| 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô  | Dimensões:  103x 92 x 33mm. | Agrupa chassi, suportes, atuadores e rodagem. |
-| 1.1 | Chassi | Base estrutural impressa em 3D para suporte dos motores, circuitos, suporte de pilhas e sensores.  Material: PLA. | Fabricado via FDM.  Garante leveza, rigidez mecânica e pontos de fixação com furação para parafusos M2/M3.  | Funciona como base mecânica principal e suporte dos componentes.   |
-| 1.2 | Suporte | Compartimento de fixação e alojamento das pilhas.  | Transmissão direta no eixo dos motores Nema 8\. | Fixado diretamente sobre a estrutura do chassi. |
-| 1.3 | Carenagem | Proteção externa da eletrônica e dos motores. | Estrutura aberta. | Não cotado no orçamento (chassi aberto exposto). |
-| 1.4 | Atuadores | Motores de passo para movimentação diferencial (Esquerdo e Direito). | 2x Nema 8\. | Responsáveis pela tração e precisão dos movimentos no labirinto. |
-| 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Transmissão direta no eixo dos motores Nema 11\. | Sem necessidade de caixas de redução adicionais ou correias  |
-| 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 40 mm (borracha silicone ou neoprene) \+ 1x Roda boba omnidirecional (caster).  | Garante o contato com o solo e o equilíbrio do robô. |
+| 1 | **Sub-sistema: Estrutura** | Conjunto mecânico, base de fixação e sistema de locomoção do robô | Dimensões: 92 × 103 mm (placa base). | Agrupa chassi, suportes, atuadores e rodagem. |
+| 1.1 | Chassi | Placa monoplano que serve de base estrutural e suporte dos demais componentes. | Acrílico 3 mm (corte a laser) ou impressão 3D em PETG/PLA; 92 × 103 mm; furação para parafusos M2/M3. | Funciona como base mecânica principal; geometria ajustada para giros de 90° e 180° dentro da célula. |
+| 1.2 | Suporte | Berço para alojamento e fixação da bateria, e suporte/torre para os sensores de distância ToF. | Suporte de bateria impresso em 3D (PLA/PETG); torre de sensores ToF com fixação modular a 0° e ±45°, altura de 2,5 cm. | Bateria posicionada sobre o eixo de tração, concentrando massa sobre as rodas. |
+| 1.3 | Carenagem | Cobertura externa da eletrônica e dos motores. | Design aberto (sem carenagem); placa aparente. | Reduz massa, facilita dissipação térmica e manutenção. |
+| 1.4 | Atuadores | Motores para movimentação diferencial (esquerdo e direito). | 2x Motor Redutor DC 6V N20 com encoder, 750 RPM, ≈30 g cada. | Tração diferencial com odometria em malha fechada; controle PID de velocidade por motor. |
+| 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Roda acoplada diretamente ao eixo de saída da caixa de redução do motor N20. | Sem correias ou engrenagens externas; folga interna da caixa de redução compensada pelo realinhamento com as paredes. |
+| 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 34 mm × 6,5 mm com borracha vulcanizada + 1x *Sphere Caster* de 10 mm (nylon) para apoio frontal. | Garante o contato com o solo, evita patinagem e permite apoio omnidirecional sem arrasto nos giros. |
 
 <img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
 
@@ -54,8 +54,8 @@
 
 | ID | Nome | Descrição |
 |---|---|---|
-| **3.2** | **Conjunto de sensoriamento** | Componentes e circuitos que disponibilizam informações do ambiente e da bateria ao microcontrolador.<br>**Dados Técnicos:** Sensores infravermelhos, condicionamento de sinais, proteção de entradas e interface de leitura da bateria.<br>**Comentários:** Montagem alinhada com Estrutura e grandeza de bateria alinhada com Energia (RF1, RF3 e RF8). |
-| 3.2.1 | Sensores infravermelhos de paredes | Sensores para detecção de paredes à esquerda, à direita e à frente do robô.<br>**Dados Técnicos:** Previsão do TAP: 1 sensor que será posicionado mais à frente da estrutura, abrangendo 180 graus. Referências preliminares HW-201 e módulo identificado como LM393.<br>**Comentários:** Detecção a validar em células de 18 cm, paredes de 5 cm de altura e 1,2 cm de espessura, brancas com topo vermelho e piso preto (RF1). |
+| **3.2** | **Conjunto de sensoriamento** | Componentes e circuitos que disponibilizam informações do ambiente e da bateria ao microcontrolador.<br>**Dados Técnicos:** Sensores ToF (Time-of-Flight), condicionamento de sinais, proteção de entradas e interface de leitura da bateria.<br>**Comentários:** Montagem alinhada com Estrutura e grandeza de bateria alinhada com Energia (RF1, RF3 e RF8). |
+| 3.2.1 | Sensores ToF de distância | Sensores baseados em tempo de voo da luz (ToF) para medição precisa de distância em relação às paredes (frente, esquerda e direita).<br>**Dados Técnicos:** Sensores ToF com alcance de até 2 metros de distância.<br>**Comentários:** Detecção a validar em células de 18 cm, paredes de 5 cm de altura e 1,2 cm de espessura, brancas com topo vermelho e piso preto (RF1). |
 | 3.2.2 | Circuitos de condicionamento e proteção dos sensores | Circuitos que adequam os sinais dos sensores às entradas do microcontrolador.<br>**Dados Técnicos:** Filtragem, amplificação quando necessária, ajuste de limiar e proteção contra picos de tensão e descargas eletrostáticas; valores a dimensionar.<br>**Comentários:** Leituras estáveis e níveis elétricos compatíveis. A resposta às superfícies da pista deve ser verificada por calibração e testes (RF8 e RNF5). |
 | 3.2.3 | Interface de leitura da bateria | Circuito de aquisição do sinal de bateria para monitoramento e telemetria.<br>**Dados Técnicos:** Divisor de tensão ligado ao conversor analógico-digital (ADC), dimensionado conforme a tensão máxima da fonte e a faixa de entrada do microcontrolador.<br>**Comentários:** Leituras comparadas com instrumento de referência. Energia define a fonte e a grandeza disponível; Firmware trata os dados para estimativa de carga (RF3; Energia RF04; Software RF23). |
 
@@ -63,9 +63,9 @@
 
 | ID | Nome | Descrição |
 |---|---|---|
-| **3.3** | **Conjunto de acionamento dos motores** | Eletrônica responsável pelo acionamento independente dos motores de passo e pelas interfaces usadas na estimativa de movimento.<br>**Dados Técnicos:** Dois canais de acionamento, compatíveis com os motores e com a alimentação fornecida por Energia.<br>**Comentários:** Avanço, curvas e paradas verificados em conjunto com Firmware e Estrutura (RF2). |
-| 3.3.1 | Drivers dos motores de passo | Circuitos dedicados ao fornecimento de corrente e à sequência de acionamento das fases de cada motor.<br>**Dados Técnicos:** Um canal por motor; corrente e tensão compatíveis com os motores previstos no TAP como Nema 11; proteção contra sobrecorrente nos enrolamentos.<br>**Comentários:** Modelo e dissipação a dimensionar pelas especificações dos motores escolhidos; funcionamento dentro dos limites elétricos e térmicos dos componentes (RF2 e RF7). |
-| 3.3.2 | Interface STEP/DIR | Conexões dos sinais de passo e direção entre microcontrolador e drivers.<br>**Dados Técnicos:** Linhas independentes para os dois motores, com níveis lógicos compatíveis e pinagem documentada.<br>**Comentários:** Firmware utiliza os pulsos enviados para estimar deslocamento e velocidade em malha aberta; esta interface não mede a rotação real das rodas (RF6; Software RF21 e RF22). |
+| **3.3** | **Conjunto de acionamento dos motores** | Eletrônica responsável pelo acionamento independente dos motores DC com encoder e pelas interfaces usadas na estimativa de movimento e controle de velocidade.<br>**Dados Técnicos:** Dois canais de acionamento (ponte H ou drivers para motores DC), compatíveis com os motores N20 e com a alimentação fornecida por Energia.<br>**Comentários:** Avanço, curvas e paradas verificados em conjunto com Firmware e Estrutura (RF2). |
+| 3.3.1 | Drivers dos motores | Circuitos dedicados ao fornecimento de corrente e controle de velocidade/sentido (Ponte H) para cada motor DC.<br>**Dados Técnicos:** Um canal por motor (ou driver de ponte H duplo); corrente e tensão compatíveis com os motores DC N20 de 6 V; proteção contra sobrecorrente.<br>**Comentários:** Modelo e dissipação a dimensionar pelas especificações dos motores escolhidos; funcionamento dentro dos limites elétricos e térmicos dos componentes (RF2 e RF7). |
+| 3.3.2 | Interface PWM / Direção e Leitura de Encoders | Conexões dos sinais de PWM, direção e leitura dos encoders dos motores entre microcontrolador e drivers/hardware.<br>**Dados Técnicos:** Sinais PWM e de controle de sentido para os drivers, além das entradas de sinal dos encoders de cada motor N20 para realimentação em malha fechada.<br>**Comentários:** Firmware utiliza os sinais dos encoders para medir a rotação real e controlar a velocidade e o deslocamento em malha fechada (RF6; Software RF21 e RF22). |
 
 # 3.4 Comunicação e interface local
 
@@ -144,7 +144,7 @@
 |---|---|---|
 | **4.2.3** | **Software Embarcado (Firmware)** | Software executado no Micromouse para controlar o robô, navegar no labirinto e enviar telemetria. |
 | 4.2.3.1 | Controle | Controle da movimentação e dos componentes do robô. |
-| 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores de passo (RF21). |
+| 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores DC N20 com leitura de encoder para malha fechada (RF21). |
 | 4.2.3.1.2 | Sensores | Leitura e processamento dos sensores de paredes e demais entradas usadas na navegação (RF20). |
 | 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
 | 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução (RF26, RF27). |
