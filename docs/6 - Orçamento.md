@@ -41,4 +41,4 @@ Mande o **link público** da planilha de orçamento, e exporte em Markdown no fo
 | **14** | Kit Tubos Termorretráteis | Diâmetros variados para isolamento elétrico das conexões | 1 | R$ 12,00 | R$ 12,00 | Disponível no Lab |
 | **15** | Cabo de Silicone Flexível AWG 20 | Fios vermelho/preto de silicone de alta flexibilidade (2m) | 2 | R$ 6,00 | R$ 12,00 | A comprar |
 | **16** | Placa de Fenolite Ilhada (Protótipo) | Placa ilhada 5x7cm para montagem do módulo de alimentação | 2 | R$ 5,00 | R$ 10,00 | A comprar |
-| **—** | **TOTAL ESTIMADO (ENERGIA)** | — | — | — | **R$ 270,00** | — |
+| **—** | **TOTAL ESTIMADO (ENERGIA)** | — | — | — | **R$ 280,00** | — |
