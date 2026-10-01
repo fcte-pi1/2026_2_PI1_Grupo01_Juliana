@@ -2,24 +2,20 @@
 
 Mande o **link público** da planilha de orçamento, e exporte em Markdown no formato a seguir:
 
-| **ID** | **Item ou Serviço** | **Tipo** | **Previsto** | **Realizado** | **Responsável** |
-|:------:|---------------------|----------|-------------:|--------------:|-----------------|
-| 1 | Madeira | Matéria-prima | R$ 0,50 | R$ 0,60 | Fulano |
-| 2 | Ferro | Matéria-prima | R$ 0,25 | R$ 0,25 | Fulano |
-| 3 | Plástico ABS | Matéria-prima | R$ 0,25 | R$ 0,15 | Fulano |
-| 4 | Arduino | Componente eletrônico | R$ 2,00 | R$ 3,00 | Beltrano |
-| 5 | Fonte DC | Componente elétrico | R$ 2,00 | R$ 2,50 | Beltrano |
-| 6 | Martelo | Ferramentas | R$ 3,00 | R$ 2,75 | Fulano |
-| 7 | Impressão 3D | Montagem | R$ 4,00 | R$ 2,00 | Ciclano |
-| 8 | | | | | |
-| 9 | | | | | |
-| 10 | | | | | |
-| 11 | | | | | |
-| 12 | | | | | |
-| 13 | | | | | |
-| 14 | | | | | |
-| 15 | | | | | |
-| 16 | | | | | |
+### Orçamento do Subsistema de Estrutura
+
+| ID | Item / Componente | Especificação Técnica | Qtd | Valor Unit. (R$) | Valor Total (R$) | Origem / Status |
+| :-: | :--- | :--- | :-: | :-: | :-: | :--- |
+| **1** | Placa de Acrílico / PETG | Impressão 3D Chassi Base 3mm | 1 | R$ 60,00 | R$ 60,00 | A comprar |
+| **2** | Caster Ball | Roda Boba Esférica Metálica Ball Caster | 1 | R$ 33,91 | R$ 34,00 | A comprar |
+| **3** | Par de Rodas e Pneus | Diâmetro = 34mm | 4 | R$ 12,33 | R$ 50,00 | A comprar |
+| **4** | Placa MDF | MDF padrão 50 × 50 × 12 mm | 3 | R$ 28,28 | R$ 85,00 | A comprar |
+| **5** | Placa Perfurada | Placa Circuito Dupla Face Ilhada Fibra 5x7cm | 5 | R$ 6,10 | R$ 31,00 | A comprar |
+| **6** | Motores DC N20 | Mini Motor Redutor DC 6V N20 750 RPM, com Encoder 6V | 3 | R$ 59,60 | R$ 180,00 | A comprar |
+| **—** | **TOTAL ESTIMADO (ESTRUTURA)** | — | — | — | **R$ 440,00** | — |
+
+<font size="2"><p style="text-align: center">Fonte: Jefferson de Souza Reis, Geovana (Bygeo57), Júlio César (DeNNis715) e Murilo (MuriloPi13), 2026.</p></font>
+
 
 ### Orçamento do Subsistema de Energia
 
@@ -79,3 +75,13 @@ O subsistema de software **não prevê aquisição de hardware dedicado**: o Mic
 > **Rateio:** o item 4 pode ser absorvido pelo orçamento de Eletrônica (bancada ESP32). Se a equipe já possuir cabo, o **total de Software permanece R$ 0,00**.
 
 <font size="2"><p style="text-align: center">Fonte: [Amanda de Moura](https://github.com/AmandaaMoura), 2026. Gerência de Software — PI1 Grupo 01.</p></font>
+
+## Orçamento Total do Projeto
+
+| Subsistema | Valor Estimado (R$) |
+|---|---:|
+| Energia | R$ 280,00 |
+| Eletrônica | R$ 529,16 |
+| Software | R$ 15,00 |
+| Estrutura | R$ 440,00 |
+| **TOTAL GERAL** | **R$ 1.264,16** |
