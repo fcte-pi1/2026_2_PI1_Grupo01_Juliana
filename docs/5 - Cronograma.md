@@ -1,36 +1,3 @@
-# Cronograma Geral
-
-Exporte as informações do GitHub Projects [em formato CSV](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-your-project/exporting-your-projects-data), e [renderize em Markdown](https://www.google.com/search?q=convert+CSV+file+to+Markdown+table) no formato a seguir:
-
-| **ID** | **Tarefa** | **Responsável** | **Predecessor** | **Data de Início** | **Data de Conclusão** | **% de Execução** | **Status** | **Prioridade** |
-|:------:|------------|-----------------|-----------------|--------------------|-----------------------|:-----------------:|-------------|----------------|
-| 1 | **Planejamento** | Todos | — | 02/09/2026 | 30/09/2026 | 100% | Em andamento | Alta |
-| 1.1 | Termo de Abertura do Projeto | Todos | — | 02/09/2026 | 15/09/2026 | 100% | Concluído | Alta |
-| 1.2 | Definição de Requisitos | Todos | 1.1 | 16/09/2026 | 20/09/2026 | 100% | Concluído | Alta |
-| 1.3 | Definição da Estrutura Analítica do Produto | Todos | 1.2 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
-| 1.4 | Definição do Projeto Conceitual do Produto | Todos | 1.3 | 22/09/2026 | 29/09/2026 | 100% | Em andamento | Alta |
-| 1.5 | Definição do Cronograma | Todos | 1.3 | 25/09/2026 | 30/09/2026 | 90% | Em andamento | Alta |
-| 1.6 | Definição do Orçamento | Todos | 1.3 | 25/09/2026 | 30/09/2026 | 80% | Em andamento | Média |
-| 2 | **Execução** | Todos | 1 | 01/10/2026 | 20/11/2026 | 0% | Não iniciado | Alta |
-| 2.1 | Aquisição de Partes | Todos | 1.6 | 01/10/2026 | 12/10/2026 | 0% | Não iniciado | Alta |
-| 2.2 | Montagem de Subsistemas | Software, Eletrônica, Energia, Estrutura | 2.1 | 13/10/2026 | 27/10/2026 | 0% | Não iniciado | Alta |
-| 2.3 | Testes de Subsistemas | Software, Eletrônica, Energia, Estrutura | 2.2 | 28/10/2026 | 05/11/2026 | 0% | Não iniciado | Alta |
-| 2.4 | Integração de Subsistemas | Todos | 2.3 | 06/11/2026 | 13/11/2026 | 0% | Não iniciado | Alta |
-| 2.5 | Testes de Integração | Todos | 2.4 | 14/11/2026 | 19/11/2026 | 0% | Não iniciado | Alta |
-| 2.6 | Apresentação Final | Todos | 2.5 | 20/11/2026 | 25/11/2026 | 0% | Não iniciado | Alta |
-| 3 | **Documentação** | Todos | 1 | 02/09/2026 | 30/11/2026 | 35% | Em andamento | Alta |
-| 3.1 | Termo de Abertura do Projeto | Todos | — | 02/09/2026 | 15/09/2026 | 100% | Concluído | Alta |
-| 3.2 | Requisitos | Todos | 3.1 | 16/09/2026 | 20/09/2026 | 100% | Concluído | Alta |
-| 3.3 | Estrutura Analítica do Produto | Todos | 3.2 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
-| 3.4 | Projeto Conceitual do Produto | Todos | 3.3 | 22/09/2026 | 29/09/2026 | 90% | Em andamento | Alta |
-| 3.5 | Cronograma | Todos | 3.3 | 25/09/2026 | 30/09/2026 | 90% | Em andamento | Alta |
-| 3.6 | Orçamento | Todos | 3.3 | 25/09/2026 | 30/09/2026 | 80% | Em andamento | Média |
-| 3.7 | Testes | Todos | 2.3, 2.5 | 28/10/2026 | 19/11/2026 | 0% | Não iniciado | Alta |
-| 3.8 | Avaliação de Desempenho | Todos | 2.6 | 26/11/2026 | 28/11/2026 | 0% | Não iniciado | Média |
-| 3.9 | Documento Final | Todos | 3.8 | 26/11/2026 | 30/11/2026 | 0% | Não iniciado | Alta |
-
----
-
 ## Cronograma do Subsistema de Energia
 
 <font size="3"><p style="text-align: center">Tabela 1: Cronograma do subsistema de Energia</p></font>
