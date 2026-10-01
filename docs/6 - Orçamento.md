@@ -71,11 +71,7 @@ O subsistema de software **não prevê aquisição de hardware dedicado**: o Mic
 | **1** | Notebook operacional | Receptor da ponte serial/Bluetooth, backend, front-end e demonstração na APT (equipe) | 1 | R$ 0,00 | R$ 0,00 | Já disponível (equipe) |
 | **2** | Stack de desenvolvimento | Python (FastAPI), Node (React/Vite), PlatformIO, PostgreSQL via Docker, GitHub Actions | 1 | R$ 0,00 | R$ 0,00 | Open source / GitHub Education |
 | **3** | Repositório e documentação | MkDocs, issues e GitHub Projects (46 tarefas de software) | 1 | R$ 0,00 | R$ 0,00 | Repositório do grupo |
-| **4** | Cabo USB (firmware) | Gravação e telemetria de bancada na ESP32 (desenvolvimento) | 1 | R$ 15,00 | R$ 15,00 | A comprar / compartilhado com Eletrônica |
-| **5** | Adaptador USB–serial (opcional) | Apoio à ponte serial em bancada, se o notebook não expuser porta COM nativa | 0 | R$ 25,00 | R$ 0,00 | Opcional — não previsto na v1 |
-| **6** | Hospedagem em nuvem | Não aplicável: sistema previsto para execução em **rede local** no local da prova | — | — | R$ 0,00 | Fora do escopo TAP |
-| **—** | **TOTAL ESTIMADO (SOFTWARE)** | Custos incrementais ao hardware já orçado nas outras frentes | — | — | **R$ 15,00** | — |
-
-> **Rateio:** o item 4 pode ser absorvido pelo orçamento de Eletrônica (bancada ESP32). Se a equipe já possuir cabo, o **total de Software permanece R$ 0,00**.
+| **4** | Cabo USB (firmware) | Gravação e telemetria de bancada na ESP32 (desenvolvimento) | 1 | R$ 0,00 | R$ 0,00 | Orçado em Eletrônica / equipe |
+| **—** | **TOTAL ESTIMADO (SOFTWARE)** | Custos incrementais ao hardware já orçado nas outras frentes | — | — | **R$ 0,00** | — |
 
 <font size="2"><p style="text-align: center">Fonte: [Amanda de Moura](https://github.com/AmandaaMoura), 2026. Gerência de Software — PI1 Grupo 01.</p></font>

@@ -1,33 +1,33 @@
-# Cronograma
+# Cronograma Geral
 
 Exporte as informações do GitHub Projects [em formato CSV](https://docs.github.com/en/issues/planning-and-tracking-with-projects/managing-your-project/exporting-your-projects-data), e [renderize em Markdown](https://www.google.com/search?q=convert+CSV+file+to+Markdown+table) no formato a seguir:
 
 | **ID** | **Tarefa** | **Responsável** | **Predecessor** | **Data de Início** | **Data de Conclusão** | **% de Execução** | **Status** | **Prioridade** |
 |:------:|------------|-----------------|-----------------|--------------------|-----------------------|:-----------------:|-------------|----------------|
-| 1 | **Planejamento** | | | | | | Não iniciado | |
-| 1.1 | Termo de Abertura do Projeto | | | | | | Não iniciado | |
-| 1.2 | Definição de Requisitos | | | | | | Não iniciado | |
-| 1.3 | Definição da Estrutura Analítica do Produto | | | | | | Não iniciado | |
-| 1.4 | Definição do Projeto Conceitual do Produto | | | | | | Não iniciado | |
-| 1.5 | Definição do Cronograma | | | | | | Não iniciado | |
-| 1.6 | Definição do Orçamento | | | | | | Não iniciado | |
-| 2 | **Execução** | | | | | | Não iniciado | |
-| 2.1 | Aquisição de Partes | | | | | | Não iniciado | |
-| 2.2 | Montagem de Subsistemas | | | | | | Não iniciado | |
-| 2.3 | Testes de Subsistemas | | | | | | Não iniciado | |
-| 2.4 | Integração de Subsistemas | | | | | | Não iniciado | |
-| 2.5 | Testes de Integração | | | | | | Não iniciado | |
-| 2.6 | Apresentação Final | | | | | | Não iniciado | |
-| 3 | **Documentação** | | | | | | Não iniciado | |
-| 3.1 | Termo de Abertura do Projeto | | | | | | Não iniciado | |
-| 3.2 | Requisitos | | | | | | Não iniciado | |
-| 3.3 | Estrutura Analítica do Produto | | | | | | Não iniciado | |
-| 3.4 | Projeto Conceitual do Produto | | | | | | Não iniciado | |
-| 3.5 | Cronograma | | | | | | Não iniciado | |
-| 3.6 | Orçamento | | | | | | Não iniciado | |
-| 3.7 | Testes | | | | | | Não iniciado | |
-| 3.8 | Avaliação de Desempenho | | | | | | Não iniciado | |
-| 3.9 | Documento Final | | | | | | Não iniciado | |
+| 1 | **Planejamento** | Todos | — | 02/09/2026 | 30/09/2026 | 100% | Em andamento | Alta |
+| 1.1 | Termo de Abertura do Projeto | Todos | — | 02/09/2026 | 15/09/2026 | 100% | Concluído | Alta |
+| 1.2 | Definição de Requisitos | Todos | 1.1 | 16/09/2026 | 20/09/2026 | 100% | Concluído | Alta |
+| 1.3 | Definição da Estrutura Analítica do Produto | Todos | 1.2 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
+| 1.4 | Definição do Projeto Conceitual do Produto | Todos | 1.3 | 22/09/2026 | 29/09/2026 | 100% | Em andamento | Alta |
+| 1.5 | Definição do Cronograma | Todos | 1.3 | 25/09/2026 | 30/09/2026 | 90% | Em andamento | Alta |
+| 1.6 | Definição do Orçamento | Todos | 1.3 | 25/09/2026 | 30/09/2026 | 80% | Em andamento | Média |
+| 2 | **Execução** | Todos | 1 | 01/10/2026 | 20/11/2026 | 0% | Não iniciado | Alta |
+| 2.1 | Aquisição de Partes | Todos | 1.6 | 01/10/2026 | 12/10/2026 | 0% | Não iniciado | Alta |
+| 2.2 | Montagem de Subsistemas | Software, Eletrônica, Energia, Estrutura | 2.1 | 13/10/2026 | 27/10/2026 | 0% | Não iniciado | Alta |
+| 2.3 | Testes de Subsistemas | Software, Eletrônica, Energia, Estrutura | 2.2 | 28/10/2026 | 05/11/2026 | 0% | Não iniciado | Alta |
+| 2.4 | Integração de Subsistemas | Todos | 2.3 | 06/11/2026 | 13/11/2026 | 0% | Não iniciado | Alta |
+| 2.5 | Testes de Integração | Todos | 2.4 | 14/11/2026 | 19/11/2026 | 0% | Não iniciado | Alta |
+| 2.6 | Apresentação Final | Todos | 2.5 | 20/11/2026 | 25/11/2026 | 0% | Não iniciado | Alta |
+| 3 | **Documentação** | Todos | 1 | 02/09/2026 | 30/11/2026 | 35% | Em andamento | Alta |
+| 3.1 | Termo de Abertura do Projeto | Todos | — | 02/09/2026 | 15/09/2026 | 100% | Concluído | Alta |
+| 3.2 | Requisitos | Todos | 3.1 | 16/09/2026 | 20/09/2026 | 100% | Concluído | Alta |
+| 3.3 | Estrutura Analítica do Produto | Todos | 3.2 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
+| 3.4 | Projeto Conceitual do Produto | Todos | 3.3 | 22/09/2026 | 29/09/2026 | 90% | Em andamento | Alta |
+| 3.5 | Cronograma | Todos | 3.3 | 25/09/2026 | 30/09/2026 | 90% | Em andamento | Alta |
+| 3.6 | Orçamento | Todos | 3.3 | 25/09/2026 | 30/09/2026 | 80% | Em andamento | Média |
+| 3.7 | Testes | Todos | 2.3, 2.5 | 28/10/2026 | 19/11/2026 | 0% | Não iniciado | Alta |
+| 3.8 | Avaliação de Desempenho | Todos | 2.6 | 26/11/2026 | 28/11/2026 | 0% | Não iniciado | Média |
+| 3.9 | Documento Final | Todos | 3.8 | 26/11/2026 | 30/11/2026 | 0% | Não iniciado | Alta |
 
 ---
 
@@ -223,3 +223,34 @@ Como previsão interna das nossas atividades planejamos para que o software fiqu
 <font size="2"><p style="text-align: center">Fonte: [Amanda de Moura](https://github.com/AmandaaMoura), 2026. Gerência de Software — PI1 Grupo 01.</p></font>
 
 ---
+
+## Cronograma do Subsistema de Estrutura
+
+<font size="3"><p style="text-align: center">Tabela 4: Cronograma do subsistema de Estrutura</p></font>
+
+| **ID** | **Tarefa** | **Responsável** | **Predecessor** | **Data de Início** | **Data de Conclusão** | **% de Execução** | **Status** | **Prioridade** |
+|:------:|------------|-----------------|-----------------|--------------------|-----------------------|:-----------------:|-------------|----------------|
+| 1 | **Definição Conceitual** | Estrutura | — | 16/09/2026 | 29/09/2026 | 100% | Concluído | Alta |
+| 1.1 | Levantamento de requisitos dimensionais do labirinto | Jefferson | — | 16/09/2026 | 20/09/2026 | 100% | Concluído | Alta |
+| 1.2 | Seleção de materiais (chassi, rodas, fixação) | Geovana | 1.1 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
+| 1.3 | Definição dos atuadores (motor DC N20 com encoder) | Júlio César | 1.1 | 21/09/2026 | 25/09/2026 | 100% | Concluído | Alta |
+| 1.4 | Projeto conceitual de estruturas (documento) | Murilo | 1.2, 1.3 | 22/09/2026 | 29/09/2026 | 100% | Concluído | Alta |
+| 2 | **Modelagem e Prototipagem** | Estrutura | 1 | 01/10/2026 | 19/10/2026 | 0% | Não iniciado | Alta |
+| 2.1 | Modelagem CAD do chassi e suportes | Jefferson | 1.4 | 01/10/2026 | 08/10/2026 | 0% | Não iniciado | Alta |
+| 2.2 | Modelagem CAD da torre de sensores | Geovana | 1.4 | 01/10/2026 | 08/10/2026 | 0% | Não iniciado | Alta |
+| 2.3 | Corte/impressão do chassi (acrílico ou PETG) | Júlio César | 2.1 | 09/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |
+| 2.4 | Impressão 3D dos suportes e torre de sensores | Murilo | 2.2 | 09/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |
+| 2.5 | Aquisição de motores, rodas e *caster* | Jefferson | 1.3 | 01/10/2026 | 12/10/2026 | 0% | Não iniciado | Alta |
+| 3 | **Montagem** | Estrutura | 2 | 16/10/2026 | 24/10/2026 | 0% | Não iniciado | Alta |
+| 3.1 | Fixação dos motores e rodas ao chassi | Júlio César | 2.3, 2.5 | 16/10/2026 | 20/10/2026 | 0% | Não iniciado | Alta |
+| 3.2 | Montagem do suporte de bateria e torre de sensores | Murilo | 2.4 | 16/10/2026 | 20/10/2026 | 0% | Não iniciado | Alta |
+| 3.3 | Ajuste e alinhamento final da estrutura | Geovana | 3.1, 3.2 | 21/10/2026 | 24/10/2026 | 0% | Não iniciado | Alta |
+| 4 | **Testes de Estrutura (AP12)** | Estrutura | 3 | 25/10/2026 | 25/10/2026 | 0% | Não iniciado | Alta |
+| 4.1 | Teste de rigidez e fixação mecânica | Jefferson | 3.3 | 25/10/2026 | 25/10/2026 | 0% | Não iniciado | Alta |
+| 4.2 | Teste de giro (90° e 180°) e repetibilidade | Geovana | 3.3 | 25/10/2026 | 25/10/2026 | 0% | Não iniciado | Alta |
+| 5 | **Testes de Integração (AP18)** | Estrutura | 4 | 23/11/2026 | 23/11/2026 | 0% | Não iniciado | Alta |
+| 5.1 | Integração estrutura, eletrônica e energia | Todos (Estrutura) | 4 | 23/11/2026 | 23/11/2026 | 0% | Não iniciado | Alta |
+| 6 | **Apresentação Final** | Estrutura | 5 | 02/12/2026 | 02/12/2026 | 0% | Não iniciado | Alta |
+
+<font size="2"><p style="text-align: center">Fonte: [Jefferson de Souza Reis](https://github.com/jeffh), [Geovana](https://github.com/Bygeo57), [Júlio César](https://github.com/DeNNis715) e [Murilo](https://github.com/MuriloPi13), 2026.</p></font>
+
