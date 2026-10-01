@@ -42,3 +42,22 @@ Mande o **link público** da planilha de orçamento, e exporte em Markdown no fo
 | **15** | Cabo de Silicone Flexível AWG 20 | Fios vermelho/preto de silicone de alta flexibilidade (2m) | 2 | R$ 6,00 | R$ 12,00 | A comprar |
 | **16** | Placa de Fenolite Ilhada (Protótipo) | Placa ilhada 5x7cm para montagem do módulo de alimentação | 2 | R$ 5,00 | R$ 10,00 | A comprar |
 | **—** | **TOTAL ESTIMADO (ENERGIA)** | — | — | — | **R$ 280,00** | — |
+
+### Orçamento do Subsistema de Eletrônica
+
+| Componente | Uso no Robô | Qtd. Seg. (Reserva) | Qtd. Total | Preço Unit. Médio (R$) | Subtotal Estimado (R$) | Justificativa da Reserva | Origem / Status |
+| :--- | :-: | :-: | :-: | :-: | :-: | :--- | :--- |
+| Microcontrolador ESP32 DevKit V1 (30 pinos) | 1 | 1 | 2 | 36,88 | 73,66 | Curtos acidentais nos pinos GPIO ou falha de regulador interno. | 1 disponível / A comprar 1 |
+| Sensores ToF (VL53L0X) | 4 | 2 | 6 | 29,81 | 180,00 | Módulos I²C são sensíveis a estática (ESD) e falhas nos pinos XSHUT. | A comprar |
+| Ponte H Dupla (TB6612FNG) | 1 | 1 | 2 | 34,00 | 68,00 | Drivers queimam facilmente por picos de corrente (stall) dos motores. | A comprar |
+| Módulo Regulador Buck-Boost (5V) | 1 | 1 | 2 | 25,00 | 50,00 | Essencial para não perder o projeto inteiro se houver pico na bateria. | A comprar |
+| Diodo Schottky SS34 (SMD ou PTH) | 1 | 4 | 5 | 2,50 | 12,50 | Proteção reversa da bateria. Queima "para salvar" o restante do circuito. | A comprar |
+| Chave DIP Switch (4 vias) | 1 | 1 | 2 | 20,00 | 40,00 | Quebra mecânica das chaves. | A comprar |
+| Buzzer Ativo (3,3 V) | 1 | 1 | 2 | 10,00 | 20,00 | Componente muito barato para arriscar ficar sem diagnóstico sonoro. | A comprar |
+| Transistor NPN (P2N2222A) | 1 | 4 | 5 | 2,00 | 10,00 | Acionamento do buzzer. Terminais muito frágeis. | A comprar |
+| Kit Componentes Passivos (Resistores 10k, 22k, 1k, Caps 100nF e LEDs) | - | - | 1 kit | 35,00 | 35,00 | Utilizados no divisor de tensão (ADC), filtros e interface. | A comprar |
+| Insumos (Estanho, Fios AWG flexíveis, Barras de Pinos e Conectores JST) | - | - | 1 kit | 40,00 | 40,00 | Consumo natural de laboratório para prototipagem e solda da PCB. | A comprar |
+| **TOTAL ESTIMADO** | | | | | **R$ 529,16** | | — |
+
+
+<font size="2"><p style="text-align: center">Fonte: [Ana Victória](https://github.com/navicg), [João Vitor](https://github.com/Jauzimm), [Marcus](https://github.com/MarcusVRezende), [Anderson](https://github.com/leicamAnd), [Juan](https://github.com/IndianoDev) e [Fábio](https://github.com/fabiofonteles1), 2026.</p></font>
