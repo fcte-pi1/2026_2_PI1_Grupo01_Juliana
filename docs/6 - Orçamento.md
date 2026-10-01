@@ -1,7 +1,3 @@
-# Orçamento
-
-Mande o **link público** da planilha de orçamento, e exporte em Markdown no formato a seguir:
-
 ### Orçamento do Subsistema de Estrutura
 
 | ID | Item / Componente | Especificação Técnica | Qtd | Valor Unit. (R$) | Valor Total (R$) | Origem / Status |
