@@ -156,7 +156,7 @@
         <mxCell id="p1-cn-ler" value="Ler serial Bluetooth e repassar ao backend" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=service;" vertex="1" parent="p1-be-sub">
           <mxGeometry x="90" y="800" width="180" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="p1-be-receber" value="Receber, validar e registrar telemetria; no health-check, conferir o tipo do DIP switch (RF08, RF09, RF27, RNF09)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=receive;" vertex="1" parent="p1-be-sub">
+        <mxCell id="p1-be-receber" value="Receber, validar e registrar telemetria; conferir tipo do DIP (RF08, RF09, RF27, RNF09)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#185FA5;taskMarker=receive;" vertex="1" parent="p1-be-sub">
           <mxGeometry x="350" y="450" width="180" height="70" as="geometry" />
         </mxCell>
         <mxCell id="p1-be-gw-resultado" value="Estado da tentativa?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;labelPosition=right;verticalLabelPosition=top;verticalAlign=bottom;align=left;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#185FA5;" vertex="1" parent="p1-be-sub">
@@ -407,7 +407,7 @@
           <mxGeometry x="350" y="185" width="50" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p1-mm-hc" value="Executar health-check e ler tipo no DIP switch (RF27, RF29)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p1-pool-micromouse">
-          <mxGeometry x="460" y="175" width="180" height="70" as="geometry" />
+          <mxGeometry x="460" y="175" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p1-mm-gw-hc" value="Health-check aprovado?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p1-pool-micromouse">
           <mxGeometry x="700" y="185" width="50" height="50" as="geometry" />
@@ -630,7 +630,7 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="p2-pool-micromouse" value="Micromouse (firmware)" style="swimlane;html=1;horizontal=0;startSize=30;fillColor=#FAEEDA;strokeColor=#854F0B;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="0" y="0" width="2540" height="410" as="geometry" />
+          <mxGeometry x="0" y="0" width="2160" height="410" as="geometry" />
         </mxCell>
         <mxCell id="p2-inicio" value="Célula alcançada" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=standard;symbol=none;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p2-pool-micromouse">
           <mxGeometry x="60" y="90" width="40" height="40" as="geometry" />
@@ -648,28 +648,28 @@
           <mxGeometry x="670" y="70" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p2-gravar" value="Gravar mapa, posição e estado na flash (RF42)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="1110" y="70" width="180" height="80" as="geometry" />
+          <mxGeometry x="890" y="70" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p2-gw-candidato" value="Posição é célula de objetivo? (RF26)" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="1340" y="85" width="50" height="50" as="geometry" />
+          <mxGeometry x="1120" y="85" width="50" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p2-fim-sucesso" value="Sucesso" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle;spacingRight=4;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=general;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="1345" y="250" width="40" height="40" as="geometry" />
+          <mxGeometry x="1125" y="250" width="40" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p2-floodfill" value="Recalcular flood fill (paredes desconhecidas = abertas)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="1600" y="70" width="180" height="80" as="geometry" />
+          <mxGeometry x="1220" y="70" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p2-mover" value="Mover para a vizinha de menor valor (desempate: frente &gt; 90° &gt; 180°) (RF21)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="1820" y="70" width="180" height="80" as="geometry" />
+          <mxGeometry x="1440" y="70" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p2-registrar" value="Registrar célula no trajeto (RF28)" style="points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];shape=mxgraph.bpmn.task;whiteSpace=wrap;rectStyle=rounded;size=10;html=1;container=0;expand=0;collapsible=0;fillColor=#FFFFFF;strokeColor=#854F0B;taskMarker=service;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="2040" y="70" width="180" height="80" as="geometry" />
+          <mxGeometry x="1660" y="70" width="180" height="80" as="geometry" />
         </mxCell>
         <mxCell id="p2-gw-interrupcao" value="Interrupção ativa (Bluetooth ou BOOT)?" style="points=[[0.25,0.25,0],[0.5,0,0],[0.75,0.25,0],[1,0.5,0],[0.75,0.75,0],[0.5,1,0],[0.25,0.75,0],[0,0.5,0]];shape=mxgraph.bpmn.gateway2;html=1;whiteSpace=nowrap;verticalLabelPosition=top;verticalAlign=bottom;align=center;labelBackgroundColor=none;perimeter=rhombusPerimeter;outlineConnect=0;outline=none;symbol=none;gwType=exclusive;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="2310" y="85" width="50" height="50" as="geometry" />
+          <mxGeometry x="1930" y="85" width="50" height="50" as="geometry" />
         </mxCell>
         <mxCell id="p2-fim-parar" value="Parar e enviar failed" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.event;html=1;whiteSpace=nowrap;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=none;perimeter=ellipsePerimeter;outlineConnect=0;aspect=fixed;outline=end;symbol=message;fillColor=#FFFFFF;strokeColor=#854F0B;" vertex="1" parent="p2-pool-micromouse">
-          <mxGeometry x="2420" y="90" width="40" height="40" as="geometry" />
+          <mxGeometry x="2040" y="90" width="40" height="40" as="geometry" />
         </mxCell>
         <mxCell id="p2-e1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;" edge="1" parent="p2-pool-micromouse" source="p2-inicio" target="p2-gw-junta">
           <mxGeometry relative="1" as="geometry" />
@@ -710,7 +710,7 @@
         <mxCell id="p2-e18" value="não (próxima célula)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#444441;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="p2-pool-micromouse" source="p2-gw-interrupcao" target="p2-gw-junta">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="2335" y="370" />
+              <mxPoint x="1955" y="370" />
               <mxPoint x="165" y="370" />
             </Array>
           </mxGeometry>
