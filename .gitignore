@@ -342,3 +342,11 @@ TSWLatexianTemp*
 .DS_Store
 Thumbs.db
 
+
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+
+# Firmware (teste no PC)
+src/firmware/**/build/
