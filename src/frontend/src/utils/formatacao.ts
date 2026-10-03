@@ -3,7 +3,10 @@ import type { Celula, ComponenteHealthCheck, MotivoFalha, MotivoRecusa } from '.
 /** Lado da célula em metros (labirinto de 18 cm). */
 export const LADO_CELULA_M = 0.18
 
-/** Limite de tempo por tipo de labirinto, somando as 3 tentativas (RF32). */
+/**
+ * Limite de tempo por execução lógica (RF32): 10 min corridos desde Nova execução,
+ * incluindo os intervalos entre tentativas, para até 3 tentativas.
+ */
 export const LIMITE_EXECUCAO_S = 600
 
 export const LIMITE_TENTATIVAS = 3

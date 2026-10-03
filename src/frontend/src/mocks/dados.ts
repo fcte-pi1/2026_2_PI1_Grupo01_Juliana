@@ -50,13 +50,13 @@ export function trajetoAte(ate: number): PassoTrajeto[] {
   return CAMINHO.slice(0, ate + 1).map((celula, i) => passo(i + 1, celula))
 }
 
-/** Tentativa 1 até B2 (falha) e tentativa 2 retomando de B3 até `ate`. */
+/** Tentativa 1 até B2 (falha) e tentativa 2 retomando da própria B2 até `ate`. */
 export function trajetoComRetomada(ate: number): PassoTrajeto[] {
   const primeira = trajetoAte(6)
-  const retomada = CAMINHO.slice(8, ate + 1)
+  const retomada = CAMINHO.slice(7, ate + 1)
   return [
     ...primeira,
-    passo(primeira.length + 1, [1, 2], true),
+    passo(primeira.length + 1, [1, 1], true),
     ...retomada.map((celula, i) => passo(primeira.length + 2 + i, celula)),
   ]
 }

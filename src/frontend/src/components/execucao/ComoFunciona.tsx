@@ -2,7 +2,7 @@ const PASSOS = [
   { titulo: 'Nova execução', texto: 'Você escolhe o labirinto e cria a execução aqui.' },
   { titulo: 'Health-check', texto: 'Ligue o robô em A1. Ele testa bateria, sensores ToF, motores e encoders e envia o resultado.' },
   { titulo: 'Em execução', texto: 'A largada é automática. A tela mostra tempo, velocidade, bateria e célula atual.' },
-  { titulo: 'Resultado', texto: 'No fim, o trajeto aparece no mapa. Se falhar, dá para retomar do checkpoint (até 3 tentativas).' },
+  { titulo: 'Resultado', texto: 'No fim, o trajeto aparece no mapa. Se falhar, dá para retomar da célula da falha (até 3 tentativas em 10 min).' },
 ]
 
 export function ComoFunciona() {

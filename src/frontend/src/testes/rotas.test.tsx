@@ -14,7 +14,7 @@ const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '06-sem-comunicacao': /Sem dados do robô há/,
   '07-encerrar-execucao': /Encerrar a tentativa 1 da execução #0042\?/,
   '08-encerrada-como-falha': /Retomar tentativa \(2\/3\)/,
-  '09-retomar-do-checkpoint': /Retomar a execução #0042\?/,
+  '09-retomar-tentativa': /Retomar a execução #0042\?/,
   '10-retomada-tentativa-2': /Tentativa 2\/3/,
   '11-concluida-apos-retomada': /concluída na tentativa 2/,
   '12-falha-sem-retomada': /Sem retomada/,
@@ -46,10 +46,11 @@ describe('rota /', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('Retomar só libera depois do checklist', async () => {
+  it('Retomar parte da célula da falha e só libera depois do checklist', async () => {
     renderizarRota('/?modal=retomar', '08-encerrada-como-falha')
     const modal = await screen.findByRole('dialog')
-    const confirmar = within(modal).getByRole('button', { name: 'Retomar da célula B3' })
+    expect(within(modal).getByText('Robô posicionado em B2')).toBeInTheDocument()
+    const confirmar = within(modal).getByRole('button', { name: 'Retomar da célula B2' })
     expect(confirmar).toBeDisabled()
     for (const caixa of within(modal).getAllByRole('checkbox')) await userEvent.click(caixa)
     expect(confirmar).toBeEnabled()

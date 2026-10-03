@@ -19,7 +19,7 @@ import { useAgora } from '../../hooks/useAgora'
 import { useExecucaoAtual } from '../../hooks/useExecucaoAtual'
 import { useLabirintos } from '../../hooks/useLabirintos'
 import { formatarNumeroExecucao, formatarTempo, nomeCelula } from '../../utils/formatacao'
-import { celulaCheckpoint, derivarEstadoInicio, segundosSemDados, tentativaAtual, type EstadoInicio } from './estadoInicio'
+import { derivarEstadoInicio, segundosSemDados, tentativaAtual, type EstadoInicio } from './estadoInicio'
 import { PainelAoVivo } from './PainelAoVivo'
 import { PainelEncerrada } from './PainelEncerrada'
 
@@ -129,7 +129,6 @@ export function Inicio() {
   const aberta = tentativa.status === 'health-check' || tentativa.status === 'running'
   const { falha } = tentativa
   const celulaFalha = falha ? { x: falha.celula_x, y: falha.celula_y } : null
-  const checkpoint = celulaFalha ? celulaCheckpoint(execucao, celulaFalha) : null
   const ultimaLeitura = execucao.leituras.at(-1)
 
   return (
@@ -197,12 +196,11 @@ export function Inicio() {
           aoConfirmar={(pedido: EncerrarPedido) => enviar(() => encerrarTentativa(execucao.execucao_id, pedido))}
         />
       )}
-      {modal === 'retomar' && estado === 'falha-retomavel' && celulaFalha && checkpoint && (
+      {modal === 'retomar' && estado === 'falha-retomavel' && celulaFalha && (
         <ModalRetomar
           numeroExecucao={numero}
           proxima={tentativa.attempt_index + 1}
           celulaFalha={nomeCelula(celulaFalha)}
-          checkpoint={nomeCelula(checkpoint)}
           enviando={enviando}
           aoCancelar={() => abrirModal(null)}
           aoConfirmar={() => enviar(() => retomarTentativa(execucao.execucao_id))}
@@ -240,7 +238,7 @@ function FaixaEstado({ estado, execucao, agora }: { estado: EstadoInicio; execuc
           Tentativa {tentativa.attempt_index} registrada como Falha
           {tentativa.falha && ` (${tentativa.falha.motivo} em ${nomeCelula({ x: tentativa.falha.celula_x, y: tentativa.falha.celula_y })})`}.{' '}
           {estado === 'falha-retomavel'
-            ? 'Pode ser retomada do checkpoint.'
+            ? 'Pode ser retomada da célula da falha.'
             : 'Sem retomada: as 3 tentativas foram usadas ou a execução foi cancelada.'}
           <Link to="/execucoes" className="faixa__acao">
             Ver no histórico →

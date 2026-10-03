@@ -33,10 +33,10 @@ Os 12 estados de tela do protótipo podem ser abertos pelo painel flutuante "Moc
 
 ```
 /?cenario=08-encerrada-como-falha
-/?cenario=09-retomar-do-checkpoint&modal=retomar
+/?cenario=09-retomar-tentativa&modal=retomar
 ```
 
-Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05-execucao-recusada`, `06-sem-comunicacao`, `07-encerrar-execucao`, `08-encerrada-como-falha`, `09-retomar-do-checkpoint`, `10-retomada-tentativa-2`, `11-concluida-apos-retomada`, `12-falha-sem-retomada`. O cenário escolhido fica salvo na aba (sessionStorage), e os botões da tela avançam o cenário como o backend faria (Nova execução → health-check, Encerrar → falha, Retomar → tentativa 2).
+Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05-execucao-recusada`, `06-sem-comunicacao`, `07-encerrar-execucao`, `08-encerrada-como-falha`, `09-retomar-tentativa`, `10-retomada-tentativa-2`, `11-concluida-apos-retomada`, `12-falha-sem-retomada`. O cenário escolhido fica salvo na aba (sessionStorage), e os botões da tela avançam o cenário como o backend faria (Nova execução → health-check, Encerrar → falha, Retomar → tentativa 2).
 
 ## Rotas
 

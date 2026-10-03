@@ -1,4 +1,4 @@
-import type { Celula, Execucao, Tentativa } from '../../api/tipos'
+import type { Execucao, Tentativa } from '../../api/tipos'
 import { ALERTA_SEM_DADOS_S, LIMITE_TENTATIVAS } from '../../utils/formatacao'
 
 /**
@@ -54,12 +54,4 @@ export function derivarEstadoInicio(execucao: Execucao | null, agora: number): E
     default:
       return podeRetomar(execucao) ? 'falha-retomavel' : 'falha-sem-retomada'
   }
-}
-
-/** Célula de onde a retomada parte: a última do trajeto antes da célula da falha (RF38). */
-export function celulaCheckpoint(execucao: Execucao, falha: Celula): Celula {
-  const { trajeto } = execucao
-  const indice = trajeto.findLastIndex((p) => p.x === falha.x && p.y === falha.y)
-  const anterior = indice > 0 ? trajeto[indice - 1] : null
-  return anterior ? { x: anterior.x, y: anterior.y } : falha
 }

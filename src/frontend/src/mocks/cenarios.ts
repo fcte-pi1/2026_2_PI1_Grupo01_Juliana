@@ -129,7 +129,7 @@ export const CENARIOS: Cenario[] = [
     atual: (agora) => ({ ...base, execucao: encerradaComoFalha(agora) }),
   },
   {
-    id: '09-retomar-do-checkpoint',
+    id: '09-retomar-tentativa',
     titulo: 'Modal Retomar tentativa',
     modal: 'retomar',
     atual: (agora) => ({ ...base, execucao: encerradaComoFalha(agora) }),
