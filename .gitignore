@@ -350,3 +350,6 @@ __pycache__/
 
 # Firmware (teste no PC)
 src/firmware/**/build/
+
+# Windows (metadados de download no WSL)
+*:Zone.Identifier
