@@ -1,0 +1,551 @@
+/* Estilos dos componentes de telemetria, tentativas, execução e histórico. */
+
+.cartao__cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--esp-3);
+}
+
+.cartao__cabecalho .cartao__titulo {
+  margin-bottom: 0;
+}
+
+.cartao--perigo {
+  border-color: #f5c2c2;
+  background: #fffafa;
+}
+
+.cartao--perigo .cartao__titulo {
+  color: #991b1b;
+}
+
+.texto-perigo {
+  color: var(--cor-perigo);
+}
+
+.texto-retomada {
+  color: var(--cor-retomada);
+}
+
+.texto-grande {
+  font-size: var(--texto-xl);
+  font-weight: 700;
+}
+
+.espaco-acima {
+  margin-top: var(--esp-3);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+/* Métricas */
+.metrica {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.metrica__valor {
+  font-size: var(--texto-numero);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.metrica__unidade {
+  margin-left: 6px;
+  font-size: var(--texto-md);
+  font-weight: 500;
+  color: var(--cor-texto-suave);
+}
+
+.barra {
+  height: 6px;
+  border-radius: var(--raio-pilula);
+  background: var(--cor-borda);
+  overflow: hidden;
+}
+
+.barra__preenchida {
+  height: 100%;
+  min-width: 6px;
+  background: var(--cor-primaria);
+  border-radius: inherit;
+}
+
+.barra__preenchida--sucesso {
+  background: var(--cor-sucesso);
+}
+
+.tempo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--esp-8);
+  align-items: center;
+}
+
+.tempo__cronometro {
+  font-size: var(--texto-cronometro);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: var(--esp-1) 0;
+}
+
+.tempo__limite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.tempo__linha {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 720px) {
+  .tempo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--esp-4);
+  }
+
+  .tempo__cronometro {
+    font-size: var(--texto-numero);
+  }
+}
+
+.mini-metricas {
+  margin: var(--esp-3) 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--esp-2);
+}
+
+.mini-metricas > div {
+  padding: 10px 12px;
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-suave);
+}
+
+.mini-metricas dt {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+.mini-metricas dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.lista-dados {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.lista-dados > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: 12px;
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-suave);
+  font-size: var(--texto-sm);
+}
+
+.lista-dados dt {
+  color: var(--cor-texto-secundario);
+}
+
+.lista-dados dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Health-check */
+.health-check {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--esp-2);
+}
+
+.health-check__item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-2);
+  padding: 10px 12px;
+  border-radius: var(--raio-md);
+  font-size: var(--texto-sm);
+  background: var(--cor-superficie-suave);
+}
+
+.health-check__item--ok {
+  background: var(--cor-sucesso-suave);
+  color: #166534;
+}
+
+.health-check__item--falha {
+  background: var(--cor-perigo-suave);
+  color: #991b1b;
+}
+
+.health-check__item--pendente {
+  color: var(--cor-texto-suave);
+}
+
+/* Execução */
+.resumo-execucao {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.resumo-execucao__numero {
+  font-size: var(--texto-lg);
+  margin-right: var(--esp-2);
+}
+
+.etapas {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-4);
+  padding: var(--esp-4) var(--esp-5);
+}
+
+.etapas__item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  font-size: var(--texto-sm);
+}
+
+.etapas__item p {
+  color: var(--cor-texto-suave);
+}
+
+.etapas__marcador {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--cor-borda-forte);
+  font-family: var(--fonte-mono);
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+.etapas__item--feita .etapas__marcador {
+  border-color: transparent;
+  background: var(--cor-sucesso-suave);
+  color: var(--cor-sucesso);
+}
+
+.etapas__item--feita p {
+  color: var(--cor-sucesso);
+}
+
+.etapas__item--atual .etapas__marcador {
+  border-color: transparent;
+  background: var(--cor-primaria);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--cor-primaria-suave);
+}
+
+.etapas__item--atual p {
+  color: var(--cor-primaria);
+}
+
+.etapas__item--falha .etapas__marcador {
+  border-color: transparent;
+  background: var(--cor-perigo);
+  color: #fff;
+}
+
+.etapas__item--falha p {
+  color: var(--cor-perigo);
+}
+
+@media (max-width: 720px) {
+  .etapas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.nova-execucao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+}
+
+.seletor-labirinto {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-3);
+}
+
+@media (max-width: 720px) {
+  .seletor-labirinto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.seletor-labirinto__opcao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--esp-3) var(--esp-4);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie);
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor-labirinto__opcao strong {
+  font-size: var(--texto-lg);
+}
+
+.seletor-labirinto__opcao--ativa {
+  border: 2px solid var(--cor-primaria);
+  background: #f8faff;
+}
+
+.seletor-labirinto__melhor {
+  margin-top: var(--esp-2);
+  padding-top: var(--esp-2);
+  border-top: 1px dashed var(--cor-borda);
+  width: 100%;
+  font-size: var(--texto-xs);
+}
+
+.seletor-labirinto__melhor .mono {
+  color: var(--cor-sucesso);
+  font-weight: 700;
+}
+
+.como-funciona {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+}
+
+.como-funciona li {
+  display: flex;
+  gap: var(--esp-3);
+}
+
+.como-funciona__numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--cor-superficie-suave);
+  border: 1px solid var(--cor-borda);
+  font-size: var(--texto-xs);
+  font-weight: 700;
+}
+
+.como-funciona li:first-child .como-funciona__numero {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  color: #fff;
+}
+
+/* Avisos */
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  margin: 0;
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--raio-md);
+  font-size: var(--texto-sm);
+}
+
+.aviso--info {
+  border: 1px dashed var(--cor-borda-forte);
+  color: var(--cor-texto-secundario);
+}
+
+.aviso--alerta {
+  border: 1px solid #f7d58b;
+  background: var(--cor-alerta-suave);
+  color: #78350f;
+}
+
+.aviso--alerta p {
+  margin-top: 2px;
+}
+
+.aviso--alerta .botao {
+  margin-left: auto;
+}
+
+.aviso__icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--cor-alerta);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Modais */
+.modal__fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: var(--esp-4);
+  background: rgb(15 23 42 / 0.45);
+}
+
+.modal {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: var(--esp-6);
+  border-radius: var(--raio-lg);
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-modal);
+}
+
+.modal__titulo {
+  font-size: var(--texto-lg);
+  margin-bottom: var(--esp-2);
+}
+
+.modal__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-4);
+  font-size: var(--texto-md);
+  color: var(--cor-texto-secundario);
+}
+
+.modal__rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--esp-3);
+  margin-top: var(--esp-5);
+}
+
+.opcoes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.opcoes legend {
+  margin-bottom: var(--esp-2);
+  font-size: var(--texto-sm);
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: 12px var(--esp-4);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-md);
+  color: var(--cor-texto);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.opcao .mono {
+  margin-left: auto;
+}
+
+.opcao--marcada {
+  border-color: var(--cor-primaria);
+  background: #f8faff;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+  font-size: var(--texto-sm);
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.campo textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: var(--raio-md);
+  font-weight: 400;
+  resize: vertical;
+}
+
+/* Histórico */
+.filtro {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-suave);
+  border: 1px solid var(--cor-borda);
+}
+
+.filtro__opcao {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: var(--raio-sm);
+  background: transparent;
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  color: var(--cor-texto-secundario);
+  cursor: pointer;
+}
+
+.filtro__opcao--ativa {
+  background: var(--cor-superficie);
+  color: var(--cor-primaria);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.1);
+}
+
+.nova-execucao .labirinto__grade {
+  max-width: 320px;
+}
+
+/* Métricas na coluna lateral de 360px: o número cheio estoura o cartão. */
+.metricas-compactas .metrica__valor {
+  font-size: var(--texto-xl);
+  white-space: nowrap;
+}
+
+.metricas-compactas .metrica__unidade {
+  margin-left: 4px;
+  font-size: var(--texto-xs);
+}
