@@ -46,6 +46,25 @@ Além disso, o glossário busca:
 
 <font size="2"><p style="text-align: center">Fonte: [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr), 2026.</p></font>
 
+## Siglas
+
+| Sigla | Significado | Definição |
+| :--- | :--- | :--- |
+| <a id="sigla-api"></a>**API** | *Application Programming Interface* | Interface de programação. No projeto, é o backend em FastAPI, que recebe a telemetria da ponte e atende o front-end. |
+| <a id="sigla-der"></a>**DER** | Diagrama Entidade-Relacionamento | Modelo das tabelas do banco de dados, com atributos, chaves e cardinalidades. Ver [Persistência de dados](4.4%20-%20Projeto%20conceitual%20de%20software.md#persistencia-de-dados). |
+| <a id="sigla-dip"></a>**DIP** | *Dual In-line Package* | Formato da chave de 4 vias (DIP switch) da placa do robô. As vias 1 e 2 selecionam o tipo de labirinto (RF27). |
+| <a id="sigla-json"></a>**JSON** | *JavaScript Object Notation* | Formato de texto para dados estruturados. Cada mensagem de telemetria é um objeto JSON em uma linha. |
+| <a id="sigla-nvs"></a>**NVS** | *Non-Volatile Storage* | Área da memória flash da ESP32 que mantém dados depois de desligar. Guarda o mapa, o estado da execução e o contador de inicializações (RF42). |
+| <a id="sigla-pc"></a>**PC** | *Personal Computer* | Computador pessoal. No projeto, o notebook da equipe, onde rodam a ponte Bluetooth e os testes do firmware. |
+| <a id="sigla-pr"></a>**PR** | *Pull Request* | Pedido de integração de uma branch ao repositório, revisado pela equipe antes do merge. |
+| <a id="sigla-rf"></a>**RF** | Requisito Funcional | O que o sistema deve fazer. Os códigos (RF01, RF02…) estão em [Requisitos](2%20-%20Requisitos.md). |
+| <a id="sigla-rnf"></a>**RNF** | Requisito Não Funcional | Como o sistema deve se comportar (desempenho, confiabilidade…). Os códigos RNF-B estão no [Backlog não funcional do software](4.4%20-%20Projeto%20conceitual%20de%20software.md#2-backlog-nao-funcional). |
+| <a id="sigla-spp"></a>**SPP** | *Serial Port Profile* | Perfil do Bluetooth clássico que emula uma porta serial. É o canal entre o robô e a ponte. |
+| <a id="sigla-utc"></a>**UTC** | *Coordinated Universal Time* | Tempo universal coordenado, referência dos fusos horários. O horário de Brasília é UTC−3. |
+| <a id="sigla-utf8"></a>**UTF-8** | *8-bit Unicode Transformation Format* | Codificação de texto Unicode usada nas mensagens de telemetria. |
+
+<font size="2"><p style="text-align: center">Fonte: [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr), 2026.</p></font>
+
 ---
 
 ## Referências Bibliográficas
@@ -62,3 +81,4 @@ Além disso, o glossário busca:
 | 1.1 | 25/09/2026 | Atualização com a descoberta do labirinto em execução, a retomada, os comandos de iniciar e parar e o flood fill | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
 | 1.2 | 27/09/2026 | Alinhamento ao modelo de execução lógica com até 3 tentativas: inclusão de Execução Lógica, Tentativa e Interrupção; revisão de Canal do Micromouse, Encerrar, Execução, Failed, Motivo de Falha, Rejeitar, Retomada, Retomar, Sistema de Telemetria, Tempo Limite, Tentativa Rejeitada e Tipo de Labirinto; estados passam a se referir à tentativa | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
 | 1.3 | 02/10/2026 | Tipo de labirinto selecionado no DIP switch, conforme esclarecimento do professor: revisão de Área de Objetivo e Tipo de Labirinto; remoção de Prova de Borda | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
+| 1.4 | 02/10/2026 | Inclusão da seção de siglas, com âncoras para os links do Contrato de telemetria | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
