@@ -17,6 +17,7 @@ Site de documentação do projeto **2026.2 PI1 Grupo 01 Juliana**.
     - [4.2 Energia](4.2 - Projeto conceitual de energia.md)
     - [4.3 Hardware](4.3 - Projeto conceitual de hardware.md)
     - [4.4 Software](4.4 - Projeto conceitual de software.md)
+        - [4.4.1 Contrato de telemetria](4.4.1 - Contrato de telemetria.md)
 5. [Cronograma](5 - Cronograma.md)
 6. [Orçamento](6 - Orçamento.md)
 7. Testes

@@ -1,0 +1,13 @@
+[project]
+name = "micromouse-backend"
+version = "0.1.0"
+description = "Backend do Sistema de Telemetria do Micromouse (PI1 Grupo 01)"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.7"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
