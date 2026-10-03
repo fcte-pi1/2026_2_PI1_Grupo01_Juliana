@@ -68,11 +68,12 @@ static void test_tof_mede_distancia_ate_as_paredes(void)
     TEST_ASSERT_TRUE(sim_tof_medir(0, &mm));
     TEST_ASSERT_UINT16_WITHIN(2, 404, mm);
 
-    /* Laterais: sensor a 30 mm do centro, paredes a 84 mm do centro. */
+    /* Laterais a 45°: sensor a 30 mm do centro, paredes a 84 mm do centro,
+     * então o feixe percorre 54 / sen(45°) = 76 mm. */
     TEST_ASSERT_TRUE(sim_tof_medir(2, &mm));
-    TEST_ASSERT_UINT16_WITHIN(2, 54, mm);
+    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
     TEST_ASSERT_TRUE(sim_tof_medir(3, &mm));
-    TEST_ASSERT_UINT16_WITHIN(2, 54, mm);
+    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
 }
 
 static void test_tof_fora_de_alcance(void)
@@ -98,8 +99,8 @@ static void test_encoders_acompanham_o_deslocamento(void)
 {
     sim_mundo_iniciar(CORREDOR_1X3);
     sim_motor_habilitar(true);
-    sim_motor_definir(0, 500);
-    sim_motor_definir(1, 500);
+    sim_motor_definir(0, 300);
+    sim_motor_definir(1, 300);
     sim_mundo_avancar(1000);
 
     sim_pose_t pose = sim_pose();

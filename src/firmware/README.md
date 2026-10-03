@@ -47,7 +47,7 @@ A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, m
 ```text
 src/firmware/
 ├── platformio.ini        ambientes: esp32_sim (ESP32) e native (PC/testes)
-├── include/config/       pinos.h e robo.h (valores definitivos no ARQ-09)
+├── include/config/       pinos.h e robo.h (valores e fontes do ARQ-09)
 ├── lib/
 │   ├── hal/              contratos do hardware (hal_tof.h, hal_motor.h, ...)
 │   │   └── sim/          implementação simulada de cada contrato
@@ -91,8 +91,8 @@ A simulação lê labirintos desenhados assim; a largada é a célula do canto i
 
 ## Pendências
 
-- **Pinos:** a ESP32 de 30 pinos tem 23 GPIOs livres, e a Tabela 2 do 4.3 pede 24 sinais. Hoje `DIP_4` ficou sem pino. Opções: ligar o XSHUT de só 3 ToF (o quarto fica com o endereço padrão) ou dispensar uma chave do DIP. A decisão é do ARQ-09, com a Eletrônica.
-- Valores físicos em `config/robo.h` e o formato das mensagens são provisórios até o ARQ-09 e o ARQ-01.
+- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
+- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF. O formato das mensagens é provisório até o ARQ-01.
 
 > [!WARNING]
 > **Não acrescente arquivos referentes a _hardware_ nesta pasta.** Eles deverão ser armazenados na pasta [hw](../../hw) deste repositório. Também não versione a saída da compilação (`.pio/`, `.bin`, `.elf`).
