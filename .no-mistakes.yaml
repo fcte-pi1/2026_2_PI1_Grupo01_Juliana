@@ -1,0 +1,6 @@
+# Configuração do no-mistakes (https://github.com/kunchenguid/no-mistakes).
+# O daemon lê pr.template e pr.appendix só da main, então mudanças aqui
+# valem a partir do merge.
+pr:
+  template: .github/pull_request_template.md
+  appendix: minimal
