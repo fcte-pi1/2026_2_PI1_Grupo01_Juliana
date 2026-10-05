@@ -1,0 +1,5 @@
+# Simulador Wokwi: roda o firmware compilado pelo ambiente esp32_sim (pio run)
+[wokwi]
+version = 1
+firmware = '.pio/build/esp32_sim/firmware.bin'
+elf = '.pio/build/esp32_sim/firmware.elf'
