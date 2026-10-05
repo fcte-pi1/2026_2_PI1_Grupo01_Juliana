@@ -2,8 +2,18 @@
 .DS_Store
 .vscode
 
-# Adicione outros arquivos a serem ignorados aqui
-# ...
+# Python (src/backend)
+__pycache__/
+*.py[cod]
+.venv/
+.env
+
+# PlatformIO (src/firmware)
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
 
 # LaTeX
 
