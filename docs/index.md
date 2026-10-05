@@ -12,6 +12,7 @@ Site de documentação do projeto **2026.2 PI1 Grupo 01 Juliana**.
 1. [TAP](1 - TAP.md)
 2. [Requisitos](2 - Requisitos.md)
 3. [EAP](3 - EAP.md)
+   - [Decisões de arquitetura (ADRs)](decisoes/README.md)
 4. Projeto conceitual
     - [4.1 Estruturas](4.1 - Projeto conceitual de estruturas.md)
     - [4.2 Energia](4.2 - Projeto conceitual de energia.md)
