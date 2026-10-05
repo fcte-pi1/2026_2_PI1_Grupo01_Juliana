@@ -1,19 +1,48 @@
-# _Backend_
+# Backend — Sistema de Telemetria Micromouse
 
-Esta pasta deverá armazenar arquivos referentes a:
+API **FastAPI** + **PostgreSQL** (MVC: rotas → serviços → repositórios/modelos).
 
-- Código-fonte da API REST: rotas, controladores, modelos e lógica de negócio.
-- Arquivos de configuração do servidor: `app.py`, `server.js`, `main.go` etc., dependendo da linguagem/framework utilizado ([Flask](https://flask.palletsprojects.com/), [FastAPI](https://fastapi.tiangolo.com/), [Express](https://expressjs.com/), [Django](https://www.djangoproject.com/) etc.).
-- Arquivos de definição de dependências: `requirements.txt` ou `pyproject.toml` (Python), `package.json` (Node.js), `pom.xml` (Java/Maven) etc.
-- Scripts de migração e esquemas de banco de dados: arquivos `.sql`, scripts de migração ([Alembic](https://alembic.sqlalchemy.org/), [Sequelize](https://sequelize.org/) etc.) e seeds de dados para desenvolvimento.
-- Arquivos de configuração de ambiente: `.env.example` com as variáveis de ambiente necessárias (nunca o `.env` real).
-- Arquivos de containerização: `Dockerfile` e `docker-compose.yml`, caso o serviço seja executado em contêiner.
+## Subir o ambiente
 
-Evite incluir:
+```bash
+cd src/backend
+cp .env.example .env   # opcional; docker-compose já define variáveis
+docker compose up --build
+```
 
-- Credenciais e segredos: arquivos `.env`, chaves de API, senhas, tokens de acesso ou qualquer dado sensível **nunca** devem ser versionados.
-- Artefatos de build: diretórios como `__pycache__/`, `dist/`, `build/`, `.eggs/` devem ser gerados localmente e ignorados via `.gitignore`.
-- Dependências instaladas: pastas como `node_modules/` ou ambientes virtuais Python (`venv/`, `.env/`) não devem ser incluídos no repositório.
-- Arquivos temporários/específicos do sistema operacional: arquivos gerados automaticamente pelo sistema ou pelo gerenciador de arquivos (ex.: `*~`, `.DS_Store`, `Thumbs.db`).
-> [!WARNING]
-> **Não acrescente arquivos referentes ao _frontend_ nesta pasta.** Eles deverão ser armazenados na pasta [frontend](https://github.com/fcte-pi1/template/tree/main/src/frontend) deste repositório.
+- API: http://localhost:8000/docs  
+- Back-health (API + banco): http://localhost:8000/back-health  
+
+## Onde implementar cada tarefa (BACK-01 … BACK-08)
+
+| Tarefa | Pasta / arquivo |
+|--------|------------------|
+| BACK-01 Persistência / consultas | `app/repositories/`, `app/models/` |
+| BACK-03 Máquina de estados | `app/services/gerenciador_execucoes.py` |
+| BACK-04 Métricas | `app/services/calculo_metricas.py` |
+| BACK-05 Link / tempo | `app/services/monitor_conexao.py` (limites em `app/config.py`) |
+| BACK-06 SQL específico | `app/repositories/` |
+| BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |
+| BACK-08 Ponte serial | `ponte/` (processo separado) |
+| HTTP / contrato ARQ-02 | `app/routers/` (501 até implementar) |
+| Schemas ARQ-01 / ARQ-02 | `app/schemas/telemetria.py`, `app/schemas/api.py` |
+
+## Desenvolvimento local
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+export DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse
+alembic upgrade head
+uvicorn app.main:app --reload
+pytest
+ruff check .
+```
+
+## Migrações
+
+```bash
+alembic revision --autogenerate -m "descricao"
+alembic upgrade head
+```
