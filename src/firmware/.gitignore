@@ -1,2 +1,5 @@
 # Saída de compilação do PlatformIO
 .pio/
+
+# Saída do simulador no PC
+simulador/build/
