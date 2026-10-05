@@ -29,8 +29,12 @@
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
 #define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
 
-/* Motores — [ENE] Tabela de proteções */
-#define MOTOR_PWM_MAX_PERCENT       81      /* barramento de 7,4 V em motor de 6 V: média ≤ 6 V */
+/*
+ * Motores — [ENE] 4.2 v1.3, Tabelas 7 e 8.
+ * O limite de PWM não é fixo: potência máxima = MOTOR_POTENCIA_MAX x 6000 / V_bateria_mV,
+ * limitada a 100 %. Dá 71 % com 8,4 V, 81 % com 7,4 V e 100 % com as pilhas (≤ 6 V).
+ */
+#define MOTOR_TENSAO_NOMINAL_MV     6000    /* [EST] N20 de 6 V */
 #define MOTOR_TRAVADO_MS            1000    /* encoder parado com PWM ativo: desliga a ponte H (stuck) */
 
 /*
@@ -59,5 +63,23 @@
 #define BATERIA_DIVISOR             3.2f    /* [HW] divisor 22 kΩ / 10 kΩ: V_bateria = V_adc x 3,2 */
 #define BATERIA_CHEIA_MV            8400    /* [ENE] 4,2 V por célula */
 #define BATERIA_CORTE_MV            7000    /* [ENE] corte por subtensão: 3,5 V por célula */
+#define BATERIA_ALERTA_MV           7400    /* [ENE] alerta (LED + buzzer): 3,7 V por célula, acima do corte */
+
+/* Fonte alternativa — 4 pilhas AA em série, selecionada por jumper [ENE] */
+#define BATERIA_AA_ALERTA_MV        5000    /* [ENE] alerta de carga mínima das pilhas */
+
+/*
+ * Curvas de descarga: pares {mV, %}, da tensão maior para a menor; o firmware
+ * interpola entre os pontos (FIRM-06, #128).
+ * PROVISÓRIO: curva típica de LiPo e de pilha alcalina sob a corrente média de
+ * 0,43 A [ENE]. Será trocada pela curva medida nos testes de energia (7.2).
+ * Na LiPo, 0 % é o corte (7,0 V): é a carga que o robô ainda pode usar.
+ */
+#define BATERIA_CURVA_LIPO { \
+    {8400, 100}, {8200, 90}, {8000, 75}, {7800, 55}, \
+    {7600, 35},  {7400, 15}, {7200, 5},  {7000, 0} }
+#define BATERIA_CURVA_AA { \
+    {6400, 100}, {6000, 80}, {5600, 50}, {5200, 20}, \
+    {5000, 10},  {4400, 0} }
 
 #endif /* CONFIG_ROBO_H */
