@@ -183,3 +183,52 @@ def test_mensagens_em_portugues(tmp_path):
     assert "labirinto: deve ser '4x4', '8x4', '12x4' ou 'invalido'" in mensagem
     assert "tentativas[0].celulas[2].x: deve ser no máximo 11" in mensagem
     assert "tentativas[0].eventos[0].segundos: campo obrigatório" in mensagem
+
+
+def test_rejeita_travessia_pela_parede_de_saida(tmp_path):
+    dados = copy.deepcopy(VALIDO)
+    dados["tentativas"][0]["celulas"][0]["paredes"] = 15  # (0, 0) com parede N
+
+    mensagem = _erro(tmp_path, dados)
+    assert "tentativas[0].celulas[1]: atravessa a parede N de (0, 0)" in mensagem
+    assert "(raiz)" not in mensagem
+
+
+def test_rejeita_travessia_pela_parede_de_entrada(tmp_path):
+    dados = copy.deepcopy(VALIDO)
+    dados["tentativas"][1]["celulas"][1]["paredes"] = 11  # (1, 2) com parede O
+
+    assert "tentativas[1].celulas[1]: atravessa a parede O de (1, 2)" in _erro(tmp_path, dados)
+
+
+def test_rejeita_revisita_com_mascara_diferente(tmp_path):
+    dados = copy.deepcopy(VALIDO)
+    dados["tentativas"][1]["celulas"][0]["paredes"] = 9  # era 8 na tentativa 0
+
+    mensagem = _erro(tmp_path, dados)
+    assert "tentativas[1].celulas[0]: (0, 2) tem paredes 9" in mensagem
+    assert "mas tentativas[0].celulas[2] tem 8" in mensagem
+
+
+# De (1, 2) até ao lado de (1, 1) sem passar pela parede S de (1, 2).
+_CONTORNO = [{"x": 2, "y": 2, "paredes": 0}, {"x": 2, "y": 1, "paredes": 0}]
+
+
+def test_rejeita_vizinhas_que_discordam_da_parede(tmp_path):
+    dados = copy.deepcopy(VALIDO)
+    # O robô não passa entre (0, 1), que tem parede L, e (1, 1), que não tem parede O.
+    dados["tentativas"][1]["celulas"] += _CONTORNO + [{"x": 1, "y": 1, "paredes": 1}]
+
+    assert (
+        "tentativas[0].celulas[1] (0, 1) e tentativas[1].celulas[4] (1, 1) "
+        "discordam na parede entre elas"
+    ) in _erro(tmp_path, dados)
+
+
+def test_aceita_revisita_coerente_entre_tentativas(tmp_path):
+    dados = copy.deepcopy(VALIDO)
+    dados["tentativas"][0]["celulas"].append({"x": 0, "y": 1, "paredes": 12})
+    dados["tentativas"][1]["celulas"] += _CONTORNO + [{"x": 1, "y": 1, "paredes": 9}]
+
+    roteiro = carregar(_gravar(tmp_path, dados))
+    assert roteiro.tentativas[1].celulas[0] == roteiro.tentativas[0].celulas[2]

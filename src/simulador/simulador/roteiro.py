@@ -103,6 +103,56 @@ class Roteiro(_Modelo):
     s_por_celula: Annotated[float, Field(gt=0)]
     tentativas: Annotated[list[Tentativa], Field(min_length=1)]
 
+    @model_validator(mode="after")
+    def _paredes_coerentes(self) -> "Roteiro":
+        # Erros aqui já trazem o caminho na mensagem; validar() não põe prefixo.
+        for i, tentativa in enumerate(self.tentativas):
+            celulas = tentativa.celulas
+            for j, (a, b) in enumerate(zip(celulas, celulas[1:]), start=1):
+                direcao = _DIRECOES[(b.x - a.x, b.y - a.y)]
+                for lado, celula in ((direcao, a), (_OPOSTA[direcao], b)):
+                    if celula.paredes & _BITS[lado]:
+                        raise ValueError(
+                            f"tentativas[{i}].celulas[{j}]: atravessa a parede {lado} de "
+                            f"({celula.x}, {celula.y})"
+                        )
+
+        # O labirinto é o mesmo em todas as tentativas: uma máscara por célula.
+        mapa: dict[tuple[int, int], tuple[int, str]] = {}
+        for i, tentativa in enumerate(self.tentativas):
+            for j, celula in enumerate(tentativa.celulas):
+                posicao = f"tentativas[{i}].celulas[{j}]"
+                chave = (celula.x, celula.y)
+                if chave not in mapa:
+                    mapa[chave] = (celula.paredes, posicao)
+                elif mapa[chave][0] != celula.paredes:
+                    paredes, primeira = mapa[chave]
+                    raise ValueError(
+                        f"{posicao}: ({celula.x}, {celula.y}) tem paredes {celula.paredes}, "
+                        f"mas {primeira} tem {paredes}"
+                    )
+
+        # Vizinhas presentes no roteiro concordam na parede que dividem.
+        for (x, y), (paredes, posicao) in mapa.items():
+            for direcao, (dx, dy) in (("L", (1, 0)), ("N", (0, 1))):
+                vizinha = mapa.get((x + dx, y + dy))
+                if vizinha is None:
+                    continue
+                aqui = bool(paredes & _BITS[direcao])
+                ali = bool(vizinha[0] & _BITS[_OPOSTA[direcao]])
+                if aqui != ali:
+                    raise ValueError(
+                        f"{posicao} ({x}, {y}) e {vizinha[1]} ({x + dx}, {y + dy}) "
+                        f"discordam na parede entre elas"
+                    )
+        return self
+
+
+# Máscara do contrato e direção do passo entre células vizinhas (N = +y, L = +x).
+_BITS = {"N": 1, "S": 2, "L": 4, "O": 8}
+_OPOSTA = {"N": "S", "S": "N", "L": "O", "O": "L"}
+_DIRECOES = {(0, 1): "N", (0, -1): "S", (1, 0): "L", (-1, 0): "O"}
+
 
 # Rótulos das uniões discriminadas que o Pydantic põe no caminho do erro.
 _ROTULOS = {"perda_link", "linha_crua", "parada_boot", "sucesso", "falha", "nenhum"}
@@ -143,7 +193,10 @@ def validar(texto: str | bytes, origem: str = "roteiro") -> Roteiro:
     try:
         return Roteiro.model_validate_json(texto)
     except ValidationError as erro:
-        linhas = [f"{_caminho(e['loc'])}: {_mensagem(e)}" for e in erro.errors()]
+        linhas = [
+            f"{_caminho(e['loc'])}: {_mensagem(e)}" if e["loc"] else _mensagem(e)
+            for e in erro.errors()
+        ]
         raise RoteiroInvalido(f"{origem}: roteiro inválido\n  " + "\n  ".join(linhas)) from erro
 
 
