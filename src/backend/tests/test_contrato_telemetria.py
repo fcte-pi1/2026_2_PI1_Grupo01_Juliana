@@ -4,15 +4,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-
 from contrato.telemetria import (
+    TAMANHO_MAXIMO,
     Comando,
     Deduplicador,
     EntradaPonte,
     LinhaInvalida,
     RelogioDoRobo,
     RespostaPonte,
-    TAMANHO_MAXIMO,
     escrever_linha,
     ler_linha,
 )
@@ -29,6 +28,14 @@ def _linha(**campos) -> str:
 
 def _tel(**mudancas) -> str:
     return _linha(**{**TEL, **mudancas})
+
+
+def _evento_bruto(**campos) -> str:
+    return _linha(v=1, boot=7, seq=1, t_ms=1, **campos)
+
+
+def _falha(**campos) -> str:
+    return _evento_bruto(tipo="falha", x=0, y=0, **campos)
 
 
 def test_exemplos_cobrem_todos_os_tipos():
@@ -57,14 +64,14 @@ def test_exemplo_ida_e_volta_byte_a_byte(linha):
         _tel(eixo_longo="z"),
         _linha(**{k: v for k, v in TEL.items() if k != "bat_mv"}),
         _tel(extra="x" * TAMANHO_MAXIMO),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="passo", x=0, y=0, paredes=16),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="hc_item", componente="tof_traseiro", aprovado=True, valor=None),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="hc_resultado", aprovado=True, tipo_dip="invalido", inicio="nova"),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="falha", motivo="collision", origem="web", x=0, y=0, componente=None),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="falha", motivo="stuck", origem="boot", x=0, y=0, componente=None),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="falha", motivo="time_exceeded", origem="automatica", x=0, y=0, componente=None),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="falha", motivo="falha_componente", origem="automatica", x=0, y=0, componente=None),
-        _linha(v=1, boot=7, seq=1, t_ms=1, tipo="falha", motivo="collision", origem="automatica", x=0, y=0, componente="tof_direito"),
+        _evento_bruto(tipo="passo", x=0, y=0, paredes=16),
+        _evento_bruto(tipo="hc_item", componente="tof_traseiro", aprovado=True, valor=None),
+        _evento_bruto(tipo="hc_resultado", aprovado=True, tipo_dip="invalido", inicio="nova"),
+        _falha(motivo="collision", origem="web", componente=None),
+        _falha(motivo="stuck", origem="boot", componente=None),
+        _falha(motivo="time_exceeded", origem="automatica", componente=None),
+        _falha(motivo="falha_componente", origem="automatica", componente=None),
+        _falha(motivo="collision", origem="automatica", componente="tof_direito"),
     ],
 )
 def test_linha_invalida_e_descartada(linha):
