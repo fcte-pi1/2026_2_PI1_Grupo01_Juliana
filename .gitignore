@@ -353,3 +353,6 @@ src/firmware/**/build/
 
 # Windows (metadados de download no WSL)
 *:Zone.Identifier
+
+# Simulador (estado local: boot persistido)
+.simulador/
