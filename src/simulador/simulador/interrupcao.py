@@ -9,7 +9,7 @@ import json
 import logging
 import threading
 
-from contrato.telemetria import VERSAO, Comando, Falha, HcResultado, Mensagem, Sucesso, Tel
+from contrato.telemetria import VERSAO, Comando, Falha, HcResultado, Sucesso, Tel
 from pydantic import ValidationError
 
 from simulador.gerador import Item, LinhaCrua
@@ -51,10 +51,16 @@ def _comando_valido(linha: str) -> bool:
 
 
 class Situacao:
-    """O que o robô já enviou no boot atual: posição, última tel e se já parou."""
+    """O que o robô já enviou no boot atual: posição, última tel e se já parou.
+
+    Depois de uma queda de link saem eventos antigos (reenvio do buffer); só a mensagem de
+    `seq` maior que todos os já vistos atualiza a posição e numera a próxima.
+    """
 
     def __init__(self):
-        self.ultima: tuple[int, Mensagem] | None = None  # (t simulado, mensagem)
+        self.boot: int | None = None
+        self.seq = -1  # maior seq já enviado no boot
+        self.ancora_ms = 0  # t simulado - t_ms, fixado na primeira mensagem do boot
         self.tel: Tel | None = None
         self.x = self.y = 0
         self.parado = False
@@ -63,11 +69,13 @@ class Situacao:
         """Atualiza a situação com um item que acabou de sair."""
         if isinstance(item, LinhaCrua):
             return
-        if self.ultima is not None and item.boot != self.ultima[1].boot:
-            self.tel, self.parado = None, False  # nova tentativa
-        self.ultima = (t_simulado_ms, item)
-        if hasattr(item, "x"):
-            self.x, self.y = item.x, item.y
+        if item.boot != self.boot:  # nova tentativa
+            self.boot, self.seq, self.ancora_ms = item.boot, -1, t_simulado_ms - item.t_ms
+            self.tel, self.parado = None, False
+        if item.seq > self.seq:
+            self.seq = item.seq
+            if hasattr(item, "x"):
+                self.x, self.y = item.x, item.y
         if isinstance(item, Tel):
             self.tel = item
         if isinstance(item, Sucesso | Falha) or (
@@ -81,16 +89,14 @@ class Situacao:
         return self.tel is not None and not self.parado
 
     def _t_ms(self, t_simulado_ms: int) -> int:
-        t_anterior, mensagem = self.ultima
-        return mensagem.t_ms + t_simulado_ms - t_anterior
+        return t_simulado_ms - self.ancora_ms
 
     def confirmacao(self, t_simulado_ms: int) -> Falha:
         """`falha` com origem web na célula atual; o robô passa a ficar parado."""
-        _, mensagem = self.ultima
         falha = Falha(
             v=VERSAO,
-            boot=mensagem.boot,
-            seq=mensagem.seq + 1,
+            boot=self.boot,
+            seq=self.seq + 1,
             t_ms=self._t_ms(t_simulado_ms),
             tipo="falha",
             motivo=None,
@@ -104,12 +110,11 @@ class Situacao:
 
     def tel_parada(self, t_simulado_ms: int) -> Tel:
         """Próxima tel com o robô parado em `failed`; a bateria cai 1 mV/s como no gerador."""
-        _, mensagem = self.ultima
         t_ms = self._t_ms(t_simulado_ms)
         bat_mv = max(0, self.tel.bat_mv - (t_ms // 1000 - self.tel.t_ms // 1000))
         tel = self.tel.model_copy(
             update={
-                "seq": mensagem.seq + 1,
+                "seq": self.seq + 1,
                 "t_ms": t_ms,
                 "estado": "failed",
                 "x": self.x,

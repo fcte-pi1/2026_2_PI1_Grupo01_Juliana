@@ -4,6 +4,7 @@ Função pura, sem relógio nem I/O: cada item sai com o instante simulado em qu
 deve ser enviado. Quem dorme, acelera e escreve é o emissor.
 """
 
+from collections import deque
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import get_args
@@ -30,6 +31,8 @@ DURACAO_HC_MS = 2000  # hc_item em 100, 300, ..., 1700 ms; hc_resultado em 1900 
 DURACAO_FINAL_MS = 3000  # tel a 1 Hz em success/failed depois do fim
 TAMANHO_CELULA_MM = 180
 VELOCIDADE_MAXIMA_MM_S = 2000  # teto do vel_mm_s no contrato
+TAMANHO_BUFFER = 64  # eventos guardados para reenvio (buffer circular do firmware)
+INTERVALO_REENVIO_MS = 1000 // 20  # reenvio a no máximo 20 por segundo
 
 
 @dataclass(frozen=True)
@@ -197,6 +200,90 @@ def _corrida(estado: _Boot, inicio_ms: int) -> Iterator[tuple[int, Item]]:
     return fim_ms
 
 
+def _tentativa(estado: _Boot, inicio: str) -> Iterator[tuple[int, Item]]:
+    """Health-check e, se aprovado, a corrida. Devolve (pelo return) o t_ms final."""
+    aprovado = yield from _health_check(estado, inicio)
+    if not aprovado:
+        return DURACAO_HC_MS  # health-check reprovado: a tentativa termina aqui
+    return (yield from _corrida(estado, DURACAO_HC_MS))
+
+
+def _quedas(estado: _Boot) -> list[tuple[int, int]]:
+    """Intervalos [início, fim) de t simulado sem link, já unidos quando se sobrepõem."""
+    periodo_celula_ms = round(estado.roteiro.s_por_celula * 1000)
+    quedas = sorted(
+        (t, t + round(evento.segundos * 1000))
+        for evento in estado.tentativa.eventos
+        if evento.tipo == "perda_link"
+        for t in [estado.inicio_ms + DURACAO_HC_MS + evento.na_celula * periodo_celula_ms]
+    )
+    unidas: list[tuple[int, int]] = []
+    for inicio, fim in quedas:
+        if unidas and inicio <= unidas[-1][1]:
+            unidas[-1] = (unidas[-1][0], max(unidas[-1][1], fim))
+        else:
+            unidas.append((inicio, fim))
+    return unidas
+
+
+def _eh_evento(item: Item) -> bool:
+    return not isinstance(item, Tel | LinhaCrua)
+
+
+def _com_link(estado: _Boot, itens: Iterator[tuple[int, Item]]) -> Iterator[tuple[int, Item]]:
+    """Aplica as quedas de link de um boot à linha do tempo `itens` (de _tentativa).
+
+    Durante a queda nada sai, mas todo evento entra no buffer circular. Na volta, o buffer
+    inteiro é reenviado do mais antigo ao mais novo, um a cada INTERVALO_REENVIO_MS; os
+    eventos novos entram no fim da fila e a tel continua saindo na hora (seção Reconexão
+    do contrato). Devolve (pelo return) o t simulado em que o boot termina.
+    """
+    buffer: deque[Item] = deque(maxlen=TAMANHO_BUFFER)
+    fila: deque[Item] = deque()
+    proxima_ms = 0
+    pendentes = deque(_quedas(estado))
+    fim_ms = 0
+
+    def drenar(ate_ms: int) -> Iterator[tuple[int, Item]]:
+        """Envia a fila até `ate_ms`, parando nas quedas e recomeçando em cada volta."""
+        nonlocal fila, proxima_ms
+        while True:
+            caiu = bool(pendentes) and pendentes[0][0] <= ate_ms
+            limite_ms = pendentes[0][0] if caiu else ate_ms + 1
+            while fila and proxima_ms < limite_ms:
+                yield proxima_ms, fila.popleft()
+                proxima_ms += INTERVALO_REENVIO_MS
+            if not caiu or pendentes[0][1] > ate_ms:
+                return
+            _, volta_ms = pendentes.popleft()
+            fila, proxima_ms = deque(buffer), volta_ms
+
+    def tentativa() -> Iterator[tuple[int, Item]]:
+        nonlocal fim_ms
+        fim_ms = yield from itens
+
+    t = estado.inicio_ms
+    for t, item in tentativa():
+        yield from drenar(t)
+        sem_link = bool(pendentes) and pendentes[0][0] <= t
+        if _eh_evento(item):
+            buffer.append(item)
+            if sem_link:
+                continue
+            if fila:
+                fila.append(item)  # sai depois do que ainda falta reenviar
+                continue
+        if not sem_link:
+            yield t, item
+
+    if pendentes and pendentes[0][0] <= t:
+        yield from drenar(pendentes[0][1])  # o link volta depois do último item
+    while fila:
+        yield proxima_ms, fila.popleft()
+        proxima_ms += INTERVALO_REENVIO_MS
+    return max(estado.inicio_ms + fim_ms, proxima_ms - INTERVALO_REENVIO_MS)  # reenvio passa do fim
+
+
 def gerar(roteiro: Roteiro, opcoes: Opcoes = Opcoes()) -> Iterator[tuple[int, Item]]:
     """Linha do tempo do roteiro: pares (t simulado em ms, mensagem ou linha crua)."""
     agora_ms = 0
@@ -204,9 +291,4 @@ def gerar(roteiro: Roteiro, opcoes: Opcoes = Opcoes()) -> Iterator[tuple[int, It
         agora_ms += round(tentativa.pausa_s * 1000)
         inicio = tentativa.inicio or ("nova" if i == 0 else "retomada")
         estado = _Boot(roteiro, tentativa, opcoes, opcoes.boot + i, agora_ms)
-        aprovado = yield from _health_check(estado, inicio)
-        agora_ms += DURACAO_HC_MS
-        if not aprovado:
-            continue  # health-check reprovado: a tentativa termina aqui
-        fim_ms = yield from _corrida(estado, DURACAO_HC_MS)
-        agora_ms += fim_ms - DURACAO_HC_MS
+        agora_ms = yield from _com_link(estado, _tentativa(estado, inicio))
