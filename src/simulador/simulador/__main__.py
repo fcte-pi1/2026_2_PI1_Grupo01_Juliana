@@ -2,8 +2,9 @@
 
 import argparse
 import logging
+import os
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
@@ -12,6 +13,13 @@ from simulador.roteiro import RoteiroInvalido, carregar
 from simulador.saidas import PtyIndisponivel, SaidaPty
 
 SAIDAS = ("stdout", "pty", "http")
+SAIDA_PADRAO = "stdout"
+ACELERAR_PADRAO = 1.0
+TAXA_TEL_PADRAO_HZ = 5.0
+
+
+class ConfiguracaoInvalida(ValueError):
+    """Valor de configuração que não serve, vindo do ambiente."""
 
 
 def criar_parser() -> argparse.ArgumentParser:
@@ -24,16 +32,14 @@ def criar_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--saida",
         choices=SAIDAS,
-        default="stdout",
-        help="para onde as linhas vão (padrão: stdout)",
+        help="para onde as linhas vão (padrão: $SIMULADOR_SAIDA ou stdout)",
     )
-    parser.add_argument("--url", help="URL da API, usada com --saida http")
+    parser.add_argument("--url", help="URL da API, usada com --saida http (padrão: $API_URL)")
     parser.add_argument(
         "--acelerar",
         type=float,
-        default=1.0,
         metavar="N",
-        help="divide as esperas e o t_ms por N (padrão: 1)",
+        help="divide as esperas e o t_ms por N (padrão: $SIMULADOR_ACELERAR ou 1)",
     )
     parser.add_argument(
         "--sem-espera",
@@ -43,9 +49,8 @@ def criar_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--taxa-tel",
         type=float,
-        default=5.0,
         metavar="HZ",
-        help="taxa da tel em movimento, de 1 a 20 (padrão: 5)",
+        help="taxa da tel em movimento, de 1 a 20 (padrão: $SIMULADOR_TAXA_TEL_HZ ou 5)",
     )
     parser.add_argument(
         "--boot",
@@ -54,6 +59,33 @@ def criar_parser() -> argparse.ArgumentParser:
         help="força o boot inicial em vez do salvo em .simulador/boot",
     )
     return parser
+
+
+def _numero(ambiente: Mapping[str, str], nome: str, padrao: float) -> float:
+    """Lê um número do ambiente; sem a variável, devolve o padrão."""
+    texto = ambiente.get(nome)
+    if texto is None:
+        return padrao
+    try:
+        return float(texto)
+    except ValueError:
+        raise ConfiguracaoInvalida(f"{nome} deve ser um número (recebido {texto!r})") from None
+
+
+def aplicar_ambiente(args: argparse.Namespace, ambiente: Mapping[str, str]) -> None:
+    """Preenche as opções que faltaram com as variáveis do .env; a opção vence a variável."""
+    if args.saida is None:
+        args.saida = ambiente.get("SIMULADOR_SAIDA", SAIDA_PADRAO)
+        if args.saida not in SAIDAS:
+            raise ConfiguracaoInvalida(
+                f"SIMULADOR_SAIDA deve ser {', '.join(SAIDAS)} (recebido {args.saida!r})"
+            )
+    if args.url is None:
+        args.url = ambiente.get("API_URL")
+    if args.acelerar is None:
+        args.acelerar = _numero(ambiente, "SIMULADOR_ACELERAR", ACELERAR_PADRAO)
+    if args.taxa_tel is None:
+        args.taxa_tel = _numero(ambiente, "SIMULADOR_TAXA_TEL_HZ", TAXA_TEL_PADRAO_HZ)
 
 
 def _configurar_log() -> logging.Logger:
@@ -71,17 +103,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Ponto de entrada; devolve o código de saída."""
     args = criar_parser().parse_args(argv)
     log = _configurar_log()
+    try:
+        aplicar_ambiente(args, os.environ)
+    except ConfiguracaoInvalida as erro:
+        log.error("%s", erro)
+        return 1
 
     if not TAXA_TEL_MINIMA_HZ <= args.taxa_tel <= TAXA_TEL_MAXIMA_HZ:
         log.error(
-            "--taxa-tel deve ficar entre %d e %d Hz (recebido %g)",
+            "--taxa-tel (ou SIMULADOR_TAXA_TEL_HZ) deve ficar entre %d e %d Hz (recebido %g)",
             TAXA_TEL_MINIMA_HZ,
             TAXA_TEL_MAXIMA_HZ,
             args.taxa_tel,
         )
         return 1
     if args.acelerar <= 0:
-        log.error("--acelerar deve ser maior que 0 (recebido %g)", args.acelerar)
+        log.error(
+            "--acelerar (ou SIMULADOR_ACELERAR) deve ser maior que 0 (recebido %g)", args.acelerar
+        )
         return 1
     if args.saida == "http":
         log.error("--saida %s ainda não implementada", args.saida)

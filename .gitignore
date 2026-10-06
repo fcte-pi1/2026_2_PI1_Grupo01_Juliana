@@ -347,6 +347,7 @@ Thumbs.db
 __pycache__/
 .venv/
 .pytest_cache/
+.env
 
 # Firmware (teste no PC)
 src/firmware/**/build/

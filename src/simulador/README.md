@@ -47,6 +47,31 @@ para o stderr.
 
 Mesmo acelerado, o simulador nunca passa de 20 linhas por segundo de tempo real.
 
+## Configuração
+
+O simulador usa o mesmo `.env` do backend. Copie o exemplo e ajuste o que precisar:
+
+```sh
+cp src/backend/.env.example src/backend/.env
+```
+
+Para carregar o arquivo, use o `--env-file` do uv (não há python-dotenv):
+
+```sh
+cd src/simulador
+uv run --env-file ../backend/.env python -m simulador <roteiro> [opções]
+```
+
+Cada variável só vale quando a opção correspondente não foi passada; a opção sempre vence.
+Valor inválido no ambiente termina com código 1, como a opção inválida.
+
+| Variável | Opção | Padrão | Efeito |
+| --- | --- | --- | --- |
+| `API_URL` | `--url` | | URL da API, para `--saida http`. Também usada pela ponte. |
+| `SIMULADOR_SAIDA` | `--saida` | `stdout` | `stdout`, `pty` ou `http`. |
+| `SIMULADOR_ACELERAR` | `--acelerar` | `1` | Divide as esperas e o `t_ms`; maior que 0. |
+| `SIMULADOR_TAXA_TEL_HZ` | `--taxa-tel` | `5` | Taxa da `tel` em movimento, de 1 a 20 Hz. |
+
 ## Roteiros prontos
 
 Ficam em `roteiros/`.
