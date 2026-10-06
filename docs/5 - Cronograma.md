@@ -146,7 +146,7 @@ Como previsão interna das nossas atividades planejamos para que o software fiqu
 | 2.2.8 | BACK-03 · Gerenciador de execuções e tentativas | Amanda de Moura | 2.2.1, 2.1.1 | 07/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.9 | FRONT-05 · Encerrar e Retomar tentativa | Karoline Luz | 2.2.5 | 09/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.10 | FIRM-06 · Leitura da bateria (simulada) | Luiza Pugas, João Marcos | 2.1.6 | 10/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
-| 2.2.11 | FIRM-01 · Flood fill, tipo do labirinto e prova de borda | Chris Escobar | 2.2.3 | 10/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
+| 2.2.11 | FIRM-01 · Flood fill e leitura do tipo no DIP switch | Chris Escobar | 2.2.3 | 10/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.12 | QA-01 · Plano de testes 7.4 (casos 4.1–4.16) | Amanda de Moura | 2.1.1 | 09/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.13 | BACK-04 · Cálculo de métricas | Amanda de Moura | 2.2.6 | 13/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.14 | BACK-07 · Stream SSE em tempo real | Amanda de Moura | 2.2.6 | 13/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |
