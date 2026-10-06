@@ -82,14 +82,6 @@ export class ClienteAPI {
     if (STATUS_SEM_CONEXAO.has(resposta.status)) throw new ErroSemConexao()
 
     const dados = lerCorpo(await resposta.text())
-    const resposta = await fetch(this.url(caminho), {
-      method: metodo,
-      headers: corpo === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: corpo === undefined ? undefined : JSON.stringify(corpo),
-      signal: sinal,
-    })
-    const texto = await resposta.text()
-    const dados: unknown = texto ? JSON.parse(texto) : null
     if (!resposta.ok) throw new ErroApi(resposta.status, dados)
     return dados as T
   }
