@@ -36,8 +36,8 @@
 | 3.2.1 | Revisar os requisitos de Energia diante do conceitual v1.2 (corrente de pico, autonomia e proteções) | João Marcos, Giovana | 1.4 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Média |
 | 3.3 | Estrutura Analítica do Produto | João Marcos, Giovana | 1.3 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Alta |
 | 3.3.1 | Corrigir a EAP de Energia (itens 2.1 a 2.6, Figuras 1 e 3 e histórico de versões), alinhando a capacidade e a corrente de pico ao conceitual v1.2 | João Marcos, Giovana | 1.4 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Alta |
-| 3.4 | Projeto Conceitual do Produto | João Marcos, Giovana | 1.4 | 30/09/2026 | 03/11/2026 | 0% | Não iniciado | Alta |
-| 3.4.1 | Corrigir o 4.2 (v1.3): alerta acima do corte, limite de PWM pela tensão medida, PTC com corrente de hold e trip, diagrama de blocos | João Marcos, Giovana | 1.4 | 30/09/2026 | 05/10/2026 | 0% | Não iniciado | Alta |
+| 3.4 | Projeto Conceitual do Produto | João Marcos, Giovana | 1.4 | 30/09/2026 | 03/11/2026 | 50% | Em andamento | Alta |
+| 3.4.1 | Corrigir o 4.2 (v1.3): alerta acima do corte, limite de PWM pela tensão medida, PTC com corrente de hold e trip, diagrama de blocos (issue #160) | João Marcos, Giovana | 1.4 | 30/09/2026 | 05/10/2026 | 100% | Concluído | Alta |
 | 3.4.2 | Atualizar o 4.2 (v1.4) trocando as premissas por valores medidos | João Marcos, Giovana | 2.3.2 | 27/10/2026 | 03/11/2026 | 0% | Não iniciado | Média |
 | 3.5 | Cronograma | João Marcos, Giovana | 1.5 | 30/09/2026 | 04/12/2026 | 0% | Não iniciado | Média |
 | 3.5.1 | Atualizar o cronograma com o realizado (contínuo) | João Marcos, Giovana | 1.5 | 30/09/2026 | 04/12/2026 | 0% | Não iniciado | Média |
@@ -146,7 +146,7 @@ Como previsão interna das nossas atividades planejamos para que o software fiqu
 | 2.2.8 | BACK-03 · Gerenciador de execuções e tentativas | Amanda de Moura | 2.2.1, 2.1.1 | 07/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.9 | FRONT-05 · Encerrar e Retomar tentativa | Karoline Luz | 2.2.5 | 09/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.10 | FIRM-06 · Leitura da bateria (simulada) | Luiza Pugas, João Marcos | 2.1.6 | 10/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
-| 2.2.11 | FIRM-01 · Flood fill, tipo do labirinto e prova de borda | Chris Escobar | 2.2.3 | 10/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
+| 2.2.11 | FIRM-01 · Flood fill e leitura do tipo no DIP switch | Chris Escobar | 2.2.3 | 10/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.12 | QA-01 · Plano de testes 7.4 (casos 4.1–4.16) | Amanda de Moura | 2.1.1 | 09/10/2026 | 16/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.13 | BACK-04 · Cálculo de métricas | Amanda de Moura | 2.2.6 | 13/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.14 | BACK-07 · Stream SSE em tempo real | Amanda de Moura | 2.2.6 | 13/10/2026 | 15/10/2026 | 0% | Não iniciado | Alta |

@@ -73,7 +73,7 @@
 |---|---|---|
 | **3.4** | **Comunicação e interface local** | Componentes de transmissão de telemetria, configuração prévia e sinalização do estado do robô.<br>**Dados Técnicos:** Bluetooth clássico **integrado à ESP32** (SPP), DIP switch de quatro vias, LED, buzzer e circuitos de acionamento.<br>**Comentários:** Interfaces e comportamento definidos em conjunto com Software. Ver [ADR-003](decisoes/003-bluetooth-spp-esp32.md). |
 | 3.4.1 | Módulo Bluetooth de telemetria | Enlace sem fio para envio dos dados do microcontrolador ao dispositivo receptor integrado ao sistema web.<br>**Dados Técnicos:** Bluetooth clássico integrado da ESP32, perfil SPP (`BluetoothSerial`), recebido como porta serial no notebook da equipe; substitui o HM-10 BLE previsto no TAP.<br>**Comentários:** Envio de dados reais validado de ponta a ponta. Protocolo, formato e conexão do receptor ao backend definidos com Software; navegação autônoma mesmo sem comunicação (RF4; Software RF24 e RNF07). |
-| 3.4.2 | DIP switch de configuração | Interface física para seleção do modo de operação sem reprogramação.<br>**Dados Técnicos:** Quatro vias conectadas a entradas digitais com níveis lógicos definidos; tabela de combinações a documentar com Firmware.<br>**Comentários:** Configuração lida antes da corrida, respeitando a restrição de intervenção durante o percurso (RF9; Software RF27). Prioridade Should Have na Eletrônica. |
+| 3.4.2 | DIP switch de configuração | Interface física para seleção do tipo de labirinto (vias 1–2) e dos modos de operação (vias 3–4) sem reprogramação.<br>**Dados Técnicos:** Quatro vias conectadas a entradas digitais com níveis lógicos definidos; tabela de combinações no projeto conceitual de software (4.4).<br>**Comentários:** Configuração lida antes da corrida, respeitando a restrição de intervenção durante o percurso (RF9; Software RF27). Prioridade Should Have na Eletrônica. |
 | 3.4.3 | Indicadores visuais e sonoros | LED e buzzer para indicação de início, erro/colisão e conclusão do percurso.<br>**Dados Técnicos:** Resistor limitador e/ou estágio de chaveamento dimensionado para a corrente dos indicadores e os limites das saídas do microcontrolador.<br>**Comentários:** Estados acionados e identificáveis durante os testes com Firmware (RF5 e RF10; Software RF25). Prioridade Should Have na Eletrônica. |
 
 # 3.5 Placa e interconexões
@@ -147,7 +147,7 @@
 | 4.2.3.1.1 | Motores | Controle de velocidade, direção e acionamento dos motores DC N20 com leitura de encoder para malha fechada (RF21). |
 | 4.2.3.1.2 | Sensores | Leitura e processamento dos sensores de paredes e demais entradas usadas na navegação (RF20). |
 | 4.2.3.2 | Navegação | Algoritmos responsáveis pela navegação e resolução do labirinto. |
-| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com objetivos candidatos conforme o tamanho descoberto em execução (RF26, RF27). |
+| 4.2.3.2.1 | Flood Fill (método Adachi) | Algoritmo utilizado para determinar caminhos e distâncias no labirinto, com as células de objetivo definidas pelo tipo lido no DIP switch (RF26, RF27). |
 | 4.2.3.2.2 | Mapeamento | Construção e atualização do mapa de paredes durante a execução (RF28, RF42). |
 | 4.2.3.3 | Telemetria | Gerenciamento das informações enviadas pelo Micromouse para acompanhamento externo. |
 | 4.2.3.3.1 | Envio | Transmissão periódica de célula, bateria, status e demais dados ao backend (RF24). |
@@ -171,10 +171,11 @@
 
 ### Figura 5 – EAP do Sub-sistema de Software
 
-> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-adachi).
+> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-com-o-metodo-adachi).
 
 ## Histórico de Versões (EAP — Software 4.2.3)
 
 | Versão | Data | Descrição | Autor(es) |
 | :----: | :--: | --------- | --------- |
 | 1.0 | 25/09/2026 | Item **4.2.3.2.1** atualizado de DFS para **Flood Fill (método Adachi)**, alinhado ao projeto conceitual de software (0.2) e ao glossário. | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) |
+| 1.1 | 02/10/2026 | Itens **3.4.2** e **4.2.3.2.1** alinhados ao tipo de labirinto selecionado no DIP switch (vias 1–2), conforme esclarecimento do professor. | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) |
