@@ -30,9 +30,9 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio
-          key: platformio-${{ hashFiles('src/firmware/platformio.ini') }}
+          key: platformio-${{ hashFiles('src/firmware/platformio.ini', 'src/firmware/requirements.txt') }}
 
-      - run: pip install platformio
+      - run: pip install -r requirements.txt
 
       - name: navegacao/ sem Arduino, FreeRTOS ou HAL
         run: |
@@ -42,6 +42,28 @@ jobs:
 
       - name: Testes no PC (Unity)
         run: pio test -e native
+
+      # Uma linha por labirinto no log e no resumo da execução. Falha se algum
+      # labirinto for inválido; com o FIRM-01, acrescentar --exigir-sucesso.
+      - name: Simulador de navegação (FIRM-02)
+        run: |
+          set -o pipefail
+          make -C simulador build/simulador
+          ./simulador/build/simulador --telemetria simulador/build/telemetria simulador/labirintos/*.txt | tee simulador/build/relatorio.txt
+          {
+            echo '### Simulador de navegação'
+            echo '```text'
+            cat simulador/build/relatorio.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar roteiros de telemetria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roteiros-telemetria
+          path: src/firmware/simulador/build/telemetria/
+          if-no-files-found: ignore
 
       - name: Compilar para a ESP32
         run: pio run -e esp32_sim
