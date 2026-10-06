@@ -30,9 +30,9 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio
-          key: platformio-${{ hashFiles('src/firmware/platformio.ini') }}
+          key: platformio-${{ hashFiles('src/firmware/platformio.ini', 'src/firmware/requirements.txt') }}
 
-      - run: pip install platformio
+      - run: pip install -r requirements.txt
 
       - name: navegacao/ sem Arduino, FreeRTOS ou HAL
         run: |

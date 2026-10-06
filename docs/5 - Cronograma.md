@@ -36,8 +36,8 @@
 | 3.2.1 | Revisar os requisitos de Energia diante do conceitual v1.2 (corrente de pico, autonomia e proteções) | João Marcos, Giovana | 1.4 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Média |
 | 3.3 | Estrutura Analítica do Produto | João Marcos, Giovana | 1.3 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Alta |
 | 3.3.1 | Corrigir a EAP de Energia (itens 2.1 a 2.6, Figuras 1 e 3 e histórico de versões), alinhando a capacidade e a corrente de pico ao conceitual v1.2 | João Marcos, Giovana | 1.4 | 30/09/2026 | 06/10/2026 | 0% | Não iniciado | Alta |
-| 3.4 | Projeto Conceitual do Produto | João Marcos, Giovana | 1.4 | 30/09/2026 | 03/11/2026 | 0% | Não iniciado | Alta |
-| 3.4.1 | Corrigir o 4.2 (v1.3): alerta acima do corte, limite de PWM pela tensão medida, PTC com corrente de hold e trip, diagrama de blocos | João Marcos, Giovana | 1.4 | 30/09/2026 | 05/10/2026 | 0% | Não iniciado | Alta |
+| 3.4 | Projeto Conceitual do Produto | João Marcos, Giovana | 1.4 | 30/09/2026 | 03/11/2026 | 50% | Em andamento | Alta |
+| 3.4.1 | Corrigir o 4.2 (v1.3): alerta acima do corte, limite de PWM pela tensão medida, PTC com corrente de hold e trip, diagrama de blocos (issue #160) | João Marcos, Giovana | 1.4 | 30/09/2026 | 05/10/2026 | 100% | Concluído | Alta |
 | 3.4.2 | Atualizar o 4.2 (v1.4) trocando as premissas por valores medidos | João Marcos, Giovana | 2.3.2 | 27/10/2026 | 03/11/2026 | 0% | Não iniciado | Média |
 | 3.5 | Cronograma | João Marcos, Giovana | 1.5 | 30/09/2026 | 04/12/2026 | 0% | Não iniciado | Média |
 | 3.5.1 | Atualizar o cronograma com o realizado (contínuo) | João Marcos, Giovana | 1.5 | 30/09/2026 | 04/12/2026 | 0% | Não iniciado | Média |
