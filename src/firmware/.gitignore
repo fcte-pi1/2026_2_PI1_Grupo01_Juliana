@@ -1,2 +1,3 @@
 # Saída de compilação do PlatformIO
 .pio/
+.venv/

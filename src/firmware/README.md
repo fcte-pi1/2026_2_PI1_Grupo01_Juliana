@@ -8,13 +8,18 @@ Ferramenta: [PlatformIO](https://platformio.org/) com o framework Arduino-ESP32,
 
 **Opção 1 — VS Code (recomendada):** instale a extensão **PlatformIO IDE** e abra a pasta `src/firmware` (não a raiz do repositório). Os botões ✓ (compilar), → (gravar) e 🔌 (monitor serial) ficam na barra inferior.
 
-**Opção 2 — terminal:**
+**Opção 2 — terminal:** a versão do PlatformIO fica fixada em `requirements.txt` (a mesma do CI).
 
 ```bash
-python3 -m venv ~/.platformio/penv
-~/.platformio/penv/bin/pip install platformio
-ln -s ~/.platformio/penv/bin/pio ~/.local/bin/pio
+cd src/firmware
+python3 -m venv .venv
+source .venv/bin/activate        # no Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pio --version                    # PlatformIO Core, version 6.2.0
 ```
+
+> [!WARNING]
+> Não instale pelo `apt install platformio`: o pacote do Ubuntu traz a versão 4.3.4, que quebra com `AttributeError: 'PlatformioCLI' object has no attribute 'resultcallback'`. Se ela já estiver instalada, remova (`sudo apt remove platformio`) e use o venv acima.
 
 No Linux, para gravar na placa, o usuário precisa estar no grupo `dialout` (`sudo usermod -aG dialout $USER` e depois sair e entrar na sessão).
 
