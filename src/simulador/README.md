@@ -31,7 +31,7 @@ para o stderr.
 | --- | --- |
 | `stdout` (padrão) | Escreve cada linha no terminal. Bom para ver o cenário ou gerar um `.jsonl`. |
 | `pty` | Abre uma porta serial virtual, imprime o caminho (ex.: `/dev/pts/5`) no stderr e só começa quando alguém abre a porta, como o SPP do robô faz com a ponte. Linux e WSL; no Windows nativo termina com código 1. |
-| `http` | Em breve: envia cada linha para `POST /telemetria` da API, sem a ponte. Hoje termina com código 1. |
+| `http` | Envia cada linha para `POST /telemetria` da API (`--url` ou `API_URL`), sem a ponte. Sem URL, termina com código 1. |
 
 ### Opções
 
@@ -43,9 +43,53 @@ para o stderr.
 | `--acelerar N` | `1` | Divide as esperas e o `t_ms` por N. |
 | `--sem-espera` | | Emite tudo de uma vez, sem dormir. |
 | `--taxa-tel HZ` | `5` | Taxa da `tel` em movimento, de 1 a 20 Hz; fora disso, código 1. |
-| `--boot N` | `0` | Número do boot da primeira tentativa. |
+| `--boot N` | salvo em `.simulador/boot` | Número do boot da primeira tentativa. |
 
 Mesmo acelerado, o simulador nunca passa de 20 linhas por segundo de tempo real.
+
+### Boot
+
+Como o robô, o simulador guarda o próximo boot em `.simulador/boot` (relativo à pasta em que
+roda; o arquivo não é versionado). Cada execução começa no número salvo (`0` se o arquivo não
+existe) e grava o primeiro boot mais o número de tentativas do roteiro, então duas execuções
+seguidas nunca repetem boot. `--boot N` força o primeiro boot (útil para comparar saídas) e
+também atualiza o arquivo.
+
+## Comportamento
+
+### Interromper
+
+Com `--saida pty` ou `--saida http`, o simulador ouve o comando que o Sistema de Telemetria
+manda ao robô: `{"v":1,"cmd":"interromper"}` (no pty, uma linha na porta; no http, a resposta
+do `POST /telemetria`). Se o robô está andando, o resto do roteiro é descartado e saem a
+`falha` com `origem` `web` e `motivo` nulo (quem preenche é o backend) na posição atual e três `tel`
+`failed` a 1 Hz. Um novo comando nesses 3 s reenvia a mesma `falha` (mesmo `seq`). Comando
+com o robô já parado, ou qualquer outra linha, só vai para o log.
+
+### `perda_link`
+
+O link cai na célula `na_celula` por `segundos` de tempo simulado. Na queda nada sai, mas o
+robô continua andando e cada evento (tudo menos `tel`) entra no buffer de 64. Na volta, o
+buffer inteiro é reenviado, do mais antigo ao mais novo, um a cada 50 ms, inclusive eventos
+que já tinham saído antes da queda; o backend descarta os repetidos pelo `seq`. A `tel` volta
+a sair na hora.
+
+```json
+"eventos": [{"na_celula": 4, "tipo": "perda_link", "segundos": 7}]
+```
+
+No pty, a queda é só silêncio na porta; no http, nenhum `POST` é feito durante ela.
+
+### `parada_boot`
+
+O operador aperta o BOOT na célula `na_celula`: a corrida para ali, sai a `falha` com
+`origem` `boot` e `motivo` `encerrado_operador` e três `tel` `failed` a 1 Hz. O `fim` da
+tentativa e os eventos de células posteriores são ignorados; a próxima tentativa segue
+normalmente.
+
+```json
+"eventos": [{"na_celula": 2, "tipo": "parada_boot"}]
+```
 
 ## Configuração
 
@@ -104,6 +148,58 @@ não é JSON, `v` = 2, `x` = 12, linha com mais de 256 bytes, `falha` web com mo
 ```sh
 uv run python -m simulador roteiros/malformadas.json --sem-espera > malformadas.jsonl
 ```
+
+### `colisao-retomada.json`
+
+A tentativa 1 (`inicio` nova) bate em (1, 3) com `falha` `collision`. Depois de 5 s, a
+tentativa 2 (boot seguinte, `inicio` retomada) sai de novo de (0, 0) e chega ao centro com
+`sucesso`.
+
+```sh
+uv run python -m simulador roteiros/colisao-retomada.json --saida http --url http://localhost:8000
+```
+
+### `perda-link.json`
+
+Corrida de exploração até o centro com uma queda de 12 s no meio, a partir da célula 4. Passa
+do `LIMITE_SEM_SINAL_S` (10 s), então o backend deve marcar `link_lost`. Depois da queda o
+buffer é reenviado e o robô termina a corrida.
+
+```sh
+uv run python -m simulador roteiros/perda-link.json --saida http --url http://localhost:8000
+```
+
+### `reconexao.json`
+
+A mesma corrida com uma queda de 7 s, abaixo do limite: o link volta, o buffer é reenviado e
+a corrida chega ao `sucesso`.
+
+```sh
+uv run python -m simulador roteiros/reconexao.json --saida pty
+```
+
+### `estouro-10min.json`
+
+O robô dá 64 voltas no anel externo do 4x4 (o centro é fechado), mais de 600 s simulados
+andando, sem `sucesso` nem `falha` (`fim` `nenhum`). Quem encerra a execução por tempo é o
+backend.
+
+Para não esperar 10 min, rode acelerado e reduza o limite do backend na mesma proporção. No
+`src/backend/.env`:
+
+```dotenv
+TEMPO_MAXIMO_EXECUCAO_S=60
+```
+
+E o simulador com `--acelerar 10`, que divide também o `t_ms` por 10:
+
+```sh
+uv run python -m simulador roteiros/estouro-10min.json --saida http --url http://localhost:8000 --acelerar 10 --taxa-tel 1
+```
+
+O `--taxa-tel 1` é recomendado: com a `tel` a 5 Hz, a versão acelerada passaria de 20 linhas
+por segundo e o limitador esticaria a execução para uns 3 min. A 1 Hz são cerca de 1400
+linhas, uns 70 s de tempo real, ainda acima dos 60 s do limite.
 
 ## Desenvolvimento
 
