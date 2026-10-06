@@ -10,13 +10,18 @@ from sqlalchemy.orm import Session, sessionmaker
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 TEST_DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
+    "TEST_DATABASE_URL",
     "postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test",
 )
+
+if not urlparse(TEST_DATABASE_URL).path.endswith("_test"):
+    raise RuntimeError(
+        "TEST_DATABASE_URL precisa apontar para um banco cujo nome termina em _test"
+    )
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
-from app.db import get_db  # noqa: E402
-from app.main import app  # noqa: E402
+from app.db import get_db
+from app.main import app 
 
 
 def _aplicar_migracoes(url: str) -> None:
