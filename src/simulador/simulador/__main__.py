@@ -1,9 +1,14 @@
 """Linha de comando do simulador (`python -m simulador`)."""
 
 import argparse
+import logging
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+
+from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
+from simulador.gerador import Opcoes, gerar
+from simulador.roteiro import RoteiroInvalido, carregar
 
 SAIDAS = ("stdout", "pty", "http")
 
@@ -50,10 +55,52 @@ def criar_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _configurar_log() -> logging.Logger:
+    """Log em stderr, para o stdout ficar só com as linhas (FR-10)."""
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter("simulador: %(message)s"))
+    log = logging.getLogger("simulador")
+    log.handlers = [handler]
+    log.setLevel(logging.INFO)
+    log.propagate = False
+    return log
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Ponto de entrada; devolve o código de saída."""
-    criar_parser().parse_args(argv)
-    print("simulador: execução do roteiro ainda não implementada", file=sys.stderr)
+    args = criar_parser().parse_args(argv)
+    log = _configurar_log()
+
+    if not TAXA_TEL_MINIMA_HZ <= args.taxa_tel <= TAXA_TEL_MAXIMA_HZ:
+        log.error(
+            "--taxa-tel deve ficar entre %d e %d Hz (recebido %g)",
+            TAXA_TEL_MINIMA_HZ,
+            TAXA_TEL_MAXIMA_HZ,
+            args.taxa_tel,
+        )
+        return 1
+    if args.acelerar <= 0:
+        log.error("--acelerar deve ser maior que 0 (recebido %g)", args.acelerar)
+        return 1
+    if args.saida != "stdout":
+        log.error("--saida %s ainda não implementada", args.saida)
+        return 1
+    try:
+        roteiro = carregar(args.roteiro)
+    except RoteiroInvalido as erro:
+        log.error("%s", erro)
+        return 1
+
+    opcoes = Opcoes(boot=args.boot or 0, taxa_tel_hz=args.taxa_tel)
+
+    def escrever(linha: str) -> None:
+        sys.stdout.write(linha)
+        sys.stdout.flush()
+
+    enviadas = emitir(
+        gerar(roteiro, opcoes), escrever, acelerar=args.acelerar, sem_espera=args.sem_espera
+    )
+    log.info("roteiro %s terminado: %d linhas", roteiro.nome, enviadas)
     return 0
 
 
