@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 from alembic import command
@@ -20,8 +21,8 @@ if not urlparse(TEST_DATABASE_URL).path.endswith("_test"):
     )
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
-from app.db import get_db
-from app.main import app 
+from app.db import get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 
 def _aplicar_migracoes(url: str) -> None:
