@@ -85,7 +85,7 @@ docker compose exec db psql -U micromouse -d micromouse -c "CREATE DATABASE micr
 ```bash
 cd src/backend
 source .venv/bin/activate
-export DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test
+export TEST_DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test
 
 ruff check .
 pytest -q          # resumo; use pytest -v para mais detalhe
