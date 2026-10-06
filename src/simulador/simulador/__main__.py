@@ -3,12 +3,13 @@
 import argparse
 import logging
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
 from simulador.gerador import Opcoes, gerar
 from simulador.roteiro import RoteiroInvalido, carregar
+from simulador.saidas import PtyIndisponivel, SaidaPty
 
 SAIDAS = ("stdout", "pty", "http")
 
@@ -82,7 +83,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.acelerar <= 0:
         log.error("--acelerar deve ser maior que 0 (recebido %g)", args.acelerar)
         return 1
-    if args.saida != "stdout":
+    if args.saida == "http":
         log.error("--saida %s ainda não implementada", args.saida)
         return 1
     try:
@@ -93,13 +94,29 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     opcoes = Opcoes(boot=args.boot or 0, taxa_tel_hz=args.taxa_tel)
 
-    def escrever(linha: str) -> None:
-        sys.stdout.write(linha)
-        sys.stdout.flush()
+    def rodar(escrever: Callable[[str], None]) -> int:
+        return emitir(
+            gerar(roteiro, opcoes), escrever, acelerar=args.acelerar, sem_espera=args.sem_espera
+        )
 
-    enviadas = emitir(
-        gerar(roteiro, opcoes), escrever, acelerar=args.acelerar, sem_espera=args.sem_espera
-    )
+    if args.saida == "pty":
+        try:
+            saida = SaidaPty(ao_receber=lambda linha: log.info("recebida: %s", linha))
+        except PtyIndisponivel as erro:
+            log.error("%s", erro)
+            return 1
+        with saida:
+            log.info("porta serial virtual: %s (esperando alguém abrir)", saida.caminho)
+            saida.aguardar_conexao()
+            log.info("porta aberta, começando o roteiro")
+            enviadas = rodar(saida.escrever)
+    else:
+
+        def escrever(linha: str) -> None:
+            sys.stdout.write(linha)
+            sys.stdout.flush()
+
+        enviadas = rodar(escrever)
     log.info("roteiro %s terminado: %d linhas", roteiro.nome, enviadas)
     return 0
 
