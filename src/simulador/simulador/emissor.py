@@ -13,7 +13,8 @@ from typing import Protocol
 
 from contrato.telemetria import Mensagem, escrever_linha
 
-from simulador.gerador import Item, LinhaCrua
+from simulador.gerador import DURACAO_FINAL_MS, PERIODO_TEL_PARADO_MS, Item, LinhaCrua
+from simulador.interrupcao import Interrupcao, Situacao
 
 LINHAS_POR_SEGUNDO = 20  # teto do enlace (FR-3)
 TAXA_TEL_MINIMA_HZ = 1
@@ -73,23 +74,56 @@ def emitir(
     relogio: Relogio | None = None,
     acelerar: float = 1,
     sem_espera: bool = False,
+    interrupcao: Interrupcao | None = None,
 ) -> int:
     """Envia cada item no seu instante (t simulado ÷ acelerar); devolve quantas linhas saíram.
 
-    Com `sem_espera`, emite tudo de uma vez, sem relógio nem limitador.
+    Com `sem_espera`, emite tudo de uma vez, sem relógio nem limitador. Com `interrupcao`,
+    um `interromper` recebido para o roteiro antes do próximo item: sai a `falha` com origem
+    web e a tel a 1 Hz em `failed` por 3 s, repetindo a `falha` a cada novo comando.
     """
     relogio = relogio or RelogioReal()
     limitador = Limitador(relogio)
     inicio = relogio.agora()
     enviadas = 0
-    for t_simulado_ms, item in itens:
+
+    def aguardar(t_simulado_ms: int) -> None:
         if not sem_espera:
             espera = inicio + t_simulado_ms / 1000 / acelerar - relogio.agora()
             if espera > 0:
                 relogio.dormir(espera)
+
+    def enviar(item: Item) -> None:
+        nonlocal enviadas
+        if not sem_espera:
             limitador.aguardar()
         linha = texto(item, acelerar)
         escrever(linha)
         enviadas += 1
         log.info("enviada: %s", linha.rstrip("\n"))
+
+    situacao = Situacao()
+    for t_simulado_ms, item in itens:
+        aguardar(t_simulado_ms)
+        if interrupcao is not None and interrupcao.novos():
+            if situacao.pode_parar:
+                break
+            log.info("o robô já está parado; comando sem efeito")
+        enviar(item)
+        situacao.registrar(t_simulado_ms, item)
+    else:
+        return enviadas
+
+    log.info("roteiro interrompido pela web em (%d, %d)", situacao.x, situacao.y)
+    falha = situacao.confirmacao(t_simulado_ms)
+    enviar(falha)
+    for t_simulado_ms in range(
+        t_simulado_ms + PERIODO_TEL_PARADO_MS,
+        t_simulado_ms + DURACAO_FINAL_MS + 1,
+        PERIODO_TEL_PARADO_MS,
+    ):
+        aguardar(t_simulado_ms)
+        for _ in range(interrupcao.novos()):
+            enviar(falha)  # já parado: só repete a confirmação, sem outro efeito
+        enviar(situacao.tel_parada(t_simulado_ms))
     return enviadas

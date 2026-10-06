@@ -11,6 +11,7 @@ import httpx
 
 from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
 from simulador.gerador import Opcoes, gerar
+from simulador.interrupcao import Interrupcao
 from simulador.roteiro import RoteiroInvalido, carregar
 from simulador.saidas import PtyIndisponivel, SaidaHttp, SaidaPty
 
@@ -141,17 +142,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     opcoes = Opcoes(boot=args.boot or 0, taxa_tel_hz=args.taxa_tel)
 
+    interrupcao = Interrupcao()
+
     def rodar(escrever: Callable[[str], None]) -> int:
         return emitir(
-            gerar(roteiro, opcoes), escrever, acelerar=args.acelerar, sem_espera=args.sem_espera
+            gerar(roteiro, opcoes),
+            escrever,
+            acelerar=args.acelerar,
+            sem_espera=args.sem_espera,
+            interrupcao=interrupcao,
         )
-
-    def ao_receber(linha: str) -> None:
-        log.info("recebida: %s", linha)
 
     if args.saida == "pty":
         try:
-            saida = SaidaPty(ao_receber=ao_receber)
+            saida = SaidaPty(ao_receber=interrupcao.ao_receber)
         except PtyIndisponivel as erro:
             log.error("%s", erro)
             return 1
@@ -161,7 +165,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             log.info("porta aberta, começando o roteiro")
             enviadas = rodar(saida.escrever)
     elif args.saida == "http":
-        with SaidaHttp(criar_cliente(args.url), ao_receber=ao_receber) as saida:
+        with SaidaHttp(criar_cliente(args.url), ao_receber=interrupcao.ao_receber) as saida:
             log.info("enviando para %s/telemetria", args.url.rstrip("/"))
             enviadas = rodar(saida.escrever)
     else:
