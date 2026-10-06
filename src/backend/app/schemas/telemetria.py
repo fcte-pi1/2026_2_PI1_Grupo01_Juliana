@@ -5,7 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class MensagemTelemetria(BaseModel):
-    """Contrato ARQ-01 — esqueleto; campos finais alinhados ao diagrama de componentes."""
+    """Esqueleto provisório do ARQ-01, até a BACK-02 (#119).
+    
+    Não é o contrato serial de contrato/telemetria.py. Não importar esse módulo aqui.
+    """
 
     seq: int = Field(ge=0)
     status: Literal["health-check", "running", "success", "failed"]
