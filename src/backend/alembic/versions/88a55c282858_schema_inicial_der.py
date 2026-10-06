@@ -60,7 +60,7 @@ def upgrade() -> None:
     sa.Column('attempt_index', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('tipo_inicio', sa.String(), nullable=False),
-    sa.Column('tipo_descoberto', sa.String(), nullable=True),
+    sa.Column('tipo_dip', sa.String(), nullable=True),
     sa.Column('iniciada_em', sa.DateTime(timezone=True), nullable=False),
     sa.Column('encerrada_em', sa.DateTime(timezone=True), nullable=True),
     sa.Column('tempo_s', sa.Numeric(), nullable=True),

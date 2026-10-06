@@ -48,7 +48,7 @@ class Tentativa(Base):
     attempt_index: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False)
     tipo_inicio: Mapped[str] = mapped_column(String, nullable=False)
-    tipo_descoberto: Mapped[str | None] = mapped_column(String)
+    tipo_dip: Mapped[str | None] = mapped_column(String)
     iniciada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     tempo_s: Mapped[Decimal | None] = mapped_column(Numeric)
