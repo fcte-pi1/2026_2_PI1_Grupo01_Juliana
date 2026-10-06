@@ -1,0 +1,47 @@
+name: firmware
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "src/firmware/**"
+      - ".github/workflows/firmware.yml"
+  pull_request:
+    paths:
+      - "src/firmware/**"
+      - ".github/workflows/firmware.yml"
+
+defaults:
+  run:
+    working-directory: src/firmware
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio
+          key: platformio-${{ hashFiles('src/firmware/platformio.ini') }}
+
+      - run: pip install platformio
+
+      - name: navegacao/ sem Arduino, FreeRTOS ou HAL
+        run: |
+          if grep -rnE '#include *[<"](Arduino|freertos/|esp_|hal_)' lib/navegacao; then
+            echo "navegacao/ precisa ser C puro" && exit 1
+          fi
+
+      - name: Testes no PC (Unity)
+        run: pio test -e native
+
+      - name: Compilar para a ESP32
+        run: pio run -e esp32_sim
