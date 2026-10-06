@@ -1,3 +1,8 @@
 # Saída de compilação do PlatformIO
 .pio/
+
+# Ambiente Python com o PlatformIO (requirements.txt)
 .venv/
+
+# Saída do simulador no PC
+simulador/build/

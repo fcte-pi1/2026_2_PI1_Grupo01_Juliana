@@ -88,6 +88,12 @@ bool sim_labirinto_carregar(sim_labirinto_t *lab, const char *texto)
                 marcar(lab, i - 1, y, SIM_PAREDE_L);
             }
         }
+        for (int x = 0; x < largura; x++) {
+            if (caractere(&linhas[2 * r + 1], 4 * x + 2) == 'L') {
+                lab->largada_x = (uint8_t)x;
+                lab->largada_y = (uint8_t)y;
+            }
+        }
     }
     return true;
 }

@@ -18,7 +18,7 @@ Além disso, o glossário busca:
 
 | Termo | Definição |
 | :--- | :--- |
-| **Área de Objetivo** | Célula de chegada do labirinto, sempre no canto diametralmente oposto ao de partida. Como o tamanho do labirinto não é conhecido de antemão, sua posição depende do tipo de labirinto descoberto durante a execução. Quando o Micromouse a alcança e confirma a borda, a execução termina com sucesso. |
+| **Área de Objetivo** | Célula de chegada do labirinto, sempre no canto diametralmente oposto ao de partida. Sua posição depende do tipo de labirinto selecionado no DIP switch. Quando o Micromouse a alcança, a execução termina com sucesso. |
 | **Canal do Micromouse** | Componente do backend que recebe, pela ponte serial Bluetooth, as mensagens do Micromouse e envia ao robô o único comando previsto: a interrupção, quando o operador encerra a tentativa manualmente. |
 | **Célula** | Unidade quadrada do labirinto, de 18 x 18 cm, identificada por coluna e linha (ex.: A1, B2) e usada para registrar a posição do Micromouse. |
 | **Encerrar** | Finalizar manualmente a tentativa em andamento. Pela interface web, o operador usa **Encerrar tentativa**, escolhe o motivo (collision, stuck ou out_of_track) e o sistema envia a interrupção ao robô, registrando o motivo e a origem encerrado_operador; pelo botão BOOT do robô, a tentativa termina com o motivo encerrado_operador. Em ambos os casos, a execução lógica continua e pode ser retomada. |
@@ -31,7 +31,6 @@ Além disso, o glossário busca:
 | **Micromouse** | Robô autônomo que explora o labirinto com o algoritmo flood fill (método Adachi) até a área de objetivo, mapeando as paredes e enviando telemetria ao sistema web. |
 | **Motivo de Falha** | Causa registrada quando uma tentativa termina em falha: colisão (collision), travamento (stuck), saída da pista (out_of_track), tempo excedido (time_exceeded), falha de componente (falha_componente, com o componente que falhou), bateria baixa (low_battery), health-check reprovado (health_check_failed), perda de comunicação (link_lost) ou encerramento pelo operador (encerrado_operador). No encerramento manual pela interface, o operador escolhe o motivo e a tentativa recebe também a origem encerrado_operador. |
 | **Operador** | Membro da equipe que acompanha a execução pela interface web e pode encerrá-la manualmente quando necessário. |
-| **Prova de Borda** | Confirmação de que uma linha inteira de paredes é o limite externo do labirinto: se todas as paredes dessa linha estão fechadas, nada além dela é alcançável e, como a área de objetivo sempre é alcançável, ali termina o labirinto. |
 | **Rejeitar** | Recusar uma ação que não corresponde ao estado da execução lógica, registrando-a como tentativa rejeitada. |
 | **Retomada** | Evento registrado quando o operador aciona **Retomar tentativa (*n*/3)** após uma tentativa em falha: abre-se uma nova tentativa da mesma execução lógica e o robô continua da célula onde falhou, com o mapa preservado. Consome uma das 3 tentativas. Evitar: reinício de execução, nova execução. |
 | **Retomar** | Abrir uma nova tentativa da execução lógica em andamento após uma falha, continuando da célula onde o robô parou e aproveitando o mapa já construído. |
@@ -42,8 +41,27 @@ Além disso, o glossário busca:
 | **Tempo Limite** | Duração máxima de 10 minutos no total para cada tipo de labirinto, contada desde **Nova execução** e somando as até 3 tentativas da execução lógica e os intervalos entre elas. Ao ser ultrapassado, a tentativa aberta falha com o motivo time_exceeded e a execução lógica é cancelada. |
 | **Tentativa** | Cada passagem do Micromouse dentro de uma execução lógica, numerada de 1 a 3. Começa no health-check e termina em success ou failed. Evitar: corrida, run. |
 | **Tentativa Rejeitada** | Ação recusada pelo sistema por não corresponder ao estado da execução lógica (por exemplo, uma retomada sem tentativa em falha, uma quarta tentativa ou uma nova execução enquanto outra ainda está em andamento). Não é uma tentativa e não entra no histórico. Evitar: execução recusada, execução rejeitada. |
-| **Tipo de Labirinto** | Formato do labirinto (4x4, 8x4 ou 12x4). O Micromouse o descobre durante a execução pela extensão das células visitadas e o envia como "indeterminado" até lá. O operador também o informa em **Nova execução**, apenas no backend, para que a web desenhe a grade do labirinto; essa informação nunca é enviada ao robô. |
+| **Tipo de Labirinto** | Formato do labirinto (4x4, 8x4 ou 12x4). Selecionado no DIP switch do robô antes de ligá-lo. O operador também o informa em **Nova execução**, apenas no backend, para que a web desenhe a grade do labirinto e confira o DIP switch; essa informação nunca é enviada ao robô pela web. |
 | **Trajeto** | Sequência cronológica de células visitadas pelo Micromouse em uma execução, que permite reconstruir o percurso completo. |
+
+<font size="2"><p style="text-align: center">Fonte: [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr), 2026.</p></font>
+
+## Siglas
+
+| Sigla | Significado | Definição |
+| :--- | :--- | :--- |
+| <a id="sigla-api"></a>**API** | *Application Programming Interface* | Interface de programação. No projeto, é o backend em FastAPI, que recebe a telemetria da ponte e atende o front-end. |
+| <a id="sigla-der"></a>**DER** | Diagrama Entidade-Relacionamento | Modelo das tabelas do banco de dados, com atributos, chaves e cardinalidades. Ver [Persistência de dados](4.4%20-%20Projeto%20conceitual%20de%20software.md#persistencia-de-dados). |
+| <a id="sigla-dip"></a>**DIP** | *Dual In-line Package* | Formato da chave de 4 vias (DIP switch) da placa do robô. As vias 1 e 2 selecionam o tipo de labirinto (RF27). |
+| <a id="sigla-json"></a>**JSON** | *JavaScript Object Notation* | Formato de texto para dados estruturados. Cada mensagem de telemetria é um objeto JSON em uma linha. |
+| <a id="sigla-nvs"></a>**NVS** | *Non-Volatile Storage* | Área da memória flash da ESP32 que mantém dados depois de desligar. Guarda o mapa, o estado da execução e o contador de inicializações (RF42). |
+| <a id="sigla-pc"></a>**PC** | *Personal Computer* | Computador pessoal. No projeto, o notebook da equipe, onde rodam a ponte Bluetooth e os testes do firmware. |
+| <a id="sigla-pr"></a>**PR** | *Pull Request* | Pedido de integração de uma branch ao repositório, revisado pela equipe antes do merge. |
+| <a id="sigla-rf"></a>**RF** | Requisito Funcional | O que o sistema deve fazer. Os códigos (RF01, RF02…) estão em [Requisitos](2%20-%20Requisitos.md). |
+| <a id="sigla-rnf"></a>**RNF** | Requisito Não Funcional | Como o sistema deve se comportar (desempenho, confiabilidade…). Os códigos RNF-B estão no [Backlog não funcional do software](4.4%20-%20Projeto%20conceitual%20de%20software.md#2-backlog-nao-funcional). |
+| <a id="sigla-spp"></a>**SPP** | *Serial Port Profile* | Perfil do Bluetooth clássico que emula uma porta serial. É o canal entre o robô e a ponte. |
+| <a id="sigla-utc"></a>**UTC** | *Coordinated Universal Time* | Tempo universal coordenado, referência dos fusos horários. O horário de Brasília é UTC−3. |
+| <a id="sigla-utf8"></a>**UTF-8** | *8-bit Unicode Transformation Format* | Codificação de texto Unicode usada nas mensagens de telemetria. |
 
 <font size="2"><p style="text-align: center">Fonte: [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr), 2026.</p></font>
 
@@ -62,3 +80,5 @@ Além disso, o glossário busca:
 | 1.0 | 23/09/2026 | Criação do glossário | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
 | 1.1 | 25/09/2026 | Atualização com a descoberta do labirinto em execução, a retomada, os comandos de iniciar e parar e o flood fill | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
 | 1.2 | 27/09/2026 | Alinhamento ao modelo de execução lógica com até 3 tentativas: inclusão de Execução Lógica, Tentativa e Interrupção; revisão de Canal do Micromouse, Encerrar, Execução, Failed, Motivo de Falha, Rejeitar, Retomada, Retomar, Sistema de Telemetria, Tempo Limite, Tentativa Rejeitada e Tipo de Labirinto; estados passam a se referir à tentativa | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
+| 1.3 | 02/10/2026 | Tipo de labirinto selecionado no DIP switch, conforme esclarecimento do professor: revisão de Área de Objetivo e Tipo de Labirinto; remoção de Prova de Borda | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
+| 1.4 | 02/10/2026 | Inclusão da seção de siglas, com âncoras para os links do Contrato de telemetria | [Wanjo Christopher Paraizo Escobar](https://github.com/wChrstphr) | - | - |
