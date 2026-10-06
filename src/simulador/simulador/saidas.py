@@ -3,6 +3,9 @@
 `SaidaPty` abre uma porta serial virtual (pty) e faz o papel do SPP do robô: a ponte (#131)
 abre o lado escravo, recebe as linhas escritas no lado mestre e pode mandar comandos de
 volta, que chegam linha a linha a um callback.
+
+`SaidaHttp` faz o papel do robô e da ponte juntos: cada linha vira um `POST /telemetria`, e os
+comandos da resposta chegam ao mesmo tipo de callback do pty.
 """
 
 import logging
@@ -11,12 +14,20 @@ import select
 import sys
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Self
+
+import httpx
+from contrato.telemetria import EntradaPonte, RespostaPonte
+from pydantic import ValidationError
 
 log = logging.getLogger("simulador")
 
 _INTERVALO_S = 0.1  # de quanto em quanto tempo as esperas conferem se devem parar
+FILA_MAXIMA = 100  # linhas guardadas enquanto a API não responde (mesma regra da ponte)
+FUSO = timezone(timedelta(hours=-3))  # recebido_em vai com fuso -03:00, como na ponte
 
 
 class PtyIndisponivel(RuntimeError):
@@ -125,6 +136,92 @@ class SaidaPty:
         if self._leitor is not None:
             self._leitor.join()
         os.close(self.mestre)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.fechar()
+
+
+def _agora() -> datetime:
+    return datetime.now(UTC).astimezone(FUSO)
+
+
+class SaidaHttp:
+    """Envia cada linha para `POST /telemetria` e entrega os comandos da resposta ao callback.
+
+    Se a API não responde (timeout, recusa ou 5xx), a linha fica numa fila de até
+    `fila_maxima` e é reenviada antes da próxima; acima disso, a mais antiga é descartada.
+    """
+
+    def __init__(
+        self,
+        cliente: httpx.Client,
+        ao_receber: Callable[[str], None] | None = None,
+        fila_maxima: int = FILA_MAXIMA,
+        agora: Callable[[], datetime] = _agora,
+    ):
+        self.cliente = cliente
+        self.ao_receber = ao_receber or (lambda linha: None)
+        self.fila_maxima = fila_maxima
+        self.agora = agora
+        self.fila: deque[EntradaPonte] = deque()
+
+    def escrever(self, linha: str) -> None:
+        """Põe a linha na fila com o instante de agora e tenta enviar a fila inteira."""
+        if len(self.fila) >= self.fila_maxima:
+            descartada = self.fila.popleft()
+            log.warning(
+                "fila cheia (%d linhas): descartada a mais antiga, %s",
+                self.fila_maxima,
+                descartada.linha,
+            )
+        self.fila.append(EntradaPonte(linha=linha.rstrip("\n"), recebido_em=self.agora()))
+        self.esvaziar()
+
+    def esvaziar(self) -> bool:
+        """Envia a fila em ordem até acabar ou a API falhar; devolve True se esvaziou."""
+        while self.fila:
+            if not self._enviar(self.fila[0]):
+                return False
+            self.fila.popleft()
+        return True
+
+    def _enviar(self, entrada: EntradaPonte) -> bool:
+        """Faz o POST de uma linha; devolve False se ela precisa ser reenviada."""
+        try:
+            resposta = self.cliente.post(
+                "/telemetria",
+                content=entrada.model_dump_json(),
+                headers={"Content-Type": "application/json"},
+            )
+        except httpx.TransportError as erro:
+            log.warning("a API não respondeu (%s); %d linhas na fila", erro, len(self.fila))
+            return False
+        if resposta.is_server_error:
+            log.warning(
+                "a API respondeu %d; %d linhas na fila", resposta.status_code, len(self.fila)
+            )
+            return False
+        if not resposta.is_success:
+            # 4xx: a API recebeu e recusou a linha; reenviar daria o mesmo resultado.
+            log.warning("a API recusou a linha (%d): %s", resposta.status_code, entrada.linha)
+            return True
+        try:
+            comandos = RespostaPonte.model_validate_json(resposta.content).comandos
+        except ValidationError:
+            log.warning("resposta da API fora do RespostaPonte: %s", resposta.text)
+            return True
+        for comando in comandos:
+            self.ao_receber(comando.model_dump_json())
+        return True
+
+    def fechar(self) -> None:
+        """Tenta enviar o que sobrou na fila e fecha o cliente."""
+        if not self.esvaziar():
+            log.warning("a API não respondeu; %d linhas não foram enviadas", len(self.fila))
+        self.cliente.close()
 
     def __enter__(self) -> Self:
         return self

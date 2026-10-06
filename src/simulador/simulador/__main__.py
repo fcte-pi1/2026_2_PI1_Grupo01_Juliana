@@ -7,15 +7,18 @@ import sys
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
+import httpx
+
 from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
 from simulador.gerador import Opcoes, gerar
 from simulador.roteiro import RoteiroInvalido, carregar
-from simulador.saidas import PtyIndisponivel, SaidaPty
+from simulador.saidas import PtyIndisponivel, SaidaHttp, SaidaPty
 
 SAIDAS = ("stdout", "pty", "http")
 SAIDA_PADRAO = "stdout"
 ACELERAR_PADRAO = 1.0
 TAXA_TEL_PADRAO_HZ = 5.0
+TIMEOUT_HTTP_S = 2.0
 
 
 class ConfiguracaoInvalida(ValueError):
@@ -88,6 +91,11 @@ def aplicar_ambiente(args: argparse.Namespace, ambiente: Mapping[str, str]) -> N
         args.taxa_tel = _numero(ambiente, "SIMULADOR_TAXA_TEL_HZ", TAXA_TEL_PADRAO_HZ)
 
 
+def criar_cliente(url: str) -> httpx.Client:
+    """Cliente HTTP da saída http; os testes trocam por um TestClient."""
+    return httpx.Client(base_url=url, timeout=TIMEOUT_HTTP_S)
+
+
 def _configurar_log() -> logging.Logger:
     """Log em stderr, para o stdout ficar só com as linhas (FR-10)."""
     handler = logging.StreamHandler(sys.stderr)
@@ -122,8 +130,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--acelerar (ou SIMULADOR_ACELERAR) deve ser maior que 0 (recebido %g)", args.acelerar
         )
         return 1
-    if args.saida == "http":
-        log.error("--saida %s ainda não implementada", args.saida)
+    if args.saida == "http" and not args.url:
+        log.error("--saida http precisa de --url ou API_URL")
         return 1
     try:
         roteiro = carregar(args.roteiro)
@@ -138,9 +146,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             gerar(roteiro, opcoes), escrever, acelerar=args.acelerar, sem_espera=args.sem_espera
         )
 
+    def ao_receber(linha: str) -> None:
+        log.info("recebida: %s", linha)
+
     if args.saida == "pty":
         try:
-            saida = SaidaPty(ao_receber=lambda linha: log.info("recebida: %s", linha))
+            saida = SaidaPty(ao_receber=ao_receber)
         except PtyIndisponivel as erro:
             log.error("%s", erro)
             return 1
@@ -148,6 +159,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             log.info("porta serial virtual: %s (esperando alguém abrir)", saida.caminho)
             saida.aguardar_conexao()
             log.info("porta aberta, começando o roteiro")
+            enviadas = rodar(saida.escrever)
+    elif args.saida == "http":
+        with SaidaHttp(criar_cliente(args.url), ao_receber=ao_receber) as saida:
+            log.info("enviando para %s/telemetria", args.url.rstrip("/"))
             enviadas = rodar(saida.escrever)
     else:
 
