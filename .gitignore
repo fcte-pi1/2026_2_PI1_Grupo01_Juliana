@@ -368,9 +368,13 @@ Thumbs.db
 __pycache__/
 .venv/
 .pytest_cache/
+.env
 
 # Firmware (teste no PC)
 src/firmware/**/build/
 
 # Windows (metadados de download no WSL)
 *:Zone.Identifier
+
+# Simulador (estado local: boot persistido)
+.simulador/
