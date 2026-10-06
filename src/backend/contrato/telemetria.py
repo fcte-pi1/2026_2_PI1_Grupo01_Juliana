@@ -7,7 +7,7 @@ este schema os aceita e os gera de volta byte a byte.
 """
 
 from datetime import datetime, timedelta
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import (
     AwareDatetime,
@@ -129,7 +129,7 @@ class Sucesso(_Mensagem):
 
 
 Mensagem = Annotated[
-    Union[Tel, HcItem, HcResultado, Passo, Falha, Sucesso],
+    Tel | HcItem | HcResultado | Passo | Falha | Sucesso,
     Field(discriminator="tipo"),
 ]
 
