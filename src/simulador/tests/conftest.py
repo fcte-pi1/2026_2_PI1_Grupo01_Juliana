@@ -10,3 +10,11 @@ def ambiente_limpo(monkeypatch):
     """Tira do ambiente as variáveis do .env, para os testes não dependerem da máquina."""
     for nome in VARIAVEIS:
         monkeypatch.delenv(nome, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def arquivo_boot(monkeypatch, tmp_path):
+    """Boot persistido num diretório temporário, fora do .simulador/ da máquina."""
+    arquivo = tmp_path / ".simulador" / "boot"
+    monkeypatch.setattr("simulador.__main__.ARQUIVO_BOOT", arquivo)
+    return arquivo

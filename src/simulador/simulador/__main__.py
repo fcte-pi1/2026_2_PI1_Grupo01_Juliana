@@ -20,6 +20,7 @@ SAIDA_PADRAO = "stdout"
 ACELERAR_PADRAO = 1.0
 TAXA_TEL_PADRAO_HZ = 5.0
 TIMEOUT_HTTP_S = 2.0
+ARQUIVO_BOOT = Path(".simulador/boot")  # faz o papel da NVS do robô
 
 
 class ConfiguracaoInvalida(ValueError):
@@ -92,6 +93,26 @@ def aplicar_ambiente(args: argparse.Namespace, ambiente: Mapping[str, str]) -> N
         args.taxa_tel = _numero(ambiente, "SIMULADOR_TAXA_TEL_HZ", TAXA_TEL_PADRAO_HZ)
 
 
+def reservar_boots(arquivo: Path, quantos: int, forcado: int | None = None) -> int:
+    """Devolve o primeiro boot da execução e grava no arquivo o próximo livre.
+
+    Sem `forcado`, começa no boot salvo (0 se o arquivo não existir), para não repetir
+    boot entre execuções e o Deduplicador do backend não descartar os eventos.
+    """
+    if forcado is not None:
+        primeiro = forcado
+    else:
+        try:
+            primeiro = int(arquivo.read_text())
+        except FileNotFoundError:
+            primeiro = 0
+        except ValueError:
+            raise ConfiguracaoInvalida(f"{arquivo} deve ter um número inteiro") from None
+    arquivo.parent.mkdir(parents=True, exist_ok=True)
+    arquivo.write_text(f"{primeiro + quantos}\n")
+    return primeiro
+
+
 def criar_cliente(url: str) -> httpx.Client:
     """Cliente HTTP da saída http; os testes trocam por um TestClient."""
     return httpx.Client(base_url=url, timeout=TIMEOUT_HTTP_S)
@@ -131,6 +152,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--acelerar (ou SIMULADOR_ACELERAR) deve ser maior que 0 (recebido %g)", args.acelerar
         )
         return 1
+    if args.boot is not None and args.boot < 0:
+        log.error("--boot deve ser no mínimo 0 (recebido %d)", args.boot)
+        return 1
     if args.saida == "http" and not args.url:
         log.error("--saida http precisa de --url ou API_URL")
         return 1
@@ -140,7 +164,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         log.error("%s", erro)
         return 1
 
-    opcoes = Opcoes(boot=args.boot or 0, taxa_tel_hz=args.taxa_tel)
+    try:
+        boot = reservar_boots(ARQUIVO_BOOT, len(roteiro.tentativas), args.boot)
+    except (ConfiguracaoInvalida, OSError) as erro:
+        log.error("boot: %s", erro)
+        return 1
+    opcoes = Opcoes(boot=boot, taxa_tel_hz=args.taxa_tel)
 
     interrupcao = Interrupcao()
 

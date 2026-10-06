@@ -141,7 +141,7 @@ def test_fila_maxima_padrao_e_100():
 def test_main_http_envia_as_mesmas_linhas_do_stdout(tmp_path, capsys, monkeypatch):
     caminho = tmp_path / "roteiro.json"
     caminho.write_text(json.dumps(ROTEIRO), encoding="utf-8")
-    assert main([str(caminho), "--saida", "stdout", "--sem-espera"]) == 0
+    assert main([str(caminho), "--saida", "stdout", "--sem-espera", "--boot", "0"]) == 0
     esperadas = capsys.readouterr().out.splitlines()
 
     api = Api()
@@ -153,7 +153,7 @@ def test_main_http_envia_as_mesmas_linhas_do_stdout(tmp_path, capsys, monkeypatc
 
     monkeypatch.setattr(cli, "criar_cliente", criar_cliente)
     monkeypatch.setenv("API_URL", "http://api:8000")
-    assert main([str(caminho), "--saida", "http", "--sem-espera"]) == 0
+    assert main([str(caminho), "--saida", "http", "--sem-espera", "--boot", "0"]) == 0
     assert urls == ["http://api:8000"]
     assert api.linhas() == esperadas
 

@@ -21,7 +21,7 @@ from contrato.telemetria import (
     Tel,
 )
 
-from simulador.roteiro import Celula, FimFalha, FimSucesso, Roteiro, Tentativa
+from simulador.roteiro import Celula, FimFalha, FimSucesso, ParadaBoot, Roteiro, Tentativa
 
 COMPONENTES: tuple[Componente, ...] = get_args(Componente)  # ordem da Tabela 3
 
@@ -140,31 +140,46 @@ def _health_check(estado: _Boot, inicio: str) -> Iterator[tuple[int, Mensagem]]:
     return aprovado
 
 
+def _parada(tentativa: Tentativa) -> ParadaBoot | None:
+    """Primeira parada pelo BOOT da tentativa, se houver."""
+    paradas = [evento for evento in tentativa.eventos if evento.tipo == "parada_boot"]
+    return min(paradas, key=lambda evento: evento.na_celula, default=None)
+
+
+def _ultima_celula(tentativa: Tentativa) -> int:
+    """Índice da célula em que a corrida acaba: a da parada pelo BOOT ou a última."""
+    parada = _parada(tentativa)
+    return len(tentativa.celulas) - 1 if parada is None else parada.na_celula
+
+
 def _corrida(estado: _Boot, inicio_ms: int) -> Iterator[tuple[int, Item]]:
     """Um passo por célula, tel na taxa de movimento, fim e tel a 1 Hz depois dele.
 
-    Devolve (pelo return) o t_ms em que a tentativa termina.
+    A parada pelo BOOT corta a corrida na sua célula e vira o fim. Devolve (pelo return)
+    o t_ms em que a tentativa termina.
     """
     tentativa = estado.tentativa
+    ultima = _ultima_celula(tentativa)
+    celulas = tentativa.celulas[: ultima + 1]
     s_por_celula = estado.roteiro.s_por_celula
     periodo_celula_ms = round(s_por_celula * 1000)
-    fim_ms = inicio_ms + (len(tentativa.celulas) - 1) * periodo_celula_ms
+    fim_ms = inicio_ms + ultima * periodo_celula_ms
     vel_mm_s = min(VELOCIDADE_MAXIMA_MM_S, round(TAMANHO_CELULA_MM / s_por_celula))
 
     # Prioridades no mesmo instante: entrar na célula, tel, passo, linha crua, fim.
     agenda: list[tuple[int, int, str, object]] = []
-    for i, celula in enumerate(tentativa.celulas):
+    for i, celula in enumerate(celulas):
         t = inicio_ms + i * periodo_celula_ms
         agenda += [(t, 0, "entrar", celula), (t, 2, "passo", celula)]
     periodo_tel_ms = round(1000 / estado.opcoes.taxa_tel_hz)
     agenda += [(t, 1, "tel", "running") for t in range(inicio_ms, fim_ms + 1, periodo_tel_ms)]
     for evento in tentativa.eventos:
-        if evento.tipo == "linha_crua":
+        if evento.tipo == "linha_crua" and evento.na_celula <= ultima:
             t = inicio_ms + evento.na_celula * periodo_celula_ms
             agenda.append((t, 3, "linha_crua", evento.linha))
 
-    fim = tentativa.fim
-    if isinstance(fim, FimSucesso | FimFalha):
+    fim = _parada(tentativa) or tentativa.fim
+    if isinstance(fim, FimSucesso | FimFalha | ParadaBoot):
         estado_final = "success" if isinstance(fim, FimSucesso) else "failed"
         agenda.append((fim_ms, 4, "fim", fim))
         agenda += [
@@ -186,6 +201,17 @@ def _corrida(estado: _Boot, inicio_ms: int) -> Iterator[tuple[int, Item]]:
             yield estado.inicio_ms + t, LinhaCrua(dado)
         elif isinstance(dado, FimSucesso):
             yield estado.mensagem(Sucesso, t, tipo="sucesso", x=estado.x, y=estado.y)
+        elif isinstance(dado, ParadaBoot):
+            yield estado.mensagem(
+                Falha,
+                t,
+                tipo="falha",
+                motivo="encerrado_operador",
+                origem="boot",
+                x=estado.x,
+                y=estado.y,
+                componente=None,
+            )
         else:
             yield estado.mensagem(
                 Falha,
@@ -214,7 +240,7 @@ def _quedas(estado: _Boot) -> list[tuple[int, int]]:
     quedas = sorted(
         (t, t + round(evento.segundos * 1000))
         for evento in estado.tentativa.eventos
-        if evento.tipo == "perda_link"
+        if evento.tipo == "perda_link" and evento.na_celula <= _ultima_celula(estado.tentativa)
         for t in [estado.inicio_ms + DURACAO_HC_MS + evento.na_celula * periodo_celula_ms]
     )
     unidas: list[tuple[int, int]] = []

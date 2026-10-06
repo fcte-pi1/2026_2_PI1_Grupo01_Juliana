@@ -104,7 +104,7 @@ def test_linhas_do_outro_lado_chegam_ao_callback():
 def test_main_pty_entrega_as_mesmas_linhas_do_stdout(tmp_path, capsys, monkeypatch):
     caminho = tmp_path / "roteiro.json"
     caminho.write_text(json.dumps(ROTEIRO), encoding="utf-8")
-    assert main([str(caminho), "--saida", "stdout", "--sem-espera"]) == 0
+    assert main([str(caminho), "--saida", "stdout", "--sem-espera", "--boot", "0"]) == 0
     esperadas = capsys.readouterr().out.splitlines(keepends=True)
 
     pontes: list[Ponte] = []
@@ -115,7 +115,7 @@ def test_main_pty_entrega_as_mesmas_linhas_do_stdout(tmp_path, capsys, monkeypat
             pontes.append(Ponte(self.caminho))
 
     monkeypatch.setattr(cli, "SaidaPty", SaidaComPonte)
-    assert main([str(caminho), "--saida", "pty", "--sem-espera"]) == 0
+    assert main([str(caminho), "--saida", "pty", "--sem-espera", "--boot", "0"]) == 0
     assert pontes[0].linhas() == esperadas
     assert pontes[0].caminho in capsys.readouterr().err
 
