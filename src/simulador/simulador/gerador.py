@@ -11,19 +11,25 @@ from typing import get_args
 from contrato.telemetria import (
     VERSAO,
     Componente,
+    Falha,
     HcItem,
     HcResultado,
     Mensagem,
+    Passo,
+    Sucesso,
     Tel,
 )
 
-from simulador.roteiro import Roteiro, Tentativa
+from simulador.roteiro import Celula, FimFalha, FimSucesso, Roteiro, Tentativa
 
 COMPONENTES: tuple[Componente, ...] = get_args(Componente)  # ordem da Tabela 3
 
 PERIODO_TEL_PARADO_MS = 1000  # tel a 1 Hz parado
 INTERVALO_HC_ITEM_MS = 200  # entre um teste de componente e o próximo
 DURACAO_HC_MS = 2000  # hc_item em 100, 300, ..., 1700 ms; hc_resultado em 1900 ms
+DURACAO_FINAL_MS = 3000  # tel a 1 Hz em success/failed depois do fim
+TAMANHO_CELULA_MM = 180
+VELOCIDADE_MAXIMA_MM_S = 2000  # teto do vel_mm_s no contrato
 
 
 @dataclass(frozen=True)
@@ -47,8 +53,11 @@ Item = Mensagem | LinhaCrua
 class _Boot:
     """Estado de um boot: numera as mensagens e conta o tempo desde o início."""
 
-    def __init__(self, roteiro: Roteiro, tentativa: Tentativa, boot: int, inicio_ms: int):
+    def __init__(
+        self, roteiro: Roteiro, tentativa: Tentativa, opcoes: Opcoes, boot: int, inicio_ms: int
+    ):
         self.roteiro = roteiro
+        self.opcoes = opcoes
         self.tentativa = tentativa
         self.boot = boot
         self.inicio_ms = inicio_ms
@@ -78,6 +87,19 @@ class _Boot:
             vel_mm_s=vel_mm_s,
             eixo_longo=self.eixo_longo,
         )
+
+    def entrar(self, celula: Celula) -> None:
+        """Move o robô para a célula e atualiza rumo e eixo longo."""
+        rumo = _rumo(celula.x - self.x, celula.y - self.y)
+        if rumo is not None:
+            self.rumo = rumo
+        self.x, self.y = celula.x, celula.y
+        self.eixo_longo = _eixo_longo(self.roteiro.labirinto, self.x, self.y, self.eixo_longo)
+
+
+def _rumo(dx: int, dy: int) -> str | None:
+    """Direção absoluta do passo: N = +y, S = -y, L = +x, O = -x."""
+    return {(0, 1): "N", (0, -1): "S", (1, 0): "L", (-1, 0): "O"}.get((dx, dy))
 
 
 def _eixo_longo(labirinto: str, x: int, y: int, atual: str | None) -> str | None:
@@ -115,14 +137,76 @@ def _health_check(estado: _Boot, inicio: str) -> Iterator[tuple[int, Mensagem]]:
     return aprovado
 
 
+def _corrida(estado: _Boot, inicio_ms: int) -> Iterator[tuple[int, Item]]:
+    """Um passo por célula, tel na taxa de movimento, fim e tel a 1 Hz depois dele.
+
+    Devolve (pelo return) o t_ms em que a tentativa termina.
+    """
+    tentativa = estado.tentativa
+    s_por_celula = estado.roteiro.s_por_celula
+    periodo_celula_ms = round(s_por_celula * 1000)
+    fim_ms = inicio_ms + (len(tentativa.celulas) - 1) * periodo_celula_ms
+    vel_mm_s = min(VELOCIDADE_MAXIMA_MM_S, round(TAMANHO_CELULA_MM / s_por_celula))
+
+    # Prioridades no mesmo instante: entrar na célula, tel, passo, linha crua, fim.
+    agenda: list[tuple[int, int, str, object]] = []
+    for i, celula in enumerate(tentativa.celulas):
+        t = inicio_ms + i * periodo_celula_ms
+        agenda += [(t, 0, "entrar", celula), (t, 2, "passo", celula)]
+    periodo_tel_ms = round(1000 / estado.opcoes.taxa_tel_hz)
+    agenda += [(t, 1, "tel", "running") for t in range(inicio_ms, fim_ms + 1, periodo_tel_ms)]
+    for evento in tentativa.eventos:
+        if evento.tipo == "linha_crua":
+            t = inicio_ms + evento.na_celula * periodo_celula_ms
+            agenda.append((t, 3, "linha_crua", evento.linha))
+
+    fim = tentativa.fim
+    if isinstance(fim, FimSucesso | FimFalha):
+        estado_final = "success" if isinstance(fim, FimSucesso) else "failed"
+        agenda.append((fim_ms, 4, "fim", fim))
+        agenda += [
+            (t, 1, "tel", estado_final)
+            for t in range(
+                fim_ms + PERIODO_TEL_PARADO_MS, fim_ms + DURACAO_FINAL_MS + 1, PERIODO_TEL_PARADO_MS
+            )
+        ]
+        fim_ms += DURACAO_FINAL_MS
+
+    for t, _, acao, dado in sorted(agenda, key=lambda item: item[:2]):
+        if acao == "entrar":
+            estado.entrar(dado)
+        elif acao == "tel":
+            yield estado.tel(t, dado, vel_mm_s if dado == "running" else 0)
+        elif acao == "passo":
+            yield estado.mensagem(Passo, t, tipo="passo", x=dado.x, y=dado.y, paredes=dado.paredes)
+        elif acao == "linha_crua":
+            yield estado.inicio_ms + t, LinhaCrua(dado)
+        elif isinstance(dado, FimSucesso):
+            yield estado.mensagem(Sucesso, t, tipo="sucesso", x=estado.x, y=estado.y)
+        else:
+            yield estado.mensagem(
+                Falha,
+                t,
+                tipo="falha",
+                motivo=dado.motivo,
+                origem="automatica",
+                x=estado.x,
+                y=estado.y,
+                componente=dado.componente,
+            )
+    return fim_ms
+
+
 def gerar(roteiro: Roteiro, opcoes: Opcoes = Opcoes()) -> Iterator[tuple[int, Item]]:
     """Linha do tempo do roteiro: pares (t simulado em ms, mensagem ou linha crua)."""
     agora_ms = 0
     for i, tentativa in enumerate(roteiro.tentativas):
         agora_ms += round(tentativa.pausa_s * 1000)
         inicio = tentativa.inicio or ("nova" if i == 0 else "retomada")
-        estado = _Boot(roteiro, tentativa, opcoes.boot + i, agora_ms)
+        estado = _Boot(roteiro, tentativa, opcoes, opcoes.boot + i, agora_ms)
         aprovado = yield from _health_check(estado, inicio)
         agora_ms += DURACAO_HC_MS
         if not aprovado:
             continue  # health-check reprovado: a tentativa termina aqui
+        fim_ms = yield from _corrida(estado, DURACAO_HC_MS)
+        agora_ms += fim_ms - DURACAO_HC_MS
