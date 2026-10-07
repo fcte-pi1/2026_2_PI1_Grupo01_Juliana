@@ -95,7 +95,16 @@ A `lib/sensores/` lê os 4 ToF pela HAL, filtra cada um com a mediana das 3 últ
 - **XSHUT** (`tof_sequencia_inicio`): descreve a ordem para ligar um sensor por vez e trocar os endereços para 0x30 a 0x33. O driver real (FIRM-10) só percorre a lista.
 
 > [!IMPORTANT]
-> O ToF lateral aponta a 45° para a frente. Na **primeira metade** da célula (0 a ~70 mm depois de entrar) ele lê ~77 mm com parede e mais de 230 mm sem. Perto do **centro**, ele enxerga o poste do canto seguinte e lê ~77 a 91 mm **mesmo sem parede**. A parede lateral de uma célula deve ser guardada logo depois de o robô entrar nela; quem escolhe esse momento é o movimento (FIRM-05) ou a navegação (FIRM-01).
+> O ToF lateral aponta 45° para a frente, então mede a parede **~74 mm à frente** do centro do robô, e não ao lado dele. Com parede, lê ~77 mm. Sem parede, o feixe atravessa o lado aberto e bate no que houver na célula vizinha. Medido no mundo simulado, no pior caso (vizinha com parede horizontal), com *p* = quanto o robô já entrou na célula:
+>
+> | *p* (mm) | Sem parede lê | Resultado |
+> |---|---|---|
+> | −65 a +30 | 310 a 176 mm | confiável |
+> | +35 a +85 | 169 a 98 mm | parede falsa (parede da vizinha) |
+> | +90 a +110 | 91 a 77 mm | parede falsa (poste do canto) |
+> | acima de +115 | — | já mede a célula seguinte |
+>
+> A parede lateral de uma célula deve ser guardada **ao entrar nela** (*p* entre 0 e ~20 mm); as 3 amostras da mediana vêm do trecho logo antes da fronteira, que também é confiável. Quem escolhe esse momento é o movimento (FIRM-05) ou a navegação (FIRM-01).
 
 ### Labirintos em texto
 

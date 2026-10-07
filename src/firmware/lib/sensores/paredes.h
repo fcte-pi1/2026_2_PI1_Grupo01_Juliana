@@ -12,9 +12,10 @@
  *     *_SAI_MM (config/robo.h); entre os dois, mantém o estado anterior;
  *   - sensor falho ou sem leitura conta como "sem parede".
  *
- * ATENÇÃO: o lateral a 45° só vê a parede da célula atual na primeira metade
- * dela (ver config/robo.h). Quem usa o resultado lateral deve guardá-lo logo
- * depois de o robô entrar na célula (FIRM-05 #135 / FIRM-01 #117).
+ * ATENÇÃO: o lateral a 45° mede a parede ~74 mm à frente do robô. A lateral de
+ * uma célula só é confiável perto da entrada dela (de ~65 mm antes a ~30 mm
+ * depois da fronteira; ver config/robo.h). Quem usa o resultado lateral deve
+ * guardá-lo ao entrar na célula (FIRM-05 #135 / FIRM-01 #117).
  */
 
 #include <stdbool.h>

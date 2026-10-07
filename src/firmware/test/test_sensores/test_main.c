@@ -281,10 +281,10 @@ static void test_50_casos_sinteticos(void)
 
 /* ------------------------------------------------- ponta a ponta (HAL sim) */
 
-/* Robô em (0, 0), 30 mm depois de entrar na célula, virado para o norte. */
+/* Robô em (0, 0), 10 mm depois de entrar na célula, virado para o norte. */
 static void pose_na_janela_lateral(void)
 {
-    sim_definir_pose(CELULA_MM / 2.0f, 30.0f, PI_F / 2.0f);
+    sim_definir_pose(CELULA_MM / 2.0f, 10.0f, PI_F / 2.0f);
 }
 
 static void ler_ciclos(int ciclos)
@@ -328,7 +328,7 @@ static void test_largada_ve_paredes_laterais_e_frente_aberta(void)
 
 static void test_celula_aberta_dos_lados_com_ruido(void)
 {
-    sim_definir_pose(X_CELULA_ABERTA, 30.0f, PI_F / 2.0f);
+    sim_definir_pose(X_CELULA_ABERTA, 10.0f, PI_F / 2.0f);
     sim_definir_tof_ruido(15, 1234);
 
     for (int i = 0; i < 40; i++) {
@@ -359,7 +359,7 @@ static void test_paredes_estaveis_com_ruido(void)
 
 static void test_pico_isolado_nao_cria_parede(void)
 {
-    sim_definir_pose(X_CELULA_ABERTA, 30.0f, PI_F / 2.0f);
+    sim_definir_pose(X_CELULA_ABERTA, 10.0f, PI_F / 2.0f);
     ler_ciclos(3);
     TEST_ASSERT_FALSE(sensores_paredes().direita);
 
@@ -379,10 +379,60 @@ static void test_frente_ve_parede_ao_chegar_no_fim(void)
 }
 
 /*
- * Documenta a regra da janela (config/robo.h): no centro de uma célula sem
- * paredes laterais, o lateral a 45° enxerga o poste do canto seguinte e acusa
- * parede. Por isso a lateral deve ser lida logo depois de entrar na célula.
+ * Janela da leitura lateral (config/robo.h), no pior caso: coluna do meio sem
+ * paredes laterais e vizinhas com parede horizontal em toda fronteira.
  */
+static const char CORREDOR_ABERTO[] =
+    "+---+---+---+\n"
+    "|           |\n"
+    "+---+   +---+\n"
+    "|           |\n"
+    "+---+   +---+\n"
+    "|           |\n"
+    "+---+---+---+\n";
+
+static const char CORREDOR_FECHADO[] =
+    "+---+---+---+\n"
+    "|   |   |   |\n"
+    "+---+   +---+\n"
+    "|   |   |   |\n"
+    "+---+   +---+\n"
+    "|   |   |   |\n"
+    "+---+---+---+\n";
+
+/* Anda pela coluna do meio, de 60 mm antes até 20 mm depois de entrar em (1, 1). */
+static paredes_t atravessar_fronteira(const char *labirinto)
+{
+    sim_mundo_iniciar(labirinto);
+    sensores_iniciar();
+    for (int p = -60; p <= 20; p += 20) { /* 20 mm por amostra: 400 mm/s a 20 Hz */
+        sim_definir_pose(CELULA_MM * 1.5f, CELULA_MM + p, PI_F / 2.0f);
+        sensores_ler();
+    }
+    return sensores_paredes();
+}
+
+static void test_lateral_lida_ao_entrar_na_celula(void)
+{
+    paredes_t aberto = atravessar_fronteira(CORREDOR_ABERTO);
+    TEST_ASSERT_FALSE(aberto.esquerda);
+    TEST_ASSERT_FALSE(aberto.direita);
+
+    paredes_t fechado = atravessar_fronteira(CORREDOR_FECHADO);
+    TEST_ASSERT_TRUE(fechado.esquerda);
+    TEST_ASSERT_TRUE(fechado.direita);
+}
+
+/* Lida tarde demais (p = 60 mm), o lateral vê a parede da vizinha. */
+static void test_lateral_tarde_demais_ve_a_vizinha(void)
+{
+    sim_mundo_iniciar(CORREDOR_ABERTO);
+    sim_definir_pose(CELULA_MM * 1.5f, CELULA_MM + 60.0f, PI_F / 2.0f);
+    ler_ciclos(3);
+    TEST_ASSERT_TRUE(sensores_paredes().direita);
+}
+
+/* No centro de uma célula sem paredes laterais, o lateral vê o poste do canto. */
 static void test_lateral_no_centro_ve_o_poste(void)
 {
     sim_definir_pose(X_CELULA_ABERTA, CELULA_MM / 2.0f, PI_F / 2.0f);
@@ -562,6 +612,8 @@ int main(void)
     RUN_TEST(test_pico_isolado_nao_cria_parede);
     RUN_TEST(test_frente_ve_parede_ao_chegar_no_fim);
     RUN_TEST(test_lateral_no_centro_ve_o_poste);
+    RUN_TEST(test_lateral_lida_ao_entrar_na_celula);
+    RUN_TEST(test_lateral_tarde_demais_ve_a_vizinha);
     RUN_TEST(test_sensor_ausente_reportado_com_o_nome);
     RUN_TEST(test_autoteste_na_largada);
     RUN_TEST(test_autoteste_regras);

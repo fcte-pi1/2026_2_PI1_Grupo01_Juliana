@@ -63,11 +63,20 @@
  * Detecção de parede pelos ToF (FIRM-03, #129).
  * PROVISÓRIO: limiares tirados da geometria acima; calibrar na pista no FIRM-10 (#141).
  *
- * Com o robô centrado, o frontal lê ~44 mm com parede e ~224 mm sem. O lateral
- * (45°) lê ~77 mm com parede e > 230 mm sem, MAS só na primeira metade da célula:
- * perto do centro ele enxerga o poste do canto seguinte (~77-91 mm) mesmo sem
- * parede. Por isso a parede lateral de uma célula deve ser lida logo depois de
- * o robô entrar nela (0 a ~70 mm); quem escolhe o momento é o movimento.
+ * Com o robô centrado, o frontal lê ~44 mm com parede e ~224 mm sem.
+ *
+ * O lateral aponta 45° para a frente: mede a parede ~74 mm À FRENTE do centro
+ * do robô, não ao lado. Com parede, lê ~77 mm. Sem parede, o feixe atravessa o
+ * lado aberto e bate no que houver na célula vizinha; no pior caso (vizinha com
+ * parede horizontal) lê (154 - p) x 1,41 mm, em que p é quanto o robô já entrou
+ * na célula. Medido no mundo simulado:
+ *   p de -65 a +30 mm: sem parede >= 176 mm  -> leitura confiável;
+ *   p de +35 a +85 mm: 169 a 98 mm           -> parede falsa (vizinha);
+ *   p de +90 a +110 mm: 77 a 91 mm           -> parede falsa (poste do canto);
+ *   p acima de +115 mm: já mede a célula seguinte.
+ * Por isso a parede lateral de uma célula deve ser guardada AO ENTRAR nela
+ * (p entre 0 e ~20 mm), com as amostras da mediana tiradas desde ~65 mm antes
+ * da fronteira. Quem escolhe o momento é o movimento (FIRM-05) / navegação (FIRM-01).
  *
  * Histerese: vira parede abaixo de ENTRA e só deixa de ser acima de SAI.
  */
