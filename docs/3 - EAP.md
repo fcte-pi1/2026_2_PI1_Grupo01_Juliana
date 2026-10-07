@@ -171,7 +171,7 @@
 
 ### Figura 5 – EAP do Sub-sistema de Software
 
-> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-adachi).
+> **Algoritmo de navegação:** a definição oficial do pacote **4.2.3.2.1** é **Flood Fill (método Adachi)** (tabela acima). Versões antigas da figura ou rascunhos que citavam **DFS** estão obsoletos; o firmware segue o [4.4 — Projeto conceitual de software](4.4%20-%20Projeto%20conceitual%20de%20software.md#decisao-flood-fill-com-o-metodo-adachi).
 
 ## Histórico de Versões (EAP — Software 4.2.3)
 

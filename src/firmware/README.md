@@ -8,13 +8,18 @@ Ferramenta: [PlatformIO](https://platformio.org/) com o framework Arduino-ESP32,
 
 **Opção 1 — VS Code (recomendada):** instale a extensão **PlatformIO IDE** e abra a pasta `src/firmware` (não a raiz do repositório). Os botões ✓ (compilar), → (gravar) e 🔌 (monitor serial) ficam na barra inferior.
 
-**Opção 2 — terminal:**
+**Opção 2 — terminal:** a versão do PlatformIO fica fixada em `requirements.txt` (a mesma do CI).
 
 ```bash
-python3 -m venv ~/.platformio/penv
-~/.platformio/penv/bin/pip install platformio
-ln -s ~/.platformio/penv/bin/pio ~/.local/bin/pio
+cd src/firmware
+python3 -m venv .venv
+source .venv/bin/activate        # no Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pio --version                    # PlatformIO Core, version 6.2.0
 ```
+
+> [!WARNING]
+> Não instale pelo `apt install platformio`: o pacote do Ubuntu traz a versão 4.3.4, que quebra com `AttributeError: 'PlatformioCLI' object has no attribute 'resultcallback'`. Se ela já estiver instalada, remova (`sudo apt remove platformio`) e use o venv acima.
 
 No Linux, para gravar na placa, o usuário precisa estar no grupo `dialout` (`sudo usermod -aG dialout $USER` e depois sair e entrar na sessão).
 
@@ -28,6 +33,7 @@ Rodar dentro de `src/firmware`:
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
+| `make -C simulador` | Roda a navegação em todos os labirintos de `simulador/labirintos/` ([simulador no PC](simulador/README.md)) |
 
 Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria (`tel` a 5 Hz e `heartbeat` a 1 Hz) e linhas `#` de depuração com as leituras dos ToF simulados.
 
@@ -47,16 +53,19 @@ A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, m
 ```text
 src/firmware/
 ├── platformio.ini        ambientes: esp32_sim (ESP32) e native (PC/testes)
-├── include/config/       pinos.h e robo.h (valores definitivos no ARQ-09)
+├── include/config/       pinos.h e robo.h (valores e fontes do ARQ-09)
 ├── lib/
 │   ├── hal/              contratos do hardware (hal_tof.h, hal_motor.h, ...)
 │   │   └── sim/          implementação simulada de cada contrato
 │   ├── simulacao/        mundo simulado: labirinto em texto + física do robô
+│   ├── simulador/        corrida célula a célula e roteiro de telemetria (FIRM-02)
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01) — C puro
 ├── src/
 │   ├── main.cpp          setup() e loop() do Arduino
 │   └── app/              tarefas FreeRTOS, estados, health-check, telemetria
+├── simulador/            programa de PC que roda a navegação nos labirintos (FIRM-02)
+│   └── labirintos/       24 labirintos válidos: 4x4, 8x4 e 12x4, espelhados
 └── test/                 testes Unity que rodam no PC
 ```
 
@@ -75,24 +84,25 @@ Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao ha
 
 ### Labirintos em texto
 
-A simulação lê labirintos desenhados assim; a largada é a célula do canto inferior esquerdo, virada para o norte:
+A simulação lê labirintos desenhados assim. No [simulador do PC](simulador/README.md), a largada é a célula marcada com `L` (sem a marca, a do canto inferior esquerdo) e o robô começa virado para a saída dela; o mundo simulado da ESP32 sempre começa em (0, 0), virado para o norte:
 
 ```text
 +---+---+---+---+
 |           |   |
 +   +---+   +   +
-|   |       |   |
+|   |           |
 +   +   +---+   +
 |   |   |       |
 +   +---+   +---+
-|   |           |
+| L |           |
 +---+---+---+---+
 ```
 
 ## Pendências
 
-- **Pinos:** a ESP32 de 30 pinos tem 23 GPIOs livres, e a Tabela 2 do 4.3 pede 24 sinais. Hoje `DIP_4` ficou sem pino. Opções: ligar o XSHUT de só 3 ToF (o quarto fica com o endereço padrão) ou dispensar uma chave do DIP. A decisão é do ARQ-09, com a Eletrônica.
-- Valores físicos em `config/robo.h` e o formato das mensagens são provisórios até o ARQ-09 e o ARQ-01.
+- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
+- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura) e as curvas de descarga da bateria (Energia, até os testes da 7.2). O formato das mensagens é provisório até o ARQ-01.
+- **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
 > [!WARNING]
 > **Não acrescente arquivos referentes a _hardware_ nesta pasta.** Eles deverão ser armazenados na pasta [hw](../../hw) deste repositório. Também não versione a saída da compilação (`.pio/`, `.bin`, `.elf`).
