@@ -47,7 +47,7 @@ uint16_t tof_filtro_mediana(const tof_filtro_t *f);
 /* Limita a distância ao alcance do sensor. */
 uint16_t tof_saturar(uint16_t distancia_mm);
 
-/* Mediana de n valores (n >= 1); não altera o vetor. */
+/* Mediana de n valores (1 a 16; 0 se n <= 0); não altera o vetor. */
 uint16_t tof_mediana(const uint16_t *valores, int n);
 
 #ifdef __cplusplus

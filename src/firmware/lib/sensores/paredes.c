@@ -2,6 +2,11 @@
 
 #include "config/robo.h"
 
+_Static_assert(PAREDE_FRENTE_ENTRA_MM <= PAREDE_FRENTE_SAI_MM,
+               "histerese da frente: ENTRA deve ser <= SAI");
+_Static_assert(PAREDE_LADO_ENTRA_MM <= PAREDE_LADO_SAI_MM,
+               "histerese lateral: ENTRA deve ser <= SAI");
+
 void paredes_iniciar(paredes_t *estado)
 {
     estado->frente = false;

@@ -4,19 +4,23 @@
 #include "tof_filtro.h"
 
 bool tof_autoteste_avaliar(const bool respondeu[], const uint16_t distancia_mm[], int n,
-                           uint16_t *valor_mm)
+                           bool *tem_valor, uint16_t *valor_mm)
 {
     uint16_t validas[TOF_AUTOTESTE_AMOSTRAS];
     int quantidade = 0;
 
-    for (int i = 0; i < n && quantidade < TOF_AUTOTESTE_AMOSTRAS; i++) {
+    if (n > TOF_AUTOTESTE_AMOSTRAS) {
+        n = TOF_AUTOTESTE_AMOSTRAS;
+    }
+    for (int i = 0; i < n; i++) {
         if (respondeu[i]) {
             validas[quantidade++] = tof_saturar(distancia_mm[i]);
         }
     }
 
-    *valor_mm = quantidade > 0 ? tof_mediana(validas, quantidade) : 0;
-    return quantidade == n && *valor_mm >= TOF_AUTOTESTE_MIN_MM;
+    *tem_valor = quantidade > 0;
+    *valor_mm = *tem_valor ? tof_mediana(validas, quantidade) : 0;
+    return n > 0 && quantidade == n && *valor_mm >= TOF_AUTOTESTE_MIN_MM;
 }
 
 void tof_autoteste_executar(tof_autoteste_t resultado[TOF_QTD])
@@ -31,7 +35,8 @@ void tof_autoteste_executar(tof_autoteste_t resultado[TOF_QTD])
         }
 
         resultado[id].nome = hal_tof_nome((tof_id_t)id);
-        resultado[id].ok = tof_autoteste_avaliar(respondeu, distancia, TOF_AUTOTESTE_AMOSTRAS,
-                                                 &resultado[id].valor_mm);
+        resultado[id].aprovado =
+            tof_autoteste_avaliar(respondeu, distancia, TOF_AUTOTESTE_AMOSTRAS,
+                                  &resultado[id].tem_valor, &resultado[id].valor_mm);
     }
 }

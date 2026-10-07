@@ -54,6 +54,8 @@ static void test_mediana_de_3_5_e_par(void)
     TEST_ASSERT_EQUAL_UINT16(3, tof_mediana(cinco, 5));
     TEST_ASSERT_EQUAL_UINT16(150, tof_mediana(dois, 2));
     TEST_ASSERT_EQUAL_UINT16(300, tres[0]); /* não altera a entrada */
+    TEST_ASSERT_EQUAL_UINT16(0, tof_mediana(tres, 0));
+    TEST_ASSERT_EQUAL_UINT16(40, tof_mediana(tres + 1, 1));
 }
 
 static void test_nada_a_vista_satura_no_alcance(void)
@@ -94,6 +96,20 @@ static void test_filtro_tolera_duas_falhas_e_descarta_na_terceira(void)
     tof_filtro_iniciar(&f);
     tof_filtro_inserir(&f, true, 77);
     TEST_ASSERT_TRUE(tof_filtro_valido(&f));
+}
+
+static void test_janela_da_mediana_desliza(void)
+{
+    tof_filtro_t f;
+    tof_filtro_iniciar(&f);
+    tof_filtro_inserir(&f, true, 300);
+    tof_filtro_inserir(&f, true, 300);
+    tof_filtro_inserir(&f, true, 300);
+    tof_filtro_inserir(&f, true, 50);
+    TEST_ASSERT_EQUAL_UINT16(300, tof_filtro_mediana(&f)); /* 300, 300, 50 */
+    tof_filtro_inserir(&f, true, 50);
+    TEST_ASSERT_EQUAL_UINT16(50, tof_filtro_mediana(&f)); /* 300, 50, 50 */
+    TEST_ASSERT_EQUAL_UINT8(TOF_MEDIANA_AMOSTRAS, f.quantidade);
 }
 
 static void test_histerese(void)
@@ -386,14 +402,26 @@ static void test_sensor_ausente_reportado_com_o_nome(void)
     ler_ciclos(1);
     TEST_ASSERT_TRUE(sensores_tof_falhou(TOF_DIREITO));
     TEST_ASSERT_FALSE(sensores_paredes().direita); /* falho conta como sem parede */
+    uint16_t mm;
+    TEST_ASSERT_FALSE(sensores_distancia_mm(TOF_DIREITO, &mm));
+
+    /* Voltar a responder não basta: o sensor fica falho até sensores_iniciar. */
+    sim_definir_tof_ausente(TOF_DIREITO, false);
+    ler_ciclos(3);
+    TEST_ASSERT_TRUE(sensores_tof_falhou(TOF_DIREITO));
+    sensores_iniciar();
+    ler_ciclos(1);
+    TEST_ASSERT_FALSE(sensores_tof_falhou(TOF_DIREITO));
+    TEST_ASSERT_TRUE(sensores_paredes().direita);
+    sim_definir_tof_ausente(TOF_DIREITO, true);
     TEST_ASSERT_EQUAL_STRING("tof_direito", hal_tof_nome(TOF_DIREITO));
 
     tof_autoteste_t r[TOF_QTD];
     tof_autoteste_executar(r);
     TEST_ASSERT_EQUAL_STRING("tof_direito", r[TOF_DIREITO].nome);
-    TEST_ASSERT_FALSE(r[TOF_DIREITO].ok);
-    TEST_ASSERT_EQUAL_UINT16(0, r[TOF_DIREITO].valor_mm);
-    TEST_ASSERT_TRUE(r[TOF_ESQUERDO].ok);
+    TEST_ASSERT_FALSE(r[TOF_DIREITO].aprovado);
+    TEST_ASSERT_FALSE(r[TOF_DIREITO].tem_valor); /* valor vai como null */
+    TEST_ASSERT_TRUE(r[TOF_ESQUERDO].aprovado);
 }
 
 /* --------------------------------------------------------------- autoteste */
@@ -405,7 +433,8 @@ static void test_autoteste_na_largada(void)
     tof_autoteste_t r[TOF_QTD];
     tof_autoteste_executar(r);
     for (int i = 0; i < TOF_QTD; i++) {
-        TEST_ASSERT_TRUE_MESSAGE(r[i].ok, r[i].nome);
+        TEST_ASSERT_TRUE_MESSAGE(r[i].aprovado, r[i].nome);
+        TEST_ASSERT_TRUE(r[i].tem_valor);
         TEST_ASSERT_EQUAL_STRING(hal_tof_nome((tof_id_t)i), r[i].nome);
     }
     TEST_ASSERT_UINT16_WITHIN(5, 77, r[TOF_ESQUERDO].valor_mm);
@@ -419,18 +448,35 @@ static void test_autoteste_regras(void)
     const uint16_t perto[5] = {80, 79, 81, 300, 78};
     const uint16_t tampado[5] = {5, 6, 4, 5, 5};
     const uint16_t nada[5] = {8190, 8190, 8190, 8190, 8190};
+    const uint16_t limite[5] = {20, 20, 20, 20, 20};
+    const bool nenhuma[5] = {false, false, false, false, false};
+    bool tem_valor;
     uint16_t valor;
 
-    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, perto, 5, &valor));
+    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, perto, 5, &tem_valor, &valor));
+    TEST_ASSERT_TRUE(tem_valor);
     TEST_ASSERT_EQUAL_UINT16(80, valor);
 
-    TEST_ASSERT_FALSE(tof_autoteste_avaliar(uma_falha, perto, 5, &valor));
-    TEST_ASSERT_FALSE(tof_autoteste_avaliar(todas, tampado, 5, &valor));
-    TEST_ASSERT_EQUAL_UINT16(5, valor);
+    /* Uma falha reprova, mas o valor das que responderam é informado. */
+    TEST_ASSERT_FALSE(tof_autoteste_avaliar(uma_falha, perto, 5, &tem_valor, &valor));
+    TEST_ASSERT_TRUE(tem_valor);
+    TEST_ASSERT_EQUAL_UINT16(79, valor); /* 78, 79, 80, 300: média dos dois do meio */
 
-    /* Nada à vista é ok: corredor aberto na frente do sensor. */
-    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, nada, 5, &valor));
+    TEST_ASSERT_FALSE(tof_autoteste_avaliar(todas, tampado, 5, &tem_valor, &valor));
+    TEST_ASSERT_EQUAL_UINT16(5, valor);
+    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, limite, 5, &tem_valor, &valor));
+
+    TEST_ASSERT_FALSE(tof_autoteste_avaliar(nenhuma, perto, 5, &tem_valor, &valor));
+    TEST_ASSERT_FALSE(tem_valor);
+
+    /* Nada à vista é aprovado: corredor aberto na frente do sensor. */
+    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, nada, 5, &tem_valor, &valor));
     TEST_ASSERT_EQUAL_UINT16(TOF_ALCANCE_MAX_MM, valor);
+
+    /* Bordas de n: zero reprova; acima do máximo, o excesso é ignorado. */
+    TEST_ASSERT_FALSE(tof_autoteste_avaliar(todas, perto, 0, &tem_valor, &valor));
+    TEST_ASSERT_FALSE(tem_valor);
+    TEST_ASSERT_TRUE(tof_autoteste_avaliar(todas, perto, 99, &tem_valor, &valor));
 }
 
 /* ------------------------------------------------------------------ XSHUT */
@@ -506,6 +552,7 @@ int main(void)
     RUN_TEST(test_mediana_de_3_5_e_par);
     RUN_TEST(test_nada_a_vista_satura_no_alcance);
     RUN_TEST(test_filtro_tolera_duas_falhas_e_descarta_na_terceira);
+    RUN_TEST(test_janela_da_mediana_desliza);
     RUN_TEST(test_histerese);
     RUN_TEST(test_50_casos_sinteticos);
     RUN_TEST(test_4_sensores_leem_a_20_hz);

@@ -4,6 +4,13 @@
 
 #define MEDIANA_MAX 16
 
+_Static_assert(TOF_MEDIANA_AMOSTRAS >= 1 && TOF_MEDIANA_AMOSTRAS <= MEDIANA_MAX,
+               "TOF_MEDIANA_AMOSTRAS deve ficar entre 1 e 16");
+_Static_assert(TOF_AUTOTESTE_AMOSTRAS >= 1 && TOF_AUTOTESTE_AMOSTRAS <= MEDIANA_MAX,
+               "TOF_AUTOTESTE_AMOSTRAS deve ficar entre 1 e 16");
+_Static_assert(TOF_FALHAS_PARA_DESCARTAR >= 1 && TOF_FALHAS_PARA_DESCARTAR <= 255,
+               "TOF_FALHAS_PARA_DESCARTAR deve ficar entre 1 e 255");
+
 void tof_filtro_iniciar(tof_filtro_t *f)
 {
     memset(f, 0, sizeof(*f));
@@ -52,6 +59,9 @@ uint16_t tof_mediana(const uint16_t *valores, int n)
 {
     uint16_t ordenados[MEDIANA_MAX];
 
+    if (n <= 0) {
+        return 0;
+    }
     if (n > MEDIANA_MAX) {
         n = MEDIANA_MAX;
     }
