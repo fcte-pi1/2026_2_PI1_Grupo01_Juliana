@@ -10,7 +10,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gerar-tipos": "openapi-typescript ../backend/openapi.yaml -o src/api/schema.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -32,6 +33,7 @@
     "globals": "^17.13.0",
     "jsdom": "^30.1.1",
     "msw": "^2.15.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.71.0",
     "vite": "^8.3.0",
