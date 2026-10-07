@@ -54,6 +54,16 @@ void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);
 
+/*
+ * Ruído nos ToF (FIRM-03, #129): cada leitura dentro do alcance ganha um erro
+ * uniforme em [-amplitude, +amplitude] mm, com gerador próprio de semente fixa
+ * (reprodutível). Amplitude 0 (o padrão) desliga.
+ */
+void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente);
+
+/* A próxima leitura do sensor devolve distancia_mm (um pico isolado). */
+void sim_definir_tof_pico(int tof, uint16_t distancia_mm);
+
 /* Usado pelos testes para conferir o resultado */
 sim_pose_t sim_pose(void);
 bool sim_motores_habilitados(void);
