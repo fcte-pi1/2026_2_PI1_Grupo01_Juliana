@@ -59,6 +59,28 @@
 #define TOF_D_ANG      -45.0f
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
 
+/*
+ * Detecção de parede pelos ToF (FIRM-03, #129).
+ * PROVISÓRIO: limiares tirados da geometria acima; calibrar na pista no FIRM-10 (#141).
+ *
+ * Com o robô centrado, o frontal lê ~44 mm com parede e ~224 mm sem. O lateral
+ * (45°) lê ~77 mm com parede e > 230 mm sem, MAS só na primeira metade da célula:
+ * perto do centro ele enxerga o poste do canto seguinte (~77-91 mm) mesmo sem
+ * parede. Por isso a parede lateral de uma célula deve ser lida logo depois de
+ * o robô entrar nela (0 a ~70 mm); quem escolhe o momento é o movimento.
+ *
+ * Histerese: vira parede abaixo de ENTRA e só deixa de ser acima de SAI.
+ */
+#define PAREDE_FRENTE_ENTRA_MM      120
+#define PAREDE_FRENTE_SAI_MM        150
+#define PAREDE_LADO_ENTRA_MM        140
+#define PAREDE_LADO_SAI_MM          170
+
+#define TOF_MEDIANA_AMOSTRAS        3     /* a 20 Hz: ~100 ms de atraso, ~40 mm a 400 mm/s */
+#define TOF_FALHAS_PARA_DESCARTAR   3     /* leituras seguidas sem resposta (150 ms a 20 Hz) */
+#define TOF_AUTOTESTE_AMOSTRAS      5
+#define TOF_AUTOTESTE_MIN_MM        20    /* abaixo disso, sensor tampado ou com defeito */
+
 /* Bateria — LiPo 2S 7,4 V 500 mAh [ENE] */
 #define BATERIA_DIVISOR             3.2f    /* [HW] divisor 22 kΩ / 10 kΩ: V_bateria = V_adc x 3,2 */
 #define BATERIA_CHEIA_MV            8400    /* [ENE] 4,2 V por célula */
