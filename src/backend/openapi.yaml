@@ -17,9 +17,9 @@ paths:
       tags: [execucoes]
       summary: Listar execuções, todas ou de um labirinto
       description: >
-        Sem o parâmetro, devolve os três labirintos na mesma lista (US27).
-        Com labirinto, filtra um tipo (US26). A tela inicial usa o primeiro
-        item como última execução quando não há execução em andamento.
+        Sem o parâmetro, devolve 4x4, 8x4 e 12x4 na mesma lista.
+        Com labirinto, devolve só o tipo pedido. Quando não há execução
+        em andamento, o primeiro item é a execução mais recente já encerrada.
       parameters:
         - name: labirinto
           in: query
@@ -68,7 +68,7 @@ paths:
                       velocidade_media: null
                       consumo_bateria: null
                 filtrado:
-                  summary: US26, só o labirinto pedido
+                  summary: Só o labirinto pedido no parâmetro
                   value:
                     - execucao_id: 123e4567-e89b-12d3-a456-426614174000
                       labirinto: "4x4"
@@ -113,10 +113,10 @@ paths:
     get:
       operationId: buscarExecucaoEmAndamento
       tags: [execucoes]
-      summary: Retrato da execução lógica em andamento
+      summary: Busca dos dados da execução em andamento (ao vivo)
       description: >
-        No máximo uma execução fica em_andamento (US12).
-        A tela carrega este retrato e depois assina o stream.
+        No máximo uma execução fica em_andamento.
+        A tela carrega o resultado desta busca e depois assina o stream.
         Registrar esta rota antes de /execucoes/{execucao_id}.
       responses:
         "200":
@@ -134,8 +134,8 @@ paths:
                   $ref: "#/components/examples/Tela06SemComunicacao"
         "204":
           description: >
-            Tela 01, início sem execução ativa. A última execução concluída
-            vem de GET /execucoes.
+            Não há execução em andamento, então o corpo vem vazio.
+            A execução mais recente já encerrada é o primeiro item de GET /execucoes.
 
   /execucoes/{execucao_id}:
     get:
@@ -143,8 +143,9 @@ paths:
       tags: [execucoes]
       summary: Consultar uma execução, com trajeto, tentativas e health-check
       description: >
-        Devolve o que a US28 pede para reexibir o percurso, inclusive depois
-        de encerrada. O acompanhamento ao vivo continua no stream.
+        Devolve trajeto, tentativas e health-check para reexibir o percurso,
+        inclusive depois de a execução encerrar. O acompanhamento ao vivo
+        continua no stream.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       responses:
@@ -174,8 +175,7 @@ paths:
       tags: [execucoes]
       summary: Encerrar a tentativa aberta, mantendo a execução em andamento
       description: >
-        Tela 07 é o modal deste pedido (US22, RF30). A tentativa passa a
-        failed com origem encerrado_operador. A execução lógica permanece
+        A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece
         em_andamento, para a retomada. O backend passa a devolver o comando
         de interrupção em POST /telemetria.
       parameters:
@@ -188,13 +188,15 @@ paths:
               $ref: "#/components/schemas/EncerrarTentativa"
             examples:
               tela-07-encerrar:
-                summary: Tela 07, motivo obrigatório e observação opcional
+                summary: Motivo obrigatório e observação opcional
                 value:
                   motivo: collision
                   observacao: Bateu na parede norte da célula (1, 2).
       responses:
         "200":
-          description: Tentativa encerrada. O corpo é o retrato da tela 08.
+          description: >
+            Tentativa encerrada. O corpo é a execução com a tentativa failed
+            e a execução ainda em_andamento, quando cabe retomada.
           content:
             application/json:
               schema:
@@ -213,9 +215,10 @@ paths:
       tags: [execucoes]
       summary: Abrir a tentativa seguinte depois de uma falha
       description: >
-        Tela 09 é o modal, sem corpo. Em caso de sucesso a resposta é o
-        recibo da tentativa 2 ou 3 (tela 10 começa depois disso).
-        Recusa com 409 e não cria tentativa (US20, US21, RF19).
+        O pedido não tem corpo. Em caso de sucesso a resposta é o retorno
+        da tentativa 2 ou 3. Recusa com 409 e não cria tentativa quando
+        já existe tentativa aberta, quando as três já foram usadas ou
+        quando a execução está cancelada.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       responses:
@@ -227,7 +230,7 @@ paths:
                 $ref: "#/components/schemas/RetornoNovaExecucao"
               examples:
                 tela-10-retomada:
-                  summary: Recibo da tentativa 2/3
+                  summary: Retorno da tentativa 2/3
                   value:
                     execucao_id: 123e4567-e89b-12d3-a456-426614174000
                     tentativa_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
@@ -243,7 +246,7 @@ paths:
       tags: [stream]
       summary: Eventos da execução ao vivo
       description: >
-        SSE (US08). O campo event repete o tipo do JSON em data.
+        Fluxo de eventos do servidor para o navegador. O campo event repete o tipo do JSON em data.
         No evento passo, a linha id é o passo_id. Ao reconectar, o navegador
         envia esse valor em Last-Event-ID e o backend reenvia os passos
         posteriores. A amostra telemetria não entra nesse replay.
@@ -305,7 +308,7 @@ paths:
       summary: Receber uma linha da ponte Bluetooth
       description: >
         A ponte não interpreta a linha. O backend valida o JSON interno
-        conforme o contrato 4.4.1 e, se a linha for inválida, descarta e
+        e, se a linha for inválida, descarta e
         registra em log, ainda assim respondendo 200.
         A resposta traz os comandos para escrever na serial. A lista fica
         com interromper depois de Encerrar tentativa, até a confirmação do
@@ -331,7 +334,7 @@ paths:
                   value:
                     comandos: []
                 interromper:
-                  summary: Downlink depois de Encerrar tentativa (RF39)
+                  summary: Comando de interrupção depois de encerrar a tentativa
                   value:
                     comandos:
                       - v: 1
@@ -360,15 +363,16 @@ components:
             detail: Execução não encontrada.
     Recusa:
       description: >
-        Tela 05 e as outras recusas de retomada (RF19).
-        Nenhuma tentativa nova é gravada.
+        A retomada foi recusada. Nenhuma tentativa nova é gravada.
+        O motivo diz se já havia tentativa aberta, se as três já foram
+        usadas ou se a execução está cancelada.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Recusa"
           examples:
             tela-05-tentativa-aberta:
-              summary: Tela 05. Já existe tentativa em health-check ou running.
+              summary: Já existe tentativa em health-check ou running.
               value:
                 motivo: tentativa_aberta
                 ocorrida_em: "2026-10-07T14:04:02-03:00"
@@ -391,7 +395,7 @@ components:
 
   examples:
     Tela02HealthCheck:
-      summary: Tela 02, health-check em andamento
+      summary: Health-check em andamento
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -434,7 +438,7 @@ components:
             rumo: "N"
             enviado_em: "2026-10-07T14:00:04-03:00"
     Tela03EmExecucao:
-      summary: Tela 03, tentativa 1 em running
+      summary: Tentativa 1 em running
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -489,7 +493,7 @@ components:
             enviado_em: "2026-10-07T14:03:21-03:00"
     Tela06SemComunicacao:
       summary: >
-        Tela 06. A tentativa segue running e a View compara ultima_mensagem_em
+        A tentativa segue running e a interface compara ultima_mensagem_em
         com o relógio. Aos 10 s sem mensagem o backend cancela com link_lost.
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
@@ -534,7 +538,7 @@ components:
             rumo: "N"
             enviado_em: "2026-10-07T14:03:09-03:00"
     Tela04Concluida:
-      summary: Tela 04, sucesso na tentativa 1
+      summary: Sucesso na tentativa 1 e execução concluída
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -579,8 +583,8 @@ components:
             enviado_em: "2026-10-07T14:00:33-03:00"
     Tela08EncerradaComoFalha:
       summary: >
-        Telas 08 e 09. A tentativa 1 falhou e a execução segue em_andamento,
-        então Retomar tentativa (2/3) ainda aparece.
+        A tentativa 1 falhou e a execução segue em_andamento,
+        então ainda cabe abrir a tentativa 2.
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -631,7 +635,7 @@ components:
             rumo: "L"
             enviado_em: "2026-10-07T14:04:00-03:00"
     Tela10Retomada:
-      summary: Tela 10, tentativa 2 em running, mapa preservado
+      summary: Tentativa 2 em running, mapa preservado
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -703,7 +707,7 @@ components:
             rumo: "N"
             enviado_em: "2026-10-07T14:06:01-03:00"
     Tela11ConcluidaAposRetomada:
-      summary: Tela 11, sucesso na tentativa 2
+      summary: Sucesso na tentativa 2 e execução concluída
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -768,7 +772,7 @@ components:
             rumo: "N"
             enviado_em: "2026-10-07T14:06:28-03:00"
     Tela12FalhaSemRetomada:
-      summary: Tela 12, três tentativas sem sucesso e execução cancelada
+      summary: Três tentativas sem sucesso e execução cancelada
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
         labirinto: "4x4"
@@ -904,7 +908,7 @@ components:
         - encerrado_operador
     MotivoEncerramento:
       type: string
-      description: Motivos que o operador pode escolher no modal (RF30).
+      description: Motivos que o operador pode escolher ao encerrar a tentativa.
       enum: [collision, stuck, out_of_track]
     OrigemFalha:
       type: string
@@ -929,7 +933,7 @@ components:
     RetornoNovaExecucao:
       type: object
       description: >
-        Recibo ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1.
+        Retorno ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1.
         Em POST /execucoes/{id}/retomar, é 2 ou 3.
       required: [execucao_id, tentativa_id, attempt_index]
       properties:
@@ -1143,7 +1147,7 @@ components:
           type: number
           nullable: true
           description: >
-            Variação percentual contra o melhor tempo do mesmo labirinto (US16).
+            Variação percentual contra o melhor tempo do mesmo labirinto.
             Negativo quando esta execução foi mais rápida. Null se não houver marca anterior.
         eixo_longo:
           allOf:
@@ -1157,8 +1161,8 @@ components:
           format: date-time
           nullable: true
           description: >
-            Recebimento da última mensagem. A View usa este instante para a
-            tela 06. Aos 10 s sem mensagem a execução passa a cancelada,
+            Recebimento da última mensagem. A interface compara este instante
+            com o relógio. Aos 10 s sem mensagem a execução passa a cancelada,
             com link_lost.
         tentativas:
           type: array
