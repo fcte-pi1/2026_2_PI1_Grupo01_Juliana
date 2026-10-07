@@ -74,7 +74,7 @@ As camadas só dependem das de baixo: `app → navegacao, controle, sensores →
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais entram ao lado (FIRM-03 a FIRM-07) e trocar um pelo outro não muda o resto do código.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais entram ao lado no FIRM-10 (#141) e trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
@@ -91,7 +91,7 @@ A `lib/sensores/` lê os 4 ToF pela HAL, filtra cada um com a mediana das 3 últ
 - **Histerese:** vira parede abaixo de `PAREDE_*_ENTRA_MM` e só deixa de ser acima de `PAREDE_*_SAI_MM` (`config/robo.h`). Entre os dois, mantém o estado anterior, para o ruído não fazer a parede "piscar".
 - **Nada à vista** (o VL53L0X devolve ~8190) é saturado em `TOF_ALCANCE_MAX_MM`: corredor aberto, não falha.
 - **Falha:** 3 leituras seguidas sem resposta marcam o sensor como falho até `sensores_iniciar()`, e ele conta como "sem parede". Quem gera a `falha_componente` é a FIRM-09.
-- **Autoteste** (`tof_autoteste_executar`): 5 leituras por sensor; dá nome, ok e a mediana em mm para o `hc_item`.
+- **Autoteste** (`tof_autoteste_executar`): 5 leituras por sensor; dá nome, `aprovado` e a mediana em mm (ou nulo, se nada respondeu) para o `hc_item`.
 - **XSHUT** (`tof_sequencia_inicio`): descreve a ordem para ligar um sensor por vez e trocar os endereços para 0x30 a 0x33. O driver real (FIRM-10) só percorre a lista.
 
 > [!IMPORTANT]
