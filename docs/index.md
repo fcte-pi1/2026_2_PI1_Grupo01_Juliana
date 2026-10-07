@@ -12,7 +12,6 @@
 
 [:material-rocket-launch: Começar](1 - TAP.md){ .md-button .md-button--primary }
 [:material-vector-polyline: Arquitetura proposta](4.4 - Projeto conceitual de software.md){ .md-button }
-[:material-file-document-check: Decisões (ADRs)](decisoes/README.md){ .md-button }
 [:material-account-group: Equipe](1 - TAP.md#membros-da-equipe){ .md-button }
 
 </div>
@@ -92,7 +91,7 @@ O sistema web deve receber e exibir dados como trajeto, bateria, velocidade méd
 
 Estrutura, energia, hardware e software são tratados como subsistemas que precisam funcionar em conjunto.
 
-[Ver EAP](3 - EAP.md) · [Decisões de arquitetura (ADRs)](decisoes/README.md)
+[Ver EAP](3 - EAP.md)
 </div>
 
 <div class="feature-card" markdown>
@@ -160,7 +159,7 @@ Dados de navegação são enviados ao sistema web para acompanhamento e análise
 ### :material-cog-outline: Projeto conceitual
 <p>Decisões e orientações para estrutura, energia, hardware e software.</p>
 
-[Explorar subsistemas](4.1 - Projeto conceitual de estruturas.md) · [ADRs](decisoes/README.md)
+[Explorar subsistemas](4.1 - Projeto conceitual de estruturas.md)
 </div>
 
 <div class="quick-link" markdown>
