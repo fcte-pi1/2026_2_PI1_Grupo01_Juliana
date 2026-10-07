@@ -35,7 +35,7 @@ Rodar dentro de `src/firmware`:
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C simulador` | Roda a navegação em todos os labirintos de `simulador/labirintos/` ([simulador no PC](simulador/README.md)) |
 
-Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria (`tel` a 5 Hz e `heartbeat` a 1 Hz) e linhas `#` de depuração com as leituras dos ToF simulados.
+Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria (`tel` a 5 Hz e `heartbeat` a 1 Hz) e linhas `#` de depuração com as distâncias filtradas dos ToF simulados.
 
 ### Sem placa: simulador Wokwi
 
@@ -59,6 +59,7 @@ src/firmware/
 │   │   └── sim/          implementação simulada de cada contrato
 │   ├── simulacao/        mundo simulado: labirinto em texto + física do robô
 │   ├── simulador/        corrida célula a célula e roteiro de telemetria (FIRM-02)
+│   ├── sensores/         ToF: mediana, paredes com histerese, autoteste e sequência XSHUT (FIRM-03)
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01) — C puro
 ├── src/
@@ -69,7 +70,7 @@ src/firmware/
 └── test/                 testes Unity que rodam no PC
 ```
 
-As camadas só dependem das de baixo: `app → navegacao, controle → hal`. A `navegacao/` não pode incluir Arduino, FreeRTOS nem a HAL (o CI confere); ela recebe as paredes como parâmetro e devolve o próximo movimento. Assim o mesmo código roda na ESP32, nos testes e no simulador do PC (FIRM-02).
+As camadas só dependem das de baixo: `app → navegacao, controle, sensores → hal`. A `navegacao/` não pode incluir Arduino, FreeRTOS nem a HAL (o CI confere); ela recebe as paredes como parâmetro e devolve o próximo movimento. Assim o mesmo código roda na ESP32, nos testes e no simulador do PC (FIRM-02).
 
 ### HAL real e HAL simulada
 
@@ -79,8 +80,22 @@ Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao ha
 
 | Tarefa | Núcleo | Função |
 |---|---|---|
-| `navegacao` | 1 | Lê os sensores, decide o movimento e põe um evento na fila (5 Hz) |
+| `navegacao` | 1 | Lê os ToF a 20 Hz; a 5 Hz decide o movimento e põe um evento na fila |
 | `telemetria` | 0 | Tira os eventos da fila e envia pelo Bluetooth; nunca bloqueia a navegação |
+
+### Detecção de paredes (FIRM-03)
+
+A `lib/sensores/` lê os 4 ToF pela HAL, filtra cada um com a mediana das 3 últimas leituras e decide se há parede à frente, à esquerda e à direita:
+
+- **Frente:** média dos dois frontais válidos; com um só, usa esse.
+- **Histerese:** vira parede abaixo de `PAREDE_*_ENTRA_MM` e só deixa de ser acima de `PAREDE_*_SAI_MM` (`config/robo.h`). Entre os dois, mantém o estado anterior, para o ruído não fazer a parede "piscar".
+- **Nada à vista** (o VL53L0X devolve ~8190) é saturado em `TOF_ALCANCE_MAX_MM`: corredor aberto, não falha.
+- **Falha:** 3 leituras seguidas sem resposta marcam o sensor como falho até `sensores_iniciar()`, e ele conta como "sem parede". Quem gera a `falha_componente` é a FIRM-09.
+- **Autoteste** (`tof_autoteste_executar`): 5 leituras por sensor; dá nome, ok e a mediana em mm para o `hc_item`.
+- **XSHUT** (`tof_sequencia_inicio`): descreve a ordem para ligar um sensor por vez e trocar os endereços para 0x30 a 0x33. O driver real (FIRM-10) só percorre a lista.
+
+> [!IMPORTANT]
+> O ToF lateral aponta a 45° para a frente. Na **primeira metade** da célula (0 a ~70 mm depois de entrar) ele lê ~77 mm com parede e mais de 230 mm sem. Perto do **centro**, ele enxerga o poste do canto seguinte e lê ~77 a 91 mm **mesmo sem parede**. A parede lateral de uma célula deve ser guardada logo depois de o robô entrar nela; quem escolhe esse momento é o movimento (FIRM-05) ou a navegação (FIRM-01).
 
 ### Labirintos em texto
 
@@ -101,7 +116,7 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador/RE
 ## Pendências
 
 - **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
-- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura) e as curvas de descarga da bateria (Energia, até os testes da 7.2). O formato das mensagens é provisório até o ARQ-01.
+- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura), as curvas de descarga da bateria (Energia, até os testes da 7.2) e os limiares de parede dos ToF (`PAREDE_*_MM`, tirados da geometria; calibrar na pista no FIRM-10). O formato das mensagens é provisório até o ARQ-01.
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
 > [!WARNING]
