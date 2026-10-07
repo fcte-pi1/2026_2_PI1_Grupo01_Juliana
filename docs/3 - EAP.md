@@ -19,7 +19,7 @@
 | 1.5 | Transmissão | Acoplamento de força do motor para as rodas. | Roda acoplada diretamente ao eixo de saída da caixa de redução do motor N20. | Sem correias ou engrenagens externas; folga interna da caixa de redução compensada pelo realinhamento com as paredes. |
 | 1.6 | Rodas/Hélices | Conjunto de rodagem e ponto de apoio. | 2x Rodas de 34 mm × 6,5 mm com borracha vulcanizada + 1x *Sphere Caster* de 10 mm (nylon) para apoio frontal. | Garante o contato com o solo, evita patinagem e permite apoio omnidirecional sem arrasto nos giros. |
 
-<img src="https://raw.githubusercontent.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/refs/heads/feature/EAP-estruturas/docs/figs/eap_estrutura.png" alt="" width="">
+![EAP do subsistema de Estrutura](figs/eap_estrutura.png)
 
 ### Figura 2 – EAP do Sub-sistema de Estrutura
 
@@ -28,16 +28,40 @@
 | **ID** | **Componente** | **Descrição** | **Dados Técnicos** | **Comentários** |
 |:------:|----------------|---------------|--------------------|-----------------|
 | 2 | **Sub-sistema: Fonte Energética** | Conjunto responsável por armazenar, converter, proteger, distribuir e monitorar a energia que alimenta todos os demais subsistemas embarcados do Micromouse. | Autonomia mínima de 30 min de operação contínua; massa e volume dentro do envelope de 16,5 × 16,5 cm. | Atende aos requisitos 1 a 10 da frente de Energia. |
-| 2.1 | Alimentação | Fonte primária de energia embarcada, transportada pelo próprio robô. Duas opções em avaliação: pack de pilhas AA e bateria LiPo, com seleção manual entre elas. | Pilhas: 4 × AA em série, 6,0 V nominais (alcalinas) ou 4,8 V (NiMH). LiPo: 2S (7,4 V) ou 3S (11,1 V). Capacidade alvo ≥ 1500 mAh. | Capacidade obtida do consumo estimado (≈1,8 A médio) × 0,5 h, dividido pelos 80% de capacidade utilizável e acrescido de 30% de margem. Valor a confirmar após a medição real de consumo nos testes de energia (AP12). |
-| 2.2 | Eletrônica de Potência | Conversão e adequação da tensão da fonte para os níveis exigidos por cada subsistema, com barramentos separados para potência e lógica. | Barramento lógico regulado (5 V e/ou 3,3 V), corrente ≥ 1 A; barramento de potência dimensionado para o pico dos motores (estimado entre 2,7 A e 4 A). | O barramento lógico não pode compartilhar a linha dos motores, sob pena de reinicialização do microcontrolador. Fronteira com a Eletrônica a alinhar: os drivers dos motores podem ser alocados aqui ou no subsistema de Hardware. |
-| 2.3 | Proteções | Elementos que impedem danos ao conjunto em falhas elétricas: sobrecorrente, curto-circuito, inversão de polaridade e descarga profunda da bateria. | Elemento de sobrecorrente dimensionado acima do pico de operação; proteção de polaridade na entrada; corte por subtensão referenciado à tensão mínima por célula do fabricante. | Itens de proteção não constam da tabela de requisitos de Energia após a última revisão; confirmar com a professora se permanecem nesta frente ou migram para a Eletrônica. |
-| 2.4 | Gerenciamento de Energia | Monitoramento da carga disponível e sinalização do estado de energia do robô ao usuário e ao software embarcado. | Sinal de medição compatível com a faixa de entrada analógica do microcontrolador; indicação visual de robô energizado e de carga mínima. | Fornece o dado de telemetria "consumo de bateria" exigido no slide 11. Método de medição ainda em aberto: leitura de tensão, medição de corrente em série ou contagem de carga. |
+| 2.1 | Alimentação | Fonte de energia embarcada, transportada pelo próprio robô: bateria LiPo como fonte principal e pacote de pilhas AA como alternativa, com seleção manual entre elas. | **LiPo 2S (7,4 V), 500 mAh, C-rating ≥ 20C**, ≈ 30 g. Alternativa: 4 × AA em série (6,0 V). Energia exigida: 2,60 Wh; disponível: 3,70 Wh. | Energia de 3 tentativas no pior caso (1,60 Wh), dividida pelos 80% utilizáveis da LiPo e acrescida de 30% de margem (justificativa na [seção 4.1 do 4.2](4.2%20-%20Projeto%20conceitual%20de%20energia.md)). Autonomia resultante ≈ 55 min. Valores a confirmar com a medição de consumo nos testes de energia (7.2). |
+| 2.2 | Eletrônica de Potência | Conversão e adequação da tensão da fonte para os níveis exigidos por cada subsistema, com barramentos separados para potência e lógica. | 5 V para o ESP32 por conversor **buck-boost** (≥ 500 mA); 3,3 V para ToF e encoders por LDO (≥ 200 mA); motores ligados à bateria pela ponte H, com PWM limitado a 6 V médios (D<sub>máx</sub> = 6,0 V / V<sub>bateria</sub>). Corrente de pico: **1,53 A** (bloqueio das duas rodas). | O buck-boost mantém os 5 V tanto com a LiPo quanto com as pilhas descarregando. O barramento lógico não compartilha a linha dos motores, para evitar reinicialização do microcontrolador. A ponte H (TB6612FNG) fica no subsistema de Hardware. |
+| 2.3 | Proteções | Elementos que impedem danos ao conjunto em falhas elétricas: sobrecorrente, curto-circuito, inversão de polaridade e descarga profunda da bateria. | Fusível rearmável PTC MF-MSMF200 (hold 2,0 A, trip 3,5 A); proteção de polaridade na entrada; corte por subtensão em 3,5 V/célula (7,0 V) e alerta em 3,7 V/célula (7,4 V), feitos pelo firmware. | O componente da proteção de polaridade ainda precisa ser fechado com a Eletrônica: o 4.2 propõe MOSFET de canal P e o 4.3 usa diodo SS34. |
+| 2.4 | Gerenciamento de Energia | Monitoramento da carga disponível e sinalização do estado de energia do robô ao usuário e ao software embarcado. | Leitura da tensão da bateria por divisor 22 kΩ / 10 kΩ (÷ 3,2) no ADC do ESP32 (GPIO36); LED e buzzer no alerta de carga mínima. | Fornece o dado de telemetria de bateria. O método adotado é a leitura de tensão, convertida em porcentagem pela curva de descarga. |
 | 2.5 | Distribuição e Seleção de Fonte | Caminho elétrico entre a fonte e os demais subsistemas: chaveamento geral, seleção da fonte ativa, conectores e cabeamento. | Conectores compatíveis com a corrente de pico; seleção manual de fonte com bloqueio de conexão simultânea; referencial de terra comum entre os barramentos. | A seleção deve impedir que as duas fontes fiquem ligadas ao mesmo tempo. Cabeamento e conectores devem suportar o pico de corrente, não apenas a média. |
 | 2.6 | Suporte e Fixação da Fonte | Compartimento e fixação mecânica da fonte de energia à estrutura, permitindo instalação e remoção sem ferramentas especiais. | Fixação capaz de resistir a vibração e colisão sem deslocamento; acesso à fonte sem desmontar a estrutura. | Viabiliza a troca ou recarga entre tentativas, permitida apenas com o robô em repouso. Interface com a frente de Estruturas quanto ao ponto de fixação e à distribuição de massa. |
 
- <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/fix-eap/docs/figs/eap-energia.jpeg?raw=true" alt="" width=""> 
+```mermaid
+flowchart TD
+    M["Micromouse"] --> E1["1 Estrutura"]
+    M --> E2["2 Fonte Energética"]
+    M --> E3["3 Eletrônica"]
+    M --> E4["4 Software"]
+    E2 --> A["2.1 Alimentação<br/>LiPo 2S 7,4 V · 500 mAh · 20C<br/>alternativa: 4 × AA (6 V)"]
+    E2 --> B["2.2 Eletrônica de Potência<br/>5 V buck-boost · 3,3 V LDO<br/>motores com PWM ≤ 6 V · pico 1,53 A"]
+    E2 --> C["2.3 Proteções<br/>PTC 2,0 A / 3,5 A<br/>polaridade · corte em 7,0 V"]
+    E2 --> D["2.4 Gerenciamento de Energia<br/>divisor 22k/10k no ADC<br/>alerta em 7,4 V (LED e buzzer)"]
+    E2 --> F["2.5 Distribuição e Seleção<br/>chave geral · jumper<br/>uma fonte por vez"]
+    E2 --> G["2.6 Suporte e Fixação<br/>troca sem ferramentas<br/>resistente a vibração"]
+    classDef pai fill:#dcdcd7,stroke:#888,color:#222
+    classDef foco fill:#fde972,stroke:#c9a400,color:#222
+    classDef item fill:#9fe3fb,stroke:#2b7fa8,color:#123
+    class M,E1,E3,E4 pai
+    class E2 foco
+    class A,B,C,D,F,G item
+```
 
- ### Figura 3 – EAP do Sub-sistema de Fonte Energética
+### Figura 3 – EAP do Sub-sistema de Fonte Energética
+
+## Histórico de Versões (EAP — Energia 2)
+
+| Versão | Data | Descrição | Autor(es) |
+| :----: | :--: | --------- | --------- |
+| 1.0 | 07/10/2026 | Itens **2.1** a **2.4** alinhados ao projeto conceitual de energia v1.4: LiPo 2S 500 mAh 20C, pico de 1,53 A, PTC de 2,0 A / 3,5 A, alerta em 7,4 V e corte em 7,0 V, divisor de 22 kΩ / 10 kΩ. Figura 3 refeita no próprio documento, no lugar da imagem que apontava para uma branch excluída [#162](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/162). | [João Marcos Moraes de Andrade](https://github.com/JJOAOMARCOSS), [Giovana Martins de Brito](https://github.com/Giih-martins) |
 
 
 # 3. Sub-sistema: Eletrônica/Hardware
