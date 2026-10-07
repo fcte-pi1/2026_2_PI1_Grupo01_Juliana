@@ -1,0 +1,1412 @@
+openapi: 3.0.3
+info:
+  title: Micromouse - Telemetria - API
+  version: 1.0.0
+  description: >
+    Contrato HTTP entre a View, a conexão Bluetooth e o backend.
+
+tags:
+  - name: execucoes
+  - name: stream
+  - name: telemetria
+
+paths:
+  /execucoes:
+    get:
+      operationId: listarExecucoes
+      tags: [execucoes]
+      summary: Listar execuções, todas ou de um labirinto
+      description: >
+        Sem o parâmetro, devolve os três labirintos na mesma lista (US27).
+        Com labirinto, filtra um tipo (US26). A tela inicial usa o primeiro
+        item como última execução quando não há execução em andamento.
+      parameters:
+        - name: labirinto
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Labirinto"
+          example: "4x4"
+      responses:
+        "200":
+          description: Lista de execuções, da mais recente para a mais antiga.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResumoExecucao"
+              examples:
+                todos:
+                  summary: Todos as execuções de todos os labirintos
+                  value:
+                    - execucao_id: 123e4567-e89b-12d3-a456-426614174000
+                      labirinto: "4x4"
+                      status: concluida
+                      tentativas_usadas: 1
+                      iniciada_em: "2026-10-07T14:00:00-03:00"
+                      encerrada_em: "2026-10-07T14:00:33-03:00"
+                      tempo_total_s: 33.1
+                      velocidade_media: 0.078
+                      consumo_bateria: 2.8
+                    - execucao_id: 123e4567-e89b-12d3-a456-426614174099
+                      labirinto: "8x4"
+                      status: cancelada
+                      tentativas_usadas: 3
+                      iniciada_em: "2026-10-06T15:00:00-03:00"
+                      encerrada_em: "2026-10-06T15:01:36-03:00"
+                      tempo_total_s: 96.5
+                      velocidade_media: 0.07
+                      consumo_bateria: 4.2
+                    - execucao_id: 123e4567-e89b-12d3-a456-426614174091
+                      labirinto: "12x4"
+                      status: em_andamento
+                      tentativas_usadas: 0
+                      iniciada_em: "2026-10-07T14:00:00-03:00"
+                      encerrada_em: null
+                      tempo_total_s: 0.0
+                      velocidade_media: null
+                      consumo_bateria: null
+                filtrado:
+                  summary: US26, só o labirinto pedido
+                  value:
+                    - execucao_id: 123e4567-e89b-12d3-a456-426614174000
+                      labirinto: "4x4"
+                      status: concluida
+                      tentativas_usadas: 1
+                      iniciada_em: "2026-10-07T14:00:00-03:00"
+                      encerrada_em: "2026-10-07T14:00:33-03:00"
+                      tempo_total_s: 33.1
+                      velocidade_media: 0.078
+                      consumo_bateria: 2.8
+    post:
+      operationId: novaExecucao
+      tags: [execucoes]
+      summary: Registra uma nova execução, contando 1/3 tentativas.
+      description: >
+        O operador informa o labirinto. O backend abre a execução lógica,
+        começa o relógio de 10 minutos e cria a tentativa 1.
+        Se já houver execução em andamento, ela é cancelada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NovaExecucao"
+            example:
+              labirinto: "4x4"
+      responses:
+        "201":
+          description: Execução criada com sucesso, contando 1/3 tentativas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetornoNovaExecucao"
+              example:
+                execucao_id: 123e4567-e89b-12d3-a456-426614174000
+                tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                attempt_index: 1
+        "422":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /execucoes/em-andamento:
+    get:
+      operationId: buscarExecucaoEmAndamento
+      tags: [execucoes]
+      summary: Retrato da execução lógica em andamento
+      description: >
+        No máximo uma execução fica em_andamento (US12).
+        A tela carrega este retrato e depois assina o stream.
+        Registrar esta rota antes de /execucoes/{execucao_id}.
+      responses:
+        "200":
+          description: Há uma execução em andamento.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoDetalhe"
+              examples:
+                tela-02-health-check:
+                  $ref: "#/components/examples/Tela02HealthCheck"
+                tela-03-em-execucao:
+                  $ref: "#/components/examples/Tela03EmExecucao"
+                tela-06-sem-comunicacao:
+                  $ref: "#/components/examples/Tela06SemComunicacao"
+        "204":
+          description: >
+            Tela 01, início sem execução ativa. A última execução concluída
+            vem de GET /execucoes.
+
+  /execucoes/{execucao_id}:
+    get:
+      operationId: buscarExecucao
+      tags: [execucoes]
+      summary: Consultar uma execução, com trajeto, tentativas e health-check
+      description: >
+        Devolve o que a US28 pede para reexibir o percurso, inclusive depois
+        de encerrada. O acompanhamento ao vivo continua no stream.
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+      responses:
+        "200":
+          description: Execução encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoDetalhe"
+              examples:
+                tela-04-concluida:
+                  $ref: "#/components/examples/Tela04Concluida"
+                tela-08-encerrada-como-falha:
+                  $ref: "#/components/examples/Tela08EncerradaComoFalha"
+                tela-10-retomada:
+                  $ref: "#/components/examples/Tela10Retomada"
+                tela-11-concluida-apos-retomada:
+                  $ref: "#/components/examples/Tela11ConcluidaAposRetomada"
+                tela-12-falha-sem-retomada:
+                  $ref: "#/components/examples/Tela12FalhaSemRetomada"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /execucoes/{execucao_id}/encerrar-tentativa:
+    post:
+      operationId: encerrarTentativa
+      tags: [execucoes]
+      summary: Encerrar a tentativa aberta, mantendo a execução em andamento
+      description: >
+        Tela 07 é o modal deste pedido (US22, RF30). A tentativa passa a
+        failed com origem encerrado_operador. A execução lógica permanece
+        em_andamento, para a retomada. O backend passa a devolver o comando
+        de interrupção em POST /telemetria.
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EncerrarTentativa"
+            examples:
+              tela-07-encerrar:
+                summary: Tela 07, motivo obrigatório e observação opcional
+                value:
+                  motivo: collision
+                  observacao: Bateu na parede norte da célula (1, 2).
+      responses:
+        "200":
+          description: Tentativa encerrada. O corpo é o retrato da tela 08.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoDetalhe"
+              examples:
+                tela-08-encerrada-como-falha:
+                  $ref: "#/components/examples/Tela08EncerradaComoFalha"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "422":
+          $ref: "#/components/responses/ErroValidacao"
+
+  /execucoes/{execucao_id}/retomar:
+    post:
+      operationId: retomarTentativa
+      tags: [execucoes]
+      summary: Abrir a tentativa seguinte depois de uma falha
+      description: >
+        Tela 09 é o modal, sem corpo. Em caso de sucesso a resposta é o
+        recibo da tentativa 2 ou 3 (tela 10 começa depois disso).
+        Recusa com 409 e não cria tentativa (US20, US21, RF19).
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+      responses:
+        "201":
+          description: Nova tentativa aberta. attempt_index é 2 ou 3.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetornoNovaExecucao"
+              examples:
+                tela-10-retomada:
+                  summary: Recibo da tentativa 2/3
+                  value:
+                    execucao_id: 123e4567-e89b-12d3-a456-426614174000
+                    tentativa_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    attempt_index: 2
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Recusa"
+
+  /execucoes/{execucao_id}/stream:
+    get:
+      operationId: abrirStream
+      tags: [stream]
+      summary: Eventos da execução ao vivo
+      description: >
+        SSE (US08). O campo event repete o tipo do JSON em data.
+        No evento passo, a linha id é o passo_id. Ao reconectar, o navegador
+        envia esse valor em Last-Event-ID e o backend reenvia os passos
+        posteriores. A amostra telemetria não entra nesse replay.
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+        - name: Last-Event-ID
+          in: header
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: passo_id do último passo já aplicado na tela.
+      responses:
+        "200":
+          description: Fluxo text/event-stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                telemetria:
+                  summary: Amostra de célula, bateria e velocidade
+                  value: |
+                    event: telemetria
+                    data: {"tipo":"telemetria","ordem":42,"x":0,"y":2,"bateria":7.81,"velocidade":0.21,"rumo":"N","eixo_longo":null,"enviado_em":"2026-10-07T14:03:21-03:00"}
+                passo:
+                  summary: id igual ao passo_id, para o Last-Event-ID
+                  value: |
+                    id: 41
+                    event: passo
+                    data: {"tipo":"passo","passo_id":41,"seq":2,"x":0,"y":1,"paredes_mask":9,"retomada":false,"entrou_em":"2026-10-07T14:03:22-03:00"}
+                status:
+                  summary: Health-check aprovado, tentativa passa a running
+                  value: |
+                    event: status
+                    data: {"tipo":"status","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","attempt_index":1,"status_tentativa":"running","status_execucao":"em_andamento","tipo_dip":"4x4"}
+                health_check:
+                  summary: Um componente verificado
+                  value: |
+                    event: health_check
+                    data: {"tipo":"health_check","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","componente":"bateria","aprovado":true,"valor_lido":7.84}
+                falha:
+                  summary: Tentativa encerrada com falha
+                  value: |
+                    event: falha
+                    data: {"tipo":"falha","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","motivo":"collision","origem":"encerrado_operador","celula_x":1,"celula_y":2,"componente":null,"observacao":"Bateu na parede norte da célula (1, 2).","momento_falha":"2026-10-07T14:04:00-03:00","status_execucao":"em_andamento"}
+                sucesso:
+                  summary: Objetivo alcançado
+                  value: |
+                    event: sucesso
+                    data: {"tipo":"sucesso","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","x":3,"y":3,"status_execucao":"concluida"}
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /telemetria:
+    post:
+      operationId: receberTelemetria
+      tags: [telemetria]
+      summary: Receber uma linha da ponte Bluetooth
+      description: >
+        A ponte não interpreta a linha. O backend valida o JSON interno
+        conforme o contrato 4.4.1 e, se a linha for inválida, descarta e
+        registra em log, ainda assim respondendo 200.
+        A resposta traz os comandos para escrever na serial. A lista fica
+        com interromper depois de Encerrar tentativa, até a confirmação do
+        robô ou até abrir outra tentativa.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinhaTelemetria"
+            example:
+              linha: '{"v":1,"boot":7,"seq":42,"t_ms":11250,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":7810,"vel_mm_s":210,"eixo_longo":null}'
+              recebido_em: "2026-10-07T14:03:21.512-03:00"
+      responses:
+        "200":
+          description: Comandos pendentes para a serial. Lista vazia se não houver.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaTelemetria"
+              examples:
+                sem-comando:
+                  value:
+                    comandos: []
+                interromper:
+                  summary: Downlink depois de Encerrar tentativa (RF39)
+                  value:
+                    comandos:
+                      - v: 1
+                        cmd: interromper
+        "422":
+          $ref: "#/components/responses/ErroValidacao"
+
+components:
+  parameters:
+    ExecucaoId:
+      name: execucao_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NaoEncontrado:
+      description: Não há execução com esse execucao_id.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroNaoEncontrado"
+          example:
+            detail: Execução não encontrada.
+    Recusa:
+      description: >
+        Tela 05 e as outras recusas de retomada (RF19).
+        Nenhuma tentativa nova é gravada.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Recusa"
+          examples:
+            tela-05-tentativa-aberta:
+              summary: Tela 05. Já existe tentativa em health-check ou running.
+              value:
+                motivo: tentativa_aberta
+                ocorrida_em: "2026-10-07T14:04:02-03:00"
+            limite-3:
+              summary: As três tentativas já foram consumidas.
+              value:
+                motivo: limite_3
+                ocorrida_em: "2026-10-07T14:12:00-03:00"
+            execucao-cancelada:
+              summary: A execução já está cancelada ou o tempo acabou.
+              value:
+                motivo: execucao_cancelada
+                ocorrida_em: "2026-10-07T14:12:00-03:00"
+    ErroValidacao:
+      description: Corpo ou parâmetro fora do contrato.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroValidacao"
+
+  examples:
+    Tela02HealthCheck:
+      summary: Tela 02, health-check em andamento
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: em_andamento
+        tentativas_usadas: 1
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: null
+        tempo_total_s: null
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:00:04-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: health-check
+            tipo_inicio: nova
+            tipo_dip: null
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: null
+            tempo_s: null
+            velocidade_media: null
+            bateria_inicial: null
+            bateria_final: null
+            consumo_bateria: null
+            health_check:
+              - componente: bateria
+                aprovado: true
+                valor_lido: 7.84
+              - componente: tof_frontal_esq
+                aprovado: true
+                valor_lido: 180
+            falha: null
+        trajeto: []
+        leituras:
+          - ordem: 1
+            x: 0
+            y: 0
+            bateria: 7.84
+            velocidade: 0
+            rumo: "N"
+            enviado_em: "2026-10-07T14:00:04-03:00"
+    Tela03EmExecucao:
+      summary: Tela 03, tentativa 1 em running
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: em_andamento
+        tentativas_usadas: 1
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: null
+        tempo_total_s: null
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:03:21-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: running
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: null
+            tempo_s: null
+            velocidade_media: null
+            bateria_inicial: 7.84
+            bateria_final: null
+            consumo_bateria: null
+            health_check:
+              - componente: bateria
+                aprovado: true
+                valor_lido: 7.84
+            falha: null
+        trajeto:
+          - passo_id: 40
+            seq: 1
+            x: 0
+            y: 0
+            paredes_mask: 12
+            retomada: false
+            entrou_em: "2026-10-07T14:00:30-03:00"
+          - passo_id: 41
+            seq: 2
+            x: 0
+            y: 1
+            paredes_mask: 9
+            retomada: false
+            entrou_em: "2026-10-07T14:03:22-03:00"
+        leituras:
+          - ordem: 42
+            x: 0
+            y: 2
+            bateria: 7.81
+            velocidade: 0.21
+            rumo: "N"
+            enviado_em: "2026-10-07T14:03:21-03:00"
+    Tela06SemComunicacao:
+      summary: >
+        Tela 06. A tentativa segue running e a View compara ultima_mensagem_em
+        com o relógio. Aos 10 s sem mensagem o backend cancela com link_lost.
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: em_andamento
+        tentativas_usadas: 1
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: null
+        tempo_total_s: null
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:03:09-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: running
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: null
+            tempo_s: null
+            velocidade_media: null
+            bateria_inicial: 7.84
+            bateria_final: null
+            consumo_bateria: null
+            health_check: []
+            falha: null
+        trajeto:
+          - passo_id: 41
+            seq: 2
+            x: 0
+            y: 1
+            paredes_mask: 9
+            retomada: false
+            entrou_em: "2026-10-07T14:03:00-03:00"
+        leituras:
+          - ordem: 40
+            x: 0
+            y: 1
+            bateria: 7.8
+            velocidade: 0
+            rumo: "N"
+            enviado_em: "2026-10-07T14:03:09-03:00"
+    Tela04Concluida:
+      summary: Tela 04, sucesso na tentativa 1
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: concluida
+        tentativas_usadas: 1
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: "2026-10-07T14:00:33-03:00"
+        tempo_total_s: 33.1
+        variacao_melhor_tempo_pct: -12.5
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:00:33-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: success
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: "2026-10-07T14:00:33-03:00"
+            tempo_s: 33.1
+            velocidade_media: 0.078
+            bateria_inicial: 7.84
+            bateria_final: 7.56
+            consumo_bateria: 0.28
+            health_check: []
+            falha: null
+        trajeto:
+          - passo_id: 50
+            seq: 10
+            x: 3
+            y: 3
+            paredes_mask: 3
+            retomada: false
+            entrou_em: "2026-10-07T14:00:33-03:00"
+        leituras:
+          - ordem: 80
+            x: 3
+            y: 3
+            bateria: 7.56
+            velocidade: 0
+            rumo: "N"
+            enviado_em: "2026-10-07T14:00:33-03:00"
+    Tela08EncerradaComoFalha:
+      summary: >
+        Telas 08 e 09. A tentativa 1 falhou e a execução segue em_andamento,
+        então Retomar tentativa (2/3) ainda aparece.
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: em_andamento
+        tentativas_usadas: 1
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: null
+        tempo_total_s: null
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:04:00-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: failed
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: "2026-10-07T14:04:00-03:00"
+            tempo_s: 20.4
+            velocidade_media: 0.088
+            bateria_inicial: 7.84
+            bateria_final: 7.59
+            consumo_bateria: 0.25
+            health_check: []
+            falha:
+              motivo: collision
+              origem: encerrado_operador
+              celula_x: 1
+              celula_y: 2
+              componente: null
+              observacao: Bateu na parede norte da célula (1, 2).
+              momento_falha: "2026-10-07T14:04:00-03:00"
+        trajeto:
+          - passo_id: 46
+            seq: 6
+            x: 1
+            y: 2
+            paredes_mask: 1
+            retomada: false
+            entrou_em: "2026-10-07T14:03:50-03:00"
+        leituras:
+          - ordem: 60
+            x: 1
+            y: 2
+            bateria: 7.59
+            velocidade: 0
+            rumo: "L"
+            enviado_em: "2026-10-07T14:04:00-03:00"
+    Tela10Retomada:
+      summary: Tela 10, tentativa 2 em running, mapa preservado
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: em_andamento
+        tentativas_usadas: 2
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: null
+        tempo_total_s: null
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:06:01-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: failed
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: "2026-10-07T14:04:00-03:00"
+            tempo_s: 20.4
+            velocidade_media: 0.088
+            bateria_inicial: 7.84
+            bateria_final: 7.59
+            consumo_bateria: 0.25
+            health_check: []
+            falha:
+              motivo: collision
+              origem: encerrado_operador
+              celula_x: 1
+              celula_y: 2
+              componente: null
+              observacao: Bateu na parede norte da célula (1, 2).
+              momento_falha: "2026-10-07T14:04:00-03:00"
+          - tentativa_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+            attempt_index: 2
+            status: running
+            tipo_inicio: retomada
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:05:30-03:00"
+            encerrada_em: null
+            tempo_s: null
+            velocidade_media: null
+            bateria_inicial: 7.59
+            bateria_final: null
+            consumo_bateria: null
+            health_check: []
+            falha: null
+        trajeto:
+          - passo_id: 46
+            seq: 6
+            x: 1
+            y: 2
+            paredes_mask: 1
+            retomada: false
+            entrou_em: "2026-10-07T14:03:50-03:00"
+          - passo_id: 47
+            seq: 7
+            x: 1
+            y: 2
+            paredes_mask: 1
+            retomada: true
+            entrou_em: "2026-10-07T14:05:40-03:00"
+        leituras:
+          - ordem: 1
+            x: 1
+            y: 2
+            bateria: 7.59
+            velocidade: 0.08
+            rumo: "N"
+            enviado_em: "2026-10-07T14:06:01-03:00"
+    Tela11ConcluidaAposRetomada:
+      summary: Tela 11, sucesso na tentativa 2
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: concluida
+        tentativas_usadas: 2
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: "2026-10-07T14:06:28-03:00"
+        tempo_total_s: 58.2
+        variacao_melhor_tempo_pct: 8.0
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:06:28-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: failed
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: "2026-10-07T14:04:00-03:00"
+            tempo_s: 20.4
+            velocidade_media: 0.088
+            bateria_inicial: 7.84
+            bateria_final: 7.59
+            consumo_bateria: 0.25
+            health_check: []
+            falha:
+              motivo: collision
+              origem: encerrado_operador
+              celula_x: 1
+              celula_y: 2
+              componente: null
+              observacao: null
+              momento_falha: "2026-10-07T14:04:00-03:00"
+          - tentativa_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+            attempt_index: 2
+            status: success
+            tipo_inicio: retomada
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:05:30-03:00"
+            encerrada_em: "2026-10-07T14:06:28-03:00"
+            tempo_s: 11.0
+            velocidade_media: 0.082
+            bateria_inicial: 7.59
+            bateria_final: 7.48
+            consumo_bateria: 0.11
+            health_check: []
+            falha: null
+        trajeto:
+          - passo_id: 55
+            seq: 10
+            x: 3
+            y: 3
+            paredes_mask: 3
+            retomada: false
+            entrou_em: "2026-10-07T14:06:28-03:00"
+        leituras:
+          - ordem: 20
+            x: 3
+            y: 3
+            bateria: 7.48
+            velocidade: 0
+            rumo: "N"
+            enviado_em: "2026-10-07T14:06:28-03:00"
+    Tela12FalhaSemRetomada:
+      summary: Tela 12, três tentativas sem sucesso e execução cancelada
+      value:
+        execucao_id: 123e4567-e89b-12d3-a456-426614174000
+        labirinto: "4x4"
+        status: cancelada
+        tentativas_usadas: 3
+        iniciada_em: "2026-10-07T14:00:00-03:00"
+        encerrada_em: "2026-10-07T14:12:00-03:00"
+        tempo_total_s: 96.5
+        variacao_melhor_tempo_pct: null
+        eixo_longo: null
+        ultima_mensagem_em: "2026-10-07T14:12:00-03:00"
+        tentativas:
+          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+            attempt_index: 1
+            status: failed
+            tipo_inicio: nova
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:00:00-03:00"
+            encerrada_em: "2026-10-07T14:04:00-03:00"
+            tempo_s: 16
+            velocidade_media: 0.07
+            bateria_inicial: 7.84
+            bateria_final: 7.6
+            consumo_bateria: 0.24
+            health_check: []
+            falha:
+              motivo: stuck
+              origem: automatica
+              celula_x: 1
+              celula_y: 2
+              componente: null
+              observacao: null
+              momento_falha: "2026-10-07T14:04:00-03:00"
+          - tentativa_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+            attempt_index: 2
+            status: failed
+            tipo_inicio: retomada
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:05:30-03:00"
+            encerrada_em: "2026-10-07T14:08:00-03:00"
+            tempo_s: 17
+            velocidade_media: 0.06
+            bateria_inicial: 7.6
+            bateria_final: 7.4
+            consumo_bateria: 0.2
+            health_check: []
+            falha:
+              motivo: collision
+              origem: encerrado_operador
+              celula_x: 2
+              celula_y: 2
+              componente: null
+              observacao: null
+              momento_falha: "2026-10-07T14:08:00-03:00"
+          - tentativa_id: 6ba7b811-9dad-11d1-80b4-00c04fd430c8
+            attempt_index: 3
+            status: failed
+            tipo_inicio: retomada
+            tipo_dip: "4x4"
+            iniciada_em: "2026-10-07T14:09:00-03:00"
+            encerrada_em: "2026-10-07T14:12:00-03:00"
+            tempo_s: 18
+            velocidade_media: 0.05
+            bateria_inicial: 7.4
+            bateria_final: 7.2
+            consumo_bateria: 0.2
+            health_check: []
+            falha:
+              motivo: link_lost
+              origem: automatica
+              celula_x: 2
+              celula_y: 3
+              componente: null
+              observacao: null
+              momento_falha: "2026-10-07T14:12:00-03:00"
+        trajeto:
+          - passo_id: 60
+            seq: 8
+            x: 2
+            y: 3
+            paredes_mask: 5
+            retomada: false
+            entrou_em: "2026-10-07T14:11:40-03:00"
+        leituras:
+          - ordem: 12
+            x: 2
+            y: 3
+            bateria: 7.2
+            velocidade: 0
+            rumo: "N"
+            enviado_em: "2026-10-07T14:11:50-03:00"
+
+  schemas:
+    Labirinto:
+      type: string
+      enum: ["4x4", "8x4", "12x4"]
+    StatusExecucao:
+      type: string
+      enum: [em_andamento, concluida, cancelada]
+    StatusTentativa:
+      type: string
+      enum: [health-check, running, success, failed]
+    TipoInicio:
+      type: string
+      enum: [nova, retomada]
+    TipoDip:
+      type: string
+      description: Tipo lido no DIP. invalido é o código 11 e reprova o health-check.
+      enum: ["4x4", "8x4", "12x4", invalido]
+    Componente:
+      type: string
+      enum:
+        - bateria
+        - tof_frontal_esq
+        - tof_frontal_dir
+        - tof_esquerdo
+        - tof_direito
+        - motor_esquerdo
+        - motor_direito
+        - encoder_esquerdo
+        - encoder_direito
+    MotivoFalha:
+      type: string
+      enum:
+        - collision
+        - stuck
+        - out_of_track
+        - time_exceeded
+        - falha_componente
+        - low_battery
+        - health_check_failed
+        - link_lost
+        - encerrado_operador
+    MotivoEncerramento:
+      type: string
+      description: Motivos que o operador pode escolher no modal (RF30).
+      enum: [collision, stuck, out_of_track]
+    OrigemFalha:
+      type: string
+      description: Origem gravada em FALHA. O valor web/boot da linha serial vira encerrado_operador.
+      enum: [automatica, encerrado_operador]
+    MotivoRecusa:
+      type: string
+      enum: [tentativa_aberta, limite_3, execucao_cancelada]
+    Rumo:
+      type: string
+      enum: ["N", "S", "L", "O"]
+    EixoLongo:
+      type: string
+      enum: [x, y]
+
+    NovaExecucao:
+      type: object
+      required: [labirinto]
+      properties:
+        labirinto:
+          $ref: "#/components/schemas/Labirinto"
+    RetornoNovaExecucao:
+      type: object
+      description: >
+        Recibo ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1.
+        Em POST /execucoes/{id}/retomar, é 2 ou 3.
+      required: [execucao_id, tentativa_id, attempt_index]
+      properties:
+        execucao_id:
+          type: string
+          format: uuid
+        tentativa_id:
+          type: string
+          format: uuid
+        attempt_index:
+          type: integer
+          minimum: 1
+          maximum: 3
+    EncerrarTentativa:
+      type: object
+      required: [motivo]
+      properties:
+        motivo:
+          $ref: "#/components/schemas/MotivoEncerramento"
+        observacao:
+          type: string
+          maxLength: 100
+          nullable: true
+
+    ItemHealthCheck:
+      type: object
+      required: [componente, aprovado]
+      properties:
+        componente:
+          $ref: "#/components/schemas/Componente"
+        aprovado:
+          type: boolean
+        valor_lido:
+          type: number
+          nullable: true
+    Falha:
+      type: object
+      required: [motivo, origem, celula_x, celula_y, momento_falha]
+      properties:
+        motivo:
+          $ref: "#/components/schemas/MotivoFalha"
+        origem:
+          $ref: "#/components/schemas/OrigemFalha"
+        celula_x:
+          type: integer
+          minimum: 0
+          maximum: 11
+        celula_y:
+          type: integer
+          minimum: 0
+          maximum: 11
+        componente:
+          allOf:
+            - $ref: "#/components/schemas/Componente"
+          nullable: true
+        observacao:
+          type: string
+          maxLength: 100
+          nullable: true
+        momento_falha:
+          type: string
+          format: date-time
+    Tentativa:
+      type: object
+      required: [tentativa_id, attempt_index, status, tipo_inicio, iniciada_em, health_check]
+      properties:
+        tentativa_id:
+          type: string
+          format: uuid
+        attempt_index:
+          type: integer
+          minimum: 1
+          maximum: 3
+        status:
+          $ref: "#/components/schemas/StatusTentativa"
+        tipo_inicio:
+          $ref: "#/components/schemas/TipoInicio"
+        tipo_dip:
+          allOf:
+            - $ref: "#/components/schemas/TipoDip"
+          nullable: true
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          type: string
+          format: date-time
+          nullable: true
+        tempo_s:
+          type: number
+          nullable: true
+        velocidade_media:
+          type: number
+          nullable: true
+          description: Metros por segundo. Distância em células vezes 180 mm, dividida pelo tempo.
+        bateria_inicial:
+          type: number
+          nullable: true
+          description: Tensão em volts no início da tentativa.
+        bateria_final:
+          type: number
+          nullable: true
+        consumo_bateria:
+          type: number
+          nullable: true
+        health_check:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemHealthCheck"
+        falha:
+          allOf:
+            - $ref: "#/components/schemas/Falha"
+          nullable: true
+
+    PassoTrajeto:
+      type: object
+      required: [passo_id, seq, x, y, paredes_mask, retomada]
+      properties:
+        passo_id:
+          type: integer
+          description: Também é o id do evento SSE passo.
+        seq:
+          type: integer
+          minimum: 1
+        x:
+          type: integer
+          minimum: 0
+          maximum: 11
+        y:
+          type: integer
+          minimum: 0
+          maximum: 11
+        paredes_mask:
+          type: integer
+          minimum: 0
+          maximum: 15
+          description: "N = 1, S = 2, L = 4, O = 8."
+        retomada:
+          type: boolean
+        entrou_em:
+          type: string
+          format: date-time
+    LeituraTelemetria:
+      type: object
+      required: [ordem, x, y, bateria, enviado_em]
+      properties:
+        ordem:
+          type: integer
+          minimum: 1
+        x:
+          type: integer
+          minimum: 0
+          maximum: 11
+        y:
+          type: integer
+          minimum: 0
+          maximum: 11
+        bateria:
+          type: number
+          description: Tensão em volts, convertida de bat_mv.
+        velocidade:
+          type: number
+          nullable: true
+          description: Metros por segundo, convertidos de vel_mm_s.
+        rumo:
+          allOf:
+            - $ref: "#/components/schemas/Rumo"
+          nullable: true
+        enviado_em:
+          type: string
+          format: date-time
+
+    ExecucaoDetalhe:
+      type: object
+      description: >
+        Retrato usado por GET /execucoes/em-andamento e GET /execucoes/{id}.
+        Trajeto, health-check e falha começam vazios e são preenchidos por
+        linhas novas, não por este POST de criação.
+      required:
+        - execucao_id
+        - labirinto
+        - status
+        - tentativas_usadas
+        - iniciada_em
+        - tentativas
+        - trajeto
+        - leituras
+      properties:
+        execucao_id:
+          type: string
+          format: uuid
+        labirinto:
+          $ref: "#/components/schemas/Labirinto"
+        status:
+          $ref: "#/components/schemas/StatusExecucao"
+        tentativas_usadas:
+          type: integer
+          minimum: 0
+          maximum: 3
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          type: string
+          format: date-time
+          nullable: true
+        tempo_total_s:
+          type: number
+          nullable: true
+        variacao_melhor_tempo_pct:
+          type: number
+          nullable: true
+          description: >
+            Variação percentual contra o melhor tempo do mesmo labirinto (US16).
+            Negativo quando esta execução foi mais rápida. Null se não houver marca anterior.
+        eixo_longo:
+          allOf:
+            - $ref: "#/components/schemas/EixoLongo"
+          nullable: true
+          description: >
+            Eixo em que o 8x4 ou o 12x4 se estende. Null no 4x4 e enquanto
+            o robô não entrou numa célula além do canto 4x4.
+        ultima_mensagem_em:
+          type: string
+          format: date-time
+          nullable: true
+          description: >
+            Recebimento da última mensagem. A View usa este instante para a
+            tela 06. Aos 10 s sem mensagem a execução passa a cancelada,
+            com link_lost.
+        tentativas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tentativa"
+        trajeto:
+          type: array
+          items:
+            $ref: "#/components/schemas/PassoTrajeto"
+        leituras:
+          type: array
+          description: Leituras da tentativa aberta, ou as últimas se já estiver encerrada.
+          items:
+            $ref: "#/components/schemas/LeituraTelemetria"
+
+    ResumoExecucao:
+      type: object
+      required: [execucao_id, labirinto, status, tentativas_usadas, iniciada_em]
+      properties:
+        execucao_id:
+          type: string
+          format: uuid
+        labirinto:
+          $ref: "#/components/schemas/Labirinto"
+        status:
+          $ref: "#/components/schemas/StatusExecucao"
+        tentativas_usadas:
+          type: integer
+          minimum: 0
+          maximum: 3
+        iniciada_em:
+          type: string
+          format: date-time
+        encerrada_em:
+          type: string
+          format: date-time
+          nullable: true
+        tempo_total_s:
+          type: number
+          nullable: true
+        velocidade_media:
+          type: number
+          nullable: true
+          description: Velocidade média da última tentativa, em metros por segundo.
+        consumo_bateria:
+          type: number
+          nullable: true
+          description: Consumo da última tentativa, em volts.
+
+    EventoTelemetria:
+      type: object
+      required: [tipo, ordem, x, y, bateria, enviado_em]
+      properties:
+        tipo:
+          type: string
+          enum: [telemetria]
+        ordem:
+          type: integer
+        x:
+          type: integer
+        y:
+          type: integer
+        bateria:
+          type: number
+        velocidade:
+          type: number
+          nullable: true
+        rumo:
+          allOf:
+            - $ref: "#/components/schemas/Rumo"
+          nullable: true
+        eixo_longo:
+          allOf:
+            - $ref: "#/components/schemas/EixoLongo"
+          nullable: true
+        enviado_em:
+          type: string
+          format: date-time
+    EventoPasso:
+      type: object
+      required: [tipo, passo_id, seq, x, y, paredes_mask, retomada]
+      properties:
+        tipo:
+          type: string
+          enum: [passo]
+        passo_id:
+          type: integer
+        seq:
+          type: integer
+        x:
+          type: integer
+        y:
+          type: integer
+        paredes_mask:
+          type: integer
+          minimum: 0
+          maximum: 15
+        retomada:
+          type: boolean
+        entrou_em:
+          type: string
+          format: date-time
+    EventoStatus:
+      type: object
+      required: [tipo, tentativa_id, attempt_index, status_tentativa, status_execucao]
+      properties:
+        tipo:
+          type: string
+          enum: [status]
+        tentativa_id:
+          type: string
+          format: uuid
+        attempt_index:
+          type: integer
+          minimum: 1
+          maximum: 3
+        status_tentativa:
+          $ref: "#/components/schemas/StatusTentativa"
+        status_execucao:
+          $ref: "#/components/schemas/StatusExecucao"
+        tipo_dip:
+          allOf:
+            - $ref: "#/components/schemas/TipoDip"
+          nullable: true
+    EventoHealthCheck:
+      type: object
+      required: [tipo, tentativa_id, componente, aprovado]
+      properties:
+        tipo:
+          type: string
+          enum: [health_check]
+        tentativa_id:
+          type: string
+          format: uuid
+        componente:
+          $ref: "#/components/schemas/Componente"
+        aprovado:
+          type: boolean
+        valor_lido:
+          type: number
+          nullable: true
+    EventoFalha:
+      type: object
+      required: [tipo, tentativa_id, motivo, origem, celula_x, celula_y, momento_falha, status_execucao]
+      properties:
+        tipo:
+          type: string
+          enum: [falha]
+        tentativa_id:
+          type: string
+          format: uuid
+        motivo:
+          $ref: "#/components/schemas/MotivoFalha"
+        origem:
+          $ref: "#/components/schemas/OrigemFalha"
+        celula_x:
+          type: integer
+        celula_y:
+          type: integer
+        componente:
+          allOf:
+            - $ref: "#/components/schemas/Componente"
+          nullable: true
+        observacao:
+          type: string
+          nullable: true
+          maxLength: 100
+        momento_falha:
+          type: string
+          format: date-time
+        status_execucao:
+          $ref: "#/components/schemas/StatusExecucao"
+    EventoSucesso:
+      type: object
+      required: [tipo, tentativa_id, x, y, status_execucao]
+      properties:
+        tipo:
+          type: string
+          enum: [sucesso]
+        tentativa_id:
+          type: string
+          format: uuid
+        x:
+          type: integer
+        y:
+          type: integer
+        status_execucao:
+          $ref: "#/components/schemas/StatusExecucao"
+
+    LinhaTelemetria:
+      type: object
+      required: [linha, recebido_em]
+      properties:
+        linha:
+          type: string
+          description: Linha lida da serial, sem a quebra de linha e sem alteração.
+        recebido_em:
+          type: string
+          format: date-time
+          description: Instante em que a ponte leu a linha, com fuso.
+    ComandoInterromper:
+      type: object
+      required: [v, cmd]
+      properties:
+        v:
+          type: integer
+          enum: [1]
+        cmd:
+          type: string
+          enum: [interromper]
+    RespostaTelemetria:
+      type: object
+      required: [comandos]
+      properties:
+        comandos:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComandoInterromper"
+
+    Recusa:
+      type: object
+      required: [motivo, ocorrida_em]
+      properties:
+        motivo:
+          $ref: "#/components/schemas/MotivoRecusa"
+        ocorrida_em:
+          type: string
+          format: date-time
+    ErroNaoEncontrado:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    ErroValidacao:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
