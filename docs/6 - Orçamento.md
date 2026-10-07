@@ -29,7 +29,7 @@ Itens alinhados ao [projeto conceitual de energia](4.2%20-%20Projeto%20conceitua
 
 **Já disponíveis (fora do total):** suporte para 4 pilhas AA (R$ 6,00) e pilhas alcalinas AA (R$ 14,00), já adquiridos; tubos termorretráteis (R$ 12,00), do laboratório.
 
-**Orçados na Eletrônica (não repetidos aqui):** conversor buck-boost de 5 V, diodo Schottky SS34 de proteção de polaridade, resistores do divisor do ADC (22 kΩ / 10 kΩ), capacitores e insumos (fios, barras de pinos, conectores JST e estanho). O buck-boost precisa aceitar a faixa de entrada das duas fontes, de 4,4 V (pilhas descarregadas) a 8,4 V (LiPo cheia): o XL6009 comum é só elevador (boost) e o TPS63020 aceita no máximo 5,5 V na entrada, então nenhum dos dois serve.
+**Orçados na Eletrônica (não repetidos aqui):** conversor buck-boost de 5 V, diodo Schottky SS34 de proteção de polaridade, resistores do divisor do ADC (22 kΩ / 10 kΩ), capacitores e insumos (fios, barras de pinos, conectores JST e estanho). O buck-boost precisa entregar 5 V com pelo menos 1 A e aceitar a faixa de entrada das duas fontes, de 3,5 V (pilhas descarregadas, depois da queda do SS34) a 8,4 V (LiPo cheia): o XL6009 comum é só elevador (boost) e o TPS63020 aceita no máximo 5,5 V na entrada, então nenhum dos dois serve.
 
 <font size="2"><p style="text-align: center">Fonte: [João Marcos](https://github.com/JJOAOMARCOSS) e [Giovana Martins](https://github.com/Giih-martins), 2026.</p></font>
 
