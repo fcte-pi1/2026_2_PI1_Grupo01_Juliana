@@ -17,7 +17,7 @@ typedef struct {
     int8_t y;
     uint16_t bateria_mv;
     uint16_t tof_mm[TOF_QTD];
-    uint8_t tof_ok;  /* bit i = 1 se o ToF i respondeu */
+    uint8_t tof_ok;  /* bit i = 1 se o ToF i tem leitura filtrada válida */
     uint8_t acao;    /* nav_acao_t da última decisão */
 } evento_leitura_t;
 

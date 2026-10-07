@@ -39,7 +39,7 @@ static void enviar_tel(const evento_leitura_t *ev)
                      ev->x, ev->y, ev->bateria_mv);
     enviar(linha, n);
 
-    /* Linha de depuração (começa com '#', a ponte ignora): leituras cruas dos ToF. */
+    /* Linha de depuração (começa com '#', a ponte ignora): distâncias filtradas dos ToF. */
     n = snprintf(linha, sizeof(linha), "# tof_mm fe=%u fd=%u e=%u d=%u ok=0x%X acao=%u\n",
                  ev->tof_mm[TOF_FRONTAL_ESQ], ev->tof_mm[TOF_FRONTAL_DIR],
                  ev->tof_mm[TOF_ESQUERDO], ev->tof_mm[TOF_DIREITO], ev->tof_ok, ev->acao);
