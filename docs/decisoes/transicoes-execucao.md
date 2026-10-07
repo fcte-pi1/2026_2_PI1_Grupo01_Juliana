@@ -10,6 +10,17 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 - Contadores: `attempt_index` ∈ {1,2,3}; relógio da execução desde **Nova execução** (RF32).
 - Ações recusadas registram **tentativa rejeitada** (RF19) sem alterar estados válidos.
 
+`success` é o único status de tentativa que conclui a execução. `failed` na tentativa 1 ou 2, inclusive **Encerrar tentativa**, mantém a execução `em_andamento`. Na tentativa 3, **Encerrar tentativa** também deixa a tentativa `failed` e a execução vai a `cancelada`, porque não cabe retomada. O mesmo vale para as outras falhas da terceira tentativa, para a perda de link, para o estouro de tempo e para uma nova execução que cancela a anterior.
+
+| Tentativa | Execução depois | Linhas |
+| --- | --- | --- |
+| `health-check` ou `running` | `em_andamento` | T01, T03 |
+| `success` | `concluida` | T05, T11 |
+| `failed` na tentativa 1 ou 2, inclusive **Encerrar tentativa** | `em_andamento` | T04, T06, T07 |
+| `failed` na tentativa 3, inclusive **Encerrar tentativa** | `cancelada` | T07, T12 |
+| `failed` por link (10 s) ou tempo (10 min) | `cancelada` | T08, T09 |
+| execução anterior ainda aberta quando nasce outra | a anterior fica `cancelada` | T13 |
+
 ---
 
 
@@ -25,21 +36,19 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 | T04 | `health-check`              | Telemetria: falha no health-check         | `failed`                  | `em_andamento`*          | Motivo `health_check_failed` ou `falha_componente` (RF15)                     |
 | T05 | `running`                   | Telemetria: `success`                     | `success`                 | `concluida`              | Métricas; execução encerrada com sucesso (RF26, RF33)                         |
 | T06 | `running`                   | Telemetria: `failed` (trajeto/componente) | `failed`                  | `em_andamento`†          | Motivo conforme RF15; célula/componente gravados                              |
-| T07 | `health-check` ou `running` | **Encerrar tentativa** (UC04)             | `failed`                  | `em_andamento`†          | Motivo escolhido + `encerrado_operador`; `interrupcao_pendente`=true (RF39)   |
+| T07 | `health-check` ou `running` | **Encerrar tentativa** (UC04)             | `failed`                  | `em_andamento`†          | Motivo escolhido + `encerrado_operador`; `interrupcao_pendente`=true (RF39). Na tentativa 3, a execução segue para T12 e fica `cancelada` |
 | T08 | `health-check` ou `running` | **Perda de link** 10 s (UC12.2)           | `failed`                  | `cancelada`              | Motivo `link_lost`; sem downlink                                              |
 | T09 | `health-check` ou `running` | **Tempo execução** ≥600 s (UC12.1)        | `failed`                  | `cancelada`              | Motivo `time_exceeded`; sem downlink                                          |
 | T10 | `failed`                    | —                                         | `failed`                  | †                        | Terminal; só nova tentativa via T02 ou fim de execução                        |
 | T11 | `success`                   | —                                         | `success`                 | `concluida`              | Terminal                                                                      |
 
 
- Se `attempt_index`=3 e falha impede retomada útil, operador ainda pode estar em `em_andamento` até esgotar retomadas ou cancelamento explícito — após T06 com index=3, próximo estado de execução é **T12**.
-
-† Se `attempt_index`=3 e não houver sucesso posterior, execução vai a `cancelada` (**T12**).
+\* e † Com `attempt_index` 1 ou 2, a execução permanece `em_andamento` e cabe **Retomar tentativa**. Com `attempt_index`=3, a falha segue para **T12** e a execução fica `cancelada`. Isso inclui **Encerrar tentativa** (T07) na terceira tentativa: a tentativa fica `failed` e a execução fica `cancelada`.
 
 
 | ID  | Estado tentativa (antes) | Evento                                             | Estado tentativa (depois)               | Estado execução (depois) | Efeito esperado                           |
 | --- | ------------------------ | -------------------------------------------------- | --------------------------------------- | ------------------------ | ----------------------------------------- |
-| T12 | `failed`                 | `attempt_index`=3 e sem retomada pendente          | `failed`                                | `cancelada`              | Três tentativas consumidas sem sucesso    |
+| T12 | `failed`                 | `attempt_index`=3 e sem retomada pendente          | `failed`                                | `cancelada`              | Três tentativas consumidas sem sucesso, inclusive **Encerrar tentativa** na terceira |
 | T13 | Aberta                   | **Nova execução** (UC01) cancela execução anterior | *(exec anterior)* `failed` ou encerrada | anterior `cancelada`     | Tentativa anterior fechada; nova exec T01 |
 
 

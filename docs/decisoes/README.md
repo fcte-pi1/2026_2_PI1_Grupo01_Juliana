@@ -16,6 +16,7 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [010](010-reconexao-deduplicacao-seq.md) | Reconexão ≤10 s e deduplicação por `seq` | Backend, Firmware, Ponte |
 | [011](011-execucao-logica-tres-tentativas.md) | Execução lógica, 3 tentativas e 10 min totais | Backend, Front, Testes |
 | [012](012-retomada-celula-falha.md) | Retomada na célula da falha (sem checkpoint anterior) | Front, Backend, Firmware, Testes |
+| [013](013-status-execucao-e-tentativa.md) | Dois status no contrato: execução e tentativa | Backend, Front |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 
