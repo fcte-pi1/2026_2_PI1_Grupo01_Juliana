@@ -19,8 +19,10 @@ export function useRequisicao<T>(buscar: (sinal: AbortSignal) => Promise<T>, cha
 
   useEffect(() => {
     const controle = new AbortController()
+    setDados(null)
     buscar(controle.signal)
       .then((resultado) => {
+        if (controle.signal.aborted) return
         setDados(resultado)
         setErro(null)
       })

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { CENARIOS } from '../mocks/cenarios'
@@ -64,8 +64,11 @@ describe('rota /execucoes', () => {
     expect(screen.getByRole('link', { name: '#0032' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: '8x4' }))
-    expect(await screen.findByRole('link', { name: '#0040' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: '#0041' })).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: '#0041' })).not.toBeInTheDocument()
+    })
+    expect(screen.getByRole('link', { name: '#0040' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '#0032' })).toBeInTheDocument()
   })
 })
 
