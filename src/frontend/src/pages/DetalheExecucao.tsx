@@ -37,7 +37,7 @@ export function DetalheExecucao() {
     <>
       <Cabecalho
         trilha="Histórico de execuções · detalhe"
-        titulo={`Execução ${formatarNumeroExecucao(execucao.numero)}`}
+        titulo={`Execução ${formatarNumeroExecucao(execucao.numero, execucao.execucao_id)}`}
         acoes={
           <>
             <PilulaResultado resultado={execucao.status} />

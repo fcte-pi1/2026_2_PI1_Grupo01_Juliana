@@ -33,7 +33,7 @@ export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAo
             <div className="grade grade--3">
               <CartaoMetrica
                 rotulo="Velocidade"
-                valor={ultima ? formatarNumero(ultima.velocidade, 3) : '—'}
+                valor={ultima?.velocidade != null ? formatarNumero(ultima.velocidade, 3) : '—'}
                 unidade="m/s"
                 detalhe={`${formatarNumero(distanciaM, 2)} m percorridos`}
               />

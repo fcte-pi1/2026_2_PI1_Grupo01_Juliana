@@ -43,6 +43,8 @@ export function podeRetomar(execucao: Execucao): boolean {
 
 export function derivarEstadoInicio(execucao: Execucao | null, agora: number): EstadoInicio {
   if (!execucao) return 'sem-execucao'
+  if (execucao.status === 'cancelada') return 'falha-sem-retomada'
+  if (execucao.status === 'concluida') return 'concluida'
   const tentativa = tentativaAtual(execucao)
   switch (tentativa?.status ?? 'health-check') {
     case 'health-check':
@@ -50,7 +52,7 @@ export function derivarEstadoInicio(execucao: Execucao | null, agora: number): E
     case 'running':
       return (segundosSemDados(execucao, agora) ?? 0) > ALERTA_SEM_DADOS_S ? 'sem-comunicacao' : 'em-execucao'
     case 'success':
-      return 'concluida'
+      return 'em-execucao'
     default:
       return podeRetomar(execucao) ? 'falha-retomavel' : 'falha-sem-retomada'
   }

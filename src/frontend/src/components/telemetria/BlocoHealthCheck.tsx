@@ -13,10 +13,10 @@ export function BlocoHealthCheck({ itens }: BlocoHealthCheckProps) {
       <div className="cartao__cabecalho">
         <h2 className="cartao__titulo">Health-check</h2>
         <span className="mono texto-suave">
-          {aprovados} de {itens.length} OK
+          {itens.length > 0 ? `${aprovados} de ${itens.length} OK` : 'Aguardando'}
         </span>
       </div>
-      <ul className="health-check">
+      {itens.length === 0 ? <p className="texto-suave">Aguardando os dados do health-check enviados pelo robô.</p> : <ul className="health-check">
         {itens.map((item) => (
           <li key={item.componente} className={`health-check__item health-check__item--${situacao(item)}`}>
             <span>{ROTULO_COMPONENTE[item.componente]}</span>
@@ -26,7 +26,7 @@ export function BlocoHealthCheck({ itens }: BlocoHealthCheckProps) {
             </span>
           </li>
         ))}
-      </ul>
+      </ul>}
     </section>
   )
 }

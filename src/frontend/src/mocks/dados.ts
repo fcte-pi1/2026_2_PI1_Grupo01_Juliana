@@ -1,3 +1,4 @@
+import type { components } from '../api/schema'
 import type {
   Execucao,
   Falha,
@@ -8,6 +9,39 @@ import type {
   ResumoExecucao,
   Tentativa,
 } from '../api/tipos'
+
+/** Serializa os exemplos do protótipo no mesmo formato do contrato REST. */
+export function resumoAPI(dados: ResumoExecucao): components['schemas']['ResumoExecucao'] & { numero?: number } {
+  return {
+    execucao_id: dados.execucao_id,
+    numero: dados.numero,
+    tipo_labirinto: dados.labirinto,
+    status: dados.status,
+    tentativas_usadas: dados.tentativas_usadas,
+    iniciada_em: dados.iniciada_em,
+    tempo_total_s: dados.tempo_total_s,
+    velocidade_media: dados.velocidade_media,
+    consumo_bateria: dados.consumo_bateria,
+  }
+}
+
+export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDetalhe'] & { numero?: number } {
+  const { labirinto, ...restante } = dados
+  return {
+    ...restante,
+    tipo_labirinto: labirinto,
+    trajeto: dados.trajeto.map((passo) => ({ ...passo, passo_id: passo.seq })),
+    tentativas: dados.tentativas.map((tentativa) => {
+      const { tipo_descoberto, ...restanteTentativa } = tentativa
+      return {
+        ...restanteTentativa,
+        tipo_dip: tipo_descoberto,
+        health_check: tentativa.health_check.filter((item) => item.aprovado !== null)
+          .map((item) => ({ ...item, aprovado: item.aprovado! })),
+      }
+    }),
+  }
+}
 
 // Dados de exemplo do labirinto 4x4 do protótipo (execução #0042, largada em A1,
 // objetivo em D4). As datas são relativas ao carregamento da página, para que

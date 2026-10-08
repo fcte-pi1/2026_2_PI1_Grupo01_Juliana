@@ -38,6 +38,18 @@ Os 12 estados de tela do protótipo podem ser abertos pelo painel flutuante "Moc
 
 Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05-execucao-recusada`, `06-sem-comunicacao`, `07-encerrar-execucao`, `08-encerrada-como-falha`, `09-retomar-tentativa`, `10-retomada-tentativa-2`, `11-concluida-apos-retomada`, `12-falha-sem-retomada`. O cenário escolhido fica salvo na aba (sessionStorage), e os botões da tela avançam o cenário como o backend faria (Nova execução → health-check, Encerrar → falha, Retomar → tentativa 2).
 
+### FRONT-02 — início e nova execução
+
+No cenário `05-execucao-recusada`, use Nova execução e confirme para receber o aviso pela resposta 409.
+
+A tela consulta `GET /execucoes/em-andamento` (204 quando não há execução) e `GET /execucoes` para a última execução e as marcas dos três labirintos. Não depende de rotas extras para buscar essas informações.
+
+Nova execução envia `POST /execucoes` com `tipo_labirinto`. Havendo uma em andamento, o modal informa o cancelamento antes do envio. O retorno 201 fornece os IDs e `attempt_index`; em seguida, a tela consulta o detalhe por ID e mostra Tentativa 1/3. Se essa consulta falhar, a ação de carregar tenta somente o GET, sem criar outra execução. Uma recusa 409 exibe o motivo recebido e preserva a tela e a seleção.
+
+`src/api/schema.ts` é o arquivo já gerado pela equipe na branch `feat/arq-02-contrato-rest-sse`, em `c2d7bda`. Os endpoints usam esses tipos e normalizam os campos opcionais para a View. O detalhe mínimo de `dev`, ainda sem leituras, trajeto ou health-check, é exibido como pendente. O UUID é usado quando a API não informa um número sequencial; os números do protótipo ficam nos mocks.
+
+A integração com a API real depende da implementação das rotas de ARQ-02/BACK. O tratamento dos eventos SSE permanece no FRONT-03 e os comandos existentes de encerrar/retomar continuam provisórios para suas respectivas issues; não foram implementados nesta entrega.
+
 ## Rotas
 
 | Rota              | Tela                                                    |
@@ -52,7 +64,7 @@ Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05
 src/
 ├── App.tsx            rotas
 ├── main.tsx           liga o MSW (se mock) e o roteador
-├── api/               ClienteAPI, endpoints e tipos (provisórios até o contrato OpenAPI do ARQ-02)
+├── api/               ClienteAPI, endpoints, modelos da View e tipos gerados do OpenAPI (schema.ts)
 ├── mocks/             handlers do MSW, dados e os 12 cenários
 ├── pages/             telas; inicio/estadoInicio.ts deriva o estado da tela a partir da execução
 ├── components/

@@ -2,8 +2,8 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { buscarCenario, CENARIOS } from '../mocks/cenarios'
-import { HISTORICO, ULTIMA_EXECUCAO } from '../mocks/dados'
+import { CENARIOS } from '../mocks/cenarios'
+import { HISTORICO, resumoAPI, ULTIMA_EXECUCAO } from '../mocks/dados'
 import { servidor } from '../mocks/servidor'
 import { renderizarRota } from './renderizar'
 
@@ -13,7 +13,7 @@ const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '02-health-check': /6 de 9 OK/,
   '03-em-execucao': /Tempo da execução/,
   '04-concluida': /concluída na tentativa 1/,
-  '05-execucao-recusada': /Tentativa recusada/,
+  '05-execucao-recusada': /Nova execução recusada/,
   '06-sem-comunicacao': /Sem dados do robô há/,
   '07-encerrar-execucao': /Encerrar a tentativa 1 da execução #0042\?/,
   '08-encerrada-como-falha': /Retomar tentativa \(2\/3\)/,
@@ -30,13 +30,18 @@ describe('rota /', () => {
 
   it.each(CENARIOS.map((c) => [c.id, c.modal] as const))('exibe o cenário %s', async (id, modal) => {
     renderizarRota(modal ? `/?modal=${modal}` : '/', id)
+    if (id === '05-execucao-recusada') {
+      await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
+      const dialogo = await screen.findByRole('dialog')
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Confirmar nova execução' }))
+    }
     expect((await screen.findAllByText(MARCA_DO_CENARIO[id])).length).toBeGreaterThan(0)
   })
 
   it('Nova execução abre o health-check', async () => {
     renderizarRota('/', '01-inicio')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
-    expect(await screen.findByText(/6 de 9 OK/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Health-check' })).toBeInTheDocument()
   })
 
   it('mostra o estado da última execução sem usar o resultado da tentativa', async () => {
@@ -47,10 +52,9 @@ describe('rota /', () => {
   })
 
   it.each([null, undefined])('usa o status da última execução quando resultado é %s', async (resultado) => {
-    servidor.use(http.get('*/api/execucoes/atual', () => HttpResponse.json({
-      ...buscarCenario('01-inicio').atual(Date.now()),
-      ultima: { ...ULTIMA_EXECUCAO, resultado },
-    })))
+    servidor.use(http.get('*/api/execucoes', () => HttpResponse.json([
+      { ...resumoAPI(ULTIMA_EXECUCAO), resultado },
+    ])))
     renderizarRota('/')
     const cartao = (await screen.findByText('Última execução · 4x4')).closest('section')!
     expect(within(cartao).getByText('Concluída')).toBeInTheDocument()
@@ -81,7 +85,7 @@ describe('rota /', () => {
 describe('rota /execucoes', () => {
   it.each([null, undefined])('usa o status no histórico quando resultado é %s', async (resultado) => {
     servidor.use(http.get('*/api/execucoes', () => HttpResponse.json(
-      HISTORICO.map((execucao) => ({ ...execucao, resultado })),
+      HISTORICO.map((execucao) => ({ ...resumoAPI(execucao), resultado })),
     )))
     renderizarRota('/execucoes')
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()

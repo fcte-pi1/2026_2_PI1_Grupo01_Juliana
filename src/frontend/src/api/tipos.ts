@@ -1,14 +1,12 @@
-// Tipos trocados com o backend.
-//
-// Provisórios: seguem o dicionário de dados do 4.4 (Persistência de dados) e
-// serão substituídos pelos tipos gerados do OpenAPI quando o ARQ-02 fechar o
-// contrato REST + SSE. Até lá, mudanças no DER precisam ser refletidas aqui.
+import type { components } from './schema'
 
-export type TipoLabirinto = '4x4' | '8x4' | '12x4'
+// Modelos da View. Os endpoints normalizam os dados do OpenAPI para estes tipos.
+// Os números sequenciais pertencem ao protótipo; a API identifica execuções por UUID.
+export type TipoLabirinto = components['schemas']['Labirinto']
 
-export type StatusExecucao = 'em_andamento' | 'concluida' | 'cancelada'
+export type StatusExecucao = components['schemas']['StatusExecucao']
 
-export type StatusTentativa = 'health-check' | 'running' | 'success' | 'failed'
+export type StatusTentativa = components['schemas']['StatusTentativa']
 
 export type TipoInicio = 'nova' | 'retomada'
 
@@ -65,7 +63,7 @@ export interface LeituraTelemetria {
   x: number
   y: number
   bateria: number
-  velocidade: number
+  velocidade: number | null
   enviado_em: string
 }
 
@@ -93,7 +91,7 @@ export interface Tentativa {
   attempt_index: number
   status: StatusTentativa
   tipo_inicio: TipoInicio
-  tipo_descoberto: TipoLabirinto | null
+  tipo_descoberto: components['schemas']['TipoDip'] | null
   iniciada_em: string
   encerrada_em: string | null
   tempo_s: number | null
@@ -113,7 +111,7 @@ export interface Recusa {
 /** Execução lógica com tudo o que as telas de Início e Detalhe exibem. */
 export interface Execucao {
   execucao_id: string
-  numero: number
+  numero?: number
   labirinto: TipoLabirinto
   status: StatusExecucao
   tentativas_usadas: number
@@ -129,7 +127,7 @@ export interface Execucao {
 /** Linha do histórico (GET /execucoes). */
 export interface ResumoExecucao {
   execucao_id: string
-  numero: number
+  numero?: number
   labirinto: TipoLabirinto
   status: StatusExecucao
   resultado: StatusExecucao | null
@@ -140,19 +138,19 @@ export interface ResumoExecucao {
   consumo_bateria: number | null
 }
 
-/** Resposta de GET /execucoes/atual. */
+/** Estado da View montado com GET /execucoes/em-andamento e GET /execucoes. */
 export interface ExecucaoAtualResposta {
   /** Execução lógica mais recente, em andamento ou recém-encerrada; null se não houver. */
   execucao: Execucao | null
   ultima: ResumoExecucao | null
   /** Última recusa de abertura de tentativa (RF19), se houver. */
   recusa: Recusa | null
-  proximo_numero: number
+  proximo_numero?: number
 }
 
-export interface NovaExecucaoPedido {
-  labirinto: TipoLabirinto
-}
+export type NovaExecucaoPedido = components['schemas']['NovaExecucao']
+
+export type RetornoNovaExecucao = components['schemas']['RetornoNovaExecucao']
 
 export interface EncerrarPedido {
   motivo: MotivoEncerramento

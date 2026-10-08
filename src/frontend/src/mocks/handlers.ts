@@ -1,13 +1,13 @@
 import { http, HttpResponse, sse } from 'msw'
-import type { EventoExecucao, Execucao, TipoLabirinto } from '../api/tipos'
-import { cenarioAtual, definirCenario } from './cenarioAtual'
+import type { EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
+import { avancarCenario, buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, registrarNovaExecucao } from './cenarioAtual'
 import { buscarCenario } from './cenarios'
-import { execucao, HISTORICO, LABIRINTOS, tentativa, trajetoAte } from './dados'
+import { detalheAPI, execucao, HISTORICO, resumoAPI, tentativa, trajetoAte } from './dados'
 
 const API = '*/api'
 
 function execucaoDoCenario(): Execucao {
-  return cenarioAtual().atual(Date.now()).execucao ?? buscarCenario('04-concluida').atual(Date.now()).execucao!
+  return dadosAtuais(Date.now()).execucao ?? buscarCenario('04-concluida').atual(Date.now()).execucao!
 }
 
 /** Execuções antigas do histórico, montadas a partir da linha da tabela. */
@@ -41,36 +41,45 @@ function execucaoDoHistorico(id: string): Execucao | null {
 }
 
 export const handlers = [
-  http.get(`${API}/labirintos`, () => HttpResponse.json(LABIRINTOS)),
-
-  http.get(`${API}/execucoes/atual`, () => HttpResponse.json(cenarioAtual().atual(Date.now()))),
+  http.get(`${API}/execucoes/em-andamento`, () => {
+    const atual = dadosAtuais(Date.now()).execucao
+    return atual ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
+  }),
 
   http.get(`${API}/execucoes`, ({ request }) => {
-    const labirinto = new URL(request.url).searchParams.get('labirinto') as TipoLabirinto | null
-    return HttpResponse.json(labirinto ? HISTORICO.filter((e) => e.labirinto === labirinto) : HISTORICO)
+    const labirinto = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
+    return HttpResponse.json((labirinto ? HISTORICO.filter((e) => e.labirinto === labirinto) : HISTORICO).map(resumoAPI))
   }),
 
   http.get(`${API}/execucoes/:id`, ({ params }) => {
     const id = String(params.id)
-    const encontrada = id === 'e-0042' ? execucaoDoCenario() : execucaoDoHistorico(id)
-    return encontrada ? HttpResponse.json(encontrada) : HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
+    const encontrada = buscarExecucaoRegistrada(id) ?? (id === 'e-0042' ? execucaoDoCenario() : execucaoDoHistorico(id))
+    return encontrada ? HttpResponse.json(detalheAPI(encontrada)) : HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
   }),
 
   // Comandos: trocam o cenário para o estado seguinte, como o backend faria.
-  http.post(`${API}/execucoes`, () => {
-    definirCenario('02-health-check')
-    return HttpResponse.json(execucaoDoCenario(), { status: 201 })
+  http.post(`${API}/execucoes`, async ({ request }) => {
+    const recusa = dadosAtuais(Date.now()).recusa
+    if (recusa) return HttpResponse.json(recusa, { status: 409 })
+    const pedido = await request.json() as NovaExecucaoPedido
+    if (!['4x4', '8x4', '12x4'].includes(pedido.tipo_labirinto)) return new HttpResponse(null, { status: 422 })
+    const nova = registrarNovaExecucao(pedido.tipo_labirinto, Date.now())
+    return HttpResponse.json({
+      execucao_id: nova.execucao_id,
+      tentativa_id: nova.tentativas[0].tentativa_id,
+      attempt_index: 1,
+    }, { status: 201 })
   }),
 
   http.post(`${API}/execucoes/:id/encerrar`, () => {
-    definirCenario('08-encerrada-como-falha')
+    avancarCenario('08-encerrada-como-falha')
     return HttpResponse.json(execucaoDoCenario())
   }),
 
   http.post(`${API}/execucoes/:id/retomar`, () => {
-    const recusa = cenarioAtual().atual(Date.now()).recusa
+    const recusa = dadosAtuais(Date.now()).recusa
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
-    definirCenario('10-retomada-tentativa-2')
+    avancarCenario('10-retomada-tentativa-2')
     return HttpResponse.json(execucaoDoCenario())
   }),
 ]
@@ -78,7 +87,7 @@ export const handlers = [
 /** Stream SSE da execução. Só no navegador: o jsdom dos testes não tem EventSource. */
 export function criarHandlerStream() {
   return sse<{ message: string }>(`${API}/execucoes/:id/stream`, ({ client }) => {
-    if (!cenarioAtual().aoVivo) return
+    if (!cenarioAtual().aoVivo || execucaoDoCenario().leituras.length === 0) return
     let ordem = 100
     const intervalo = setInterval(() => {
       const ultima = execucaoDoCenario().leituras.at(-1)

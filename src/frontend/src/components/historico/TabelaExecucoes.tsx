@@ -29,7 +29,7 @@ export function TabelaExecucoes({ execucoes }: TabelaExecucoesProps) {
           {execucoes.map((e) => (
             <tr key={e.execucao_id}>
               <td>
-                <Link to={`/execucoes/${e.execucao_id}`}>{formatarNumeroExecucao(e.numero)}</Link>
+                <Link to={`/execucoes/${e.execucao_id}`}>{formatarNumeroExecucao(e.numero, e.execucao_id)}</Link>
               </td>
               <td>{e.labirinto}</td>
               <td>{formatarDataHora(e.iniciada_em)}</td>
