@@ -46,8 +46,8 @@ export const handlers = [
   http.get(`${API}/execucoes/atual`, () => HttpResponse.json(cenarioAtual().atual(Date.now()))),
 
   http.get(`${API}/execucoes`, ({ request }) => {
-    const labirinto = new URL(request.url).searchParams.get('labirinto') as TipoLabirinto | null
-    return HttpResponse.json(labirinto ? HISTORICO.filter((e) => e.labirinto === labirinto) : HISTORICO)
+    const tipo = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
+    return HttpResponse.json(tipo ? HISTORICO.filter((e) => e.labirinto === tipo) : HISTORICO)
   }),
 
   http.get(`${API}/execucoes/:id`, ({ params }) => {
