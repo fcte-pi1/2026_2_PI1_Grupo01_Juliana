@@ -14,8 +14,7 @@ export type TipoInicio = 'nova' | 'retomada'
 
 export type ComponenteHealthCheck =
   | 'bateria'
-  | 'tof_frontal_esq'
-  | 'tof_frontal_dir'
+  | 'tof_frontal'
   | 'tof_esquerdo'
   | 'tof_direito'
   | 'motor_esquerdo'

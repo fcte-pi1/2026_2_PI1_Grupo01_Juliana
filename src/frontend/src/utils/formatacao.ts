@@ -59,8 +59,7 @@ export const ROTULO_MOTIVO_FALHA: Record<MotivoFalha, string> = {
 
 export const ROTULO_COMPONENTE: Record<ComponenteHealthCheck, string> = {
   bateria: 'Bateria',
-  tof_frontal_esq: 'ToF frontal esquerdo',
-  tof_frontal_dir: 'ToF frontal direito',
+  tof_frontal: 'ToF frontal',
   tof_esquerdo: 'ToF esquerdo',
   tof_direito: 'ToF direito',
   motor_esquerdo: 'Motor esquerdo',

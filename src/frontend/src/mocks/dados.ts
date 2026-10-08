@@ -64,8 +64,7 @@ export function trajetoComRetomada(ate: number): PassoTrajeto[] {
 export function healthCheck(aprovados: number): ItemHealthCheck[] {
   const componentes: ItemHealthCheck['componente'][] = [
     'bateria',
-    'tof_frontal_esq',
-    'tof_frontal_dir',
+    'tof_frontal',
     'tof_esquerdo',
     'tof_direito',
     'motor_esquerdo',
@@ -107,7 +106,7 @@ export function tentativa(agora: number, parcial: Partial<Tentativa> & Pick<Tent
     bateria_inicial: 88,
     bateria_final: null,
     consumo_bateria: null,
-    health_check: healthCheck(9),
+    health_check: healthCheck(8),
     falha: null,
     ...parcial,
   }
