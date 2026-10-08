@@ -88,8 +88,7 @@ void sim_roteiro_iniciar(sim_roteiro_t *r, uint32_t boot, sim_tipo_t tipo, sim_s
     r->eixo_longo = 0;
 
     emitir_hc_item(r, "bateria", HC_BATERIA_MV, true);
-    emitir_hc_item(r, "tof_frontal_esq", HC_TOF_FRENTE_MM, true);
-    emitir_hc_item(r, "tof_frontal_dir", HC_TOF_FRENTE_MM, true);
+    emitir_hc_item(r, "tof_frontal", HC_TOF_FRENTE_MM, true);
     emitir_hc_item(r, "tof_esquerdo", HC_TOF_LADO_MM, true);
     emitir_hc_item(r, "tof_direito", HC_TOF_LADO_MM, true);
     emitir_hc_item(r, "motor_esquerdo", 0, false);
