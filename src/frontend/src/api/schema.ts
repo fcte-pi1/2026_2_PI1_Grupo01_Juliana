@@ -79,7 +79,7 @@ export interface paths {
         put?: never;
         /**
          * Encerrar a tentativa aberta, mantendo a execução em andamento
-         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a devolver o comando de interrupção em POST /telemetria.
+         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a sinalizar `interrupcao_pendente: true` na resposta de POST /telemetria.
          */
         post: operations["encerrarTentativa"];
         delete?: never;
@@ -138,8 +138,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Receber uma linha da ponte Bluetooth
-         * @description A ponte não interpreta a linha. O backend valida o JSON interno e, se a linha for inválida, descarta e registra em log, ainda assim respondendo 200. A resposta traz os comandos para escrever na serial. A lista fica com interromper depois de Encerrar tentativa, até a confirmação do robô ou até abrir outra tentativa.
+         * Receber uma mensagem de telemetria
+         * @description Corpo **MensagemTelemetria**: telemetria já normalizada para o backend (a ponte parseia a linha serial v1 e preenche `enviado_em` com `recebido_em`). Mensagens inválidas serão descartadas com log (RNF-B09); rota 501 até BACK-02. Após **Encerrar tentativa**, a resposta traz `interrupcao_pendente: true` em todo POST até a `falha` de confirmação do robô ou nova tentativa; a ponte traduz o flag para `{"v":1,"cmd":"interromper"}` na serial.
          */
         post: operations["receberTelemetria"];
         delete?: never;
@@ -371,23 +371,32 @@ export interface components {
             y: number;
             status_execucao: components["schemas"]["StatusExecucao"];
         };
-        LinhaTelemetria: {
-            /** @description Linha lida da serial, sem a quebra de linha e sem alteração. */
-            linha: string;
+        MensagemTelemetria: {
+            seq: number;
+            /** @enum {string} */
+            status: "health-check" | "running" | "success" | "failed";
+            x: number;
+            y: number;
+            /** @description Tensão da bateria em volts. */
+            bateria: number;
+            velocidade?: number | null;
             /**
              * Format: date-time
-             * @description Instante em que a ponte leu a linha, com fuso.
+             * @description Instante de envio no robô ou de leitura na ponte, com fuso.
              */
-            recebido_em: string;
-        };
-        ComandoInterromper: {
-            /** @enum {integer} */
-            v: 1;
-            /** @enum {string} */
-            cmd: "interromper";
+            enviado_em: string;
+            /** @enum {string|null} */
+            tipo_labirinto_descoberto?: "4x4" | "8x4" | "12x4" | "indeterminado" | null;
+            /** @enum {string|null} */
+            tipo_inicio?: "nova" | "retomada" | null;
         };
         RespostaTelemetria: {
-            comandos: components["schemas"]["ComandoInterromper"][];
+            aceita: boolean;
+            /**
+             * @description true após Encerrar tentativa, até o robô confirmar ou abrir outra tentativa; a ponte traduz para JSON serial de interrupção.
+             * @default false
+             */
+            interrupcao_pendente: boolean;
         };
         Recusa: {
             motivo: components["schemas"]["MotivoRecusa"];
@@ -647,15 +656,22 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "linha": "{\"v\":1,\"boot\":7,\"seq\":42,\"t_ms\":11250,\"tipo\":\"tel\",\"estado\":\"running\",\"x\":0,\"y\":2,\"rumo\":\"N\",\"bat_mv\":7810,\"vel_mm_s\":210,\"eixo_longo\":null}",
-                 *       "recebido_em": "2026-10-07T14:03:21.512-03:00"
+                 *       "seq": 42,
+                 *       "status": "running",
+                 *       "x": 0,
+                 *       "y": 2,
+                 *       "bateria": 7.81,
+                 *       "velocidade": 0.21,
+                 *       "enviado_em": "2026-10-07T14:03:21.512-03:00",
+                 *       "tipo_labirinto_descoberto": "4x4",
+                 *       "tipo_inicio": "nova"
                  *     }
                  */
-                "application/json": components["schemas"]["LinhaTelemetria"];
+                "application/json": components["schemas"]["MensagemTelemetria"];
             };
         };
         responses: {
-            /** @description Comandos pendentes para a serial. Lista vazia se não houver. */
+            /** @description Confirmação de ingestão e sinal de interrupção pendente para downlink. */
             200: {
                 headers: {
                     [name: string]: unknown;
