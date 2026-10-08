@@ -61,7 +61,7 @@
  * Detecção de parede pelos ToF (FIRM-03, #129).
  * PROVISÓRIO: limiares tirados da geometria acima; calibrar na pista no FIRM-10 (#141).
  *
- * Com o robô centrado, o frontal lê ~44 mm com parede e ~224 mm sem.
+ * Com o robô centrado na célula, o frontal centrado lê ~44 mm com parede e ~224 mm sem.
  *
  * O lateral aponta 45° para a frente: mede a parede ~74 mm À FRENTE do centro
  * do robô, não ao lado. Com parede, lê ~77 mm. Sem parede, o feixe atravessa o

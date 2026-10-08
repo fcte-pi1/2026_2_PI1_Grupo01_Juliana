@@ -2,7 +2,7 @@
  * Testes da lib sensores (FIRM-03, #129): filtro, detecção de parede,
  * autoteste e sequência XSHUT.
  *
- * Os 50 casos sintéticos exercitam a detecção sem o mundo simulado; os casos
+ * Os 45 casos sintéticos exercitam a detecção sem o mundo simulado; os casos
  * de ponta a ponta usam a HAL simulada com ruído de semente fixa.
  */
 
@@ -122,10 +122,10 @@ static void test_histerese(void)
     TEST_ASSERT_FALSE(paredes_histerese(true, 151, 120, 150));
 }
 
-/* ------------------------------------------------------ 50 casos sintéticos */
+/* ------------------------------------------------------ 45 casos sintéticos */
 
 #define SEM     0xFFFF /* leitura sem resposta */
-#define NADA    0      /* fim da sequência / sensor não usado */
+#define NADA    0      /* fim da sequência */
 #define MAX_SEQ 9
 
 typedef enum { FRENTE, ESQUERDA, DIREITA } lado_t;
@@ -133,85 +133,68 @@ typedef enum { FRENTE, ESQUERDA, DIREITA } lado_t;
 typedef struct {
     const char *descricao;
     lado_t lado;
-    uint16_t a[MAX_SEQ]; /* frontal esquerdo, ou o lateral */
-    uint16_t b[MAX_SEQ]; /* frontal direito (só na frente) */
+    uint16_t leituras[MAX_SEQ]; /* do frontal ou do lateral daquele lado */
     bool esperado;
 } caso_t;
 
 static const caso_t CASOS[] = {
     /* Frente presente */
-    {"frente 44", FRENTE, {44, 44, 44, 44, 44}, {44, 44, 44, 44, 44}, true},
-    {"frente 60", FRENTE, {60, 60, 60, 60, 60}, {60, 60, 60, 60, 60}, true},
-    {"frente 100", FRENTE, {100, 100, 100, 100, 100}, {100, 100, 100, 100, 100}, true},
-    {"frente 119", FRENTE, {119, 119, 119}, {119, 119, 119}, true},
+    {"frente 44", FRENTE, {44, 44, 44, 44, 44}, true},
+    {"frente 60", FRENTE, {60, 60, 60, 60, 60}, true},
+    {"frente 100", FRENTE, {100, 100, 100, 100, 100}, true},
+    {"frente 119", FRENTE, {119, 119, 119}, true},
     /* Frente ausente */
-    {"frente 224", FRENTE, {224, 224, 224, 224, 224}, {224, 224, 224, 224, 224}, false},
-    {"frente 1200", FRENTE, {1200, 1200, 1200}, {1200, 1200, 1200}, false},
-    {"frente 8190", FRENTE, {8190, 8190, 8190}, {8190, 8190, 8190}, false},
-    {"frente 400", FRENTE, {400, 400, 400}, {400, 400, 400}, false},
+    {"frente 224", FRENTE, {224, 224, 224, 224, 224}, false},
+    {"frente 1200", FRENTE, {1200, 1200, 1200}, false},
+    {"frente 8190", FRENTE, {8190, 8190, 8190}, false},
+    {"frente 400", FRENTE, {400, 400, 400}, false},
     /* Frente com ruído de ±15 mm */
-    {"frente 44 ruido", FRENTE, {30, 58, 40, 52, 35}, {50, 29, 59, 44, 38}, true},
-    {"frente 224 ruido", FRENTE, {210, 238, 215, 230, 220}, {239, 212, 226, 209, 233}, false},
-    {"frente 105 ruido", FRENTE, {92, 118, 105, 119, 95}, {110, 91, 116, 99, 104}, true},
-    {"frente 165 ruido", FRENTE, {152, 178, 160, 170, 155}, {175, 151, 168, 158, 163}, false},
+    {"frente 44 ruido", FRENTE, {30, 58, 40, 52, 35}, true},
+    {"frente 224 ruido", FRENTE, {210, 238, 215, 230, 220}, false},
+    {"frente 105 ruido", FRENTE, {92, 118, 105, 119, 95}, true},
+    {"frente 165 ruido", FRENTE, {152, 178, 160, 170, 155}, false},
     /* Frente com picos isolados */
-    {"frente aberta, pico baixo", FRENTE, {224, 224, 60, 224, 224}, {224, 224, 224, 224, 224},
-     false},
-    {"frente parede, pico alto", FRENTE, {44, 44, 1200, 44, 44}, {44, 44, 44, 44, 44}, true},
-    {"frente aberta, 8190 no fim", FRENTE, {224, 224, 224, 224, 8190},
-     {224, 224, 224, 224, 224}, false},
-    {"frente parede, 8190 no fim", FRENTE, {44, 44, 44, 44, 8190}, {44, 44, 44, 44, 44}, true},
+    {"frente aberta, pico baixo", FRENTE, {224, 224, 60, 224, 224}, false},
+    {"frente parede, pico alto", FRENTE, {44, 44, 1200, 44, 44}, true},
+    {"frente aberta, 8190 no fim", FRENTE, {224, 224, 224, 224, 8190}, false},
+    {"frente parede, 8190 no fim", FRENTE, {44, 44, 44, 44, 8190}, true},
     /* Frente: histerese */
-    {"frente parede, faixa mantém", FRENTE, {100, 100, 100, 135, 135, 135},
-     {100, 100, 100, 135, 135, 135}, true},
-    {"frente aberta, faixa mantém", FRENTE, {200, 200, 200, 135, 135, 135},
-     {200, 200, 200, 135, 135, 135}, false},
-    {"frente parede some", FRENTE, {100, 100, 100, 160, 160, 160},
-     {100, 100, 100, 160, 160, 160}, false},
-    {"frente parede aparece", FRENTE, {200, 200, 200, 115, 115, 115},
-     {200, 200, 200, 115, 115, 115}, true},
-    {"frente oscila no limiar", FRENTE, {118, 122, 118, 122, 118, 122},
-     {118, 122, 118, 122, 118, 122}, true},
-    {"frente parede, oscila na faixa", FRENTE, {100, 100, 100, 125, 145, 130, 140, 135},
-     {100, 100, 100, 125, 145, 130, 140, 135}, true},
-    {"frente aberta, oscila na faixa", FRENTE, {200, 200, 200, 125, 145, 130, 140, 135},
-     {200, 200, 200, 125, 145, 130, 140, 135}, false},
-    /* Frente: um frontal só */
-    {"frente só o esquerdo vê", FRENTE, {44, 44, 44, 44}, {SEM, SEM, SEM, SEM}, true},
-    {"frente só o direito, aberta", FRENTE, {SEM, SEM, SEM, SEM}, {224, 224, 224, 224}, false},
-    {"frente só o esquerdo, aberta", FRENTE, {224, 224, 224, 224}, {SEM, SEM, SEM, SEM}, false},
-    {"frente sem nenhum", FRENTE, {SEM, SEM, SEM, SEM}, {SEM, SEM, SEM, SEM}, false},
-    {"frente média 100 e 130", FRENTE, {100, 100, 100}, {130, 130, 130}, true},
-    {"frente pico no direito", FRENTE, {44, 44, 44}, {44, 44, 1200}, true},
-    /* Frente: falhas */
-    {"frente 2 falhas toleradas", FRENTE, {44, SEM, SEM, 44, 44}, {44, 44, 44, 44, 44}, true},
-    {"frente esquerdo cai, direito aberto", FRENTE, {SEM, SEM, SEM, 44, 44},
-     {224, 224, 224, 224, 224}, false},
+    {"frente parede, faixa mantém", FRENTE, {100, 100, 100, 135, 135, 135}, true},
+    {"frente aberta, faixa mantém", FRENTE, {200, 200, 200, 135, 135, 135}, false},
+    {"frente parede some", FRENTE, {100, 100, 100, 160, 160, 160}, false},
+    {"frente parede aparece", FRENTE, {200, 200, 200, 115, 115, 115}, true},
+    {"frente oscila no limiar", FRENTE, {118, 122, 118, 122, 118, 122}, true},
+    {"frente parede, oscila na faixa", FRENTE, {100, 100, 100, 125, 145, 130, 140, 135}, true},
+    {"frente aberta, oscila na faixa", FRENTE, {200, 200, 200, 125, 145, 130, 140, 135}, false},
+    /* Frente: falhas (frontal falho ou sem leitura conta como sem parede) */
+    {"frente sem leitura", FRENTE, {SEM, SEM, SEM, SEM}, false},
+    {"frente 2 falhas toleradas", FRENTE, {44, SEM, SEM, 44, 44}, true},
+    {"frente cai e não volta", FRENTE, {SEM, SEM, SEM, 44, 44}, false},
+    {"frente parede, frontal cai", FRENTE, {44, 44, 44, SEM, SEM, SEM}, false},
     /* Lateral presente */
-    {"esquerda 77", ESQUERDA, {77, 77, 77, 77, 77}, {NADA}, true},
-    {"esquerda 54", ESQUERDA, {54, 54, 54}, {NADA}, true},
-    {"esquerda 139", ESQUERDA, {139, 139, 139}, {NADA}, true},
-    {"direita 77", DIREITA, {77, 77, 77, 77, 77}, {NADA}, true},
+    {"esquerda 77", ESQUERDA, {77, 77, 77, 77, 77}, true},
+    {"esquerda 54", ESQUERDA, {54, 54, 54}, true},
+    {"esquerda 139", ESQUERDA, {139, 139, 139}, true},
+    {"direita 77", DIREITA, {77, 77, 77, 77, 77}, true},
     /* Lateral ausente */
-    {"esquerda 331", ESQUERDA, {331, 331, 331}, {NADA}, false},
-    {"direita 232", DIREITA, {232, 232, 232}, {NADA}, false},
-    {"esquerda 8190", ESQUERDA, {8190, 8190, 8190}, {NADA}, false},
-    {"direita 171", DIREITA, {171, 171, 171}, {NADA}, false},
+    {"esquerda 331", ESQUERDA, {331, 331, 331}, false},
+    {"direita 232", DIREITA, {232, 232, 232}, false},
+    {"esquerda 8190", ESQUERDA, {8190, 8190, 8190}, false},
+    {"direita 171", DIREITA, {171, 171, 171}, false},
     /* Lateral com ruído */
-    {"esquerda 77 ruido", ESQUERDA, {62, 92, 70, 85, 77}, {NADA}, true},
-    {"direita 331 ruido", DIREITA, {316, 346, 320, 340, 331}, {NADA}, false},
-    {"esquerda 160 ruido, sem parede antes", ESQUERDA, {150, 170, 160, 155, 165}, {NADA},
-     false},
+    {"esquerda 77 ruido", ESQUERDA, {62, 92, 70, 85, 77}, true},
+    {"direita 331 ruido", DIREITA, {316, 346, 320, 340, 331}, false},
+    {"esquerda 160 ruido, sem parede antes", ESQUERDA, {150, 170, 160, 155, 165}, false},
     /* Lateral com picos */
-    {"direita aberta, pico baixo", DIREITA, {331, 331, 77, 331, 331}, {NADA}, false},
-    {"esquerda parede, pico alto", ESQUERDA, {77, 77, 1200, 77, 77}, {NADA}, true},
+    {"direita aberta, pico baixo", DIREITA, {331, 331, 77, 331, 331}, false},
+    {"esquerda parede, pico alto", ESQUERDA, {77, 77, 1200, 77, 77}, true},
     /* Lateral: histerese */
-    {"esquerda parede, faixa mantém", ESQUERDA, {100, 100, 100, 160, 160, 160}, {NADA}, true},
-    {"esquerda parede some", ESQUERDA, {100, 100, 100, 180, 180, 180}, {NADA}, false},
-    {"esquerda aberta, faixa mantém", ESQUERDA, {300, 300, 300, 150, 150, 150}, {NADA}, false},
+    {"esquerda parede, faixa mantém", ESQUERDA, {100, 100, 100, 160, 160, 160}, true},
+    {"esquerda parede some", ESQUERDA, {100, 100, 100, 180, 180, 180}, false},
+    {"esquerda aberta, faixa mantém", ESQUERDA, {300, 300, 300, 150, 150, 150}, false},
     /* Lateral: falhas */
-    {"esquerda cai e não volta", ESQUERDA, {SEM, SEM, SEM, 77, 77}, {NADA}, false},
-    {"direita 2 falhas toleradas", DIREITA, {77, SEM, SEM, 77}, {NADA}, true},
+    {"esquerda cai e não volta", ESQUERDA, {SEM, SEM, SEM, 77, 77}, false},
+    {"direita 2 falhas toleradas", DIREITA, {77, SEM, SEM, 77}, true},
 };
 
 #define QTD_CASOS ((int)(sizeof(CASOS) / sizeof(CASOS[0])))
@@ -240,17 +223,17 @@ static bool rodar_caso(const caso_t *c)
     }
     paredes_iniciar(&estado);
 
-    int n = tamanho_seq(c->a);
+    int n = tamanho_seq(c->leituras);
     for (int i = 0; i < n; i++) {
         switch (c->lado) {
         case FRENTE:
-            inserir(&filtros[TOF_FRONTAL], c->a[i]);
+            inserir(&filtros[TOF_FRONTAL], c->leituras[i]);
             break;
         case ESQUERDA:
-            inserir(&filtros[TOF_ESQUERDO], c->a[i]);
+            inserir(&filtros[TOF_ESQUERDO], c->leituras[i]);
             break;
         case DIREITA:
-            inserir(&filtros[TOF_DIREITO], c->a[i]);
+            inserir(&filtros[TOF_DIREITO], c->leituras[i]);
             break;
         }
         paredes_atualizar(&estado, filtros);
@@ -266,11 +249,11 @@ static bool rodar_caso(const caso_t *c)
     }
 }
 
-static void test_50_casos_sinteticos(void)
+static void test_45_casos_sinteticos(void)
 {
     char mensagem[96];
 
-    TEST_ASSERT_EQUAL_INT(49, QTD_CASOS);
+    TEST_ASSERT_EQUAL_INT(45, QTD_CASOS);
     for (int i = 0; i < QTD_CASOS; i++) {
         snprintf(mensagem, sizeof(mensagem), "caso %d: %s", i + 1, CASOS[i].descricao);
         TEST_ASSERT_EQUAL_MESSAGE(CASOS[i].esperado, rodar_caso(&CASOS[i]), mensagem);
@@ -293,7 +276,7 @@ static void ler_ciclos(int ciclos)
     }
 }
 
-static void test_4_sensores_leem_a_20_hz(void)
+static void test_3_sensores_leem_a_20_hz(void)
 {
     uint32_t inicio = sim_tempo_ms();
     int leituras[TOF_QTD] = {0};
@@ -532,7 +515,13 @@ static void test_autoteste_regras(void)
 static void test_sequencia_xshut(void)
 {
     tof_passo_t passos[TOF_PASSOS_INICIO];
-    const int8_t pinos[TOF_QTD] = {PINO_XSHUT_FE, PINO_XSHUT_E, PINO_XSHUT_D};
+    const int8_t pinos[TOF_QTD] = {33, 4, 5}; /* frontal, esquerdo, direito */
+
+    TEST_ASSERT_EQUAL_INT(3, TOF_QTD);
+    TEST_ASSERT_EQUAL_INT8(PINO_XSHUT_F, tof_pino_xshut(TOF_FRONTAL));
+    TEST_ASSERT_EQUAL_INT8(PINO_XSHUT_E, tof_pino_xshut(TOF_ESQUERDO));
+    TEST_ASSERT_EQUAL_INT8(PINO_XSHUT_D, tof_pino_xshut(TOF_DIREITO));
+    TEST_ASSERT_EQUAL_INT8(-1, tof_pino_xshut(TOF_QTD));
 
     TEST_ASSERT_EQUAL_INT(TOF_PASSOS_INICIO, tof_sequencia_inicio(passos));
     TEST_ASSERT_EQUAL_INT(13, TOF_PASSOS_INICIO);
@@ -602,8 +591,8 @@ int main(void)
     RUN_TEST(test_filtro_tolera_duas_falhas_e_descarta_na_terceira);
     RUN_TEST(test_janela_da_mediana_desliza);
     RUN_TEST(test_histerese);
-    RUN_TEST(test_50_casos_sinteticos);
-    RUN_TEST(test_4_sensores_leem_a_20_hz);
+    RUN_TEST(test_45_casos_sinteticos);
+    RUN_TEST(test_3_sensores_leem_a_20_hz);
     RUN_TEST(test_largada_ve_paredes_laterais_e_frente_aberta);
     RUN_TEST(test_celula_aberta_dos_lados_com_ruido);
     RUN_TEST(test_paredes_estaveis_com_ruido);

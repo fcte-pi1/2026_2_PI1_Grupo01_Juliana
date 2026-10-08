@@ -2,9 +2,9 @@
 #define TOF_ENDERECOS_H
 
 /*
- * Sequência de inicialização dos 4 VL53L0X pelo XSHUT (FIRM-03, #129).
+ * Sequência de inicialização dos 3 VL53L0X pelo XSHUT (FIRM-03, #129).
  *
- * Os 4 sensores saem de fábrica no mesmo endereço I²C (0x29). Para conviverem
+ * Os 3 sensores saem de fábrica no mesmo endereço I²C (0x29). Para conviverem
  * no barramento, o firmware desliga todos pelo XSHUT e liga um por vez,
  * trocando o endereço de cada um antes de ligar o próximo.
  *

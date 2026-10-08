@@ -2,11 +2,11 @@
 #define PAREDES_H
 
 /*
- * Detecção de parede a partir dos 4 ToF filtrados (FIRM-03, #129; US33, UC24).
+ * Detecção de parede a partir dos 3 ToF filtrados (FIRM-03, #129; US33, UC24).
  *
  * C puro: recebe os filtros (tof_filtro.h) e devolve frente/esquerda/direita.
  *
- *   - frente: média dos frontais válidos; com um só válido, usa esse;
+ *   - frente: o frontal centralizado (0°);
  *   - esquerda/direita: o lateral daquele lado;
  *   - histerese: vira parede abaixo de *_ENTRA_MM e só deixa de ser acima de
  *     *_SAI_MM (config/robo.h); entre os dois, mantém o estado anterior;

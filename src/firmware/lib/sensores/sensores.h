@@ -2,7 +2,7 @@
 #define SENSORES_H
 
 /*
- * Leitura contínua dos 4 ToF (FIRM-03, #129): lê pela HAL, filtra e detecta
+ * Leitura contínua dos 3 ToF (FIRM-03, #129): lê pela HAL, filtra e detecta
  * paredes. Funciona igual com a HAL simulada e com a real (FIRM-10, #141).
  *
  * Uso na tarefa de navegação, a cada 50 ms (20 Hz):
@@ -23,7 +23,7 @@ extern "C" {
 /* Zera filtros, falhas e paredes (início de tentativa). */
 void sensores_iniciar(void);
 
-/* Lê os 4 sensores uma vez e atualiza filtros e paredes. */
+/* Lê os 3 sensores uma vez e atualiza filtros e paredes. */
 void sensores_ler(void);
 
 paredes_t sensores_paredes(void);

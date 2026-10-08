@@ -2,7 +2,7 @@
 #define TOF_AUTOTESTE_H
 
 /*
- * Autoteste dos 4 ToF para o health-check (FIRM-03, #129; usado pela FIRM-09, #138).
+ * Autoteste dos 3 ToF para o health-check (FIRM-03, #129; usado pela FIRM-09, #138).
  *
  * Cada sensor faz TOF_AUTOTESTE_AMOSTRAS leituras. É aprovado se todas
  * responderam e a mediana (saturada no alcance) é >= TOF_AUTOTESTE_MIN_MM.
@@ -34,7 +34,7 @@ typedef struct {
 bool tof_autoteste_avaliar(const bool respondeu[], const uint16_t distancia_mm[], int n,
                            bool *tem_valor, uint16_t *valor_mm);
 
-/* Lê os 4 sensores pela HAL e preenche um resultado por sensor (ordem de tof_id_t). */
+/* Lê os 3 sensores pela HAL e preenche um resultado por sensor (ordem de tof_id_t). */
 void tof_autoteste_executar(tof_autoteste_t resultado[TOF_QTD]);
 
 #ifdef __cplusplus

@@ -3,7 +3,7 @@
 #include "config/pinos.h"
 
 static const int8_t PINOS_XSHUT[TOF_QTD] = {
-    PINO_XSHUT_FE,
+    PINO_XSHUT_F,
     PINO_XSHUT_E,
     PINO_XSHUT_D,
 };
