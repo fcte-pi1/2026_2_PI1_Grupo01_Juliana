@@ -56,7 +56,7 @@ static bool frente(bool havia_parede, const tof_filtro_t *fe, const tof_filtro_t
 
 paredes_t paredes_atualizar(paredes_t *estado, const tof_filtro_t filtros[TOF_QTD])
 {
-    estado->frente = frente(estado->frente, &filtros[TOF_FRONTAL_ESQ], &filtros[TOF_FRONTAL_DIR]);
+    estado->frente = frente(estado->frente, &filtros[TOF_FRONTAL], &filtros[TOF_FRONTAL]);
     estado->esquerda = lado(estado->esquerda, &filtros[TOF_ESQUERDO]);
     estado->direita = lado(estado->direita, &filtros[TOF_DIREITO]);
     return *estado;

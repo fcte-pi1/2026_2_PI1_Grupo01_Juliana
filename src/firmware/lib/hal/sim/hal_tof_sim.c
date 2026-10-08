@@ -3,9 +3,10 @@
 #include "hal_tof.h"
 #include "sim_mundo.h"
 
+_Static_assert(SIM_TOF_QTD == TOF_QTD, "o mundo simulado e a HAL devem ter os mesmos ToF");
+
 static const char *const NOMES[TOF_QTD] = {
-    "tof_frontal_esq",
-    "tof_frontal_dir",
+    "tof_frontal",
     "tof_esquerdo",
     "tof_direito",
 };

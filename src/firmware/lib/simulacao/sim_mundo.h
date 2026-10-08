@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 #define SIM_TOF_FORA_DE_ALCANCE 8190 /* valor que o VL53L0X devolve quando não vê nada */
+#define SIM_TOF_QTD             3    /* frontal, esquerdo e direito (mesmo TOF_QTD da HAL) */
 
 typedef struct {
     float x_mm;      /* a partir do canto inferior esquerdo do labirinto */

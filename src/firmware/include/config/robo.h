@@ -42,15 +42,13 @@
  * Origem no centro do eixo das rodas; x para a frente, y para a esquerda,
  * ângulo em graus (0 = frente, 90 = esquerda).
  *
- * Ângulos: [EST] torre de sensores com 0° e ±45°, a 25 mm do solo.
+ * Ângulos: [EST] 4.1, torre de sensores com o frontal a 0° e os laterais a ±45°,
+ * a 25 mm do solo.
  * Posições x/y: PROVISÓRIO, dependem do CAD da torre de sensores.
  */
-#define TOF_FE_X_MM     40.0f
-#define TOF_FE_Y_MM     25.0f
-#define TOF_FE_ANG      0.0f
-#define TOF_FD_X_MM     40.0f
-#define TOF_FD_Y_MM    -25.0f
-#define TOF_FD_ANG      0.0f
+#define TOF_F_X_MM      40.0f
+#define TOF_F_Y_MM      0.0f
+#define TOF_F_ANG       0.0f
 #define TOF_E_X_MM      20.0f
 #define TOF_E_Y_MM      30.0f
 #define TOF_E_ANG       45.0f

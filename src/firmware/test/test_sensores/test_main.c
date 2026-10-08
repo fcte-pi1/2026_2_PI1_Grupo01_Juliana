@@ -181,7 +181,6 @@ static const caso_t CASOS[] = {
     {"frente só o direito, aberta", FRENTE, {SEM, SEM, SEM, SEM}, {224, 224, 224, 224}, false},
     {"frente só o esquerdo, aberta", FRENTE, {224, 224, 224, 224}, {SEM, SEM, SEM, SEM}, false},
     {"frente sem nenhum", FRENTE, {SEM, SEM, SEM, SEM}, {SEM, SEM, SEM, SEM}, false},
-    {"frente média dilui um errado", FRENTE, {44, 44, 44}, {300, 300, 300}, false},
     {"frente média 100 e 130", FRENTE, {100, 100, 100}, {130, 130, 130}, true},
     {"frente pico no direito", FRENTE, {44, 44, 44}, {44, 44, 1200}, true},
     /* Frente: falhas */
@@ -245,8 +244,7 @@ static bool rodar_caso(const caso_t *c)
     for (int i = 0; i < n; i++) {
         switch (c->lado) {
         case FRENTE:
-            inserir(&filtros[TOF_FRONTAL_ESQ], c->a[i]);
-            inserir(&filtros[TOF_FRONTAL_DIR], c->b[i]);
+            inserir(&filtros[TOF_FRONTAL], c->a[i]);
             break;
         case ESQUERDA:
             inserir(&filtros[TOF_ESQUERDO], c->a[i]);
@@ -272,7 +270,7 @@ static void test_50_casos_sinteticos(void)
 {
     char mensagem[96];
 
-    TEST_ASSERT_EQUAL_INT(50, QTD_CASOS);
+    TEST_ASSERT_EQUAL_INT(49, QTD_CASOS);
     for (int i = 0; i < QTD_CASOS; i++) {
         snprintf(mensagem, sizeof(mensagem), "caso %d: %s", i + 1, CASOS[i].descricao);
         TEST_ASSERT_EQUAL_MESSAGE(CASOS[i].esperado, rodar_caso(&CASOS[i]), mensagem);
@@ -534,19 +532,19 @@ static void test_autoteste_regras(void)
 static void test_sequencia_xshut(void)
 {
     tof_passo_t passos[TOF_PASSOS_INICIO];
-    const int8_t pinos[TOF_QTD] = {PINO_XSHUT_FE, PINO_XSHUT_FD, PINO_XSHUT_E, PINO_XSHUT_D};
+    const int8_t pinos[TOF_QTD] = {PINO_XSHUT_FE, PINO_XSHUT_E, PINO_XSHUT_D};
 
     TEST_ASSERT_EQUAL_INT(TOF_PASSOS_INICIO, tof_sequencia_inicio(passos));
-    TEST_ASSERT_EQUAL_INT(17, TOF_PASSOS_INICIO);
+    TEST_ASSERT_EQUAL_INT(13, TOF_PASSOS_INICIO);
 
     for (int i = 0; i < TOF_QTD; i++) {
         TEST_ASSERT_EQUAL_INT(TOF_PASSO_XSHUT_BAIXO, passos[i].tipo);
         TEST_ASSERT_EQUAL_INT8(pinos[i], passos[i].pino);
     }
-    TEST_ASSERT_EQUAL_INT(TOF_PASSO_ESPERAR_MS, passos[4].tipo);
+    TEST_ASSERT_EQUAL_INT(TOF_PASSO_ESPERAR_MS, passos[TOF_QTD].tipo);
 
     for (int i = 0; i < TOF_QTD; i++) {
-        const tof_passo_t *p = &passos[5 + 3 * i];
+        const tof_passo_t *p = &passos[TOF_QTD + 1 + 3 * i];
         TEST_ASSERT_EQUAL_INT(TOF_PASSO_XSHUT_ALTO, p[0].tipo);
         TEST_ASSERT_EQUAL_INT8(pinos[i], p[0].pino);
         TEST_ASSERT_EQUAL_INT(TOF_PASSO_ESPERAR_MS, p[1].tipo);
@@ -561,8 +559,8 @@ static void test_sequencia_xshut(void)
 static void test_xshut_nunca_dois_no_endereco_padrao(void)
 {
     tof_passo_t passos[TOF_PASSOS_INICIO];
-    bool ligado[TOF_QTD] = {true, true, true, true}; /* XSHUT solto no boot */
-    uint8_t endereco[TOF_QTD] = {0x29, 0x29, 0x29, 0x29};
+    bool ligado[TOF_QTD] = {true, true, true}; /* XSHUT solto no boot */
+    uint8_t endereco[TOF_QTD] = {0x29, 0x29, 0x29};
     int n = tof_sequencia_inicio(passos);
     bool trocou_algum = false;
 

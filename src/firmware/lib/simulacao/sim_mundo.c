@@ -22,9 +22,8 @@ typedef struct {
     float x_mm, y_mm, ang_graus;
 } posicao_tof_t;
 
-static const posicao_tof_t POSICAO_TOF[4] = {
-    {TOF_FE_X_MM, TOF_FE_Y_MM, TOF_FE_ANG},
-    {TOF_FD_X_MM, TOF_FD_Y_MM, TOF_FD_ANG},
+static const posicao_tof_t POSICAO_TOF[SIM_TOF_QTD] = {
+    {TOF_F_X_MM, TOF_F_Y_MM, TOF_F_ANG},
     {TOF_E_X_MM, TOF_E_Y_MM, TOF_E_ANG},
     {TOF_D_X_MM, TOF_D_Y_MM, TOF_D_ANG},
 };
@@ -38,11 +37,11 @@ static struct {
     float velocidade_mm_s[2];
     float pulsos[2];
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
-    bool tof_ausente[4];
+    bool tof_ausente[SIM_TOF_QTD];
     uint16_t tof_ruido_mm;
     uint32_t tof_semente;
-    bool tof_tem_pico[4];
-    uint16_t tof_pico_mm[4];
+    bool tof_tem_pico[SIM_TOF_QTD];
+    uint16_t tof_pico_mm[SIM_TOF_QTD];
     bool boot;
     bool led;
     bool buzzer;
@@ -189,7 +188,7 @@ static int aplicar_ruido(int d)
 
 bool sim_tof_medir(int tof, uint16_t *distancia_mm)
 {
-    if (m.tof_ausente[tof]) {
+    if (tof < 0 || tof >= SIM_TOF_QTD || m.tof_ausente[tof]) {
         return false;
     }
     if (m.tof_tem_pico[tof]) {

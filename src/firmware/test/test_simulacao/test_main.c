@@ -70,10 +70,25 @@ static void test_tof_mede_distancia_ate_as_paredes(void)
 
     /* Laterais a 45°: sensor a 30 mm do centro, paredes a 84 mm do centro,
      * então o feixe percorre 54 / sen(45°) = 76 mm. */
+    TEST_ASSERT_TRUE(sim_tof_medir(1, &mm));
+    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
     TEST_ASSERT_TRUE(sim_tof_medir(2, &mm));
     TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
-    TEST_ASSERT_TRUE(sim_tof_medir(3, &mm));
-    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
+
+    /* Só existem 3 sensores: frontal, esquerdo e direito. */
+    TEST_ASSERT_FALSE(sim_tof_medir(3, &mm));
+    TEST_ASSERT_FALSE(sim_tof_medir(-1, &mm));
+}
+
+static void test_tof_frontal_centrado_ve_a_parede_da_frente(void)
+{
+    TEST_ASSERT_TRUE(sim_mundo_iniciar(CORREDOR_1X3));
+    uint16_t mm;
+
+    /* Centro da última célula: sensor em y = 450 + 40, parede em y = 540 - 6. */
+    sim_definir_pose(90.0f, 450.0f, 1.5707963f); /* norte */
+    TEST_ASSERT_TRUE(sim_tof_medir(0, &mm));
+    TEST_ASSERT_UINT16_WITHIN(5, 45, mm);
 }
 
 static void test_tof_fora_de_alcance(void)
@@ -192,6 +207,7 @@ int main(void)
     RUN_TEST(test_labirinto_le_paredes_dos_dois_lados);
     RUN_TEST(test_labirinto_rejeita_desenho_malformado);
     RUN_TEST(test_tof_mede_distancia_ate_as_paredes);
+    RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);
     RUN_TEST(test_tof_fora_de_alcance);
     RUN_TEST(test_motores_desabilitados_nao_movem);
     RUN_TEST(test_encoders_acompanham_o_deslocamento);

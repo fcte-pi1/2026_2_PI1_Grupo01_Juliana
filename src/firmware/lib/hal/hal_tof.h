@@ -11,8 +11,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    TOF_FRONTAL_ESQ = 0,
-    TOF_FRONTAL_DIR,
+    TOF_FRONTAL = 0,
     TOF_ESQUERDO,
     TOF_DIREITO,
     TOF_QTD
@@ -21,7 +20,7 @@ typedef enum {
 /* Nome usado no health-check e na telemetria (ex.: "tof_esquerdo"). */
 const char *hal_tof_nome(tof_id_t id);
 
-/* Liga os 4 sensores. Retorna false se algum não respondeu. */
+/* Liga os 3 sensores. Retorna false se algum não respondeu. */
 bool hal_tof_iniciar(void);
 
 /* Lê a distância em mm. Retorna false se o sensor não respondeu. */
