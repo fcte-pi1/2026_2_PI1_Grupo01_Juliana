@@ -108,24 +108,6 @@ docker compose up --build
 
 Encerrar: `docker compose down` — apagar volume do Postgres: `docker compose down -v`.
 
-### Persistência após restart (RNF-B05 · BACK-01)
-
-Critério de aceite: execuções gravadas continuam consultáveis depois de reiniciar o servidor/banco. No compose, os dados ficam no volume nomeado **`pgdata`** (`docker-compose.yml`).
-
-Verificação automatizada (Postgres no Docker + migrações aplicadas):
-
-```bash
-cd src/backend
-chmod +x scripts/verificar_rnf_b05_persistencia.sh   # uma vez
-./scripts/verificar_rnf_b05_persistencia.sh
-```
-
-O script: sobe `db`, aplica `alembic upgrade head` (se existir `.venv`), insere uma `execucao_logica` marcador, executa `docker compose restart db` e confere que o registro e os 3 labirintos do seed ainda existem.
-
-**Evidência no PR:** colar a linha final `OK: RNF-B05 — dados persistiram...` ou anexar screenshot do terminal.
-
-Reiniciar a **API** (`docker compose restart api`) não apaga dados — só o Postgres persiste execuções; reiniciar `db` é o teste que valida o volume.
-
 ---
 
 ## Migrações
