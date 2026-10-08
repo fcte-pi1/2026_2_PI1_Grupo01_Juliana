@@ -21,7 +21,7 @@ paths:
         Com labirinto, devolve só o tipo pedido. Quando não há execução
         em andamento, o primeiro item é a execução mais recente já encerrada.
       parameters:
-        - name: labirinto
+        - name: tipo_labirinto
           in: query
           required: false
           schema:
@@ -41,25 +41,25 @@ paths:
                   summary: Todos as execuções de todos os labirintos
                   value:
                     - execucao_id: 123e4567-e89b-12d3-a456-426614174000
-                      labirinto: "4x4"
+                      tipo_labirinto: "4x4"
                       status: concluida
                       tentativas_usadas: 1
                       iniciada_em: "2026-10-07T14:00:00-03:00"
                       encerrada_em: "2026-10-07T14:00:33-03:00"
                       tempo_total_s: 33.1
                       velocidade_media: 0.078
-                      consumo_bateria: 2.8
+                      consumo_bateria: 0.05
                     - execucao_id: 123e4567-e89b-12d3-a456-426614174099
-                      labirinto: "8x4"
+                      tipo_labirinto: "8x4"
                       status: cancelada
                       tentativas_usadas: 3
                       iniciada_em: "2026-10-06T15:00:00-03:00"
                       encerrada_em: "2026-10-06T15:01:36-03:00"
                       tempo_total_s: 96.5
                       velocidade_media: 0.07
-                      consumo_bateria: 4.2
+                      consumo_bateria: 0.12
                     - execucao_id: 123e4567-e89b-12d3-a456-426614174091
-                      labirinto: "12x4"
+                      tipo_labirinto: "12x4"
                       status: em_andamento
                       tentativas_usadas: 0
                       iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -71,14 +71,14 @@ paths:
                   summary: Só o labirinto pedido no parâmetro
                   value:
                     - execucao_id: 123e4567-e89b-12d3-a456-426614174000
-                      labirinto: "4x4"
+                      tipo_labirinto: "4x4"
                       status: concluida
                       tentativas_usadas: 1
                       iniciada_em: "2026-10-07T14:00:00-03:00"
                       encerrada_em: "2026-10-07T14:00:33-03:00"
                       tempo_total_s: 33.1
                       velocidade_media: 0.078
-                      consumo_bateria: 2.8
+                      consumo_bateria: 0.05
     post:
       operationId: novaExecucao
       tags: [execucoes]
@@ -94,7 +94,7 @@ paths:
             schema:
               $ref: "#/components/schemas/NovaExecucao"
             example:
-              labirinto: "4x4"
+              tipo_labirinto: "4x4"
       responses:
         "201":
           description: Execução criada com sucesso, contando 1/3 tentativas.
@@ -398,7 +398,7 @@ components:
       summary: Health-check em andamento
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: em_andamento
         tentativas_usadas: 1
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -441,7 +441,7 @@ components:
       summary: Tentativa 1 em running
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: em_andamento
         tentativas_usadas: 1
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -497,7 +497,7 @@ components:
         com o relógio. Aos 10 s sem mensagem o backend cancela com link_lost.
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: em_andamento
         tentativas_usadas: 1
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -541,7 +541,7 @@ components:
       summary: Sucesso na tentativa 1 e execução concluída
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: concluida
         tentativas_usadas: 1
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -587,7 +587,7 @@ components:
         então ainda cabe abrir a tentativa 2.
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: em_andamento
         tentativas_usadas: 1
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -638,7 +638,7 @@ components:
       summary: Tentativa 2 em running, mapa preservado
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: em_andamento
         tentativas_usadas: 2
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -710,7 +710,7 @@ components:
       summary: Sucesso na tentativa 2 e execução concluída
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: concluida
         tentativas_usadas: 2
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -775,7 +775,7 @@ components:
       summary: Três tentativas sem sucesso e execução cancelada
       value:
         execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        labirinto: "4x4"
+        tipo_labirinto: "4x4"
         status: cancelada
         tentativas_usadas: 3
         iniciada_em: "2026-10-07T14:00:00-03:00"
@@ -926,9 +926,9 @@ components:
 
     NovaExecucao:
       type: object
-      required: [labirinto]
+      required: [tipo_labirinto]
       properties:
-        labirinto:
+        tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
     RetornoNovaExecucao:
       type: object
@@ -1039,6 +1039,7 @@ components:
         consumo_bateria:
           type: number
           nullable: true
+          description: Queda de tensão (bateria_inicial − bateria_final), em volts.
         health_check:
           type: array
           items:
@@ -1114,7 +1115,7 @@ components:
         linhas novas, não por este POST de criação.
       required:
         - execucao_id
-        - labirinto
+        - tipo_labirinto
         - status
         - tentativas_usadas
         - iniciada_em
@@ -1125,7 +1126,7 @@ components:
         execucao_id:
           type: string
           format: uuid
-        labirinto:
+        tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
           $ref: "#/components/schemas/StatusExecucao"
@@ -1180,12 +1181,12 @@ components:
 
     ResumoExecucao:
       type: object
-      required: [execucao_id, labirinto, status, tentativas_usadas, iniciada_em]
+      required: [execucao_id, tipo_labirinto, status, tentativas_usadas, iniciada_em]
       properties:
         execucao_id:
           type: string
           format: uuid
-        labirinto:
+        tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
           $ref: "#/components/schemas/StatusExecucao"
@@ -1210,7 +1211,7 @@ components:
         consumo_bateria:
           type: number
           nullable: true
-          description: Consumo da última tentativa, em volts.
+          description: Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts.
 
     EventoTelemetria:
       type: object

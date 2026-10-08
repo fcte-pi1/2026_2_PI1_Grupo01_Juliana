@@ -186,7 +186,7 @@ export interface components {
         /** @enum {string} */
         EixoLongo: "x" | "y";
         NovaExecucao: {
-            labirinto: components["schemas"]["Labirinto"];
+            tipo_labirinto: components["schemas"]["Labirinto"];
         };
         /** @description Retorno ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1. Em POST /execucoes/{id}/retomar, é 2 ou 3. */
         RetornoNovaExecucao: {
@@ -232,6 +232,7 @@ export interface components {
             /** @description Tensão em volts no início da tentativa. */
             bateria_inicial?: number | null;
             bateria_final?: number | null;
+            /** @description Queda de tensão (bateria_inicial − bateria_final), em volts. */
             consumo_bateria?: number | null;
             health_check: components["schemas"]["ItemHealthCheck"][];
             falha?: components["schemas"]["Falha"] | null;
@@ -264,7 +265,7 @@ export interface components {
         ExecucaoDetalhe: {
             /** Format: uuid */
             execucao_id: string;
-            labirinto: components["schemas"]["Labirinto"];
+            tipo_labirinto: components["schemas"]["Labirinto"];
             status: components["schemas"]["StatusExecucao"];
             tentativas_usadas: number;
             /** Format: date-time */
@@ -289,7 +290,7 @@ export interface components {
         ResumoExecucao: {
             /** Format: uuid */
             execucao_id: string;
-            labirinto: components["schemas"]["Labirinto"];
+            tipo_labirinto: components["schemas"]["Labirinto"];
             status: components["schemas"]["StatusExecucao"];
             tentativas_usadas: number;
             /** Format: date-time */
@@ -299,7 +300,7 @@ export interface components {
             tempo_total_s?: number | null;
             /** @description Velocidade média da última tentativa, em metros por segundo. */
             velocidade_media?: number | null;
-            /** @description Consumo da última tentativa, em volts. */
+            /** @description Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts. */
             consumo_bateria?: number | null;
         };
         EventoTelemetria: {
@@ -451,7 +452,7 @@ export interface operations {
         parameters: {
             query?: {
                 /** @example 4x4 */
-                labirinto?: components["schemas"]["Labirinto"];
+                tipo_labirinto?: components["schemas"]["Labirinto"];
             };
             header?: never;
             path?: never;
@@ -481,7 +482,7 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "labirinto": "4x4"
+                 *       "tipo_labirinto": "4x4"
                  *     }
                  */
                 "application/json": components["schemas"]["NovaExecucao"];
