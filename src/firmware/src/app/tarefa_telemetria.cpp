@@ -40,9 +40,9 @@ static void enviar_tel(const evento_leitura_t *ev)
     enviar(linha, n);
 
     /* Linha de depuração (começa com '#', a ponte ignora): distâncias filtradas dos ToF. */
-    n = snprintf(linha, sizeof(linha), "# tof_mm fe=%u fd=%u e=%u d=%u ok=0x%X acao=%u\n",
-                 ev->tof_mm[TOF_FRONTAL], ev->tof_mm[TOF_FRONTAL],
-                 ev->tof_mm[TOF_ESQUERDO], ev->tof_mm[TOF_DIREITO], ev->tof_ok, ev->acao);
+    n = snprintf(linha, sizeof(linha), "# tof_mm f=%u e=%u d=%u ok=0x%X acao=%u\n",
+                 ev->tof_mm[TOF_FRONTAL], ev->tof_mm[TOF_ESQUERDO], ev->tof_mm[TOF_DIREITO],
+                 ev->tof_ok, ev->acao);
     enviar(linha, n);
 }
 

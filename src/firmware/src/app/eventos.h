@@ -21,4 +21,6 @@ typedef struct {
     uint8_t acao;    /* nav_acao_t da última decisão */
 } evento_leitura_t;
 
+static_assert(TOF_QTD <= 8, "tof_ok tem um bit por ToF");
+
 #endif /* APP_EVENTOS_H */
