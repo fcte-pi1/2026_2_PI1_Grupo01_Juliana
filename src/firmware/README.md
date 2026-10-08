@@ -85,14 +85,14 @@ Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao ha
 
 ### Detecção de paredes (FIRM-03)
 
-A `lib/sensores/` lê os 4 ToF pela HAL, filtra cada um com a mediana das 3 últimas leituras e decide se há parede à frente, à esquerda e à direita:
+O robô tem 3 ToF: 1 frontal centralizado, apontado para a frente (0°), e 2 laterais, o esquerdo a +45° e o direito a −45° ([projeto conceitual de estruturas, 4.1](../../docs/4.1%20-%20Projeto%20conceitual%20de%20estruturas.md)). A `lib/sensores/` lê os 3 pela HAL, filtra cada um com a mediana das 3 últimas leituras e decide se há parede à frente, à esquerda e à direita:
 
-- **Frente:** média dos dois frontais válidos; com um só, usa esse.
+- **Frente:** usa só o frontal; com ele falho ou sem leitura, a frente vale "sem parede".
 - **Histerese:** vira parede abaixo de `PAREDE_*_ENTRA_MM` e só deixa de ser acima de `PAREDE_*_SAI_MM` (`config/robo.h`). Entre os dois, mantém o estado anterior, para o ruído não fazer a parede "piscar".
 - **Nada à vista** (o VL53L0X devolve ~8190) é saturado em `TOF_ALCANCE_MAX_MM`: corredor aberto, não falha.
 - **Falha:** 3 leituras seguidas sem resposta marcam o sensor como falho até `sensores_iniciar()`, e ele conta como "sem parede". Quem gera a `falha_componente` é a FIRM-09.
 - **Autoteste** (`tof_autoteste_executar`): 5 leituras por sensor; dá nome, `aprovado` e a mediana em mm (ou nulo, se nada respondeu) para o `hc_item`.
-- **XSHUT** (`tof_sequencia_inicio`): descreve a ordem para ligar um sensor por vez e trocar os endereços para 0x30 a 0x33. O driver real (FIRM-10) só percorre a lista.
+- **XSHUT** (`tof_sequencia_inicio`): descreve a ordem para ligar um sensor por vez e trocar os endereços dos 3 sensores para 0x30 a 0x32. O driver real (FIRM-10) só percorre a lista.
 
 > [!IMPORTANT]
 > O ToF lateral aponta 45° para a frente, então mede a parede **~74 mm à frente** do centro do robô, e não ao lado dele. Com parede, lê ~77 mm. Sem parede, o feixe atravessa o lado aberto e bate no que houver na célula vizinha. Medido no mundo simulado, no pior caso (vizinha com parede horizontal), com *p* = quanto o robô já entrou na célula:
