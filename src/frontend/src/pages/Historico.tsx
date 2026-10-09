@@ -24,8 +24,8 @@ export function Historico() {
             <FiltroLabirinto valor={filtro} aoMudar={(valor) => setParametros(valor ? { labirinto: valor } : {})} />
           </div>
           {erro && <p className="estado-vazio">Não foi possível carregar o histórico: {erro.message}</p>}
-          {!erro && carregando && <p className="estado-vazio">Carregando…</p>}
-          {!erro && !carregando && dados && <TabelaExecucoes execucoes={dados} />}
+          {!erro && carregando && !dados && <p className="estado-vazio">Carregando…</p>}
+          {dados && <TabelaExecucoes execucoes={dados} />}
         </section>
       </div>
     </>
