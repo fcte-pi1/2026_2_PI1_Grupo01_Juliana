@@ -37,7 +37,7 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-src = ["app", "contrato", "tests", "ponte"]
+src = ["app", "contrato", "tests", "ponte", "scripts"]
 
 [tool.ruff.format]
 exclude = ["alembic/versions/**"]
