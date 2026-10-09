@@ -9,6 +9,7 @@ from app.models import (
     HealthCheckItem,
     Labirinto,
     LeituraTelemetria,
+    ParedeCelula,
     Tentativa,
 )
 from app.repositories import Repositorio
@@ -338,3 +339,113 @@ def test_hc_item_em_running_nao_grava_e_loga_info(client, db_session, caplog):
     assert any(
         r.levelno == logging.INFO and "hc_item descartado" in r.getMessage() for r in caplog.records
     )
+
+
+def _parede(db_session, execucao_id, x: int, y: int) -> ParedeCelula:
+    stmt = select(ParedeCelula).where(
+        ParedeCelula.execucao_id == execucao_id, ParedeCelula.x == x, ParedeCelula.y == y
+    )
+    return db_session.scalars(stmt).one()
+
+
+def test_passo_grava_passo_trajeto_e_parede_celula(client, tentativa_aberta, db_session):
+    assert _enviar(client, _passo(0, x=0, y=0, paredes=10)).status_code == 200
+    resposta = _enviar(client, _passo(1, x=0, y=1, paredes=5))
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"comandos": []}
+    execucao_id = tentativa_aberta.execucao_id
+    primeiro, segundo = TelemetriaRepository(db_session).listar_trajeto(execucao_id)
+    assert (primeiro.seq, primeiro.x, primeiro.y, primeiro.paredes_mask) == (1, 0, 0, 10)
+    assert (segundo.seq, segundo.x, segundo.y, segundo.paredes_mask) == (2, 0, 1, 5)
+    assert segundo.tentativa_id == tentativa_aberta.tentativa_id
+    assert not primeiro.retomada
+    recebido_em = datetime.fromisoformat(RECEBIDO_EM)
+    assert primeiro.entrou_em == recebido_em
+    assert segundo.entrou_em == recebido_em + timedelta(milliseconds=10)
+    parede = _parede(db_session, execucao_id, 0, 0)
+    # 10 = sul (2) + oeste (8)
+    assert (parede.norte, parede.sul, parede.leste, parede.oeste) == (False, True, False, True)
+    assert parede.detectada_em == recebido_em
+
+
+def test_beco_gera_trajeto_com_volta_e_parede_da_ultima_leitura(client, db_session):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+    passos = [(0, 0, 2), (0, 1, 0), (0, 2, 0), (0, 2, 13), (0, 1, 0)]
+    for seq, (x, y, paredes) in enumerate(passos):
+        assert _enviar(client, _passo(seq, x=x, y=y, paredes=paredes)).status_code == 200
+
+    trajeto = TelemetriaRepository(db_session).listar_trajeto(tentativa.execucao_id)
+
+    assert [(p.seq, p.x, p.y) for p in trajeto] == [(1, 0, 0), (2, 0, 1), (3, 0, 2), (4, 0, 1)]
+    assert trajeto[2].paredes_mask == 13
+    parede = _parede(db_session, tentativa.execucao_id, 0, 2)
+    # 13 = norte (1) + leste (4) + oeste (8)
+    assert (parede.norte, parede.sul, parede.leste, parede.oeste) == (True, False, True, True)
+
+
+def test_ultima_leitura_da_parede_vence(client, db_session):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+
+    _enviar(client, _passo(0, x=1, y=1, paredes=9))
+    _enviar(client, _passo(1, x=1, y=2, paredes=0))
+    _enviar(client, _passo(2, x=1, y=1, paredes=1))
+
+    parede = _parede(db_session, tentativa.execucao_id, 1, 1)
+    assert (parede.norte, parede.oeste) == (True, False)
+
+
+def test_seq_do_passo_e_por_execucao_e_retomada_so_no_primeiro(client, db_session):
+    execucao = _nova_execucao(db_session, "8x4")
+    primeira = _nova_tentativa(db_session, execucao, "running")
+    _enviar(client, _passo(0, x=0, y=0))
+    _enviar(client, _passo(1, x=0, y=1))
+    primeira.status = "failed"
+    db_session.flush()
+    segunda = Tentativa(
+        tentativa_id=uuid.uuid4(),
+        execucao_id=execucao.execucao_id,
+        attempt_index=2,
+        status="running",
+        tipo_inicio="retomada",
+        iniciada_em=datetime.now(UTC),
+    )
+    Repositorio(db_session).salvar(segunda)
+
+    # mesma célula do último passo da execução: só atualiza as paredes
+    _enviar(client, _passo(2, x=0, y=1, paredes=3))
+    _enviar(client, _passo(3, x=0, y=2))
+    _enviar(client, _passo(4, x=0, y=3))
+
+    trajeto = TelemetriaRepository(db_session).listar_trajeto(execucao.execucao_id)
+    assert [p.seq for p in trajeto] == [1, 2, 3, 4]
+    assert [p.tentativa_id for p in trajeto] == [primeira.tentativa_id] * 2 + [
+        segunda.tentativa_id
+    ] * 2
+    assert [p.retomada for p in trajeto] == [False, False, True, False]
+    assert trajeto[1].paredes_mask == 3
+
+
+def test_passo_repetido_nao_grava_de_novo(client, tentativa_aberta, db_session):
+    _enviar(client, _passo(1, x=0, y=0))
+    _enviar(client, _passo(2, x=0, y=1))
+    _enviar(client, _passo(1, x=0, y=0))
+
+    trajeto = TelemetriaRepository(db_session).listar_trajeto(tentativa_aberta.execucao_id)
+    assert [(p.x, p.y) for p in trajeto] == [(0, 0), (0, 1)]
+
+
+def test_passo_e_parede_na_mesma_transacao(client, db_session, monkeypatch):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+    execucao_id = tentativa.execucao_id
+    # fecha o savepoint: o rollback da ingestão não pode desfazer a tentativa
+    db_session.commit()
+
+    def upsert_falho(*_args):
+        raise OperationalError("INSERT", {}, Exception("banco caiu"))
+
+    monkeypatch.setattr(TelemetriaRepository, "gravar_paredes", upsert_falho)
+    with pytest.raises(OperationalError):
+        _enviar(client, _passo(1, x=0, y=0))
+
+    assert TelemetriaRepository(db_session).listar_trajeto(execucao_id) == []

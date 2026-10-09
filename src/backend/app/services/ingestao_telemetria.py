@@ -4,7 +4,7 @@ import logging
 import threading
 from datetime import datetime
 
-from app.models import HealthCheckItem, LeituraTelemetria, Tentativa
+from app.models import HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
@@ -88,6 +88,8 @@ class IngestaoTelemetria:
                 self._gravar_tel(sessao, tentativa, mensagem, enviado_em, entrada.recebido_em)
             elif isinstance(mensagem, HcItem):
                 self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
+            elif isinstance(mensagem, Passo):
+                self._gravar_passo(sessao, tentativa, mensagem, enviado_em)
             sessao.commit()
         except Exception:
             sessao.rollback()
@@ -141,3 +143,31 @@ class IngestaoTelemetria:
             verificado_em=enviado_em,
         )
         Repositorio(sessao).salvar(registro)
+
+    def _gravar_passo(
+        self, sessao: Session, tentativa: Tentativa, passo: Passo, enviado_em: datetime
+    ) -> None:
+        """Grava o passo (D5, D6) e as paredes da célula (D7), na mesma transação."""
+        repositorio = TelemetriaRepository(sessao)
+        ultimo = repositorio.ultimo_passo(tentativa.execucao_id)
+        if ultimo is not None and (ultimo.x, ultimo.y) == (passo.x, passo.y):
+            # releitura da mesma célula: só as paredes mudam
+            ultimo.paredes_mask = passo.paredes
+        else:
+            retomada = tentativa.tipo_inicio == "retomada" and not repositorio.tentativa_tem_passo(
+                tentativa.tentativa_id
+            )
+            registro = PassoTrajeto(
+                tentativa_id=tentativa.tentativa_id,
+                execucao_id=tentativa.execucao_id,
+                seq=ultimo.seq + 1 if ultimo is not None else 1,
+                x=passo.x,
+                y=passo.y,
+                paredes_mask=passo.paredes,
+                retomada=retomada,
+                entrou_em=enviado_em,
+            )
+            Repositorio(sessao).salvar(registro)
+        repositorio.gravar_paredes(
+            tentativa.execucao_id, passo.x, passo.y, passo.paredes, enviado_em
+        )
