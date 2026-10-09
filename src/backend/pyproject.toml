@@ -39,6 +39,9 @@ line-length = 100
 target-version = "py311"
 src = ["app", "contrato", "tests", "ponte"]
 
+[tool.ruff.format]
+exclude = ["alembic/versions/**"]
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 

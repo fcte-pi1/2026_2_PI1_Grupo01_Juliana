@@ -88,12 +88,8 @@ def test_buscar_execucao_ordena_tentativas_por_attempt_index(db_session):
 def test_listar_execucoes_ordem_decrescente_e_filtro(db_session):
     repo = Repositorio(db_session)
     base = datetime.now(UTC)
-    mais_antiga = _nova_execucao(
-        db_session, tipo="8x4", iniciada_em=base - timedelta(hours=2)
-    )
-    mais_recente = _nova_execucao(
-        db_session, tipo="4x4", iniciada_em=base - timedelta(minutes=5)
-    )
+    mais_antiga = _nova_execucao(db_session, tipo="8x4", iniciada_em=base - timedelta(hours=2))
+    mais_recente = _nova_execucao(db_session, tipo="4x4", iniciada_em=base - timedelta(minutes=5))
     _nova_execucao(db_session, tipo="8x4", iniciada_em=base - timedelta(hours=1))
 
     todas = repo.listar_execucoes()
@@ -155,9 +151,7 @@ def test_tentativa_aberta_apos_anterior_finalizada_e_permitida(db_session):
     execucao.tentativas_usadas = 2
     repo.salvar(execucao)
     _nova_tentativa(db_session, execucao, attempt_index=1, status="failed", tempo_s=None)
-    segunda = _nova_tentativa(
-        db_session, execucao, attempt_index=2, status="running", tempo_s=None
-    )
+    segunda = _nova_tentativa(db_session, execucao, attempt_index=2, status="running", tempo_s=None)
 
     carregada = repo.buscar_execucao(execucao.execucao_id)
     assert carregada is not None

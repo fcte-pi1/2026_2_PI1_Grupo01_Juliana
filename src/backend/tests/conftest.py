@@ -16,9 +16,7 @@ TEST_DATABASE_URL = os.environ.get(
 )
 
 if not urlparse(TEST_DATABASE_URL).path.endswith("_test"):
-    raise RuntimeError(
-        "TEST_DATABASE_URL precisa apontar para um banco cujo nome termina em _test"
-    )
+    raise RuntimeError("TEST_DATABASE_URL precisa apontar para um banco cujo nome termina em _test")
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 from app.db import get_db  # noqa: E402
