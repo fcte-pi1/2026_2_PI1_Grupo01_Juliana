@@ -15,6 +15,7 @@ from contrato.telemetria import (
     EntradaPonte,
     Falha,
     HcItem,
+    HcResultado,
     LinhaInvalida,
     Mensagem,
     Passo,
@@ -29,6 +30,8 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger("app.telemetria")
 
 COM_CELULA = (Tel, Passo, Falha, Sucesso)
+# repassados ao GerenciadorExecucoes, que cuida das transições (D2)
+EVENTOS = (HcResultado, Falha, Sucesso)
 
 
 class IngestaoTelemetria:
@@ -48,10 +51,12 @@ class IngestaoTelemetria:
     ) -> RespostaPonte:
         """Processa uma linha. Levanta `LinhaInvalida` se ela violar o contrato."""
         with self._trava:
-            self._processar(sessao, entrada)
+            self._processar(sessao, entrada, gerenciador)
         return RespostaPonte(comandos=gerenciador.comandos_pendentes())
 
-    def _processar(self, sessao: Session, entrada: EntradaPonte) -> None:
+    def _processar(
+        self, sessao: Session, entrada: EntradaPonte, gerenciador: GerenciadorExecucoes
+    ) -> None:
         try:
             mensagem = ler_linha(entrada.linha)
         except LinhaInvalida as erro:
@@ -65,14 +70,15 @@ class IngestaoTelemetria:
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
         if tentativa is None:
-            logger.info("%s descartada: nenhuma tentativa aberta", mensagem.tipo)
-            return
-
-        self._conferir_limites(mensagem, tentativa)
-
-        if isinstance(mensagem, HcItem) and tentativa.status != "health-check":
-            logger.info("hc_item descartado: tentativa em %s", tentativa.status)
-            return
+            # a interrupção pela web pode chegar depois de a tentativa fechar
+            if not (isinstance(mensagem, Falha) and mensagem.origem == "web"):
+                logger.info("%s descartada: nenhuma tentativa aberta", mensagem.tipo)
+                return
+        else:
+            self._conferir_limites(mensagem, tentativa)
+            if isinstance(mensagem, HcItem) and tentativa.status != "health-check":
+                logger.info("hc_item descartado: tentativa em %s", tentativa.status)
+                return
 
         if self.deduplicador.eh_repetida(mensagem):
             logger.info(
@@ -90,6 +96,8 @@ class IngestaoTelemetria:
                 self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
             elif isinstance(mensagem, Passo):
                 self._gravar_passo(sessao, tentativa, mensagem, enviado_em)
+            elif isinstance(mensagem, EVENTOS):
+                gerenciador.aplicar_evento(sessao, tentativa, mensagem)
             sessao.commit()
         except Exception:
             sessao.rollback()

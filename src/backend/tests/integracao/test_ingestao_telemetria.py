@@ -14,7 +14,7 @@ from app.models import (
 )
 from app.repositories import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
-from contrato.telemetria import ler_linha
+from contrato.telemetria import Comando, ler_linha
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 
@@ -449,3 +449,97 @@ def test_passo_e_parede_na_mesma_transacao(client, db_session, monkeypatch):
         _enviar(client, _passo(1, x=0, y=0))
 
     assert TelemetriaRepository(db_session).listar_trajeto(execucao_id) == []
+
+
+class GerenciadorFalso:
+    """Registra os eventos recebidos e devolve comandos fixos."""
+
+    def __init__(self, ordem: list[str]) -> None:
+        self.ordem = ordem
+        self.eventos = []
+        self.comandos = [Comando()]
+
+    def aplicar_evento(self, sessao, tentativa, mensagem) -> None:
+        self.ordem.append("aplicar_evento")
+        self.eventos.append((sessao, tentativa, mensagem))
+
+    def comandos_pendentes(self) -> list[Comando]:
+        return self.comandos
+
+
+@pytest.fixture
+def gerenciador_falso(client, db_session, monkeypatch) -> GerenciadorFalso:
+    ordem = []
+    commit_original = db_session.commit
+
+    def commit_registrado():
+        ordem.append("commit")
+        commit_original()
+
+    monkeypatch.setattr(db_session, "commit", commit_registrado)
+    gerenciador = GerenciadorFalso(ordem)
+    monkeypatch.setattr(client.app.state, "gerenciador", gerenciador)
+    return gerenciador
+
+
+EVENTOS = {
+    "hc_resultado": {"tipo": "hc_resultado", "aprovado": True, "tipo_dip": "4x4", "inicio": "nova"},
+    "falha": {
+        "tipo": "falha",
+        "motivo": "stuck",
+        "origem": "automatica",
+        "x": 1,
+        "y": 2,
+        "componente": None,
+    },
+    "sucesso": {"tipo": "sucesso", "x": 3, "y": 3},
+}
+
+
+def _evento(seq: int, campos: dict) -> str:
+    return json.dumps({"v": 1, "boot": 7, "seq": seq, "t_ms": 1000 + seq} | campos)
+
+
+@pytest.mark.parametrize("campos", EVENTOS.values(), ids=EVENTOS.keys())
+def test_evento_vai_ao_gerenciador_antes_do_commit(client, db_session, gerenciador_falso, campos):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+
+    resposta = _enviar(client, _evento(1, campos))
+    _enviar(client, _evento(1, campos))
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"comandos": [{"v": 1, "cmd": "interromper"}]}
+    # o repetido não chega de novo ao gerenciador
+    [(sessao, recebida, mensagem)] = gerenciador_falso.eventos
+    assert sessao is db_session
+    assert recebida.tentativa_id == tentativa.tentativa_id
+    assert mensagem == ler_linha(_evento(1, campos))
+    assert gerenciador_falso.ordem == ["aplicar_evento", "commit"]
+
+
+def test_falha_web_sem_tentativa_aberta_chega_com_none(client, gerenciador_falso):
+    falha_web = EVENTOS["falha"] | {"origem": "web", "motivo": None}
+
+    resposta = _enviar(client, _evento(1, falha_web))
+
+    assert resposta.status_code == 200
+    [(_, tentativa, mensagem)] = gerenciador_falso.eventos
+    assert tentativa is None
+    assert mensagem.origem == "web"
+
+
+@pytest.mark.parametrize("campos", EVENTOS.values(), ids=EVENTOS.keys())
+def test_evento_sem_tentativa_aberta_e_descartado(client, gerenciador_falso, campos):
+    resposta = _enviar(client, _evento(1, campos))
+
+    assert resposta.status_code == 200
+    assert gerenciador_falso.eventos == []
+
+
+def test_comandos_do_gerenciador_vao_na_resposta_da_tel(
+    client, tentativa_aberta, gerenciador_falso
+):
+    resposta = _enviar(client, _linha())
+
+    assert resposta.json() == {"comandos": [{"v": 1, "cmd": "interromper"}]}
+    assert gerenciador_falso.eventos == []
