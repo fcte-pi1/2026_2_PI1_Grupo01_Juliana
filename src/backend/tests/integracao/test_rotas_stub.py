@@ -48,13 +48,8 @@ def test_post_telemetria_retorna_501(client):
     response = client.post(
         "/telemetria",
         json={
-            "seq": 1,
-            "status": "running",
-            "x": 0,
-            "y": 0,
-            "bateria": 7.8,
-            "velocidade": 0.0,
-            "enviado_em": "2026-10-07T14:03:21.512-03:00",
+            "linha": '{"v":1,"boot":1,"seq":1,"t_ms":0,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":7800,"vel_mm_s":0,"eixo_longo":null}',
+            "recebido_em": "2026-10-07T14:03:21.512-03:00",
         },
     )
     assert response.status_code == 501
