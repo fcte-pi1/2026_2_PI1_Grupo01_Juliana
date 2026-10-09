@@ -3,7 +3,7 @@
  *
  * Roda a navegação do firmware (lib/navegacao, o mesmo código da ESP32) em
  * labirintos desenhados em texto e escreve uma linha de relatório por
- * labirinto. Uso e formato da saída: simulador/README.md.
+ * labirinto. Uso e formato da saída: simulador-navegacao/README.md.
  */
 
 #define _POSIX_C_SOURCE 200809L

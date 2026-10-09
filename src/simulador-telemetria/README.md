@@ -10,7 +10,7 @@ Serve para testar a ponte, o backend e o front sem o robô. As mensagens vêm de
 Precisa do [uv](https://docs.astral.sh/uv/) e do Python 3.12 ou mais novo.
 
 ```sh
-cd src/simulador
+cd src/simulador-telemetria
 uv sync
 ```
 
@@ -102,7 +102,7 @@ cp src/backend/.env.example src/backend/.env
 Para carregar o arquivo, use o `--env-file` do uv (não há python-dotenv):
 
 ```sh
-cd src/simulador
+cd src/simulador-telemetria
 uv run --env-file ../backend/.env python -m simulador <roteiro> [opções]
 ```
 
