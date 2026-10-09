@@ -4,7 +4,13 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from app.models import ExecucaoLogica, Labirinto, LeituraTelemetria, Tentativa
+from app.models import (
+    ExecucaoLogica,
+    HealthCheckItem,
+    Labirinto,
+    LeituraTelemetria,
+    Tentativa,
+)
 from app.repositories import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from contrato.telemetria import ler_linha
@@ -284,3 +290,51 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 
     agora = datetime.fromisoformat(RECEBIDO_EM) + timedelta(seconds=3)
     assert monitor.segundos_sem_sinal(agora) == 3
+
+
+def _hc_item(seq: int, **campos) -> str:
+    return json.dumps(
+        {"v": 1, "boot": 7, "seq": seq, "t_ms": 1000 + seq * 100, "tipo": "hc_item"}
+        | {"componente": "bateria", "aprovado": True, "valor": 7840}
+        | campos,
+        separators=(",", ":"),
+    )
+
+
+def _itens(db_session, tentativa: Tentativa) -> list[HealthCheckItem]:
+    stmt = (
+        select(HealthCheckItem)
+        .where(HealthCheckItem.tentativa_id == tentativa.tentativa_id)
+        .order_by(HealthCheckItem.item_id)
+    )
+    return list(db_session.scalars(stmt))
+
+
+def test_hc_item_em_health_check_grava_health_check_item(client, db_session):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "health-check")
+
+    assert _enviar(client, _hc_item(0)).status_code == 200
+    resposta = _enviar(client, _hc_item(1, componente="motor_esquerdo", aprovado=False, valor=None))
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"comandos": []}
+    bateria, motor = _itens(db_session, tentativa)
+    assert (bateria.componente, bateria.aprovado, bateria.valor_lido) == ("bateria", True, 7840)
+    assert (motor.componente, motor.aprovado, motor.valor_lido) == ("motor_esquerdo", False, None)
+    recebido_em = datetime.fromisoformat(RECEBIDO_EM)
+    assert bateria.verificado_em == recebido_em
+    assert motor.verificado_em == recebido_em + timedelta(milliseconds=100)
+
+
+def test_hc_item_em_running_nao_grava_e_loga_info(client, db_session, caplog):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+
+    with caplog.at_level(logging.INFO, logger="app.telemetria"):
+        resposta = _enviar(client, _hc_item(0))
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"comandos": []}
+    assert _itens(db_session, tentativa) == []
+    assert any(
+        r.levelno == logging.INFO and "hc_item descartado" in r.getMessage() for r in caplog.records
+    )

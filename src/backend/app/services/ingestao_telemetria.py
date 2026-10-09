@@ -4,7 +4,7 @@ import logging
 import threading
 from datetime import datetime
 
-from app.models import LeituraTelemetria, Tentativa
+from app.models import HealthCheckItem, LeituraTelemetria, Tentativa
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
@@ -14,6 +14,7 @@ from contrato.telemetria import (
     Deduplicador,
     EntradaPonte,
     Falha,
+    HcItem,
     LinhaInvalida,
     Mensagem,
     Passo,
@@ -69,6 +70,10 @@ class IngestaoTelemetria:
 
         self._conferir_limites(mensagem, tentativa)
 
+        if isinstance(mensagem, HcItem) and tentativa.status != "health-check":
+            logger.info("hc_item descartado: tentativa em %s", tentativa.status)
+            return
+
         if self.deduplicador.eh_repetida(mensagem):
             logger.info(
                 "%s repetida descartada (boot %d, seq %d)",
@@ -81,6 +86,8 @@ class IngestaoTelemetria:
         try:
             if isinstance(mensagem, Tel):
                 self._gravar_tel(sessao, tentativa, mensagem, enviado_em, entrada.recebido_em)
+            elif isinstance(mensagem, HcItem):
+                self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
             sessao.commit()
         except Exception:
             sessao.rollback()
@@ -122,3 +129,15 @@ class IngestaoTelemetria:
             recebido_em=recebido_em,
         )
         Repositorio(sessao).salvar(leitura)
+
+    def _gravar_hc_item(
+        self, sessao: Session, tentativa: Tentativa, item: HcItem, enviado_em: datetime
+    ) -> None:
+        registro = HealthCheckItem(
+            tentativa_id=tentativa.tentativa_id,
+            componente=item.componente,
+            aprovado=item.aprovado,
+            valor_lido=item.valor,
+            verificado_em=enviado_em,
+        )
+        Repositorio(sessao).salvar(registro)
