@@ -131,12 +131,19 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 | 12 | Chave LED ON/OFF | Mercado Livre | Gangorra c/ LED | R$ 12,00 | R$ 15,00 | **R$ 27,00** |
 | 13 | Jumper para seleção de pilhas AA / bateria LiPo | — | Jumper padrão | R$ 2,00 | R$ 0,00 | **R$ 2,00** |
 | 14 | Motor de passo direito | Mercado Livre | Nema 11 | R$ 182,00 | R$ 0,00 | **R$ 182,00** |
-| 15 | Chave bateria LiPo ON/OFF | — | Slide Switch SPDT/SP3T | R$ 11,94 | R$ 0,00 | **R$ 11,94** |
+| 15 | Chave bateria LiPo ON/OFF (kit com 10) | Mercado Livre | Gangorra KCD1-101, 10 A | R$ 13,90 | R$ 0,00 | **R$ 13,90** |
 | 16 | Conector para o motor esquerdo | Mercado Livre | JST 4 vias | R$ 20,00 | R$ 0,00 | **R$ 20,00** |
 | 17 | Placa PCB | — | FR4 dupla face | R$ 100,00 | R$ 50,00 | **R$ 150,00** |
 | 18 | Rodinhas | — | 2 × 40 mm + 1 giratória | R$ 20,00 | R$ 10,00 | **R$ 30,00** |
+| 19 | Bateria LiPo 2S 7,4 V (1 em uso + 1 reserva) | Helitec | Tattu 650 mAh 75C, XT30 | R$ 180,00 | a confirmar | **R$ 180,00** |
+| 20 | Carregador/balanceador LiPo | Mercado Livre | IMAX B3 Compact | R$ 44,90 | R$ 0,00 | **R$ 44,90** |
+| 21 | Regulador LDO 3,3 V (kit com 4) | Mercado Livre | Módulo AMS1117-3.3 | R$ 19,99 | R$ 0,00 | **R$ 19,99** |
+| 22 | Conectores de força (kit com 3 pares) | Mercado Livre | XT30 macho/fêmea | R$ 19,54 | R$ 0,00 | **R$ 19,54** |
+| 23 | Fusível rearmável (kit com 5) | Mercado Livre | PTC JK30-200, 2 A | R$ 29,99 | R$ 0,00 | **R$ 29,99** |
 
-**Total: R$ 889,66**
+**Total: R$ 1.186,04**
+
+Os itens de Energia (3, 4, 13, 15 e 19 a 23) foram atualizados em 08/10/2026 conforme o [projeto conceitual de energia](4.2%20-%20Projeto%20conceitual%20de%20energia.md) v1.5 e o [orçamento](6%20-%20Orçamento.md). Os itens 19 a 23 não aparecem na figura. Os demais itens refletem a arquitetura inicial e serão atualizados pelas áreas responsáveis; o orçamento vigente por subsistema está no documento 6.
 
 
 
