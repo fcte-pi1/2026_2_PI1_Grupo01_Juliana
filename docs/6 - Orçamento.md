@@ -15,17 +15,17 @@
 
 ### Orçamento do Subsistema de Energia
 
-Itens alinhados ao [projeto conceitual de energia](4.2%20-%20Projeto%20conceitual%20de%20energia.md) (v1.4). O total soma só o que precisa ser comprado.
+Itens alinhados ao [projeto conceitual de energia](4.2%20-%20Projeto%20conceitual%20de%20energia.md) (v1.5), com preços cotados em 07/10/2026. O total soma só o que precisa ser comprado. Os itens 3 a 6 só são vendidos em kit; as peças que sobram ficam de reserva para a montagem.
 
 | ID | Item / Componente | Especificação Técnica | Qtd | Valor Unit. (R$) | Valor Total (R$) | Origem / Status |
 | :-: | :--- | :--- | :-: | :-: | :-: | :--- |
-| **1** | Bateria LiPo 2S 7,4 V | 500 mAh, mín. 20C de taxa de descarga (1 em uso + 1 reserva) | 2 | R$ 45,00 | R$ 90,00 | A comprar |
-| **2** | Carregador/Balanceador LiPo | Carregador B3 Compact ou IMAX B6 com balanceamento | 1 | R$ 35,00 | R$ 35,00 | A comprar |
-| **3** | Regulador de Tensão LDO 3,3 V | CI AMS1117-3.3 ou SPX3819, alimentado pelos 5 V (sensores ToF e encoders) | 2 | R$ 2,50 | R$ 5,00 | A comprar |
-| **4** | Conectores XT60 (Macho/Fêmea) | Pares de conectores para as baterias LiPo e a entrada do robô | 4 | R$ 4,00 | R$ 16,00 | A comprar |
-| **5** | Chave Gangorra / Interruptor Liga/Desliga | Chave KCD1 2 posições (mín. 10 A) para corte geral | 2 | R$ 3,00 | R$ 6,00 | A comprar |
-| **6** | Fusível Rearmável PTC | Bourns MF-MSMF200: hold 2,0 A / trip 3,5 A | 2 | R$ 2,50 | R$ 5,00 | A comprar |
-| **—** | **TOTAL A COMPRAR (ENERGIA)** | — | — | — | **R$ 157,00** | — |
+| **1** | Bateria LiPo 2S 7,4 V | Tattu 650 mAh 75C, conector XT30, 43 g (1 em uso + 1 reserva) | 2 | R$ 90,00 | R$ 180,00 | A comprar ([Helitec](https://helitec.com.br/TATTU-650MAH-2S-75C-XT30)) |
+| **2** | Carregador/Balanceador LiPo | IMAX B3 Compact, balanceamento 2S/3S | 1 | R$ 44,90 | R$ 44,90 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/carregador-de-bateria-lipo-imaxrc-b3-compact-charger-/up/MLBU1965582183)) |
+| **3** | Regulador de Tensão LDO 3,3 V | Módulo AMS1117-3.3 (kit com 4), alimentado pelos 5 V (sensores ToF e encoders) | 1 kit | R$ 19,99 | R$ 19,99 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/4x-mini-modulos-regulador-de-tensao-digital-ams1117-33v/up/MLBU2903326297)) |
+| **4** | Conectores XT30 (Macho/Fêmea) | Kit com 3 pares: entrada do robô, pacote de pilhas AA e reserva | 1 kit | R$ 19,54 | R$ 19,54 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/3-pares-plugs-conector-de-energia-xt30-macho-e-femea/p/MLB2084002867)) |
+| **5** | Chave Gangorra / Interruptor Liga/Desliga | KCD1-101, 2 terminais, 10 A, para corte geral (kit com 10) | 1 kit | R$ 13,90 | R$ 13,90 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/10-pecas--chave-gangorra-2-terminais-liga-desliga-comum/up/MLBU2121393000)) |
+| **6** | Fusível Rearmável PTC | JK30-200: hold 2,0 A / trip 4,0 A, 30 V, PTH (kit com 5) | 1 kit | R$ 29,99 | R$ 29,99 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/kit-5-fusivel-rearmavel-pptc-jk30200-30v-2a-2000ma/up/MLBU3883832125)) |
+| **—** | **TOTAL A COMPRAR (ENERGIA)** | — | — | — | **R$ 308,32** | — |
 
 **Já disponíveis (fora do total):** suporte para 4 pilhas AA (R$ 6,00) e pilhas alcalinas AA (R$ 14,00), já adquiridos; tubos termorretráteis (R$ 12,00), do laboratório.
 
@@ -70,8 +70,8 @@ O subsistema de software **não prevê aquisição de hardware dedicado**: o Mic
 
 | Subsistema | Valor Estimado (R$) |
 |---|---:|
-| Energia | R$ 157,00 |
+| Energia | R$ 308,32 |
 | Eletrônica | R$ 529,26 |
 | Software | R$ 0,00 |
 | Estrutura | R$ 440,00 |
-| **TOTAL GERAL** | **R$ 1.126,26** |
+| **TOTAL GERAL** | **R$ 1.277,58** |
