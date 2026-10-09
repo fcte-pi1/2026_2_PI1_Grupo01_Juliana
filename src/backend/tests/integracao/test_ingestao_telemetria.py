@@ -412,18 +412,19 @@ def test_seq_do_passo_e_por_execucao_e_retomada_so_no_primeiro(client, db_sessio
     )
     Repositorio(db_session).salvar(segunda)
 
-    # mesma célula do último passo da execução: só atualiza as paredes
+    # a retomada começa na célula da falha: ganha o próprio passo, marcado
     _enviar(client, _passo(2, x=0, y=1, paredes=3))
-    _enviar(client, _passo(3, x=0, y=2))
-    _enviar(client, _passo(4, x=0, y=3))
+    _enviar(client, _passo(3, x=0, y=1, paredes=1))  # releitura na mesma tentativa
+    _enviar(client, _passo(4, x=0, y=2))
 
     trajeto = TelemetriaRepository(db_session).listar_trajeto(execucao.execucao_id)
-    assert [p.seq for p in trajeto] == [1, 2, 3, 4]
+    assert [(p.seq, p.x, p.y) for p in trajeto] == [(1, 0, 0), (2, 0, 1), (3, 0, 1), (4, 0, 2)]
     assert [p.tentativa_id for p in trajeto] == [primeira.tentativa_id] * 2 + [
         segunda.tentativa_id
     ] * 2
     assert [p.retomada for p in trajeto] == [False, False, True, False]
-    assert trajeto[1].paredes_mask == 3
+    assert trajeto[1].paredes_mask == 5
+    assert trajeto[2].paredes_mask == 1
 
 
 def test_passo_repetido_nao_grava_de_novo(client, tentativa_aberta, db_session):

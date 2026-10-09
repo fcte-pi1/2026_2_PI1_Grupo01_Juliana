@@ -160,12 +160,13 @@ class IngestaoTelemetria:
         """Grava o passo (D5, D6) e as paredes da célula (D7), na mesma transação."""
         repositorio = TelemetriaRepository(sessao)
         ultimo = repositorio.ultimo_passo(tentativa.execucao_id)
-        if ultimo is not None and (ultimo.x, ultimo.y) == (passo.x, passo.y):
-            # releitura da mesma célula: só as paredes mudam
+        # o último passo da execução é de outra tentativa: este é o 1º desta
+        primeiro_da_tentativa = ultimo is None or ultimo.tentativa_id != tentativa.tentativa_id
+        if not primeiro_da_tentativa and (ultimo.x, ultimo.y) == (passo.x, passo.y):
+            # releitura da mesma célula na mesma tentativa: só as paredes mudam
             ultimo.paredes_mask = passo.paredes
         else:
-            # o último passo da execução é de outra tentativa: este é o 1º desta
-            primeiro_da_tentativa = ultimo is None or ultimo.tentativa_id != tentativa.tentativa_id
+            # a retomada começa na célula da falha e ganha o próprio passo
             retomada = tentativa.tipo_inicio == "retomada" and primeiro_da_tentativa
             registro = PassoTrajeto(
                 tentativa_id=tentativa.tentativa_id,
