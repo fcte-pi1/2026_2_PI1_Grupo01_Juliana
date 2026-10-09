@@ -994,9 +994,9 @@ components:
           minimum: 0
           maximum: 11
         componente:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/Componente"
-          nullable: true
+            - enum: [null]
         observacao:
           type: string
           maxLength: 100
@@ -1020,9 +1020,9 @@ components:
         tipo_inicio:
           $ref: "#/components/schemas/TipoInicio"
         tipo_dip:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/TipoDip"
-          nullable: true
+            - enum: [null]
         iniciada_em:
           type: string
           format: date-time
@@ -1053,9 +1053,9 @@ components:
           items:
             $ref: "#/components/schemas/ItemHealthCheck"
         falha:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/Falha"
-          nullable: true
+            - enum: [null]
 
     PassoTrajeto:
       type: object
@@ -1108,9 +1108,9 @@ components:
           nullable: true
           description: Metros por segundo, convertidos de vel_mm_s.
         rumo:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/Rumo"
-          nullable: true
+            - enum: [null]
         enviado_em:
           type: string
           format: date-time
@@ -1159,9 +1159,9 @@ components:
             Variação percentual contra o melhor tempo do mesmo labirinto.
             Negativo quando esta execução foi mais rápida. Null se não houver marca anterior.
         eixo_longo:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/EixoLongo"
-          nullable: true
+            - enum: [null]
           description: >
             Eixo em que o 8x4 ou o 12x4 se estende. Null no 4x4 e enquanto
             o robô não entrou numa célula além do canto 4x4.
@@ -1240,13 +1240,13 @@ components:
           type: number
           nullable: true
         rumo:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/Rumo"
-          nullable: true
+            - enum: [null]
         eixo_longo:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/EixoLongo"
-          nullable: true
+            - enum: [null]
         enviado_em:
           type: string
           format: date-time
@@ -1293,9 +1293,9 @@ components:
         status_execucao:
           $ref: "#/components/schemas/StatusExecucao"
         tipo_dip:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/TipoDip"
-          nullable: true
+            - enum: [null]
     EventoHealthCheck:
       type: object
       required: [tipo, tentativa_id, componente, aprovado]
@@ -1332,9 +1332,9 @@ components:
         celula_y:
           type: integer
         componente:
-          allOf:
+          oneOf:
             - $ref: "#/components/schemas/Componente"
-          nullable: true
+            - enum: [null]
         observacao:
           type: string
           nullable: true
