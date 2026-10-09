@@ -1,25 +1,18 @@
 """RNF-B11: a ingestão aguenta a rajada de telemetria sem atraso acumulado."""
 
 import json
-import math
 import time
 import uuid
 from datetime import UTC, datetime
 
 from app.models import ExecucaoLogica, Labirinto, Tentativa
 from app.repositories import Repositorio
+from scripts.carga_telemetria import P95_MAXIMO_S, _p95
 from sqlalchemy import select
 
 TOTAL = 600
 JANELA = 100
-P95_MAXIMO_S = 0.100
 RECEBIDO_EM = "2026-10-08T12:00:00+00:00"
-
-
-def _p95(tempos: list[float]) -> float:
-    """Percentil 95 pelo método do posto mais próximo."""
-    ordenados = sorted(tempos)
-    return ordenados[math.ceil(0.95 * len(ordenados)) - 1]
 
 
 def _mensagem(seq: int) -> str:

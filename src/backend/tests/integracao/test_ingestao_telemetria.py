@@ -289,8 +289,8 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 
     _enviar(client, _linha())
 
-    agora = datetime.fromisoformat(RECEBIDO_EM) + timedelta(seconds=3)
-    assert monitor.segundos_sem_sinal(agora) == 3
+    # usa o relógio do servidor, não o recebido_em da ponte (que pode ser antigo)
+    assert monitor.segundos_sem_sinal() < 5
 
 
 def _hc_item(seq: int, **campos) -> str:
@@ -543,3 +543,11 @@ def test_comandos_do_gerenciador_vao_na_resposta_da_tel(
 
     assert resposta.json() == {"comandos": [{"v": 1, "cmd": "interromper"}]}
     assert gerenciador_falso.eventos == []
+
+
+def test_linha_invalida_tambem_leva_os_comandos(client, gerenciador_falso):
+    resposta = _enviar(client, "{nao é json")
+
+    assert resposta.status_code == 422
+    assert resposta.json()["comandos"] == [{"v": 1, "cmd": "interromper"}]
+    assert resposta.json()["detail"]

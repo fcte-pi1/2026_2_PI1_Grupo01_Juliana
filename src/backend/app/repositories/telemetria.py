@@ -35,10 +35,6 @@ class TelemetriaRepository:
         )
         return self._session.scalar(stmt)
 
-    def tentativa_tem_passo(self, tentativa_id: UUID) -> bool:
-        stmt = select(PassoTrajeto.passo_id).where(PassoTrajeto.tentativa_id == tentativa_id)
-        return self._session.scalar(stmt.limit(1)) is not None
-
     def listar_trajeto(self, execucao_id: UUID) -> list[PassoTrajeto]:
         stmt = (
             select(PassoTrajeto)

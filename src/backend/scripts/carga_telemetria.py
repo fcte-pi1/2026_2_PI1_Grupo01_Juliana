@@ -5,7 +5,8 @@ atraso acumulado. Sai com código 1 se p95 >= 100 ms, se o atraso acumulado
 passar de 1 s ou se alguma resposta não for 200. Precisa de uma tentativa
 aberta no banco (veja o README do backend).
 
-Uso: python scripts/carga_telemetria.py --url http://localhost:8000 --taxa 10 --duracao 60
+Uso, a partir de src/backend:
+    python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
 """
 
 import argparse
@@ -46,12 +47,25 @@ def _tel(boot: int, seq: int, t_ms: int) -> str:
     return json.dumps(mensagem, separators=(",", ":"))
 
 
+def _ha_tentativa_aberta() -> bool:
+    """Sem tentativa aberta, toda tel é descartada e a carga não mede a gravação."""
+    from app.db import SessionLocal
+    from app.repositories import Repositorio
+
+    with SessionLocal() as sessao:
+        return Repositorio(sessao).buscar_tentativa_aberta() is not None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--url", default="http://localhost:8000", help="URL base da API")
     parser.add_argument("--taxa", type=float, default=10, help="mensagens por segundo")
     parser.add_argument("--duracao", type=float, default=60, help="duração em segundos")
     args = parser.parse_args()
+
+    if not _ha_tentativa_aberta():
+        print("nenhuma tentativa aberta no DATABASE_URL: crie uma (README)", file=sys.stderr)
+        return 1
 
     total = int(args.taxa * args.duracao)
     intervalo = 1 / args.taxa
@@ -68,7 +82,7 @@ def main() -> int:
             if espera > 0:
                 time.sleep(espera)
             enviado = time.perf_counter()
-            atraso = max(0.0, enviado - previsto)
+            atraso = max(atraso, enviado - previsto)
             corpo = {
                 "linha": _tel(boot, seq, round(seq * intervalo * 1000)),
                 "recebido_em": datetime.now(UTC).isoformat(),

@@ -65,8 +65,8 @@ class IngestaoTelemetria:
             )
             raise
 
-        self.monitor.registrar_mensagem(entrada.recebido_em)
-        enviado_em = self.relogio.enviado_em(mensagem, entrada.recebido_em)
+        # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
+        self.monitor.registrar_mensagem()
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
         if tentativa is None:
@@ -89,6 +89,8 @@ class IngestaoTelemetria:
             )
             return
 
+        # a âncora do boot só é fixada por uma mensagem aceita
+        enviado_em = self.relogio.enviado_em(mensagem, entrada.recebido_em)
         try:
             if isinstance(mensagem, Tel):
                 self._gravar_tel(sessao, tentativa, mensagem, enviado_em, entrada.recebido_em)
@@ -162,9 +164,9 @@ class IngestaoTelemetria:
             # releitura da mesma célula: só as paredes mudam
             ultimo.paredes_mask = passo.paredes
         else:
-            retomada = tentativa.tipo_inicio == "retomada" and not repositorio.tentativa_tem_passo(
-                tentativa.tentativa_id
-            )
+            # o último passo da execução é de outra tentativa: este é o 1º desta
+            primeiro_da_tentativa = ultimo is None or ultimo.tentativa_id != tentativa.tentativa_id
+            retomada = tentativa.tipo_inicio == "retomada" and primeiro_da_tentativa
             registro = PassoTrajeto(
                 tentativa_id=tentativa.tentativa_id,
                 execucao_id=tentativa.execucao_id,

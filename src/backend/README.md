@@ -141,10 +141,10 @@ O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem esp
 
 ```bash
 cd src/backend
-python scripts/carga_telemetria.py --url http://localhost:8000 --taxa 10 --duracao 60
+python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
 ```
 
-O script precisa de uma tentativa aberta; sem ela, as mensagens são descartadas. Para criar uma no banco de desenvolvimento:
+O script lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
 
 ```bash
 docker compose exec db psql -U micromouse -d micromouse -c "
