@@ -45,10 +45,14 @@ def test_stream_execucao_retorna_501(client):
 
 
 def test_post_telemetria_retorna_501(client):
+    linha_tel = (
+        '{"v":1,"boot":1,"seq":1,"t_ms":0,"tipo":"tel","estado":"running",'
+        '"x":0,"y":0,"rumo":"N","bat_mv":7800,"vel_mm_s":0,"eixo_longo":null}'
+    )
     response = client.post(
         "/telemetria",
         json={
-            "linha": '{"v":1,"boot":1,"seq":1,"t_ms":0,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":7800,"vel_mm_s":0,"eixo_longo":null}',
+            "linha": linha_tel,
             "recebido_em": "2026-10-07T14:03:21.512-03:00",
         },
     )
