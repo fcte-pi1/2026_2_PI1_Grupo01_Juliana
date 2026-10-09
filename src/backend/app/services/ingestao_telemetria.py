@@ -89,8 +89,7 @@ class IngestaoTelemetria:
             )
             return
 
-        # a âncora do boot só é fixada por uma mensagem aceita
-        enviado_em = self.relogio.enviado_em(mensagem, entrada.recebido_em)
+        enviado_em = self.relogio.calcular(mensagem, entrada.recebido_em)
         try:
             if isinstance(mensagem, Tel):
                 self._gravar_tel(sessao, tentativa, mensagem, enviado_em, entrada.recebido_em)
@@ -104,6 +103,8 @@ class IngestaoTelemetria:
         except Exception:
             sessao.rollback()
             raise
+        # a âncora do boot só é fixada por uma mensagem aceita
+        self.relogio.fixar(mensagem, entrada.recebido_em)
         self.deduplicador.confirmar(mensagem)
 
     def _conferir_limites(self, mensagem: Mensagem, tentativa: Tentativa) -> None:

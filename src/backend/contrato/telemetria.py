@@ -197,11 +197,20 @@ class RelogioDoRobo:
     def __init__(self) -> None:
         self._ancoras: dict[int, datetime] = {}
 
-    def enviado_em(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
-        ancora = self._ancoras.setdefault(
+    def calcular(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
+        """Calcula o `enviado_em` sem fixar a âncora de um boot novo."""
+        ancora = self._ancoras.get(
             mensagem.boot, recebido_em - timedelta(milliseconds=mensagem.t_ms)
         )
         return ancora + timedelta(milliseconds=mensagem.t_ms)
+
+    def fixar(self, mensagem: Mensagem, recebido_em: datetime) -> None:
+        """Fixa a âncora do boot, se ele ainda não tiver uma."""
+        self._ancoras.setdefault(mensagem.boot, recebido_em - timedelta(milliseconds=mensagem.t_ms))
+
+    def enviado_em(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
+        self.fixar(mensagem, recebido_em)
+        return self.calcular(mensagem, recebido_em)
 
 
 # --- Ponte <-> API (POST /telemetria) ---------------------------------------

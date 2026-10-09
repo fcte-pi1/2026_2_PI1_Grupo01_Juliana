@@ -283,6 +283,26 @@ def test_seq_so_e_confirmado_depois_do_commit(client, db_session, monkeypatch, c
     assert client.app.state.deduplicador.eh_repetida(ler_linha(_passo(1)))
 
 
+def test_ancora_so_e_fixada_depois_do_commit(client, db_session, monkeypatch):
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+    db_session.commit()
+    commit_original = db_session.commit
+
+    def commit_falho():
+        raise OperationalError("COMMIT", {}, Exception("banco caiu"))
+
+    monkeypatch.setattr(db_session, "commit", commit_falho)
+    with pytest.raises(OperationalError):
+        _enviar(client, _linha(t_ms=1000))
+
+    monkeypatch.setattr(db_session, "commit", commit_original)
+    assert _enviar(client, _linha(t_ms=1500)).status_code == 200
+
+    # a âncora vem da mensagem aceita, não da que falhou no commit
+    [leitura] = _leituras(db_session, tentativa)
+    assert leitura.enviado_em == datetime.fromisoformat(RECEBIDO_EM)
+
+
 def test_mensagem_valida_atualiza_monitor_de_conexao(client):
     monitor = client.app.state.monitor_conexao
     assert monitor.segundos_sem_sinal() is None
