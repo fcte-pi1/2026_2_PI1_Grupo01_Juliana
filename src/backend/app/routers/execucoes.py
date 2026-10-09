@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from app.db import get_db
+from app.repositories import ExecucaoRepository, FiltroExecucoes
 from app.routers.deps import nao_implementado
 from app.schemas.api import (
     EncerrarTentativaRequest,
@@ -9,9 +11,14 @@ from app.schemas.api import (
     RetornoNovaExecucao,
     TipoLabirinto,
 )
-from fastapi import APIRouter, Query
+from app.services import consulta_execucoes
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/execucoes", tags=["execucoes"])
+
+LIMITE_PADRAO = 50
+LIMITE_MAXIMO = 100
 
 
 @router.post("", response_model=RetornoNovaExecucao, status_code=201)
@@ -21,9 +28,20 @@ def criar_execucao(body: NovaExecucaoRequest) -> RetornoNovaExecucao:
 
 @router.get("", response_model=list[ResumoExecucao])
 def listar_execucoes(
+    response: Response,
     tipo_labirinto: TipoLabirinto | None = Query(default=None),
+    limite: int = Query(default=LIMITE_PADRAO, ge=1, le=LIMITE_MAXIMO),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
 ) -> list[ResumoExecucao]:
-    nao_implementado()
+    resumos, total = consulta_execucoes.listar_historico(
+        ExecucaoRepository(db),
+        FiltroExecucoes(tipo_labirinto=tipo_labirinto),
+        limite=limite,
+        offset=offset,
+    )
+    response.headers["X-Total-Count"] = str(total)
+    return resumos
 
 
 @router.get("/em-andamento", response_model=ExecucaoDetalhe)
@@ -32,8 +50,13 @@ def buscar_execucao_em_andamento() -> ExecucaoDetalhe:
 
 
 @router.get("/{execucao_id}", response_model=ExecucaoDetalhe)
-def obter_execucao(execucao_id: UUID) -> ExecucaoDetalhe:
-    nao_implementado()
+def obter_execucao(execucao_id: UUID, db: Session = Depends(get_db)) -> ExecucaoDetalhe:
+    detalhe = consulta_execucoes.buscar_detalhe(ExecucaoRepository(db), execucao_id)
+    if detalhe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."
+        )
+    return detalhe
 
 
 @router.post("/{execucao_id}/encerrar-tentativa", response_model=ExecucaoDetalhe)
