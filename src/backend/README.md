@@ -133,4 +133,5 @@ Requer `DATABASE_URL` configurado (local ou `.env`).
 | BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |
 | BACK-08 Ponte serial | `ponte/` (processo separado) |
 | HTTP / contrato ARQ-02 | `app/routers/` (501 até implementar) |
-| Schemas ARQ-01 / ARQ-02 | `app/schemas/telemetria.py`, `app/schemas/api.py` |
+| POST /telemetria (4.4.1) | `contrato/telemetria.py` (`EntradaPonte`, `RespostaPonte`) |
+| Schemas REST / SSE (ARQ-02) | `app/schemas/api.py` |

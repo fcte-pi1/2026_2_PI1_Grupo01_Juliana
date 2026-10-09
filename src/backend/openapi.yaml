@@ -176,8 +176,9 @@ paths:
       summary: Encerrar a tentativa aberta, mantendo a execução em andamento
       description: >
         A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece
-        em_andamento, para a retomada. O backend passa a sinalizar
-        `interrupcao_pendente: true` na resposta de POST /telemetria.
+        em_andamento, para a retomada. O backend passa a devolver
+        `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria
+        até a confirmação do robô ou nova tentativa.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       requestBody:
@@ -305,49 +306,49 @@ paths:
     post:
       operationId: receberTelemetria
       tags: [telemetria]
-      summary: Receber uma mensagem de telemetria
+      summary: Receber uma linha de telemetria da ponte
       description: >
-        Corpo **MensagemTelemetria**: telemetria já normalizada para o backend
-        (a ponte parseia a linha serial v1 e preenche `enviado_em` com `recebido_em`).
-        Mensagens inválidas serão descartadas com log (RNF-B09); rota 501 até BACK-02.
-        Após **Encerrar tentativa**, a resposta traz `interrupcao_pendente: true`
-        em todo POST até a `falha` de confirmação do robô ou nova tentativa;
-        a ponte traduz o flag para `{"v":1,"cmd":"interromper"}` na serial.
+        Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial
+        e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1
+        fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa
+        aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir
+        a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção
+        em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa;
+        a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/MensagemTelemetria"
+              $ref: "#/components/schemas/EntradaPonte"
             example:
-              seq: 42
-              status: running
-              x: 0
-              y: 2
-              bateria: 7.81
-              velocidade: 0.21
-              enviado_em: "2026-10-07T14:03:21.512-03:00"
-              tipo_labirinto_descoberto: "4x4"
-              tipo_inicio: nova
+              linha: '{"v":1,"boot":7,"seq":42,"t_ms":1200,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":7810,"vel_mm_s":210,"eixo_longo":null}'
+              recebido_em: "2026-10-05T14:03:21.512-03:00"
       responses:
         "200":
-          description: Confirmação de ingestão e sinal de interrupção pendente para downlink.
+          description: Linha processada (persistida ou descartada com registro em log).
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RespostaTelemetria"
+                $ref: "#/components/schemas/RespostaPonte"
               examples:
-                aceita:
+                sem-comando:
                   value:
-                    aceita: true
-                    interrupcao_pendente: false
+                    comandos: []
                 interrupcao-pendente:
                   summary: Depois de encerrar a tentativa manualmente
                   value:
-                    aceita: true
-                    interrupcao_pendente: true
+                    comandos:
+                      - v: 1
+                        cmd: interromper
         "422":
-          $ref: "#/components/responses/ErroValidacao"
+          description: >
+            Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da
+            faixa, célula fora do labirinto). A ponte não deve reenviar 4xx.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErroValidacao"
 
 components:
   parameters:
@@ -1360,53 +1361,39 @@ components:
         status_execucao:
           $ref: "#/components/schemas/StatusExecucao"
 
-    MensagemTelemetria:
+    Comando:
       type: object
-      required: [seq, status, x, y, bateria, enviado_em]
+      required: [v, cmd]
       properties:
-        seq:
+        v:
           type: integer
-          minimum: 0
-        status:
+          enum: [1]
+        cmd:
           type: string
-          enum: [health-check, running, success, failed]
-        x:
-          type: integer
-          minimum: 0
-        y:
-          type: integer
-          minimum: 0
-        bateria:
-          type: number
-          minimum: 0
-          description: Tensão da bateria em volts.
-        velocidade:
-          type: number
-          nullable: true
-        enviado_em:
+          enum: [interromper]
+    EntradaPonte:
+      type: object
+      required: [linha, recebido_em]
+      properties:
+        linha:
+          type: string
+          description: Linha lida da serial, sem o \\n, sem alteração.
+        recebido_em:
           type: string
           format: date-time
-          description: Instante de envio no robô ou de leitura na ponte, com fuso.
-        tipo_labirinto_descoberto:
-          type: string
-          nullable: true
-          enum: ["4x4", "8x4", "12x4", indeterminado]
-        tipo_inicio:
-          type: string
-          nullable: true
-          enum: [nova, retomada]
-    RespostaTelemetria:
+          description: Instante em que a ponte leu a linha, com fuso horário.
+    RespostaPonte:
       type: object
-      required: [aceita, interrupcao_pendente]
+      required: [comandos]
       properties:
-        aceita:
-          type: boolean
-        interrupcao_pendente:
-          type: boolean
-          default: false
+        comandos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comando"
+          default: []
           description: >
-            true após Encerrar tentativa, até o robô confirmar ou abrir outra tentativa;
-            a ponte traduz para JSON serial de interrupção.
+            Comandos para a ponte escrever na serial (JSON compacto + \\n).
+            Vazio quando não há downlink pendente.
 
     Recusa:
       type: object
