@@ -167,13 +167,22 @@ class Deduplicador:
     def __init__(self) -> None:
         self._ultimo_evento: dict[int, int] = {}
 
-    def eh_nova(self, mensagem: Mensagem) -> bool:
+    def eh_repetida(self, mensagem: Mensagem) -> bool:
+        """Diz se o evento já foi aceito, sem marcar o `seq` como visto."""
         if isinstance(mensagem, Tel):
-            return True
-        ultimo = self._ultimo_evento.get(mensagem.boot)
-        if ultimo is not None and mensagem.seq <= ultimo:
             return False
-        self._ultimo_evento[mensagem.boot] = mensagem.seq
+        ultimo = self._ultimo_evento.get(mensagem.boot)
+        return ultimo is not None and mensagem.seq <= ultimo
+
+    def confirmar(self, mensagem: Mensagem) -> None:
+        """Marca o `seq` do evento como visto (depois de gravado)."""
+        if not isinstance(mensagem, Tel):
+            self._ultimo_evento[mensagem.boot] = mensagem.seq
+
+    def eh_nova(self, mensagem: Mensagem) -> bool:
+        if self.eh_repetida(mensagem):
+            return False
+        self.confirmar(mensagem)
         return True
 
 

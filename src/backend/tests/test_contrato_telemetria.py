@@ -108,6 +108,26 @@ def test_deduplicador_separa_por_boot_e_deixa_tel_passar():
     assert dedup.eh_nova(tel) and dedup.eh_nova(tel)
 
 
+def test_deduplicador_eh_repetida_nao_muda_estado_ate_confirmar():
+    dedup = Deduplicador()
+    evento = _evento(7, 5)
+    assert not dedup.eh_repetida(evento)
+    assert not dedup.eh_repetida(evento)  # sem confirmar, continua novo
+    dedup.confirmar(evento)
+    assert dedup.eh_repetida(evento)
+    assert dedup.eh_repetida(_evento(7, 4))
+    assert not dedup.eh_repetida(_evento(7, 6))
+    assert not dedup.eh_repetida(_evento(8, 5))
+
+
+def test_deduplicador_nunca_repete_tel():
+    dedup = Deduplicador()
+    tel = ler_linha(LINHAS[3])
+    dedup.confirmar(tel)
+    assert not dedup.eh_repetida(tel)
+    assert not dedup.eh_repetida(_evento(tel.boot, tel.seq))
+
+
 def test_comando_interromper():
     assert Comando().model_dump_json() == '{"v":1,"cmd":"interromper"}'
     resposta = RespostaPonte(comandos=[Comando()])
