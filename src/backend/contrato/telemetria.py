@@ -167,13 +167,22 @@ class Deduplicador:
     def __init__(self) -> None:
         self._ultimo_evento: dict[int, int] = {}
 
-    def eh_nova(self, mensagem: Mensagem) -> bool:
+    def eh_repetida(self, mensagem: Mensagem) -> bool:
+        """Diz se o evento já foi aceito, sem marcar o `seq` como visto."""
         if isinstance(mensagem, Tel):
-            return True
-        ultimo = self._ultimo_evento.get(mensagem.boot)
-        if ultimo is not None and mensagem.seq <= ultimo:
             return False
-        self._ultimo_evento[mensagem.boot] = mensagem.seq
+        ultimo = self._ultimo_evento.get(mensagem.boot)
+        return ultimo is not None and mensagem.seq <= ultimo
+
+    def confirmar(self, mensagem: Mensagem) -> None:
+        """Marca o `seq` do evento como visto (depois de gravado)."""
+        if not isinstance(mensagem, Tel):
+            self._ultimo_evento[mensagem.boot] = mensagem.seq
+
+    def eh_nova(self, mensagem: Mensagem) -> bool:
+        if self.eh_repetida(mensagem):
+            return False
+        self.confirmar(mensagem)
         return True
 
 
@@ -188,11 +197,20 @@ class RelogioDoRobo:
     def __init__(self) -> None:
         self._ancoras: dict[int, datetime] = {}
 
-    def enviado_em(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
-        ancora = self._ancoras.setdefault(
+    def calcular(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
+        """Calcula o `enviado_em` sem fixar a âncora de um boot novo."""
+        ancora = self._ancoras.get(
             mensagem.boot, recebido_em - timedelta(milliseconds=mensagem.t_ms)
         )
         return ancora + timedelta(milliseconds=mensagem.t_ms)
+
+    def fixar(self, mensagem: Mensagem, recebido_em: datetime) -> None:
+        """Fixa a âncora do boot, se ele ainda não tiver uma."""
+        self._ancoras.setdefault(mensagem.boot, recebido_em - timedelta(milliseconds=mensagem.t_ms))
+
+    def enviado_em(self, mensagem: Mensagem, recebido_em: datetime) -> datetime:
+        self.fixar(mensagem, recebido_em)
+        return self.calcular(mensagem, recebido_em)
 
 
 # --- Ponte <-> API (POST /telemetria) ---------------------------------------
