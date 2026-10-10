@@ -83,7 +83,7 @@ Para acrescentar um labirinto, basta desenhar o arquivo em `labirintos/` com a e
 
 ## Roteiro de telemetria
 
-Com `--telemetria`, cada corrida vira um arquivo `.jsonl` no formato do contrato de telemetria v1 (ARQ-01, [#107](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/107)), para o simulador de robô do ARQ-07 reproduzir para o backend:
+Com `--telemetria`, cada corrida vira um arquivo `.jsonl` no formato do contrato de telemetria v1 (ARQ-01, [#107](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/107)), para o [simulador de telemetria](../../simulador-telemetria/README.md) (ARQ-07) reproduzir para o backend:
 
 1. health-check aprovado: um `hc_item` por componente e o `hc_resultado` com o tipo do labirinto;
 2. um `passo` a cada célula, com as paredes que o robô leu;
@@ -93,3 +93,11 @@ Com `--telemetria`, cada corrida vira um arquivo `.jsonl` no formato do contrato
 As coordenadas estão no referencial do robô (largada em (0, 0), y para a saída do beco, x para o lado em que o labirinto se estende), então as versões `-dir` e `-esq` do mesmo labirinto aparecem iguais na web. Os tempos vêm de um modelo simples (200 mm/s, giro de 90° em 0,5 s) e os valores do health-check são fictícios.
 
 O CI guarda os roteiros de todos os labirintos como artefato da execução (`roteiros-telemetria`).
+
+Para mandar uma corrida para o backend, o simulador de telemetria reproduz o arquivo pelas saídas dele (`stdout`, `pty` ou `http`), trocando o `boot` a cada reprodução. Dentro de `src/simulador-telemetria`:
+
+```bash
+uv run python -m simulador ../firmware/simulador-navegacao/build/telemetria/8x4-frente-01-dir.jsonl --saida http --url http://localhost:8000
+```
+
+Detalhes em [Reproduzir uma gravação](../../simulador-telemetria/README.md#reproduzir-uma-gravação-jsonl).
