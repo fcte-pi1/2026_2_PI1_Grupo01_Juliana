@@ -206,7 +206,24 @@ Se aparecer um erro ou você não souber qual comando utilizar, peça ajuda ante
 
 Comandos como `git reset --hard`, `git push --force` e exclusões de branches não devem ser utilizados sem orientação de alguém do grupo que saiba exatamente o que está fazendo.
 
-## 13. Resumo Executivo
+## 13. Definição de pronto (DoD)
+
+Uma tarefa do cronograma de software só está **pronta** quando todos os itens abaixo forem atendidos:
+
+1. **Pull Request** aberto seguindo este guia (título com tag e número da issue, descrição completa).
+2. **Revisão** de pelo menos **uma pessoa** que não seja o autor do PR, com aprovação registrada no GitHub.
+3. **CI verde** nos workflows aplicáveis ao que mudou (`backend`, `frontend`, `firmware` e `destino-do-pr` quando for PR).
+4. **Testes** cobrindo os critérios de aceite descritos na issue (unitários, integração ou roteiro manual documentado no PR, conforme a tarefa).
+5. **Issue fechada** após o merge (via `Closes #N` no PR ou fechamento manual com referência ao PR).
+6. **Documentação atualizada** quando o contrato ou a API pública mudar (OpenAPI, contrato de telemetria, README da área, docs em `docs/`).
+
+Checklist rápido antes de pedir revisão:
+
+- [ ] Critérios de aceite da issue conferidos localmente
+- [ ] CI passando na branch do PR
+- [ ] Revisor indicado ou equipe avisada no canal do projeto
+
+## 14. Resumo Executivo
 
 - **main** = principal / versão estável
 - **dev** = testes e validação

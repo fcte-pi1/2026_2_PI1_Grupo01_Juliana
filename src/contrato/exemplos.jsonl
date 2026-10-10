@@ -1,0 +1,9 @@
+{"v":1,"boot":7,"seq":0,"t_ms":412,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7840}
+{"v":1,"boot":7,"seq":5,"t_ms":1630,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":7,"seq":10,"t_ms":2380,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+{"v":1,"boot":7,"seq":42,"t_ms":11250,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":7810,"vel_mm_s":210,"eixo_longo":null}
+{"v":1,"boot":7,"seq":43,"t_ms":11400,"tipo":"passo","x":0,"y":3,"paredes":9}
+{"v":1,"boot":7,"seq":88,"t_ms":25120,"tipo":"falha","motivo":"falha_componente","origem":"automatica","x":2,"y":3,"componente":"tof_direito"}
+{"v":1,"boot":8,"seq":57,"t_ms":19870,"tipo":"falha","motivo":null,"origem":"web","x":1,"y":2,"componente":null}
+{"v":1,"boot":9,"seq":63,"t_ms":21040,"tipo":"falha","motivo":"encerrado_operador","origem":"boot","x":1,"y":3,"componente":null}
+{"v":1,"boot":11,"seq":131,"t_ms":48200,"tipo":"sucesso","x":3,"y":3}

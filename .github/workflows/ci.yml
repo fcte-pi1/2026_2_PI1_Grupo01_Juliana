@@ -2,14 +2,32 @@ name: ci
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, dev]
+  pull_request:
 
 permissions:
   contents: write
 
 jobs:
+  destino-do-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conferir origem e destino
+        run: |
+          base="${{ github.base_ref }}"
+          head="${{ github.head_ref }}"
+          if [ "$base" = "dev" ]; then
+            exit 0
+          fi
+          if [ "$base" = "main" ] && [ "$head" = "dev" ]; then
+            exit 0
+          fi
+          echo "PR de '$head' para '$base' não segue o fluxo. Feature entra em dev; main só recebe dev."
+          exit 1
+
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

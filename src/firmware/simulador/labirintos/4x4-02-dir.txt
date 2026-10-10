@@ -1,0 +1,11 @@
+# 4x4 sem ciclos (semente 11).
+# Largada (L) virada para o norte; o labirinto se estende à direita do robô.
++---+---+---+---+
+|               |
++   +---+---+   +
+|           |   |
++---+---+---+   +
+|           |   |
++   +---+   +   +
+| L |           |
++---+---+---+---+
