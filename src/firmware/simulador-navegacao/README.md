@@ -97,7 +97,7 @@ O CI guarda os roteiros de todos os labirintos como artefato da execução (`rot
 Para mandar uma corrida para o backend, o simulador de telemetria reproduz o arquivo pelas saídas dele (`stdout`, `pty` ou `http`), trocando o `boot` a cada reprodução. Dentro de `src/simulador-telemetria`:
 
 ```bash
-uv run python -m simulador ../firmware/simulador-navegacao/build/telemetria/8x4-frente-01-dir.jsonl --saida http --url http://localhost:8000
+uv run python -m simulador ../firmware/simulador-navegacao/build/telemetria/4x4-01-dir.jsonl --saida http --url http://localhost:8000
 ```
 
 Detalhes em [Reproduzir uma gravação](../../simulador-telemetria/README.md#reproduzir-uma-gravação-jsonl).
