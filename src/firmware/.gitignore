@@ -5,4 +5,4 @@
 .venv/
 
 # Saída do simulador no PC
-simulador/build/
+simulador-navegacao/build/
