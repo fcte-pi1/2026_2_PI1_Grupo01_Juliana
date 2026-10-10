@@ -79,7 +79,7 @@ export interface paths {
         put?: never;
         /**
          * Encerrar a tentativa aberta, mantendo a execução em andamento
-         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a sinalizar `interrupcao_pendente: true` na resposta de POST /telemetria.
+         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria até a confirmação do robô ou nova tentativa.
          */
         post: operations["encerrarTentativa"];
         delete?: never;
@@ -138,8 +138,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Receber uma mensagem de telemetria
-         * @description Corpo **MensagemTelemetria**: telemetria já normalizada para o backend (a ponte parseia a linha serial v1 e preenche `enviado_em` com `recebido_em`). Mensagens inválidas serão descartadas com log (RNF-B09); rota 501 até BACK-02. Após **Encerrar tentativa**, a resposta traz `interrupcao_pendente: true` em todo POST até a `falha` de confirmação do robô ou nova tentativa; a ponte traduz o flag para `{"v":1,"cmd":"interromper"}` na serial.
+         * Receber uma linha de telemetria da ponte
+         * @description Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
          */
         post: operations["receberTelemetria"];
         delete?: never;
@@ -371,32 +371,27 @@ export interface components {
             y: number;
             status_execucao: components["schemas"]["StatusExecucao"];
         };
-        MensagemTelemetria: {
-            seq: number;
+        Comando: {
+            /** @enum {integer} */
+            v: 1;
             /** @enum {string} */
-            status: "health-check" | "running" | "success" | "failed";
-            x: number;
-            y: number;
-            /** @description Tensão da bateria em volts. */
-            bateria: number;
-            velocidade?: number | null;
+            cmd: "interromper";
+        };
+        EntradaPonte: {
+            /** @description Linha lida da serial, sem o \\n, sem alteração. */
+            linha: string;
             /**
              * Format: date-time
-             * @description Instante de envio no robô ou de leitura na ponte, com fuso.
+             * @description Instante em que a ponte leu a linha, com fuso horário.
              */
-            enviado_em: string;
-            /** @enum {string|null} */
-            tipo_labirinto_descoberto?: "4x4" | "8x4" | "12x4" | "indeterminado" | null;
-            /** @enum {string|null} */
-            tipo_inicio?: "nova" | "retomada" | null;
+            recebido_em: string;
         };
-        RespostaTelemetria: {
-            aceita: boolean;
+        RespostaPonte: {
             /**
-             * @description true após Encerrar tentativa, até o robô confirmar ou abrir outra tentativa; a ponte traduz para JSON serial de interrupção.
-             * @default false
+             * @description Comandos para a ponte escrever na serial (JSON compacto + \\n). Vazio quando não há downlink pendente.
+             * @default []
              */
-            interrupcao_pendente: boolean;
+            comandos: components["schemas"]["Comando"][];
         };
         Recusa: {
             motivo: components["schemas"]["MotivoRecusa"];
@@ -656,31 +651,32 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "seq": 42,
-                 *       "status": "running",
-                 *       "x": 0,
-                 *       "y": 2,
-                 *       "bateria": 7.81,
-                 *       "velocidade": 0.21,
-                 *       "enviado_em": "2026-10-07T14:03:21.512-03:00",
-                 *       "tipo_labirinto_descoberto": "4x4",
-                 *       "tipo_inicio": "nova"
+                 *       "linha": "{\"v\":1,\"boot\":7,\"seq\":42,\"t_ms\":1200,\"tipo\":\"tel\",\"estado\":\"running\",\"x\":0,\"y\":2,\"rumo\":\"N\",\"bat_mv\":7810,\"vel_mm_s\":210,\"eixo_longo\":null}",
+                 *       "recebido_em": "2026-10-05T14:03:21.512-03:00"
                  *     }
                  */
-                "application/json": components["schemas"]["MensagemTelemetria"];
+                "application/json": components["schemas"]["EntradaPonte"];
             };
         };
         responses: {
-            /** @description Confirmação de ingestão e sinal de interrupção pendente para downlink. */
+            /** @description Linha processada (persistida ou descartada com registro em log). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RespostaTelemetria"];
+                    "application/json": components["schemas"]["RespostaPonte"];
                 };
             };
-            422: components["responses"]["ErroValidacao"];
+            /** @description Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da faixa, célula fora do labirinto). A ponte não deve reenviar 4xx. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErroValidacao"];
+                };
+            };
         };
     };
 }
