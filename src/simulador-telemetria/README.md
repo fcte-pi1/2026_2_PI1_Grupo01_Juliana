@@ -10,7 +10,7 @@ Serve para testar a ponte, o backend e o front sem o robô. As mensagens vêm de
 Precisa do [uv](https://docs.astral.sh/uv/) e do Python 3.12 ou mais novo.
 
 ```sh
-cd src/simulador
+cd src/simulador-telemetria
 uv sync
 ```
 
@@ -102,7 +102,7 @@ cp src/backend/.env.example src/backend/.env
 Para carregar o arquivo, use o `--env-file` do uv (não há python-dotenv):
 
 ```sh
-cd src/simulador
+cd src/simulador-telemetria
 uv run --env-file ../backend/.env python -m simulador <roteiro> [opções]
 ```
 
@@ -207,3 +207,8 @@ linhas, uns 70 s de tempo real, ainda acima dos 60 s do limite.
 uv run ruff check .
 uv run pytest -q
 ```
+
+O CI (`.github/workflows/simulador-telemetria.yml`) roda os dois em todo PR que mexe no
+simulador, no backend ou no contrato, e antes confere se o `uv.lock` está em dia. O backend
+não usa o uv; quando ele muda de dependência, o lock daqui fica velho e o CI falha. Para
+corrigir, rode `uv lock` nesta pasta e versione o `uv.lock`.
