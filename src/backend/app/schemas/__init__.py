@@ -5,8 +5,9 @@ from app.schemas.api import (
     ExecucaoDetalhe,
     ExecucaoResumo,
     NovaExecucaoRequest,
+    ResumoExecucao,
+    RetornoNovaExecucao,
 )
-from app.schemas.telemetria import MensagemTelemetria, RespostaTelemetria
 
 __all__ = [
     "BackHealthResponse",
@@ -14,7 +15,7 @@ __all__ = [
     "ExecucaoCriadaResponse",
     "ExecucaoDetalhe",
     "ExecucaoResumo",
-    "MensagemTelemetria",
     "NovaExecucaoRequest",
-    "RespostaTelemetria",
+    "ResumoExecucao",
+    "RetornoNovaExecucao",
 ]

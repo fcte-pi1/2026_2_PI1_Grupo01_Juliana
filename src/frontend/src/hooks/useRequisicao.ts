@@ -21,6 +21,7 @@ export function useRequisicao<T>(buscar: (sinal: AbortSignal) => Promise<T>, cha
     const controle = new AbortController()
     buscar(controle.signal)
       .then((resultado) => {
+        if (controle.signal.aborted) return
         setDados(resultado)
         setErro(null)
       })
@@ -31,9 +32,7 @@ export function useRequisicao<T>(buscar: (sinal: AbortSignal) => Promise<T>, cha
         if (!controle.signal.aborted) setConcluida(atual)
       })
     return () => controle.abort()
-    // `buscar` muda a cada render; quem decide quando buscar de novo é a chave.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atual])
+  }, [atual, buscar])
 
   const recarregar = useCallback(() => setVersao((v) => v + 1), [])
 
