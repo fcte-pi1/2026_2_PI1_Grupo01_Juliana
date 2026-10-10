@@ -6,23 +6,8 @@ def test_post_execucao_retorna_501(client):
     assert response.status_code == 501
 
 
-def test_get_execucoes_retorna_501(client):
-    response = client.get("/execucoes")
-    assert response.status_code == 501
-
-
-def test_get_execucoes_com_filtro_retorna_501(client):
-    response = client.get("/execucoes", params={"tipo_labirinto": "4x4"})
-    assert response.status_code == 501
-
-
 def test_get_em_andamento_retorna_501(client):
     response = client.get("/execucoes/em-andamento")
-    assert response.status_code == 501
-
-
-def test_get_execucao_por_id_retorna_501(client):
-    response = client.get(f"/execucoes/{EXECUCAO_ID}")
     assert response.status_code == 501
 
 

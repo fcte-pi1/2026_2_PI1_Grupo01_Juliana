@@ -18,8 +18,11 @@ paths:
       summary: Listar execuções, todas ou de um labirinto
       description: >
         Sem o parâmetro, devolve 4x4, 8x4 e 12x4 na mesma lista.
-        Com labirinto, devolve só o tipo pedido. Quando não há execução
-        em andamento, o primeiro item é a execução mais recente já encerrada.
+        Com labirinto, devolve só o tipo pedido. A execução em andamento, se
+        houver, vem primeiro; as outras seguem da mais recente para a mais antiga.
+        Quando não há execução em andamento, o primeiro item é a execução mais
+        recente já encerrada. A lista é paginada por limite e offset, e o total
+        de execuções do filtro vem no cabeçalho X-Total-Count.
       parameters:
         - name: tipo_labirinto
           in: query
@@ -27,9 +30,32 @@ paths:
           schema:
             $ref: "#/components/schemas/Labirinto"
           example: "4x4"
+        - name: limite
+          in: query
+          required: false
+          description: Quantidade máxima de execuções na página.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Quantas execuções pular antes da página.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         "200":
           description: Lista de execuções, da mais recente para a mais antiga.
+          headers:
+            X-Total-Count:
+              description: Total de execuções do filtro, sem a paginação.
+              schema:
+                type: integer
+                minimum: 0
           content:
             application/json:
               schema:
@@ -79,6 +105,8 @@ paths:
                       tempo_total_s: 33.1
                       velocidade_media: 0.078
                       consumo_bateria: 0.05
+        "422":
+          $ref: "#/components/responses/ErroValidacao"
     post:
       operationId: novaExecucao
       tags: [execucoes]
