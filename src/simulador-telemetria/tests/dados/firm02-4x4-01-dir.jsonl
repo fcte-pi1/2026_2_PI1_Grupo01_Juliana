@@ -1,0 +1,15 @@
+{"v":1,"boot":1,"seq":0,"t_ms":250,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8100}
+{"v":1,"boot":1,"seq":1,"t_ms":500,"tipo":"hc_item","componente":"tof_frontal_esq","aprovado":true,"valor":300}
+{"v":1,"boot":1,"seq":2,"t_ms":750,"tipo":"hc_item","componente":"tof_frontal_dir","aprovado":true,"valor":300}
+{"v":1,"boot":1,"seq":3,"t_ms":1000,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8098,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":1,"seq":4,"t_ms":1000,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":54}
+{"v":1,"boot":1,"seq":5,"t_ms":1250,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":54}
+{"v":1,"boot":1,"seq":6,"t_ms":1500,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":1,"seq":7,"t_ms":1750,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":840}
+{"v":1,"boot":1,"seq":8,"t_ms":2000,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8096,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":1,"seq":9,"t_ms":2000,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":1,"seq":10,"t_ms":2250,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":840}
+{"v":1,"boot":1,"seq":11,"t_ms":2500,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+{"v":1,"boot":1,"seq":12,"t_ms":2500,"tipo":"passo","x":0,"y":0,"paredes":14}
+{"v":1,"boot":1,"seq":13,"t_ms":2500,"tipo":"falha","motivo":"stuck","origem":"automatica","x":0,"y":0,"componente":null}
+{"v":1,"boot":1,"seq":14,"t_ms":2500,"tipo":"tel","estado":"failed","x":0,"y":0,"rumo":"N","bat_mv":8095,"vel_mm_s":0,"eixo_longo":null}
