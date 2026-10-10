@@ -22,9 +22,8 @@ typedef struct {
     float x_mm, y_mm, ang_graus;
 } posicao_tof_t;
 
-static const posicao_tof_t POSICAO_TOF[4] = {
-    {TOF_FE_X_MM, TOF_FE_Y_MM, TOF_FE_ANG},
-    {TOF_FD_X_MM, TOF_FD_Y_MM, TOF_FD_ANG},
+static const posicao_tof_t POSICAO_TOF[SIM_TOF_QTD] = {
+    {TOF_F_X_MM, TOF_F_Y_MM, TOF_F_ANG},
     {TOF_E_X_MM, TOF_E_Y_MM, TOF_E_ANG},
     {TOF_D_X_MM, TOF_D_Y_MM, TOF_D_ANG},
 };
@@ -38,7 +37,11 @@ static struct {
     float velocidade_mm_s[2];
     float pulsos[2];
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
-    bool tof_ausente[4];
+    bool tof_ausente[SIM_TOF_QTD];
+    uint16_t tof_ruido_mm;
+    uint32_t tof_semente;
+    bool tof_tem_pico[SIM_TOF_QTD];
+    uint16_t tof_pico_mm[SIM_TOF_QTD];
     bool boot;
     bool led;
     bool buzzer;
@@ -166,10 +169,32 @@ void sim_motor_definir(int motor, int16_t potencia)
 /* Trunca em direção ao zero, para a frente e a ré contarem igual. */
 int32_t sim_encoder(int motor) { return (int32_t)m.pulsos[motor]; }
 
+/* Gerador congruente linear (Numerical Recipes): basta para ruído de teste. */
+static uint32_t proximo_aleatorio(void)
+{
+    m.tof_semente = m.tof_semente * 1664525u + 1013904223u;
+    return m.tof_semente;
+}
+
+static int aplicar_ruido(int d)
+{
+    if (m.tof_ruido_mm == 0) {
+        return d;
+    }
+    int faixa = 2 * m.tof_ruido_mm + 1;
+    int erro = (int)(proximo_aleatorio() >> 16) % faixa - m.tof_ruido_mm;
+    return d + erro < 0 ? 0 : d + erro;
+}
+
 bool sim_tof_medir(int tof, uint16_t *distancia_mm)
 {
-    if (m.tof_ausente[tof]) {
+    if (tof < 0 || tof >= SIM_TOF_QTD || m.tof_ausente[tof]) {
         return false;
+    }
+    if (m.tof_tem_pico[tof]) {
+        m.tof_tem_pico[tof] = false;
+        *distancia_mm = m.tof_pico_mm[tof];
+        return true;
     }
 
     /* Posição e direção do sensor no labirinto, a partir da pose do robô. */
@@ -185,7 +210,7 @@ bool sim_tof_medir(int tof, uint16_t *distancia_mm)
     /* Anda 1 mm por vez até encontrar uma parede. */
     for (int d = 0; d <= TOF_ALCANCE_MAX_MM; d++) {
         if (ponto_em_parede(ox + d * dx, oy + d * dy)) {
-            *distancia_mm = (uint16_t)d;
+            *distancia_mm = (uint16_t)aplicar_ruido(d);
             return true;
         }
     }
@@ -200,6 +225,18 @@ void sim_led_definir(bool aceso) { m.led = aceso; }
 void sim_buzzer_definir(bool ligado) { m.buzzer = ligado; }
 
 void sim_definir_tof_ausente(int tof, bool ausente) { m.tof_ausente[tof] = ausente; }
+void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente)
+{
+    m.tof_ruido_mm = amplitude_mm;
+    m.tof_semente = semente;
+}
+
+void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
+{
+    m.tof_tem_pico[tof] = true;
+    m.tof_pico_mm[tof] = distancia_mm;
+}
+
 void sim_definir_bateria_mv(uint16_t mv) { m.bateria_mv = mv; }
 void sim_definir_boot(bool pressionado) { m.boot = pressionado; }
 

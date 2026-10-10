@@ -86,6 +86,17 @@ static void test_tof_ve_parede_lateral_na_largada(void)
     TEST_ASSERT_TRUE(direita < 100);
 }
 
+static void test_tof_frontal_centrado_ve_a_parede_da_frente(void)
+{
+    uint16_t mm;
+
+    /* Centro de (0, 0) virado para o leste, onde há parede. */
+    sim_definir_pose(CELULA_MM / 2.0f, CELULA_MM / 2.0f, 0.0f);
+    TEST_ASSERT_TRUE(hal_tof_ler_mm(TOF_FRONTAL, &mm));
+    TEST_ASSERT_UINT16_WITHIN(5, 45, mm);
+    TEST_ASSERT_EQUAL_STRING("tof_frontal", hal_tof_nome(TOF_FRONTAL));
+}
+
 static void test_relogio_virtual_anda_com_a_simulacao(void)
 {
     uint32_t antes = hal_tempo_ms();
@@ -178,6 +189,7 @@ int main(void)
     RUN_TEST(test_motor_habilitado_gira_e_encoder_conta);
     RUN_TEST(test_tof_ausente_e_reportado_com_o_nome);
     RUN_TEST(test_tof_ve_parede_lateral_na_largada);
+    RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);
     RUN_TEST(test_relogio_virtual_anda_com_a_simulacao);
     RUN_TEST(test_bateria_boot_e_led);
     RUN_TEST(test_led_e_repassado_ao_espelho);

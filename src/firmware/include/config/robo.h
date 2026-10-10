@@ -42,15 +42,13 @@
  * Origem no centro do eixo das rodas; x para a frente, y para a esquerda,
  * ângulo em graus (0 = frente, 90 = esquerda).
  *
- * Ângulos: [EST] torre de sensores com 0° e ±45°, a 25 mm do solo.
+ * Ângulos: [EST] 4.1, torre de sensores com o frontal a 0° e os laterais a ±45°,
+ * a 25 mm do solo.
  * Posições x/y: PROVISÓRIO, dependem do CAD da torre de sensores.
  */
-#define TOF_FE_X_MM     40.0f
-#define TOF_FE_Y_MM     25.0f
-#define TOF_FE_ANG      0.0f
-#define TOF_FD_X_MM     40.0f
-#define TOF_FD_Y_MM    -25.0f
-#define TOF_FD_ANG      0.0f
+#define TOF_F_X_MM      40.0f
+#define TOF_F_Y_MM      0.0f
+#define TOF_F_ANG       0.0f
 #define TOF_E_X_MM      20.0f
 #define TOF_E_Y_MM      30.0f
 #define TOF_E_ANG       45.0f
@@ -58,6 +56,37 @@
 #define TOF_D_Y_MM     -30.0f
 #define TOF_D_ANG      -45.0f
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
+
+/*
+ * Detecção de parede pelos ToF (FIRM-03, #129).
+ * PROVISÓRIO: limiares tirados da geometria acima; calibrar na pista no FIRM-10 (#141).
+ *
+ * Com o robô centrado na célula, o frontal centrado lê ~44 mm com parede e ~224 mm sem.
+ *
+ * O lateral aponta 45° para a frente: mede a parede ~74 mm À FRENTE do centro
+ * do robô, não ao lado. Com parede, lê ~77 mm. Sem parede, o feixe atravessa o
+ * lado aberto e bate no que houver na célula vizinha; no pior caso (vizinha com
+ * parede horizontal) lê (154 - p) x 1,41 mm, em que p é quanto o robô já entrou
+ * na célula. Medido no mundo simulado:
+ *   p de -65 a +30 mm: sem parede >= 176 mm  -> leitura confiável;
+ *   p de +35 a +85 mm: 169 a 98 mm           -> parede falsa (vizinha);
+ *   p de +90 a +110 mm: 77 a 91 mm           -> parede falsa (poste do canto);
+ *   p acima de +115 mm: já mede a célula seguinte.
+ * Por isso a parede lateral de uma célula deve ser guardada AO ENTRAR nela
+ * (p entre 0 e ~20 mm), com as amostras da mediana tiradas desde ~65 mm antes
+ * da fronteira. Quem escolhe o momento é o movimento (FIRM-05) / navegação (FIRM-01).
+ *
+ * Histerese: vira parede abaixo de ENTRA e só deixa de ser acima de SAI.
+ */
+#define PAREDE_FRENTE_ENTRA_MM      120
+#define PAREDE_FRENTE_SAI_MM        150
+#define PAREDE_LADO_ENTRA_MM        140
+#define PAREDE_LADO_SAI_MM          170
+
+#define TOF_MEDIANA_AMOSTRAS        3     /* a 20 Hz: ~100 ms de atraso, ~40 mm a 400 mm/s */
+#define TOF_FALHAS_PARA_DESCARTAR   3     /* leituras seguidas sem resposta (150 ms a 20 Hz) */
+#define TOF_AUTOTESTE_AMOSTRAS      5
+#define TOF_AUTOTESTE_MIN_MM        20    /* abaixo disso, sensor tampado ou com defeito */
 
 /* Bateria — LiPo 2S 7,4 V 500 mAh [ENE] */
 #define BATERIA_DIVISOR             3.2f    /* [HW] divisor 22 kΩ / 10 kΩ: V_bateria = V_adc x 3,2 */

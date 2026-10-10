@@ -66,6 +66,7 @@ def test_exemplo_ida_e_volta_byte_a_byte(linha):
         _tel(extra="x" * TAMANHO_MAXIMO),
         _evento_bruto(tipo="passo", x=0, y=0, paredes=16),
         _evento_bruto(tipo="hc_item", componente="tof_traseiro", aprovado=True, valor=None),
+        _evento_bruto(tipo="hc_item", componente="tof_frontal_esq", aprovado=True, valor=300),
         _evento_bruto(tipo="hc_resultado", aprovado=True, tipo_dip="invalido", inicio="nova"),
         _falha(motivo="collision", origem="web", componente=None),
         _falha(motivo="stuck", origem="boot", componente=None),
@@ -83,6 +84,12 @@ def test_campo_extra_e_ignorado_sem_mudar_versao():
     mensagem = ler_linha(_tel(temp_c=31))
     assert mensagem.v == 1
     assert escrever_linha(mensagem) == LINHAS[3]
+
+
+def test_hc_item_do_tof_frontal_e_aceito():
+    linha = _evento_bruto(tipo="hc_item", componente="tof_frontal", aprovado=True, valor=300)
+    assert ler_linha(linha).componente == "tof_frontal"
+    assert escrever_linha(ler_linha(linha)) == linha
 
 
 def test_aceita_linha_em_bytes_e_com_crlf():

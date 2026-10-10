@@ -27,8 +27,7 @@ Coordenada = Annotated[int, Field(ge=0, le=11)]  # referencial do robô, matriz 
 
 Componente = Literal[
     "bateria",
-    "tof_frontal_esq",
-    "tof_frontal_dir",
+    "tof_frontal",
     "tof_esquerdo",
     "tof_direito",
     "motor_esquerdo",

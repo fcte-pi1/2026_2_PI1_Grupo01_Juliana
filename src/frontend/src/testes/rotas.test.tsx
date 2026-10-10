@@ -7,7 +7,7 @@ import { renderizarRota } from './renderizar'
 /** Texto que identifica cada um dos 12 estados do protótipo na rota `/`. */
 const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '01-inicio': /Nenhuma execução ativa/,
-  '02-health-check': /6 de 9 OK/,
+  '02-health-check': /6 de 8 OK/,
   '03-em-execucao': /Tempo da execução/,
   '04-concluida': /concluída na tentativa 1/,
   '05-execucao-recusada': /Tentativa recusada/,
@@ -33,7 +33,7 @@ describe('rota /', () => {
   it('Nova execução abre o health-check', async () => {
     renderizarRota('/', '01-inicio')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
-    expect(await screen.findByText(/6 de 9 OK/)).toBeInTheDocument()
+    expect(await screen.findByText(/6 de 8 OK/)).toBeInTheDocument()
   })
 
   it('Encerrar tentativa registra a falha e oferece a retomada', async () => {

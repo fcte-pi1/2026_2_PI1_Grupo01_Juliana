@@ -36,11 +36,11 @@ def _mensagens(roteiro: Roteiro, opcoes: Opcoes = Opcoes()) -> list:
     return [item for _, item in gerar(roteiro, opcoes)]
 
 
-def test_nove_hc_item_na_ordem_do_contrato():
+def test_oito_hc_item_na_ordem_do_contrato():
     itens = [m for m in _mensagens(_roteiro()) if isinstance(m, HcItem)]
 
     assert [m.componente for m in itens] == list(COMPONENTES)
-    assert len(itens) == 9
+    assert len(itens) == 8
     assert all(m.aprovado for m in itens)
 
 
@@ -52,7 +52,7 @@ def test_hc_resultado_aprovado_com_dip_e_inicio():
     assert resultado[0].aprovado
     assert resultado[0].tipo_dip == "8x4"
     assert resultado[0].inicio == "nova"
-    # o hc_resultado vem depois dos 9 hc_item
+    # o hc_resultado vem depois dos 8 hc_item
     eventos = [m for m in mensagens if isinstance(m, HcItem | HcResultado)]
     assert eventos[-1] is resultado[0]
 
@@ -103,7 +103,7 @@ def test_seq_e_t_ms_crescem_desde_zero():
 def test_health_check_reprovado_encerra_a_tentativa():
     roteiro = _roteiro(tentativa={"hc_reprovados": ["bateria"]})
 
-    assert len(_mensagens(roteiro)) == 9 + 1 + 2  # hc_item, hc_resultado e 2 tel
+    assert len(_mensagens(roteiro)) == 8 + 1 + 2  # hc_item, hc_resultado e 2 tel
 
 
 def test_toda_mensagem_passa_pelo_contrato():
@@ -153,7 +153,7 @@ def test_corrida_4x4_curta():
 
     tipos = [m.tipo if not isinstance(m, LinhaCrua) else "crua" for m in itens]
     sem_tel = [t for t in tipos if t != "tel"]
-    assert sem_tel == ["hc_item"] * 9 + ["hc_resultado", "passo", "passo", "passo", "crua"] + [
+    assert sem_tel == ["hc_item"] * 8 + ["hc_resultado", "passo", "passo", "passo", "crua"] + [
         "passo",
         "sucesso",
     ]
