@@ -207,3 +207,8 @@ linhas, uns 70 s de tempo real, ainda acima dos 60 s do limite.
 uv run ruff check .
 uv run pytest -q
 ```
+
+O CI (`.github/workflows/simulador-telemetria.yml`) roda os dois em todo PR que mexe no
+simulador, no backend ou no contrato, e antes confere se o `uv.lock` está em dia. O backend
+não usa o uv; quando ele muda de dependência, o lock daqui fica velho e o CI falha. Para
+corrigir, rode `uv lock` nesta pasta e versione o `uv.lock`.
