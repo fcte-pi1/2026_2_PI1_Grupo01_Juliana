@@ -48,12 +48,12 @@ jobs:
       - name: Simulador de navegação (FIRM-02)
         run: |
           set -o pipefail
-          make -C simulador build/simulador
-          ./simulador/build/simulador --telemetria simulador/build/telemetria simulador/labirintos/*.txt | tee simulador/build/relatorio.txt
+          make -C simulador-navegacao build/simulador
+          ./simulador-navegacao/build/simulador --telemetria simulador-navegacao/build/telemetria simulador-navegacao/labirintos/*.txt | tee simulador-navegacao/build/relatorio.txt
           {
             echo '### Simulador de navegação'
             echo '```text'
-            cat simulador/build/relatorio.txt
+            cat simulador-navegacao/build/relatorio.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -62,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: roteiros-telemetria
-          path: src/firmware/simulador/build/telemetria/
+          path: src/firmware/simulador-navegacao/build/telemetria/
           if-no-files-found: ignore
 
       - name: Compilar para a ESP32

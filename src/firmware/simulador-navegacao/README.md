@@ -10,7 +10,7 @@ O código da navegação é o mesmo da ESP32 (`lib/navegacao/nav.c`). A cada cé
 
 ## Uso
 
-Dentro de `src/firmware/simulador`:
+Dentro de `src/firmware/simulador-navegacao`:
 
 ```bash
 make                        # compila e roda todos os labirintos de labirintos/
