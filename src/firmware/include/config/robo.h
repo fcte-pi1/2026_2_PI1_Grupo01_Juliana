@@ -59,27 +59,31 @@
 #define TOF_D_ANG      -45.0f
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
 
-/* Bateria — LiPo 2S 7,4 V 500 mAh [ENE] */
-#define BATERIA_DIVISOR             3.2f    /* [HW] divisor 22 kΩ / 10 kΩ: V_bateria = V_adc x 3,2 */
+/* Bateria — LiPo 2S 7,4 V 650 mAh [ENE] (4.2 v1.5) */
+#define BATERIA_DIVISOR             3.2f    /* [HW] divisor 22 kΩ / 10 kΩ depois do diodo: V_ponte = V_adc x 3,2 */
+#define BATERIA_QUEDA_DIODO_MV      350     /* [ENE] queda do SS34, somada à leitura antes dos limites; calibrar em 7.2 */
+#define BATERIA_MEDIA_AMOSTRAS      16      /* média móvel contra o ruído das escovas (4.2 pede no mínimo 8) */
+#define BATERIA_LIMIAR_FONTE_MV     6700    /* acima disso é a LiPo (nunca abaixo de 7,0 V em uso); abaixo, as pilhas (no máximo ~6,4 V) */
 #define BATERIA_CHEIA_MV            8400    /* [ENE] 4,2 V por célula */
 #define BATERIA_CORTE_MV            7000    /* [ENE] corte por subtensão: 3,5 V por célula */
 #define BATERIA_ALERTA_MV           7400    /* [ENE] alerta (LED + buzzer): 3,7 V por célula, acima do corte */
 
 /* Fonte alternativa — 4 pilhas AA em série, selecionada por jumper [ENE] */
 #define BATERIA_AA_ALERTA_MV        5000    /* [ENE] alerta de carga mínima das pilhas */
+#define BATERIA_AA_CORTE_MV         5000    /* [ENE] o 4.2 não separa corte das pilhas: low_battery abaixo de 5,0 V */
 
 /*
  * Curvas de descarga: pares {mV, %}, da tensão maior para a menor; o firmware
  * interpola entre os pontos (FIRM-06, #128).
  * PROVISÓRIO: curva típica de LiPo e de pilha alcalina sob a corrente média de
  * 0,43 A [ENE]. Será trocada pela curva medida nos testes de energia (7.2).
- * Na LiPo, 0 % é o corte (7,0 V): é a carga que o robô ainda pode usar.
+ * Nas duas fontes, 0 % é o corte: é a carga que o robô ainda pode usar.
  */
 #define BATERIA_CURVA_LIPO { \
     {8400, 100}, {8200, 90}, {8000, 75}, {7800, 55}, \
     {7600, 35},  {7400, 15}, {7200, 5},  {7000, 0} }
 #define BATERIA_CURVA_AA { \
     {6400, 100}, {6000, 80}, {5600, 50}, {5200, 20}, \
-    {5000, 10},  {4400, 0} }
+    {5000, 0} }
 
 #endif /* CONFIG_ROBO_H */
