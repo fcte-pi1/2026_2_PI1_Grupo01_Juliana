@@ -121,6 +121,43 @@ Requer `DATABASE_URL` configurado (local ou `.env`).
 
 ---
 
+## Ingestão de telemetria (BACK-02)
+
+A ponte serial envia cada linha recebida do robô, sem alterar, para `POST /telemetria`:
+
+```json
+{"linha": "{\"v\":1,\"boot\":7,\"seq\":42,\"t_ms\":11250,\"tipo\":\"tel\",...}", "recebido_em": "2026-10-08T12:00:00+00:00"}
+```
+
+A resposta traz os comandos para o robô: `{"comandos": []}`. O formato das mensagens é o contrato v1 (`contrato/telemetria.py`, exemplos em `src/contrato/exemplos.jsonl`).
+
+- **422**: linha inválida (mais de 256 B, não é JSON, `v` ≠ 1, `tipo` desconhecido, campo faltando ou fora da faixa, `falha` incoerente ou célula fora do labirinto da execução). Nada é gravado e o motivo vai para o log (WARNING, logger `app.telemetria`). **A ponte não deve reenviar respostas 4xx**: a mesma linha vai falhar de novo.
+- **200**: mensagem aceita e gravada na tentativa aberta (`health-check` ou `running`). Também devolve 200, sem gravar e com INFO no log, a mensagem sem tentativa aberta, o evento repetido e o `hc_item` fora do health-check.
+- **Deduplicação**: eventos (`hc_item`, `hc_resultado`, `passo`, `falha`, `sucesso`) com `seq` menor ou igual ao último aceito no mesmo `boot` são repetidos (o firmware reenvia o buffer ao reconectar). O `seq` só é marcado como visto depois do commit; se a gravação falhar, o reenvio é aceito. A `tel` nunca é repetida.
+
+### Teste de carga (RNF-B11)
+
+O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem espera e verifica p95 < 100 ms sem crescimento. Para medir a API no ar, use o script, que manda `tel` no ritmo pedido e sai com código 1 se p95 ≥ 100 ms ou se o atraso acumulado passar de 1 s:
+
+```bash
+cd src/backend
+python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
+```
+
+O script lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
+
+```bash
+docker compose exec db psql -U micromouse -d micromouse -c "
+INSERT INTO execucao_logica (execucao_id, labirinto_id, status, tentativas_usadas, iniciada_em)
+VALUES ('00000000-0000-0000-0000-00000000c4a6', 1, 'em_andamento', 1, now());
+INSERT INTO tentativa (tentativa_id, execucao_id, attempt_index, status, tipo_inicio, iniciada_em)
+VALUES (gen_random_uuid(), '00000000-0000-0000-0000-00000000c4a6', 1, 'running', 'nova', now());"
+```
+
+Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed' WHERE execucao_id = '00000000-0000-0000-0000-00000000c4a6';`) para ela não receber a telemetria real.
+
+---
+
 ## Onde implementar cada tarefa (BACK-01 … BACK-08)
 
 | Tarefa | Pasta / arquivo |

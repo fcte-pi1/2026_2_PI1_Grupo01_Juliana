@@ -51,3 +51,14 @@ class Repositorio:
             .where(Tentativa.tempo_s.is_not(None))
         )
         return self._session.scalar(stmt)
+
+    def buscar_tentativa_aberta(self) -> Tentativa | None:
+        """Tentativa em health-check ou running; se houver mais de uma, a mais recente."""
+        stmt = (
+            select(Tentativa)
+            .where(Tentativa.status.in_(("health-check", "running")))
+            .options(joinedload(Tentativa.execucao).joinedload(ExecucaoLogica.labirinto))
+            .order_by(Tentativa.iniciada_em.desc())
+            .limit(1)
+        )
+        return self._session.scalar(stmt)
