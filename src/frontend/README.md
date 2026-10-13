@@ -46,9 +46,9 @@ A tela consulta `GET /execucoes/em-andamento` (204 quando não há execução) e
 
 Nova execução envia `POST /execucoes` com `tipo_labirinto`. Havendo uma em andamento, o modal informa o cancelamento antes do envio. O retorno 201 fornece os IDs e `attempt_index`; em seguida, a tela consulta o detalhe por ID e mostra Tentativa 1/3. Se essa consulta falhar, a ação de carregar tenta somente o GET, sem criar outra execução. Uma recusa 409 exibe o motivo recebido e preserva a tela e a seleção.
 
-`src/api/schema.ts` é o arquivo já gerado pela equipe na branch `feat/arq-02-contrato-rest-sse`, em `c2d7bda`. Os endpoints usam esses tipos e normalizam os campos opcionais para a View. O detalhe mínimo de `dev`, ainda sem leituras, trajeto ou health-check, é exibido como pendente. O UUID é usado quando a API não informa um número sequencial; os números do protótipo ficam nos mocks.
+`src/api/schema.ts` acompanha o contrato OpenAPI integrado à `dev`, incluindo `EntradaPonte` e `RespostaPonte`. Para atualizar os tipos após mudanças no contrato, execute `npm run gerar-tipos`. Os endpoints normalizam os campos opcionais para a View; dados ausentes de leituras, trajeto ou health-check ficam pendentes. O UUID é usado quando a API não informa um número sequencial; os números do protótipo ficam nos mocks.
 
-A integração com a API real depende da implementação das rotas de ARQ-02/BACK. O tratamento dos eventos SSE permanece no FRONT-03 e os comandos existentes de encerrar/retomar continuam provisórios para suas respectivas issues; não foram implementados nesta entrega.
+A integração completa depende da implementação de `POST /execucoes` e `GET /execucoes/em-andamento`, ainda pendentes no backend da `dev`. Histórico e detalhe já possuem implementação. O tratamento dos eventos SSE permanece no FRONT-03 e os comandos existentes de encerrar/retomar continuam provisórios para suas respectivas issues; não foram implementados nesta entrega.
 
 ## Rotas
 

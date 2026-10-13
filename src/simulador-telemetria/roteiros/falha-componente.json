@@ -1,0 +1,18 @@
+{
+  "nome": "falha-componente",
+  "labirinto": "4x4",
+  "bateria_inicial_mv": 7900,
+  "s_por_celula": 0.8,
+  "tentativas": [
+    {
+      "inicio": "nova",
+      "celulas": [
+        {"x": 0, "y": 0, "paredes": 14},
+        {"x": 0, "y": 1, "paredes": 12},
+        {"x": 0, "y": 2, "paredes": 12},
+        {"x": 0, "y": 3, "paredes": 9}
+      ],
+      "fim": {"tipo": "falha", "motivo": "falha_componente", "componente": "motor_direito"}
+    }
+  ]
+}

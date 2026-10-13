@@ -14,6 +14,9 @@
  * vertical; espaço é passagem. A célula (0, 0) é a do canto inferior esquerdo,
  * x cresce para a direita (leste) e y para cima (norte), como no docs/4.4.
  * Linhas vazias ou que começam com '#' são ignoradas (servem de comentário).
+ *
+ * A largada pode ser marcada com 'L' no meio da célula ("| L |"). Sem a
+ * marca, ela fica em (0, 0).
  */
 
 #include <stdbool.h>
@@ -34,6 +37,8 @@ typedef struct {
     uint8_t largura;                          /* células no eixo x */
     uint8_t altura;                           /* células no eixo y */
     uint8_t paredes[SIM_LAB_MAX][SIM_LAB_MAX]; /* [x][y], máscara SIM_PAREDE_* */
+    uint8_t largada_x;                        /* célula marcada com 'L', ou (0, 0) */
+    uint8_t largada_y;
 } sim_labirinto_t;
 
 /* Lê o texto. Retorna false se o desenho estiver malformado. */

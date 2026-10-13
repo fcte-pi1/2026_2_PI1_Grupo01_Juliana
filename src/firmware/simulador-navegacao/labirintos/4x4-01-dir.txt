@@ -1,0 +1,11 @@
+# 4x4 do labirinto_demo.h (HAL simulada na ESP32).
+# Largada (L) virada para o norte; o labirinto se estende à direita do robô.
++---+---+---+---+
+|           |   |
++   +---+   +   +
+|   |           |
++   +   +---+   +
+|   |   |       |
++   +---+   +---+
+| L |           |
++---+---+---+---+

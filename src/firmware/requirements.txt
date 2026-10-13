@@ -1,0 +1,3 @@
+# Versão do PlatformIO usada pelo CI e pela equipe.
+# Instalar com: pip install -r requirements.txt (dentro de um venv)
+platformio==6.2.0

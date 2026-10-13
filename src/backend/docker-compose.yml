@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: micromouse
+      POSTGRES_PASSWORD: micromouse
+      POSTGRES_DB: micromouse
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U micromouse -d micromouse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://micromouse:micromouse@db:5432/micromouse
+      TEMPO_MAXIMO_EXECUCAO_S: "600"
+      LIMITE_SEM_SINAL_S: "10"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

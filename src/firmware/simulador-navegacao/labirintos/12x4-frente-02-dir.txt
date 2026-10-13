@@ -1,0 +1,27 @@
+# 12x4 com o lado longo à frente da largada (eixo y do robô), com 4 ciclos.
+# Largada (L) virada para o norte; o labirinto se estende à direita do robô.
++---+---+---+---+
+|               |
++   +   +---+---+
+|               |
++---+---+   +   +
+|               |
++   +---+---+   +
+|       |       |
++   +   +   +---+
+|   |   |       |
++   +   +---+   +
+|   |       |   |
++   +---+   +---+
+|       |       |
++---+   +---+   +
+|           |   |
++   +---+   +   +
+|   |       |   |
++   +   +   +   +
+|   |   |   |   |
++---+   +   +   +
+|               |
++   +---+---+   +
+| L |           |
++---+---+---+---+

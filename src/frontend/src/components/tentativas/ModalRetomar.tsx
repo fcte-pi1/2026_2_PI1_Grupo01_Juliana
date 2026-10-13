@@ -57,7 +57,7 @@ export function ModalRetomar({ numeroExecucao, proxima, celulaFalha, enviando, a
         </label>
         <label className="opcao">
           <input type="checkbox" checked={bateriaOk} onChange={(e) => setBateriaOk(e.target.checked)} />
-          <span>Bateria acima de 5,20 V</span>
+          <span>Bateria acima do nível de alerta (7,4 V na LiPo)</span>
         </label>
       </fieldset>
       <p className="texto-suave">

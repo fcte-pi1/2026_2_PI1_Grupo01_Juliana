@@ -1,0 +1,11 @@
+# 8x4 com o lado longo ao lado da largada (eixo x do robô), sem ciclos.
+# Largada (L) virada para o norte; o labirinto se estende à direita do robô.
++---+---+---+---+---+---+---+---+
+|       |           |           |
++   +---+   +   +   +   +   +---+
+|           |   |   |   |       |
++---+---+   +   +   +---+---+   +
+|       |   |   |               |
++   +   +---+   +---+---+---+   +
+| L |           |               |
++---+---+---+---+---+---+---+---+
