@@ -10,6 +10,7 @@
 #include <Arduino.h>
 
 #include "app.h"
+#include "bateria.h"
 #include "config/robo.h"
 #include "eventos.h"
 #include "hal_bateria.h"
@@ -35,6 +36,8 @@ void tarefa_navegacao(void *parametro)
     (void)parametro;
     nav_estado_t nav;
     nav_iniciar(&nav);
+    bateria_t bateria;
+    bateria_iniciar(&bateria);
 
     TickType_t proximo = xTaskGetTickCount();
     bool led = false;
@@ -53,7 +56,9 @@ void tarefa_navegacao(void *parametro)
                 ev.tof_ok |= (uint8_t)(1u << i);
             }
         }
-        ev.bateria_mv = (uint16_t)(hal_bateria_ler_adc_mv() * BATERIA_DIVISOR);
+        /* O alerta (LED + buzzer) e a falha low_battery usam bateria_nivel() quando a máquina de estados entrar. */
+        bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());
+        ev.bateria_mv = bateria_mv(&bateria);
 
         nav_leitura_t leitura;
         leitura.frente = tem_parede(ev.tof_mm[TOF_FRONTAL_ESQ], ev.tof_ok & (1u << TOF_FRONTAL_ESQ)) ||

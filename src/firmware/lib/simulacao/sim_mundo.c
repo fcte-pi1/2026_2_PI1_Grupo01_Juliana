@@ -193,7 +193,8 @@ bool sim_tof_medir(int tof, uint16_t *distancia_mm)
     return true;
 }
 
-uint16_t sim_bateria_adc_mv(void) { return (uint16_t)(m.bateria_mv / BATERIA_DIVISOR); }
+/* o divisor fica depois do diodo SS34: o ADC vê a bateria menos a queda */
+uint16_t sim_bateria_adc_mv(void) { return (uint16_t)((m.bateria_mv - BATERIA_QUEDA_DIODO_MV) / BATERIA_DIVISOR); }
 
 bool sim_boot_pressionado(void) { return m.boot; }
 void sim_led_definir(bool aceso) { m.led = aceso; }
