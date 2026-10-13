@@ -371,12 +371,31 @@ paths:
                         cmd: interromper
         "422":
           description: >
-            Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da
-            faixa, célula fora do labirinto). A ponte não deve reenviar 4xx.
+            Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo
+            desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do
+            labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na
+            serial como no 200. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`,
+            por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`.
+            A ponte não deve reenviar 4xx.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErroValidacao"
+                oneOf:
+                  - $ref: "#/components/schemas/ErroLinhaInvalida"
+                  - $ref: "#/components/schemas/ErroValidacao"
+              examples:
+                linha-invalida:
+                  summary: Linha recusada sem downlink pendente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos: []
+                linha-invalida-interrupcao-pendente:
+                  summary: Linha recusada depois de encerrar a tentativa manualmente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos:
+                      - v: 1
+                        cmd: interromper
 
 components:
   parameters:
@@ -1423,6 +1442,16 @@ components:
             Comandos para a ponte escrever na serial (JSON compacto + \\n).
             Vazio quando não há downlink pendente.
 
+    ErroLinhaInvalida:
+      allOf:
+        - $ref: "#/components/schemas/RespostaPonte"
+        - type: object
+          required: [detail]
+          properties:
+            detail:
+              type: string
+              description: Motivo da recusa da linha, só para log.
+
     Recusa:
       type: object
       required: [motivo, ocorrida_em]
@@ -1449,8 +1478,13 @@ components:
             properties:
               loc:
                 type: array
+                description: >
+                  Caminho do erro; o FastAPI usa inteiros para posições (por exemplo,
+                  o caractere em que o JSON do corpo quebrou).
                 items:
-                  type: string
+                  oneOf:
+                    - type: string
+                    - type: integer
               msg:
                 type: string
               type:
