@@ -1,0 +1,336 @@
+"""Transições BACK-03 (T/E/R) — oráculo transicoes-execucao.md."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from app.main import app
+from app.models import ExecucaoLogica, Tentativa, TentativaRejeitada
+from app.repositories.repositorio import Repositorio
+from app.services.gerenciador_execucoes import GerenciadorExecucoes
+from app.services.monitor_conexao import MonitorConexao
+from contrato.telemetria import Falha, HcResultado, Sucesso, escrever_linha
+from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+
+@pytest.fixture
+def gerenciador() -> GerenciadorExecucoes:
+    return app.state.gerenciador
+
+
+def _hc(aprovado: bool = True, inicio: str = "nova", dip: str = "4x4") -> HcResultado:
+    return HcResultado(
+        v=1, boot=1, seq=1, t_ms=100, tipo="hc_resultado", aprovado=aprovado, tipo_dip=dip, inicio=inicio
+    )
+
+
+def _falha_auto(motivo: str = "stuck", x: int = 1, y: int = 2) -> Falha:
+    return Falha(
+        v=1,
+        boot=1,
+        seq=2,
+        t_ms=200,
+        tipo="falha",
+        motivo=motivo,
+        origem="automatica",
+        x=x,
+        y=y,
+        componente=None,
+    )
+
+
+def _sucesso(x: int = 3, y: int = 3) -> Sucesso:
+    return Sucesso(v=1, boot=1, seq=3, t_ms=300, tipo="sucesso", x=x, y=y)
+
+
+def _falha_web() -> Falha:
+    return Falha(
+        v=1, boot=1, seq=4, t_ms=400, tipo="falha", motivo=None, origem="web", x=0, y=0, componente=None
+    )
+
+
+class TestTransicoesTentativa:
+    def test_t01_nova_execucao_abre_health_check(self, client: TestClient, db_session: Session):
+        r = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
+        assert r.status_code == 201
+        body = r.json()
+        execucao = db_session.get(ExecucaoLogica, uuid.UUID(body["execucao_id"]))
+        tentativa = db_session.get(Tentativa, uuid.UUID(body["tentativa_id"]))
+        assert execucao.status == "em_andamento"
+        assert execucao.tentativas_usadas == 1
+        assert tentativa.status == "health-check"
+        assert tentativa.attempt_index == 1
+        assert tentativa.tipo_inicio == "nova"
+
+    def test_t02_retomar_abre_proxima_tentativa(self, client: TestClient, db_session: Session, gerenciador):
+        criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        execucao_id = criado["execucao_id"]
+        tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        db_session.commit()
+
+        r = client.post(f"/execucoes/{execucao_id}/retomar")
+        assert r.status_code == 201
+        assert r.json()["attempt_index"] == 2
+        execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
+        assert execucao.tentativas_usadas == 2
+
+    def test_t03_hc_aprovado_vai_para_running(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        assert tentativa.status == "running"
+
+    def test_t04_hc_reprovado_falha(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(aprovado=False))
+        assert tentativa.status == "failed"
+        assert execucao.status == "em_andamento"
+        assert tentativa.falha.motivo == "health_check_failed"
+
+    def test_t05_sucesso_conclui_execucao(self, client: TestClient, db_session: Session):
+        criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        execucao_id = criado["execucao_id"]
+        tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+        g: GerenciadorExecucoes = app.state.gerenciador
+        g.aplicar_evento(db_session, tentativa, _hc())
+        g.aplicar_evento(db_session, tentativa, _sucesso())
+        db_session.commit()
+        execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
+        assert tentativa.status == "success"
+        assert execucao.status == "concluida"
+
+    def test_t06_falha_trajeto_mantem_em_andamento(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert tentativa.status == "failed"
+        assert execucao.status == "em_andamento"
+
+    def test_t07_encerrar_manual(self, client: TestClient, db_session: Session, gerenciador):
+        criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        execucao_id = criado["execucao_id"]
+        tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        db_session.commit()
+
+        r = client.post(
+            f"/execucoes/{execucao_id}/encerrar-tentativa",
+            json={"motivo": "collision", "observacao": "teste"},
+        )
+        assert r.status_code == 200
+        db_session.expire_all()
+        tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+        execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
+        assert tentativa.status == "failed"
+        assert tentativa.falha.origem == "encerrado_operador"
+        assert execucao.status == "em_andamento"
+        assert [c.model_dump() for c in gerenciador.comandos_pendentes()] == [
+            {"v": 1, "cmd": "interromper"}
+        ]
+
+    def test_t08_link_lost_cancela_execucao(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        monitor = MonitorConexao(limite_sem_sinal_s=10)
+        monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+        gerenciador.verificar_monitores(db_session, monitor)
+        assert tentativa.status == "failed"
+        assert execucao.status == "cancelada"
+        assert tentativa.falha.motivo == "link_lost"
+
+    def test_t09_tempo_excedido_cancela_execucao(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        execucao.iniciada_em = datetime.now(UTC) - timedelta(seconds=601)
+        monitor = MonitorConexao(limite_sem_sinal_s=10)
+        gerenciador.verificar_monitores(db_session, monitor)
+        assert tentativa.status == "failed"
+        assert execucao.status == "cancelada"
+        assert tentativa.falha.motivo == "time_exceeded"
+
+    def test_t10_failed_e_terminal(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(aprovado=False))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert tentativa.status == "failed"
+
+    def test_t11_success_e_terminal(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _sucesso())
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert tentativa.status == "success"
+
+    def test_t12_terceira_falha_cancela_execucao(self, db_session: Session, gerenciador):
+        execucao_id = self._execucao_com_duas_falhas(db_session, gerenciador)
+        execucao = db_session.get(ExecucaoLogica, execucao_id)
+        ret = gerenciador.retomar(db_session, execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(inicio="retomada"))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert tentativa.attempt_index == 3
+        assert tentativa.status == "failed"
+        assert execucao.status == "cancelada"
+
+    def test_t13_nova_execucao_cancela_anterior(self, client: TestClient, db_session: Session):
+        primeiro = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        antiga_id = uuid.UUID(primeiro["execucao_id"])
+        tentativa_antiga = db_session.get(Tentativa, uuid.UUID(primeiro["tentativa_id"]))
+
+        client.post("/execucoes", json={"tipo_labirinto": "8x4"})
+        db_session.expire_all()
+        antiga = db_session.get(ExecucaoLogica, antiga_id)
+        db_session.refresh(tentativa_antiga)
+        assert antiga.status == "cancelada"
+        assert tentativa_antiga.status == "failed"
+
+    def _execucao_com_duas_falhas(self, db_session: Session, gerenciador) -> uuid.UUID:
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        ret = gerenciador.retomar(db_session, ret.execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(inicio="retomada"))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        return ret.execucao_id
+
+
+class TestTransicoesExecucao:
+    def test_e01_nova_sem_anterior(self, client: TestClient):
+        assert client.post("/execucoes", json={"tipo_labirinto": "4x4"}).status_code == 201
+
+    def test_e02_nova_cancela_anterior(self, client: TestClient, db_session: Session):
+        a = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        b = client.post("/execucoes", json={"tipo_labirinto": "8x4"}).json()
+        assert db_session.get(ExecucaoLogica, uuid.UUID(a["execucao_id"])).status == "cancelada"
+        assert db_session.get(ExecucaoLogica, uuid.UUID(b["execucao_id"])).status == "em_andamento"
+
+    def test_e03_sucesso_conclui(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _sucesso())
+        assert execucao.status == "concluida"
+
+    def test_e04_falha_com_retomada(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert execucao.status == "em_andamento"
+        assert Repositorio(db_session).buscar_tentativa_aberta_da_execucao(ret.execucao_id) is None
+
+    def test_e05_terceira_falha_cancela(self, db_session: Session, gerenciador):
+        helper = TestTransicoesTentativa()
+        execucao_id = helper._execucao_com_duas_falhas(db_session, gerenciador)
+        execucao = db_session.get(ExecucaoLogica, execucao_id)
+        ret = gerenciador.retomar(db_session, execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(inicio="retomada"))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        assert execucao.status == "cancelada"
+
+    def test_e08_nova_apos_terminal(self, client: TestClient, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _sucesso())
+        db_session.commit()
+        assert execucao.status == "concluida"
+        r = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
+        assert r.status_code == 201
+        nova = db_session.get(ExecucaoLogica, uuid.UUID(r.json()["execucao_id"]))
+        assert nova.status == "em_andamento"
+
+
+class TestRecusas:
+    def test_r01_tentativa_aberta(self, client: TestClient, db_session: Session):
+        criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        execucao_id = criado["execucao_id"]
+        r = client.post(f"/execucoes/{execucao_id}/retomar")
+        assert r.status_code == 409
+        assert r.json()["motivo"] == "tentativa_aberta"
+        rejeicoes = db_session.scalars(
+            select(TentativaRejeitada).where(TentativaRejeitada.execucao_id == uuid.UUID(execucao_id))
+        ).all()
+        assert len(rejeicoes) == 1
+
+    def test_r03_limite_3(self, client: TestClient, db_session: Session, gerenciador):
+        helper = TestTransicoesTentativa()
+        execucao_id = helper._execucao_com_duas_falhas(db_session, gerenciador)
+        ret = gerenciador.retomar(db_session, execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(inicio="retomada"))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        db_session.commit()
+
+        r = client.post(f"/execucoes/{execucao_id}/retomar")
+        assert r.status_code == 409
+        assert r.json()["motivo"] == "limite_3"
+
+    def test_r04_encerrar_execucao_cancelada(self, client: TestClient, db_session: Session, gerenciador):
+        helper = TestTransicoesTentativa()
+        execucao_id = helper._execucao_com_duas_falhas(db_session, gerenciador)
+        ret = gerenciador.retomar(db_session, execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(inicio="retomada"))
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+        db_session.commit()
+        r = client.post(
+            f"/execucoes/{execucao_id}/encerrar-tentativa",
+            json={"motivo": "stuck"},
+        )
+        assert r.status_code == 422
+
+    def test_confirmacao_web_nao_duplica_falha(self, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.encerrar_tentativa(db_session, ret.execucao_id, "collision", None)
+        falhas_antes = tentativa.falha.falha_id
+        gerenciador.aplicar_evento(db_session, tentativa, _falha_web())
+        assert tentativa.falha.falha_id == falhas_antes
+        assert gerenciador.comandos_pendentes() == []
+
+
+def test_retomar_concorrente_uma_aceita_outra_recusa(client: TestClient, db_session: Session, gerenciador):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    execucao_id = criado["execucao_id"]
+    tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+    gerenciador.aplicar_evento(db_session, tentativa, _hc())
+    gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
+    db_session.commit()
+
+    assert client.post(f"/execucoes/{execucao_id}/retomar").status_code == 201
+    recusada = client.post(f"/execucoes/{execucao_id}/retomar")
+    assert recusada.status_code == 409
+    assert recusada.json()["motivo"] == "tentativa_aberta"
+
+
+def test_sucesso_via_telemetria_http(client: TestClient, db_session: Session):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    execucao_id = criado["execucao_id"]
+    linha_hc = escrever_linha(_hc())
+    linha_ok = escrever_linha(_sucesso())
+    client.post("/telemetria", json={"linha": linha_hc.strip(), "recebido_em": "2026-10-07T17:00:01Z"})
+    client.post("/telemetria", json={"linha": linha_ok.strip(), "recebido_em": "2026-10-07T17:00:02Z"})
+    execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
+    assert execucao.status == "concluida"
