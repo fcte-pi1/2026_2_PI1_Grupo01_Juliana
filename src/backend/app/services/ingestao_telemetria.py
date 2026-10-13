@@ -67,6 +67,7 @@ class IngestaoTelemetria:
 
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
+        gerenciador.verificar_monitores(sessao, self.monitor)
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
         if tentativa is None:
