@@ -3,50 +3,11 @@
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
-import yaml
-from openapi_schema_validator import OAS30Validator
+from tests.contrato_openapi import validar_resposta
 
-
-def _nulo_explicito(no):
-    """Lê `allOf: [$ref] + nullable: true` como "o $ref ou null".
-
-    É a intenção do contrato, mas a leitura estrita da OAS 3.0.3 aplica o
-    nullable só ao type do próprio nó, e o validador recusaria o null.
-    """
-    if isinstance(no, list):
-        return [_nulo_explicito(item) for item in no]
-    if not isinstance(no, dict):
-        return no
-    no = {chave: _nulo_explicito(valor) for chave, valor in no.items()}
-    if no.get("nullable") and "allOf" in no and "type" not in no:
-        resto = {k: v for k, v in no.items() if k not in ("allOf", "nullable")}
-        return {**resto, "anyOf": [{"allOf": no["allOf"]}, {"enum": [None]}]}
-    return no
-
-
-OPENAPI = _nulo_explicito(
-    yaml.safe_load(
-        (Path(__file__).resolve().parents[2] / "openapi.yaml").read_text(encoding="utf-8")
-    )
-)
 LIMITE_DETALHE_S = 0.3
-
-
-def _validar(response, caminho: str, metodo: str = "get") -> None:
-    resposta = OPENAPI["paths"][caminho][metodo]["responses"][str(response.status_code)]
-    if "$ref" in resposta:
-        resposta = OPENAPI["components"]["responses"][resposta["$ref"].rsplit("/", 1)[-1]]
-    schema = resposta["content"]["application/json"]["schema"]
-    validador = OAS30Validator(
-        {**schema, "components": OPENAPI["components"]},
-        format_checker=OAS30Validator.FORMAT_CHECKER,
-    )
-    validador.validate(response.json())
-    for cabecalho in resposta.get("headers", {}):
-        assert cabecalho in response.headers
 
 
 def _popular(fabrica) -> list:
@@ -76,26 +37,26 @@ def test_lista_segue_o_contrato(client, fabrica, params):
     _popular(fabrica)
     response = client.get("/execucoes", params=params)
     assert response.status_code == 200
-    _validar(response, "/execucoes")
+    validar_resposta(response, "/execucoes")
 
 
 def test_lista_com_parametro_invalido_segue_o_contrato(client):
     response = client.get("/execucoes", params={"limite": 0})
     assert response.status_code == 422
-    _validar(response, "/execucoes")
+    validar_resposta(response, "/execucoes")
 
 
 def test_detalhe_segue_o_contrato(client, fabrica):
     for execucao in _popular(fabrica):
         response = client.get(f"/execucoes/{execucao.execucao_id}")
         assert response.status_code == 200
-        _validar(response, "/execucoes/{execucao_id}")
+        validar_resposta(response, "/execucoes/{execucao_id}")
 
 
 def test_detalhe_inexistente_segue_o_contrato(client):
     response = client.get(f"/execucoes/{uuid.uuid4()}")
     assert response.status_code == 404
-    _validar(response, "/execucoes/{execucao_id}")
+    validar_resposta(response, "/execucoes/{execucao_id}")
 
 
 def test_detalhe_12x4_com_3_tentativas_em_menos_de_300_ms(client, fabrica):
