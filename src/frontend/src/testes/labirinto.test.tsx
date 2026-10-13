@@ -67,7 +67,7 @@ describe('VisualizacaoLabirinto', () => {
       <VisualizacaoLabirinto largura={8} altura={4} trajeto={passos([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]])} />,
     )
 
-    const eixo = [...container.querySelectorAll('.labirinto__eixo text')].map((t) => t.textContent)
+    const eixo = Array.from(container.querySelectorAll('.labirinto__eixo text'), (t) => t.textContent)
     expect(eixo).toEqual(['A', 'B', 'C', 'D', '1', '2', '3', '4', '5', '6', '7', '8'])
     expect(screen.getByText('Objetivo D8')).toBeInTheDocument()
   })

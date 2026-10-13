@@ -87,7 +87,7 @@ export function VisualizacaoLabirinto({
         ))}
 
         {!compacto &&
-          [...ultimoPasso.values()].map((p) => {
+          Array.from(ultimoPasso.values(), (p) => {
             const { x, y } = canto(p)
             return (
               <g key={chave(p)}>
