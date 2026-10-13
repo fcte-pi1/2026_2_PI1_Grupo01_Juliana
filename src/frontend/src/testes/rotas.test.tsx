@@ -80,6 +80,12 @@ describe('rota /execucoes/:id', () => {
     expect(screen.getByText('Tentativas em ordem cronológica')).toBeInTheDocument()
   })
 
+  it('mostra o trajeto longo do 12x4 com a célula da falha', async () => {
+    renderizarRota('/execucoes/e-0034')
+    expect(await screen.findByRole('img', { name: /Labirinto 12x4 com 48 células visitadas/ })).toBeInTheDocument()
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+  })
+
   it('avisa quando a execução não existe', async () => {
     renderizarRota('/execucoes/nao-existe')
     expect(await screen.findByRole('heading', { name: 'Execução não encontrada' })).toBeInTheDocument()

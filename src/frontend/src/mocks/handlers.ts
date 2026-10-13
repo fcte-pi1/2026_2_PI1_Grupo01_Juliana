@@ -2,12 +2,18 @@ import { http, HttpResponse, sse } from 'msw'
 import type { EventoExecucao, Execucao, TipoLabirinto } from '../api/tipos'
 import { cenarioAtual, definirCenario } from './cenarioAtual'
 import { buscarCenario } from './cenarios'
-import { execucao, HISTORICO, LABIRINTOS, tentativa, trajetoAte } from './dados'
+import { execucao, falha, HISTORICO, LABIRINTOS, tentativa, trajeto12x4Longo, trajetoAte } from './dados'
 
 const API = '*/api'
 
 function execucaoDoCenario(): Execucao {
   return cenarioAtual().atual(Date.now()).execucao ?? buscarCenario('04-concluida').atual(Date.now()).execucao!
+}
+
+function trajetoDoHistorico(labirinto: TipoLabirinto, sucesso: boolean) {
+  if (labirinto === '4x4') return trajetoAte(sucesso ? 10 : 6)
+  if (labirinto === '12x4') return trajeto12x4Longo()
+  return []
 }
 
 /** Execuções antigas do histórico, montadas a partir da linha da tabela. */
@@ -33,9 +39,13 @@ function execucaoDoHistorico(id: string): Execucao | null {
         tempo_s: resumo.tempo_total_s,
         velocidade_media: resumo.velocidade_media,
         consumo_bateria: resumo.consumo_bateria,
+        falha:
+          resumo.labirinto === '12x4' && !sucesso
+            ? falha(agora, { motivo: 'time_exceeded', origem: 'automatica', celula_x: 11, celula_y: 2 })
+            : null,
       }),
     ],
-    trajeto: resumo.labirinto === '4x4' ? trajetoAte(sucesso ? 10 : 6) : [],
+    trajeto: trajetoDoHistorico(resumo.labirinto, sucesso),
     ultima_mensagem_em: new Date(agora).toISOString(),
   })
 }

@@ -61,6 +61,20 @@ export function trajetoComRetomada(ate: number): PassoTrajeto[] {
   ]
 }
 
+/**
+ * Trajeto longo no 12x4 (FRONT-04): 144 passos, o máximo do mapa de 12 × 12.
+ * Zigue-zague pelas colunas, volta pelo mesmo caminho e vai de novo, parando em L3.
+ */
+export function trajeto12x4Longo(): PassoTrajeto[] {
+  const ida: Array<[number, number]> = []
+  for (let x = 0; x < 12; x++) {
+    for (let i = 0; i < 4; i++) ida.push([x, x % 2 === 0 ? i : 3 - i])
+  }
+  const volta = [...ida].reverse().slice(1)
+  const celulas = [...ida, ...volta, ...ida.slice(1), [11, 1], [11, 2]] as Array<[number, number]>
+  return celulas.map(([x, y], i) => ({ seq: i + 1, x, y, paredes_mask: 0, retomada: false }))
+}
+
 export function healthCheck(aprovados: number): ItemHealthCheck[] {
   const componentes: ItemHealthCheck['componente'][] = [
     'bateria',
@@ -182,6 +196,18 @@ export const HISTORICO: ResumoExecucao[] = [
     tempo_total_s: 27.9,
     velocidade_media: 0.09,
     consumo_bateria: 2.6,
+  },
+  {
+    execucao_id: 'e-0034',
+    numero: 34,
+    labirinto: '12x4',
+    status: 'cancelada',
+    resultado: 'failed',
+    tentativas_usadas: 1,
+    iniciada_em: '2026-09-22T20:02:31Z',
+    tempo_total_s: 600,
+    velocidade_media: 0.04,
+    consumo_bateria: 11.2,
   },
   {
     execucao_id: 'e-0032',

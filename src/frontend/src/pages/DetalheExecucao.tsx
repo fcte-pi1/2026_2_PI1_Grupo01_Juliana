@@ -3,6 +3,7 @@ import { ErroApi } from '../api/clienteApi'
 import { CartaoFalha } from '../components/execucao/CartaoFalha'
 import { PilulaResultado, PilulaStatusTentativa } from '../components/execucao/PilulaResultado'
 import { Cabecalho } from '../components/layout/Cabecalho'
+import { falhasDasTentativas } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { BlocoHealthCheck } from '../components/telemetria/BlocoHealthCheck'
 import { useExecucao } from '../hooks/useExecucao'
@@ -31,7 +32,6 @@ export function DetalheExecucao() {
 
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
-  const falha = ultima?.falha
   const resultado = ultima?.status === 'success' ? 'success' : ultima?.status === 'failed' ? 'failed' : null
 
   return (
@@ -65,7 +65,7 @@ export function DetalheExecucao() {
               largura={largura}
               altura={altura}
               trajeto={execucao.trajeto}
-              celulaFalha={falha ? { x: falha.celula_x, y: falha.celula_y } : null}
+              falhas={falhasDasTentativas(execucao.tentativas)}
             />
           </section>
 

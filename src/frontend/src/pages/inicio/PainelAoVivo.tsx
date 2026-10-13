@@ -66,8 +66,8 @@ export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAo
             compacto
           />
           <p className="texto-suave espaco-acima">
-            O trajeto é desenhado célula a célula conforme o robô entra em cada uma; o mapa completo aparece quando a execução
-            terminar.
+            O trajeto é desenhado célula a célula conforme o robô entra em cada uma; o mapa com rótulos e paredes aparece quando
+            a tentativa terminar.
           </p>
         </section>
         <CartaoComunicacao ultimaMensagemEm={execucao.ultima_mensagem_em} />
