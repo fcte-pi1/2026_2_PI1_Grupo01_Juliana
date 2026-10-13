@@ -24,7 +24,14 @@ def gerenciador() -> GerenciadorExecucoes:
 
 def _hc(aprovado: bool = True, inicio: str = "nova", dip: str = "4x4") -> HcResultado:
     return HcResultado(
-        v=1, boot=1, seq=1, t_ms=100, tipo="hc_resultado", aprovado=aprovado, tipo_dip=dip, inicio=inicio
+        v=1,
+        boot=1,
+        seq=1,
+        t_ms=100,
+        tipo="hc_resultado",
+        aprovado=aprovado,
+        tipo_dip=dip,
+        inicio=inicio,
     )
 
 
@@ -47,7 +54,9 @@ def _sucesso(x: int = 3, y: int = 3) -> Sucesso:
     return Sucesso(v=1, boot=1, seq=3, t_ms=300, tipo="sucesso", x=x, y=y)
 
 
-def _aplicar_perda_link(db_session: Session, gerenciador: GerenciadorExecucoes) -> tuple[ExecucaoLogica, Tentativa]:
+def _aplicar_perda_link(
+    db_session: Session, gerenciador: GerenciadorExecucoes
+) -> tuple[ExecucaoLogica, Tentativa]:
     ret = gerenciador.nova_execucao(db_session, "4x4")
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
@@ -57,7 +66,9 @@ def _aplicar_perda_link(db_session: Session, gerenciador: GerenciadorExecucoes) 
     return execucao, tentativa
 
 
-def _aplicar_tempo_excedido(db_session: Session, gerenciador: GerenciadorExecucoes) -> tuple[ExecucaoLogica, Tentativa]:
+def _aplicar_tempo_excedido(
+    db_session: Session, gerenciador: GerenciadorExecucoes
+) -> tuple[ExecucaoLogica, Tentativa]:
     ret = gerenciador.nova_execucao(db_session, "4x4")
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
@@ -69,7 +80,16 @@ def _aplicar_tempo_excedido(db_session: Session, gerenciador: GerenciadorExecuco
 
 def _falha_web() -> Falha:
     return Falha(
-        v=1, boot=1, seq=4, t_ms=400, tipo="falha", motivo=None, origem="web", x=0, y=0, componente=None
+        v=1,
+        boot=1,
+        seq=4,
+        t_ms=400,
+        tipo="falha",
+        motivo=None,
+        origem="web",
+        x=0,
+        y=0,
+        componente=None,
     )
 
 
@@ -86,7 +106,9 @@ class TestTransicoesTentativa:
         assert tentativa.attempt_index == 1
         assert tentativa.tipo_inicio == "nova"
 
-    def test_t02_retomar_abre_proxima_tentativa(self, client: TestClient, db_session: Session, gerenciador):
+    def test_t02_retomar_abre_proxima_tentativa(
+        self, client: TestClient, db_session: Session, gerenciador
+    ):
         criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
         execucao_id = criado["execucao_id"]
         tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
@@ -286,12 +308,15 @@ class TestRecusas:
         r = client.post(f"/execucoes/{execucao_id}/retomar")
         assert r.status_code == 409
         assert r.json()["motivo"] == "tentativa_aberta"
+        eid = uuid.UUID(execucao_id)
         rejeicoes = db_session.scalars(
-            select(TentativaRejeitada).where(TentativaRejeitada.execucao_id == uuid.UUID(execucao_id))
+            select(TentativaRejeitada).where(TentativaRejeitada.execucao_id == eid)
         ).all()
         assert len(rejeicoes) == 1
 
-    def test_r02_retomar_execucao_nao_em_andamento(self, client: TestClient, db_session: Session, gerenciador):
+    def test_r02_retomar_execucao_nao_em_andamento(
+        self, client: TestClient, db_session: Session, gerenciador
+    ):
         ret = gerenciador.nova_execucao(db_session, "4x4")
         tentativa = db_session.get(Tentativa, ret.tentativa_id)
         gerenciador.aplicar_evento(db_session, tentativa, _hc())
@@ -315,7 +340,9 @@ class TestRecusas:
         assert r.status_code == 409
         assert r.json()["motivo"] == "limite_3"
 
-    def test_r04_encerrar_execucao_cancelada(self, client: TestClient, db_session: Session, gerenciador):
+    def test_r04_encerrar_execucao_cancelada(
+        self, client: TestClient, db_session: Session, gerenciador
+    ):
         helper = TestTransicoesTentativa()
         execucao_id = helper._execucao_com_duas_falhas(db_session, gerenciador)
         ret = gerenciador.retomar(db_session, execucao_id)
@@ -329,7 +356,9 @@ class TestRecusas:
         )
         assert r.status_code == 422
 
-    def test_r05_encerrar_sem_tentativa_aberta(self, client: TestClient, db_session: Session, gerenciador):
+    def test_r05_encerrar_sem_tentativa_aberta(
+        self, client: TestClient, db_session: Session, gerenciador
+    ):
         criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
         execucao_id = criado["execucao_id"]
         tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
@@ -354,7 +383,9 @@ class TestRecusas:
         assert gerenciador.comandos_pendentes() == []
 
 
-def test_retomar_concorrente_uma_aceita_outra_recusa(client: TestClient, db_session: Session, gerenciador):
+def test_retomar_concorrente_uma_aceita_outra_recusa(
+    client: TestClient, db_session: Session, gerenciador
+):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     execucao_id = criado["execucao_id"]
     tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
@@ -373,7 +404,9 @@ def test_sucesso_via_telemetria_http(client: TestClient, db_session: Session):
     execucao_id = criado["execucao_id"]
     linha_hc = escrever_linha(_hc())
     linha_ok = escrever_linha(_sucesso())
-    client.post("/telemetria", json={"linha": linha_hc.strip(), "recebido_em": "2026-10-07T17:00:01Z"})
-    client.post("/telemetria", json={"linha": linha_ok.strip(), "recebido_em": "2026-10-07T17:00:02Z"})
+    payload_hc = {"linha": linha_hc.strip(), "recebido_em": "2026-10-07T17:00:01Z"}
+    payload_ok = {"linha": linha_ok.strip(), "recebido_em": "2026-10-07T17:00:02Z"}
+    client.post("/telemetria", json=payload_hc)
+    client.post("/telemetria", json=payload_ok)
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
     assert execucao.status == "concluida"

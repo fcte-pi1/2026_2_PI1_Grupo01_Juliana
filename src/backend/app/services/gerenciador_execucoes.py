@@ -17,7 +17,8 @@ from app.services.excecoes_execucao import (
     TentativaIndisponivel,
 )
 from app.services.monitor_conexao import MonitorConexao
-from contrato.telemetria import Comando, Falha as FalhaMsg, HcResultado, Mensagem, Sucesso
+from contrato.telemetria import Comando, HcResultado, Mensagem, Sucesso
+from contrato.telemetria import Falha as FalhaMsg
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger("app.gerenciador")
@@ -59,7 +60,9 @@ class GerenciadorExecucoes:
             iniciada_em=agora,
         )
         repo.salvar(execucao)
-        tentativa = self._abrir_tentativa(repo, execucao, attempt_index=1, tipo_inicio="nova", agora=agora)
+        tentativa = self._abrir_tentativa(
+            repo, execucao, attempt_index=1, tipo_inicio="nova", agora=agora
+        )
         execucao.tentativas_usadas = 1
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, 1)
 
@@ -273,7 +276,8 @@ class GerenciadorExecucoes:
         tentativa.encerrada_em = agora
         execucao.status = "concluida"
         execucao.encerrada_em = agora
-        execucao.tempo_total_s = Decimal(str(round((agora - execucao.iniciada_em).total_seconds(), 3)))
+        segundos = (agora - execucao.iniciada_em).total_seconds()
+        execucao.tempo_total_s = Decimal(str(round(segundos, 3)))
         self._interrupcao_pendente = False
 
     def _confirmar_interrupcao(self, tentativa: Tentativa | None) -> None:
@@ -290,7 +294,9 @@ class GerenciadorExecucoes:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
 
-    def _cancelar_execucao(self, sessao: Session, execucao: ExecucaoLogica, agora: datetime) -> None:
+    def _cancelar_execucao(
+        self, sessao: Session, execucao: ExecucaoLogica, agora: datetime
+    ) -> None:
         repo = Repositorio(sessao)
         aberta = repo.buscar_tentativa_aberta_da_execucao(execucao.execucao_id)
         if aberta is not None:

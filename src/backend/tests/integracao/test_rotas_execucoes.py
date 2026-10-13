@@ -48,7 +48,14 @@ def _hc_reprovado():
     from contrato.telemetria import HcResultado
 
     return HcResultado(
-        v=1, boot=1, seq=1, t_ms=1, tipo="hc_resultado", aprovado=False, tipo_dip="4x4", inicio="nova"
+        v=1,
+        boot=1,
+        seq=1,
+        t_ms=1,
+        tipo="hc_resultado",
+        aprovado=False,
+        tipo_dip="4x4",
+        inicio="nova",
     )
 
 
