@@ -47,6 +47,26 @@ def _sucesso(x: int = 3, y: int = 3) -> Sucesso:
     return Sucesso(v=1, boot=1, seq=3, t_ms=300, tipo="sucesso", x=x, y=y)
 
 
+def _aplicar_perda_link(db_session: Session, gerenciador: GerenciadorExecucoes) -> tuple[ExecucaoLogica, Tentativa]:
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+    monitor = MonitorConexao(limite_sem_sinal_s=10)
+    monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+    gerenciador.verificar_monitores(db_session, monitor)
+    return execucao, tentativa
+
+
+def _aplicar_tempo_excedido(db_session: Session, gerenciador: GerenciadorExecucoes) -> tuple[ExecucaoLogica, Tentativa]:
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+    execucao.iniciada_em = datetime.now(UTC) - timedelta(seconds=601)
+    monitor = MonitorConexao(limite_sem_sinal_s=10)
+    gerenciador.verificar_monitores(db_session, monitor)
+    return execucao, tentativa
+
+
 def _falha_web() -> Falha:
     return Falha(
         v=1, boot=1, seq=4, t_ms=400, tipo="falha", motivo=None, origem="web", x=0, y=0, componente=None
@@ -139,23 +159,13 @@ class TestTransicoesTentativa:
         ]
 
     def test_t08_link_lost_cancela_execucao(self, db_session: Session, gerenciador):
-        ret = gerenciador.nova_execucao(db_session, "4x4")
-        tentativa = db_session.get(Tentativa, ret.tentativa_id)
-        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
-        monitor = MonitorConexao(limite_sem_sinal_s=10)
-        monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
-        gerenciador.verificar_monitores(db_session, monitor)
+        execucao, tentativa = _aplicar_perda_link(db_session, gerenciador)
         assert tentativa.status == "failed"
         assert execucao.status == "cancelada"
         assert tentativa.falha.motivo == "link_lost"
 
     def test_t09_tempo_excedido_cancela_execucao(self, db_session: Session, gerenciador):
-        ret = gerenciador.nova_execucao(db_session, "4x4")
-        tentativa = db_session.get(Tentativa, ret.tentativa_id)
-        execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
-        execucao.iniciada_em = datetime.now(UTC) - timedelta(seconds=601)
-        monitor = MonitorConexao(limite_sem_sinal_s=10)
-        gerenciador.verificar_monitores(db_session, monitor)
+        execucao, tentativa = _aplicar_tempo_excedido(db_session, gerenciador)
         assert tentativa.status == "failed"
         assert execucao.status == "cancelada"
         assert tentativa.falha.motivo == "time_exceeded"
@@ -247,6 +257,14 @@ class TestTransicoesExecucao:
         gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
         assert execucao.status == "cancelada"
 
+    def test_e06_perda_link_cancela(self, db_session: Session, gerenciador):
+        execucao, _ = _aplicar_perda_link(db_session, gerenciador)
+        assert execucao.status == "cancelada"
+
+    def test_e07_tempo_execucao_cancela(self, db_session: Session, gerenciador):
+        execucao, _ = _aplicar_tempo_excedido(db_session, gerenciador)
+        assert execucao.status == "cancelada"
+
     def test_e08_nova_apos_terminal(self, client: TestClient, db_session: Session, gerenciador):
         ret = gerenciador.nova_execucao(db_session, "4x4")
         tentativa = db_session.get(Tentativa, ret.tentativa_id)
@@ -272,6 +290,17 @@ class TestRecusas:
             select(TentativaRejeitada).where(TentativaRejeitada.execucao_id == uuid.UUID(execucao_id))
         ).all()
         assert len(rejeicoes) == 1
+
+    def test_r02_retomar_execucao_nao_em_andamento(self, client: TestClient, db_session: Session, gerenciador):
+        ret = gerenciador.nova_execucao(db_session, "4x4")
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        gerenciador.aplicar_evento(db_session, tentativa, _hc())
+        gerenciador.aplicar_evento(db_session, tentativa, _sucesso())
+        db_session.commit()
+
+        r = client.post(f"/execucoes/{ret.execucao_id}/retomar")
+        assert r.status_code == 409
+        assert r.json()["motivo"] == "execucao_cancelada"
 
     def test_r03_limite_3(self, client: TestClient, db_session: Session, gerenciador):
         helper = TestTransicoesTentativa()
@@ -299,6 +328,20 @@ class TestRecusas:
             json={"motivo": "stuck"},
         )
         assert r.status_code == 422
+
+    def test_r05_encerrar_sem_tentativa_aberta(self, client: TestClient, db_session: Session, gerenciador):
+        criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+        execucao_id = criado["execucao_id"]
+        tentativa = db_session.get(Tentativa, uuid.UUID(criado["tentativa_id"]))
+        gerenciador.aplicar_evento(db_session, tentativa, _hc(aprovado=False))
+        db_session.commit()
+        assert (
+            client.post(
+                f"/execucoes/{execucao_id}/encerrar-tentativa",
+                json={"motivo": "stuck"},
+            ).status_code
+            == 422
+        )
 
     def test_confirmacao_web_nao_duplica_falha(self, db_session: Session, gerenciador):
         ret = gerenciador.nova_execucao(db_session, "4x4")
