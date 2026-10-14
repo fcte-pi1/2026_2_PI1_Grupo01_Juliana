@@ -1,0 +1,2069 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação técnica do projeto Ratatouille, um Micromouse autônomo para solução de labirintos e registro de telemetria.">
+      
+      
+        <meta name="author" content="Grupo Ratatouille — PI1 2026.2">
+      
+      
+        <link rel="canonical" href="https://pi1-2026-2.github.io/2026_2_PI1_Grupo01_Juliana/4.4.1%20-%20Contrato%20de%20telemetria/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/brand/ratatouille-mark.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Contrato de Telemetria - Ratatouille | Micromouse</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#contrato-de-telemetria" class="md-skip">
+          Pular para conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="Ratatouille | Micromouse" class="md-header__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
+      
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Ratatouille | Micromouse
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Contrato de Telemetria
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Ativar tema escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Ativar tema claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando busca
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PI1-2026-2 / Ratatouille
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Abas" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Início
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../1%20-%20TAP/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Projeto
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../5%20-%20Cronograma/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Acompanhamento
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Validação
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Encerramento
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Ratatouille | Micromouse" class="md-nav__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
+      
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
+
+    </a>
+    Ratatouille | Micromouse
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PI1-2026-2 / Ratatouille
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Projeto
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Projeto
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1%20-%20TAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Termo de abertura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2%20-%20Requisitos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requisitos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3%20-%20EAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estrutura analítica
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Projeto conceitual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Projeto conceitual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.1%20-%20Projeto%20conceitual%20de%20estruturas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estruturas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.2%20-%20Projeto%20conceitual%20de%20energia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Energia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.3%20-%20Projeto%20conceitual%20de%20hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gloss%C3%A1rio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossário
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acompanhamento
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acompanhamento
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5%20-%20Cronograma/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cronograma
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../6%20-%20Or%C3%A7amento/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orçamento
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validação
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validação
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de estrutura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.2%20-%20Testes%20de%20energia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de energia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.3%20-%20Testes%20de%20hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.4%20-%20Testes%20de%20software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.5%20-%20Testes%20de%20integra%C3%A7%C3%A3o/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de integração
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../8%20-%20Avalia%C3%A7%C3%A3o%20de%20desempenho/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Avaliação de desempenho
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encerramento
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão geral
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enquadramento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enquadramento
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#campos-comuns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Campos comuns
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mensagens-do-robo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mensagens do robô
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mensagens do robô">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tel-estado-atual-do-robo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tel: estado atual do robô
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hc_item-um-componente-do-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hc_item: um componente do health-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hc_resultado-fim-do-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        hc_resultado: fim do health-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#passo-uma-celula-do-trajeto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        passo: uma célula do trajeto
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#falha-a-tentativa-parou-sem-chegar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        falha: a tentativa parou sem chegar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sucesso-o-robo-chegou-ao-objetivo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sucesso: o robô chegou ao objetivo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#referencial-e-paredes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referencial e paredes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#taxas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Taxas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comando-da-web-para-o-robo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comando da web para o robô
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ponte-e-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ponte e API
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validacao-no-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validação no backend
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reconexao-e-mensagens-repetidas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reconexão e mensagens repetidas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tempo-e-horario-de-brasilia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tempo e horário de Brasília
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versionamento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versionamento
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#onde-cada-mensagem-e-gravada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Onde cada mensagem é gravada
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementacoes-e-testes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementações e testes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/edit/main/docs/4.4.1 - Contrato de telemetria.md" title="Editar esta página" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/raw/main/docs/4.4.1 - Contrato de telemetria.md" title="Exibir fonte desta página" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="contrato-de-telemetria">Contrato de Telemetria<a class="headerlink" href="#contrato-de-telemetria" title="Permanent link">&para;</a></h1>
+<p>Apêndice do <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/">Projeto conceitual de software</a>. Define, sem ambiguidade, as mensagens trocadas entre o <strong>Micromouse</strong>, a <strong>ponte Bluetooth</strong> e o <strong>backend</strong>, para que as três partes possam ser implementadas e testadas separadamente (<a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B13</a>). Resolve as pendências "Formato das mensagens de telemetria" e "Detalhes da ponte Bluetooth" da <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#pendencias-da-arquitetura">arquitetura</a>.</p>
+<p><strong>Versão do contrato:</strong> 1.</p>
+<p><strong>Fonte única dos exemplos:</strong> <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/main/src/contrato/exemplos.jsonl"><code>src/contrato/exemplos.jsonl</code></a>. Os exemplos desta página são cópias desse arquivo, e os testes do backend e do firmware conferem que cada lado gera exatamente essas linhas (seção <a href="#implementacoes-e-testes">Implementações e testes</a>).</p>
+<h2 id="visao-geral">Visão geral<a class="headerlink" href="#visao-geral" title="Permanent link">&para;</a></h2>
+<p><font size="3"><p style="text-align: center">Figura 1: Visão geral do contrato de telemetria</p></font></p>
+<p><img alt="Visão geral do contrato de telemetria" src="../figs/contrato-telemetria.png" /></p>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026. · <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/main/docs/modelagem/contrato-telemetria.excalidraw">Fonte editável (Excalidraw)</a></p></font></p>
+<ul>
+<li>O robô só <strong>envia</strong> telemetria. O único comando que ele recebe é a <strong>interrupção</strong> do encerramento manual (<a href="../2%20-%20Requisitos/#software">RF39</a>, <a href="../2%20-%20Requisitos/#software">RNF06</a>).</li>
+<li>A ponte é "burra": não interpreta as mensagens. Ela lê cada linha da serial, anota a hora em que leu e repassa à <a href="../Gloss%C3%A1rio/#sigla-api">API</a>. Toda a validação fica no backend.</li>
+</ul>
+<h2 id="enquadramento">Enquadramento<a class="headerlink" href="#enquadramento" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Uma mensagem por linha, em <strong><a href="../Gloss%C3%A1rio/#sigla-json">JSON</a> compacto</strong> (sem espaços), codificado em <strong><a href="../Gloss%C3%A1rio/#sigla-utf8">UTF-8</a></strong> e terminado em <code>\n</code>.</li>
+<li>Cada linha tem no máximo <strong>256 bytes</strong>, contando o <code>\n</code>.</li>
+<li>A ordem das chaves é a dos exemplos. O backend não depende da ordem, mas o firmware sempre gera nessa ordem, o que permite comparar byte a byte nos testes.</li>
+</ul>
+<h2 id="campos-comuns">Campos comuns<a class="headerlink" href="#campos-comuns" title="Permanent link">&para;</a></h2>
+<p>Toda mensagem do robô começa com estes campos.</p>
+<p><font size="3"><p style="text-align: center">Tabela 1: Campos comuns a todas as mensagens</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>v</code></td>
+<td>inteiro</td>
+<td>sempre <code>1</code></td>
+<td>Versão do contrato. O backend descarta qualquer outro valor (seção <a href="#versionamento">Versionamento</a>).</td>
+</tr>
+<tr>
+<td><code>boot</code></td>
+<td>inteiro</td>
+<td>0 a 4 294 967 295</td>
+<td>Contador de inicializações do robô, guardado na <a href="../Gloss%C3%A1rio/#sigla-nvs">NVS</a> e somado em 1 a cada vez que ele liga.</td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td>inteiro</td>
+<td>0 a 4 294 967 295</td>
+<td>Número da mensagem dentro do <code>boot</code>. Volta a 0 quando o robô liga e soma 1 a cada mensagem, de qualquer tipo.</td>
+</tr>
+<tr>
+<td><code>t_ms</code></td>
+<td>inteiro</td>
+<td>ms, 0 a 4 294 967 295</td>
+<td>Milissegundos desde que o robô ligou, no instante do envio.</td>
+</tr>
+<tr>
+<td><code>tipo</code></td>
+<td>texto</td>
+<td>ver <a href="#mensagens-do-robo">Mensagens do robô</a></td>
+<td>Define os demais campos.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>O par (<code>boot</code>, <code>seq</code>) identifica cada mensagem de forma única, mesmo depois de o robô reiniciar em uma retomada (<a href="../2%20-%20Requisitos/#software">RF38</a>).</p>
+<h2 id="mensagens-do-robo">Mensagens do robô<a class="headerlink" href="#mensagens-do-robo" title="Permanent link">&para;</a></h2>
+<p>As mensagens se dividem em dois grupos:</p>
+<ul>
+<li><strong>Amostra:</strong> a <code>tel</code>. Se uma se perder, a seguinte chega logo e a substitui. Não é reenviada.</li>
+<li><strong>Eventos:</strong> <code>hc_item</code>, <code>hc_resultado</code>, <code>passo</code>, <code>falha</code> e <code>sucesso</code>. Cada um registra algo que aconteceu uma vez e não pode se perder; por isso entram no buffer de reenvio (seção <a href="#reconexao-e-mensagens-repetidas">Reconexão</a>).</li>
+</ul>
+<h3 id="tel-estado-atual-do-robo"><code>tel</code>: estado atual do robô<a class="headerlink" href="#tel-estado-atual-do-robo" title="Permanent link">&para;</a></h3>
+<p>Enviada continuamente: <strong>5 por segundo</strong> com o robô em movimento e <strong>1 por segundo</strong> parado. Alimenta o painel ao vivo, serve de sinal de vida para o <a href="../2%20-%20Requisitos/#software">RF31</a> (10 s sem mensagem = link perdido) e cumpre o <a href="../2%20-%20Requisitos/#software">RF08</a> (célula, bateria e instante de envio).</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">42</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">11250</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"tel"</span><span class="p">,</span><span class="nt">"estado"</span><span class="p">:</span><span class="s2">"running"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">"rumo"</span><span class="p">:</span><span class="s2">"N"</span><span class="p">,</span><span class="nt">"bat_mv"</span><span class="p">:</span><span class="mi">7810</span><span class="p">,</span><span class="nt">"vel_mm_s"</span><span class="p">:</span><span class="mi">210</span><span class="p">,</span><span class="nt">"eixo_longo"</span><span class="p">:</span><span class="kc">null</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 2: Campos da mensagem tel</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>estado</code></td>
+<td>texto</td>
+<td><code>health-check</code>, <code>running</code>, <code>success</code> ou <code>failed</code></td>
+<td>Fase da tentativa do ponto de vista do robô (<a href="../2%20-%20Requisitos/#software">RF16</a>).</td>
+</tr>
+<tr>
+<td><code>x</code>, <code>y</code></td>
+<td>inteiro</td>
+<td>célula, 0 a 11</td>
+<td>Célula atual, no <a href="#referencial-e-paredes">referencial do robô</a>.</td>
+</tr>
+<tr>
+<td><code>rumo</code></td>
+<td>texto</td>
+<td><code>N</code>, <code>S</code>, <code>L</code> ou <code>O</code></td>
+<td>Direção para a qual o robô aponta, no mesmo referencial. A web a usa para desenhar o robô.</td>
+</tr>
+<tr>
+<td><code>bat_mv</code></td>
+<td>inteiro</td>
+<td>mV, 0 a 10 000</td>
+<td>Tensão da bateria. O backend converte para % pela curva da fonte definida pela Energia (<a href="../2%20-%20Requisitos/#software">RF11</a>).</td>
+</tr>
+<tr>
+<td><code>vel_mm_s</code></td>
+<td>inteiro</td>
+<td>mm/s, 0 a 2 000</td>
+<td>Velocidade medida pelos encoders (<a href="../2%20-%20Requisitos/#software">RF22</a>).</td>
+</tr>
+<tr>
+<td><code>eixo_longo</code></td>
+<td>texto ou nulo</td>
+<td><code>x</code>, <code>y</code> ou <code>null</code></td>
+<td>Eixo em que o labirinto 8x4 ou 12x4 se estende. <code>null</code> enquanto o robô não sabe, e sempre no 4x4.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<h3 id="hc_item-um-componente-do-health-check"><code>hc_item</code>: um componente do health-check<a class="headerlink" href="#hc_item-um-componente-do-health-check" title="Permanent link">&para;</a></h3>
+<p>Enviada uma vez por componente, assim que o robô termina de testá-lo (<a href="../2%20-%20Requisitos/#software">RF29</a>). A web marca o checklist em tempo real e mostra qual componente reprovou.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">412</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"hc_item"</span><span class="p">,</span><span class="nt">"componente"</span><span class="p">:</span><span class="s2">"bateria"</span><span class="p">,</span><span class="nt">"aprovado"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"valor"</span><span class="p">:</span><span class="mi">7840</span><span class="p">}</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">1630</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"hc_item"</span><span class="p">,</span><span class="nt">"componente"</span><span class="p">:</span><span class="s2">"motor_esquerdo"</span><span class="p">,</span><span class="nt">"aprovado"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"valor"</span><span class="p">:</span><span class="kc">null</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 3: Campos da mensagem hc_item</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>componente</code></td>
+<td>texto</td>
+<td>um dos 8 da lista fixa (Tabela 4)</td>
+<td>Componente verificado.</td>
+</tr>
+<tr>
+<td><code>aprovado</code></td>
+<td>booleano</td>
+<td><code>true</code> ou <code>false</code></td>
+<td>Resultado da verificação.</td>
+</tr>
+<tr>
+<td><code>valor</code></td>
+<td>inteiro ou nulo</td>
+<td>unidade conforme o componente (Tabela 4)</td>
+<td>Medida que justificou o resultado.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p><font size="3"><p style="text-align: center">Tabela 4: Componentes do health-check e unidade do valor</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th><code>valor</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bateria</code></td>
+<td>Tensão em mV.</td>
+</tr>
+<tr>
+<td><code>tof_frontal</code>, <code>tof_esquerdo</code>, <code>tof_direito</code></td>
+<td>Distância lida, em mm.</td>
+</tr>
+<tr>
+<td><code>encoder_esquerdo</code>, <code>encoder_direito</code></td>
+<td>Pulsos contados ao girar o motor no teste.</td>
+</tr>
+<tr>
+<td><code>motor_esquerdo</code>, <code>motor_direito</code></td>
+<td><code>null</code>: o motor é aprovado pelo próprio encoder.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<h3 id="hc_resultado-fim-do-health-check"><code>hc_resultado</code>: fim do health-check<a class="headerlink" href="#hc_resultado-fim-do-health-check" title="Permanent link">&para;</a></h3>
+<p>Enviada uma vez, depois do último <code>hc_item</code>. Traz o tipo de labirinto lido no <a href="../Gloss%C3%A1rio/#sigla-dip">DIP</a> switch (<a href="../2%20-%20Requisitos/#software">RF27</a>) e se a tentativa começa do zero ou continua o mapa gravado (<a href="../2%20-%20Requisitos/#software">RF38</a>).</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">2380</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"hc_resultado"</span><span class="p">,</span><span class="nt">"aprovado"</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span><span class="nt">"tipo_dip"</span><span class="p">:</span><span class="s2">"4x4"</span><span class="p">,</span><span class="nt">"inicio"</span><span class="p">:</span><span class="s2">"nova"</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 5: Campos da mensagem hc_resultado</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>aprovado</code></td>
+<td>booleano</td>
+<td><code>true</code> ou <code>false</code></td>
+<td>Resultado geral. Se <code>false</code>, o robô não anda e a tentativa termina em <code>health_check_failed</code>.</td>
+</tr>
+<tr>
+<td><code>tipo_dip</code></td>
+<td>texto</td>
+<td><code>4x4</code>, <code>8x4</code>, <code>12x4</code> ou <code>invalido</code></td>
+<td>Tipo lido nas vias 1 e 2 do <a href="../Gloss%C3%A1rio/#sigla-dip">DIP</a> switch. <code>invalido</code> (código <code>11</code>) sempre vem com <code>aprovado</code> = <code>false</code>.</td>
+</tr>
+<tr>
+<td><code>inicio</code></td>
+<td>texto</td>
+<td><code>nova</code> ou <code>retomada</code></td>
+<td><code>retomada</code> quando o robô continua o mapa e a posição gravados na flash (<a href="../2%20-%20Requisitos/#software">RF42</a>).</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>O backend compara o <code>tipo_dip</code> com o tipo informado em <strong>Nova execução</strong>. Se divergirem, a tentativa termina como <code>failed</code> com <code>health_check_failed</code> e a web mostra um alerta (ver <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#tipo-do-labirinto-e-orientacao">Tipo do labirinto e orientação</a>).</p>
+<h3 id="passo-uma-celula-do-trajeto"><code>passo</code>: uma célula do trajeto<a class="headerlink" href="#passo-uma-celula-do-trajeto" title="Permanent link">&para;</a></h3>
+<p>Enviada <strong>toda vez que o robô entra em uma célula</strong>, inclusive quando volta a uma célula já visitada; senão, o trajeto ficaria com buracos. Alimenta o desenho do mapa e do trajeto na web (<a href="../2%20-%20Requisitos/#software">RF09</a>, <a href="../2%20-%20Requisitos/#software">RF37</a>).</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">43</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">11400</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"passo"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">"paredes"</span><span class="p">:</span><span class="mi">9</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 6: Campos da mensagem passo</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x</code>, <code>y</code></td>
+<td>inteiro</td>
+<td>célula, 0 a 11</td>
+<td>Célula em que o robô entrou.</td>
+</tr>
+<tr>
+<td><code>paredes</code></td>
+<td>inteiro</td>
+<td>máscara, 0 a 15</td>
+<td>Soma das paredes presentes: N = 1, S = 2, L = 4, O = 8.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>No exemplo, <code>9</code> = 1 + 8: paredes ao <strong>norte</strong> e a <strong>oeste</strong>.</p>
+<h3 id="falha-a-tentativa-parou-sem-chegar"><code>falha</code>: a tentativa parou sem chegar<a class="headerlink" href="#falha-a-tentativa-parou-sem-chegar" title="Permanent link">&para;</a></h3>
+<p>Enviada quando o robô para por conta própria, quando confirma uma interrupção da web ou quando o operador toca no BOOT durante a corrida (<a href="../2%20-%20Requisitos/#software">RF41</a>).</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">7</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">88</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">25120</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"falha"</span><span class="p">,</span><span class="nt">"motivo"</span><span class="p">:</span><span class="s2">"falha_componente"</span><span class="p">,</span><span class="nt">"origem"</span><span class="p">:</span><span class="s2">"automatica"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">"componente"</span><span class="p">:</span><span class="s2">"tof_direito"</span><span class="p">}</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">57</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">19870</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"falha"</span><span class="p">,</span><span class="nt">"motivo"</span><span class="p">:</span><span class="kc">null</span><span class="p">,</span><span class="nt">"origem"</span><span class="p">:</span><span class="s2">"web"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="nt">"componente"</span><span class="p">:</span><span class="kc">null</span><span class="p">}</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">9</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">63</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">21040</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"falha"</span><span class="p">,</span><span class="nt">"motivo"</span><span class="p">:</span><span class="s2">"encerrado_operador"</span><span class="p">,</span><span class="nt">"origem"</span><span class="p">:</span><span class="s2">"boot"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">"componente"</span><span class="p">:</span><span class="kc">null</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 7: Campos da mensagem falha</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>motivo</code></td>
+<td>texto ou nulo</td>
+<td><code>collision</code>, <code>stuck</code>, <code>falha_componente</code>, <code>low_battery</code>, <code>encerrado_operador</code> ou <code>null</code></td>
+<td>Motivo da parada (<a href="../2%20-%20Requisitos/#software">RF15</a>). Depende da origem (Tabela 8).</td>
+</tr>
+<tr>
+<td><code>origem</code></td>
+<td>texto</td>
+<td><code>automatica</code>, <code>web</code> ou <code>boot</code></td>
+<td>Quem causou a parada.</td>
+</tr>
+<tr>
+<td><code>x</code>, <code>y</code></td>
+<td>inteiro</td>
+<td>célula, 0 a 11</td>
+<td>Célula em que o robô parou; ponto de partida da retomada.</td>
+</tr>
+<tr>
+<td><code>componente</code></td>
+<td>texto ou nulo</td>
+<td>um dos 8 da Tabela 4, ou <code>null</code></td>
+<td>Preenchido só quando <code>motivo</code> = <code>falha_componente</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p><font size="3"><p style="text-align: center">Tabela 8: Combinações válidas de origem e motivo</p></font></p>
+<table>
+<thead>
+<tr>
+<th><code>origem</code></th>
+<th><code>motivo</code></th>
+<th>Como o backend registra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>automatica</code></td>
+<td><code>collision</code>, <code>stuck</code>, <code>falha_componente</code> ou <code>low_battery</code></td>
+<td>Cria a <code>FALHA</code> com o motivo e a origem <code>automatica</code>.</td>
+</tr>
+<tr>
+<td><code>web</code></td>
+<td><code>null</code></td>
+<td>Só confirma a interrupção. A <code>FALHA</code> já foi criada pelo modal <strong>Encerrar tentativa</strong>, com o motivo escolhido; o backend atualiza a célula com o <code>x</code>, <code>y</code> recebidos, porque é onde o robô de fato parou.</td>
+</tr>
+<tr>
+<td><code>boot</code></td>
+<td><code>encerrado_operador</code></td>
+<td>Cria a <code>FALHA</code> com motivo e origem <code>encerrado_operador</code> (<a href="../2%20-%20Requisitos/#software">RF41</a>).</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>Os motivos <code>time_exceeded</code> e <code>link_lost</code> são decididos só pelo backend (<a href="../2%20-%20Requisitos/#software">RF31</a>, <a href="../2%20-%20Requisitos/#software">RF32</a>) e nunca vêm do robô. O <code>out_of_track</code> só é escolhido pelo operador no modal. Um health-check reprovado vai no <code>hc_resultado</code>, sem <code>falha</code> separada.</p>
+<h3 id="sucesso-o-robo-chegou-ao-objetivo"><code>sucesso</code>: o robô chegou ao objetivo<a class="headerlink" href="#sucesso-o-robo-chegou-ao-objetivo" title="Permanent link">&para;</a></h3>
+<p>Enviada uma vez, quando o robô entra em uma célula de objetivo do tipo selecionado no <a href="../Gloss%C3%A1rio/#sigla-dip">DIP</a> switch (<a href="../2%20-%20Requisitos/#software">RF26</a>).</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"boot"</span><span class="p">:</span><span class="mi">11</span><span class="p">,</span><span class="nt">"seq"</span><span class="p">:</span><span class="mi">131</span><span class="p">,</span><span class="nt">"t_ms"</span><span class="p">:</span><span class="mi">48200</span><span class="p">,</span><span class="nt">"tipo"</span><span class="p">:</span><span class="s2">"sucesso"</span><span class="p">,</span><span class="nt">"x"</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="nt">"y"</span><span class="p">:</span><span class="mi">3</span><span class="p">}</span>
+</span></code></pre></div>
+<p><font size="3"><p style="text-align: center">Tabela 9: Campos da mensagem sucesso</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Unidade / faixa</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x</code>, <code>y</code></td>
+<td>inteiro</td>
+<td>célula, 0 a 11</td>
+<td>Célula de objetivo alcançada.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<h2 id="referencial-e-paredes">Referencial e paredes<a class="headerlink" href="#referencial-e-paredes" title="Permanent link">&para;</a></h2>
+<p>As coordenadas estão no <strong>referencial do robô</strong>, descrito em <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#tipo-do-labirinto-e-orientacao">Tipo do labirinto e orientação</a>:</p>
+<ul>
+<li>A largada é a célula (0, 0). O eixo <strong>y</strong> aponta para a saída do beco da largada.</li>
+<li>O sinal de <strong>x</strong> é fixado na primeira abertura lateral. Antes disso o robô só anda em y, com x = 0.</li>
+<li>Com isso, <code>x</code> e <code>y</code> estão sempre entre 0 e 11.</li>
+</ul>
+<p>A máscara de <code>paredes</code> e o <code>rumo</code> usam direções <strong>absolutas</strong> nesse referencial: <strong>N</strong> = +y, <strong>S</strong> = −y, <strong>L</strong> = +x e <strong>O</strong> = −x. Enquanto o sinal de x não está fixado, as células visitadas têm parede dos dois lados, então L e O não são ambíguos. O firmware só envia o <code>passo</code> da célula da primeira abertura lateral depois de fixar o sinal.</p>
+<p><strong>Desenho na web.</strong> No 8x4 e no 12x4, o robô não sabe de antemão se o lado longo do labirinto fica em x ou em y. Enquanto <code>eixo_longo</code> for <code>null</code>, a web desenha só o canto 4x4 junto à largada e expande a grade quando ele passa a <code>x</code> ou <code>y</code>. O robô define o <code>eixo_longo</code> ao entrar na primeira célula com <code>x</code> &gt; 3 ou <code>y</code> &gt; 3.</p>
+<h2 id="taxas">Taxas<a class="headerlink" href="#taxas" title="Permanent link">&para;</a></h2>
+<p><font size="3"><p style="text-align: center">Tabela 10: Taxas de envio</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>Taxa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tel</code></td>
+<td>5 por segundo em movimento; 1 por segundo parado.</td>
+</tr>
+<tr>
+<td>Eventos</td>
+<td>Na hora em que acontecem (um <code>passo</code> a cada célula).</td>
+</tr>
+<tr>
+<td>Reenvio depois de uma reconexão</td>
+<td>No máximo 20 por segundo, além da <code>tel</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>Em regime normal, o total fica abaixo das 10 mensagens por segundo do <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B11</a>. A <code>tel</code> a 1 Hz com o robô parado mantém o sinal de vida, sem uma mensagem <code>heartbeat</code> separada.</p>
+<h2 id="comando-da-web-para-o-robo">Comando da web para o robô<a class="headerlink" href="#comando-da-web-para-o-robo" title="Permanent link">&para;</a></h2>
+<p>O único comando é a interrupção do encerramento manual (<a href="../2%20-%20Requisitos/#software">RF30</a>, <a href="../2%20-%20Requisitos/#software">RF39</a>):</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"cmd"</span><span class="p">:</span><span class="s2">"interromper"</span><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li>O backend devolve o comando em <strong>toda</strong> resposta ao <code>POST /telemetria</code> até receber a <code>falha</code> com <code>origem</code> = <code>web</code> que confirma a parada, ou até abrir uma nova tentativa. Assim, a interrupção não se perde se uma resposta cair.</li>
+<li>O robô para, envia a <code>falha</code> de confirmação e ignora o comando se já estiver parado, apenas repetindo a confirmação. Repetir o comando não tem efeito colateral.</li>
+<li>Com o robô em movimento, a <code>tel</code> a 5 Hz faz o comando chegar em até cerca de 200 ms. Sem link, o comando chega na reconexão; a parada sem rede continua sendo o botão BOOT (<a href="../2%20-%20Requisitos/#software">RF41</a>).</li>
+</ul>
+<h2 id="ponte-e-api">Ponte e API<a class="headerlink" href="#ponte-e-api" title="Permanent link">&para;</a></h2>
+<p>A ponte roda no notebook, fora do Docker, e conversa com a <a href="../Gloss%C3%A1rio/#sigla-api">API</a> por um único endpoint.</p>
+<p><strong><code>POST /telemetria</code></strong></p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span><span class="nt">"linha"</span><span class="p">:</span><span class="s2">"{\"v\":1,\"boot\":7,\"seq\":42,...}"</span><span class="p">,</span><span class="nt">"recebido_em"</span><span class="p">:</span><span class="s2">"2026-10-05T14:03:21.512-03:00"</span><span class="p">}</span>
+</span></code></pre></div>
+<ul>
+<li><code>linha</code>: a linha lida da serial, sem o <code>\n</code>, sem nenhuma alteração.</li>
+<li><code>recebido_em</code>: instante em que a ponte leu a linha, com fuso horário. É o ponto mais próximo do rádio, então o <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B04</a> mede o backend sem o atraso da ponte.</li>
+</ul>
+<p><strong>Resposta</strong></p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span><span class="nt">"comandos"</span><span class="p">:[{</span><span class="nt">"v"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"cmd"</span><span class="p">:</span><span class="s2">"interromper"</span><span class="p">}]}</span>
+</span></code></pre></div>
+<p>A lista vem vazia (<code>{"comandos":[]}</code>) quando não há comando. A ponte escreve cada comando na serial como <a href="../Gloss%C3%A1rio/#sigla-json">JSON</a> compacto, terminado em <code>\n</code>.</p>
+<p><strong><a href="../Gloss%C3%A1rio/#sigla-api">API</a> fora do ar.</strong> Se o POST falhar, a ponte guarda as linhas numa fila em memória e as reenvia em ordem quando a <a href="../Gloss%C3%A1rio/#sigla-api">API</a> voltar, com no máximo 100 linhas (10 s a 10 mensagens por segundo). O robô continua a corrida normalmente (<a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B07</a>).</p>
+<h2 id="validacao-no-backend">Validação no backend<a class="headerlink" href="#validacao-no-backend" title="Permanent link">&para;</a></h2>
+<p>O backend valida cada linha com o schema Pydantic do contrato. Uma linha é <strong>descartada e registrada só em log</strong>, sem interromper o serviço (<a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B09</a>), quando:</p>
+<ul>
+<li>passa de 256 bytes ou não é <a href="../Gloss%C3%A1rio/#sigla-json">JSON</a>;</li>
+<li>tem <code>v</code> diferente de 1 ou <code>tipo</code> desconhecido;</li>
+<li>falta um campo, um campo tem o tipo errado ou um valor sai da faixa das tabelas;</li>
+<li><code>origem</code>, <code>motivo</code> e <code>componente</code> da <code>falha</code> não combinam (Tabela 8);</li>
+<li>a célula está fora dos limites do labirinto da execução. Por exemplo, num 4x4, <code>x</code> ou <code>y</code> maior que 3.</li>
+</ul>
+<p>Campos extras desconhecidos são <strong>ignorados</strong>, sem descartar a mensagem.</p>
+<p><strong>Mensagem sem tentativa aberta.</strong> Se não houver tentativa em <code>health-check</code> ou <code>running</code> (por exemplo, o robô foi ligado antes de <strong>Nova execução</strong>, ou a mensagem chegou atrasada depois de um encerramento), a mensagem é descartada e registrada só em log. A exceção é a <code>falha</code> com <code>origem</code> = <code>web</code>, que confirma a interrupção da tentativa recém-encerrada.</p>
+<h2 id="reconexao-e-mensagens-repetidas">Reconexão e mensagens repetidas<a class="headerlink" href="#reconexao-e-mensagens-repetidas" title="Permanent link">&para;</a></h2>
+<p>Regra para quedas de até 10 s (<a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#2-backlog-nao-funcional">RNF-B08</a>). A partir de 10 s sem mensagem, vale o <a href="../2%20-%20Requisitos/#software">RF31</a> (<code>link_lost</code>).</p>
+<ol>
+<li><strong>No firmware:</strong> todo evento entra num <strong>buffer circular de 64 eventos</strong> no momento em que é gerado, em ordem de <code>seq</code>. Em 10 s de queda, o pior caso é de cerca de 15 <code>passo</code> e alguns outros eventos, então o buffer não enche. Se encher, o evento mais antigo é descartado.</li>
+<li><strong>Ao reconectar:</strong> o robô reenvia o buffer inteiro, do mais antigo para o mais novo, a no máximo 20 por segundo. Eventos novos entram no fim do buffer e saem depois dos antigos, então os eventos sempre chegam em ordem de <code>seq</code>. A <code>tel</code> continua saindo normalmente e não é reenviada.</li>
+<li><strong>No backend:</strong> para cada <code>boot</code>, guarda o maior <code>seq</code> de <strong>evento</strong> já aceito. Um evento com <code>seq</code> menor ou igual a esse é repetido e é descartado. A <code>tel</code> não passa por essa regra.</li>
+</ol>
+<p>Não há confirmação (<em>ack</em>) do backend para o robô: reenviar o buffer inteiro custa no máximo 64 linhas por reconexão e mantém o downlink com um único comando (<a href="../2%20-%20Requisitos/#software">RNF06</a>).</p>
+<h2 id="tempo-e-horario-de-brasilia">Tempo e horário de Brasília<a class="headerlink" href="#tempo-e-horario-de-brasilia" title="Permanent link">&para;</a></h2>
+<ul>
+<li>O <strong>relógio oficial</strong> é o do backend. O <code>recebido_em</code> é gravado como <code>TIMESTAMPTZ</code>: o PostgreSQL guarda em <a href="../Gloss%C3%A1rio/#sigla-utc">UTC</a> e a web mostra em <code>America/Sao_Paulo</code>. Os tempos de tentativa e de execução (<a href="../2%20-%20Requisitos/#software">RF13</a>, <a href="../2%20-%20Requisitos/#software">RF32</a>) usam esse relógio.</li>
+<li>O robô não tem relógio de parede nem recebe comando de sincronia. O <code>t_ms</code> mede o instante de envio no relógio interno do robô.</li>
+<li>O backend converte o <code>t_ms</code> em hora real e grava em <code>enviado_em</code> (<a href="../2%20-%20Requisitos/#software">RF08</a>). Na primeira mensagem aceita de cada <code>boot</code>, ele calcula uma <strong>âncora</strong> = <code>recebido_em</code> − <code>t_ms</code>, fixada só depois de a mensagem ser gravada; em cada mensagem seguinte do mesmo <code>boot</code>, <code>enviado_em</code> = âncora + <code>t_ms</code>. O erro é a latência do Bluetooth na primeira mensagem, da ordem de dezenas de milissegundos, e os intervalos entre mensagens do mesmo <code>boot</code> saem exatos. Assim, o <code>enviado_em</code> também é exibido em horário de Brasília.</li>
+<li>A interrupção é gerada pelo próprio backend, então o horário dela é exato.</li>
+</ul>
+<h2 id="versionamento">Versionamento<a class="headerlink" href="#versionamento" title="Permanent link">&para;</a></h2>
+<p>O campo <code>v</code> protege contra firmware e backend em versões diferentes do contrato, por exemplo um robô gravado com firmware antigo.</p>
+<p><font size="3"><p style="text-align: center">Tabela 11: Quando mudar a versão</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Mudança</th>
+<th>Exemplo</th>
+<th>Versão</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acrescentar um campo opcional</td>
+<td><code>temp_c</code> na <code>tel</code></td>
+<td>Continua <code>v</code> = 1. Quem não conhece o campo o ignora.</td>
+</tr>
+<tr>
+<td>Mudar ou remover um campo, ou mudar uma unidade</td>
+<td><code>bat_mv</code> → <code>bat</code> em %</td>
+<td>Passa a <code>v</code> = 2, com firmware e backend mudando juntos, num <a href="../Gloss%C3%A1rio/#sigla-pr">PR</a> aprovado pelos dois.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>O backend aceita só <code>v</code> = 1 e descarta as outras versões com registro em log, o que deixa o erro visível em vez de gravar dados errados.</p>
+<h2 id="onde-cada-mensagem-e-gravada">Onde cada mensagem é gravada<a class="headerlink" href="#onde-cada-mensagem-e-gravada" title="Permanent link">&para;</a></h2>
+<p><font size="3"><p style="text-align: center">Tabela 12: Mensagens e tabelas do banco</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>Tabela do <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#persistencia-de-dados">DER</a></th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tel</code></td>
+<td><code>LEITURA_TELEMETRIA</code></td>
+<td>Uma linha por <code>tel</code>. <code>bat_mv</code> → <code>bateria</code> (em mV); <code>vel_mm_s</code> → <code>velocidade</code>; <code>t_ms</code> → <code>enviado_em</code> (seção <a href="#tempo-e-horario-de-brasilia">Tempo</a>). O <code>boot</code> e o <code>seq</code> só servem à deduplicação, em memória, e não são gravados.</td>
+</tr>
+<tr>
+<td><code>hc_item</code></td>
+<td><code>HEALTH_CHECK_ITEM</code></td>
+<td><code>valor</code> → <code>valor_lido</code>.</td>
+</tr>
+<tr>
+<td><code>hc_resultado</code></td>
+<td><code>TENTATIVA</code></td>
+<td><code>tipo_dip</code> e <code>inicio</code> → <code>tipo_dip</code> e <code>tipo_inicio</code>; muda o status para <code>running</code> ou <code>failed</code>.</td>
+</tr>
+<tr>
+<td><code>passo</code></td>
+<td><code>PASSO_TRAJETO</code> e <code>PAREDE_CELULA</code></td>
+<td>Na mesma transação; <code>paredes</code> → <code>paredes_mask</code> e as quatro colunas de parede.</td>
+</tr>
+<tr>
+<td><code>falha</code></td>
+<td><code>FALHA</code> e <code>TENTATIVA</code></td>
+<td>Conforme a Tabela 8.</td>
+</tr>
+<tr>
+<td><code>sucesso</code></td>
+<td><code>TENTATIVA</code></td>
+<td>Status <code>success</code> e métricas finais.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<h2 id="implementacoes-e-testes">Implementações e testes<a class="headerlink" href="#implementacoes-e-testes" title="Permanent link">&para;</a></h2>
+<p><font size="3"><p style="text-align: center">Tabela 13: Arquivos do contrato</p></font></p>
+<table>
+<thead>
+<tr>
+<th>Arquivo</th>
+<th>Conteúdo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/contrato/exemplos.jsonl</code></td>
+<td>Um exemplo real de cada tipo de mensagem. Fonte única dos exemplos desta página.</td>
+</tr>
+<tr>
+<td><code>src/backend/contrato/telemetria.py</code></td>
+<td>Schema Pydantic, leitura e escrita das linhas, deduplicação, conversão do <code>t_ms</code> em <code>enviado_em</code> e modelos do <code>POST /telemetria</code>.</td>
+</tr>
+<tr>
+<td><code>src/backend/tests/test_contrato_telemetria.py</code></td>
+<td>Lê cada exemplo e o gera de volta byte a byte; testa as linhas inválidas e a deduplicação.</td>
+</tr>
+<tr>
+<td><code>src/firmware/contrato/telemetria.h</code> e <code>.c</code></td>
+<td>Estruturas e serializador em C, com <code>snprintf</code> e sem alocação dinâmica.</td>
+</tr>
+<tr>
+<td><code>src/firmware/contrato/teste/teste_telemetria.c</code></td>
+<td>Monta as mesmas mensagens e compara byte a byte com o arquivo de exemplos.</td>
+</tr>
+</tbody>
+</table>
+<p><font size="2"><p style="text-align: center">Fonte: <a href="https://github.com/wChrstphr">Wanjo Christopher Paraizo Escobar</a>, 2026.</p></font></p>
+<p>Para rodar os testes:</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>src/backend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev]"</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pytest<span class="w">   </span><span class="c1"># backend (Python 3.11+)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>make<span class="w"> </span>-C<span class="w"> </span>src/firmware/contrato<span class="w"> </span>teste<span class="w">    </span><span class="c1"># firmware, compilado com gcc no PC</span>
+</span></code></pre></div>
+<p>Qualquer mudança no contrato começa pelo <code>exemplos.jsonl</code>. Se o schema Pydantic ou o serializador em C não acompanharem, o teste correspondente falha.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar para o topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Ratatouille · PI1 2026.2
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" target="_blank" rel="noopener" title="Repositório no GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,109 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="estados-flood-fill" name="Diagrama de Estados">
+    <mxGraphModel dx="1600" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Estados -->
+        <mxCell id="ini" value="" style="ellipse;html=1;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="870" y="0" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="hc" value="Health-check&lt;br&gt;Verifica sensores, motores e bateria&lt;br&gt;e lê o tipo do labirinto no DIP switch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#1f5fa8;fontColor=#1a4b8c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="750" y="60" width="260" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ls" value="Lendo sensores&lt;br&gt;Lê as paredes, atualiza o mapa&lt;br&gt;e recalcula o flood fill" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#1f5fa8;fontColor=#1a4b8c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="730" y="240" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dl" value="Deslocando&lt;br&gt;Move para a vizinha de menor distância&lt;br&gt;e grava mapa e posição na NVS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#1f5fa8;fontColor=#1a4b8c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="ok" value="Objetivo alcançado&lt;br&gt;status = success" style="ellipse;html=1;shape=endState;fillColor=#d5e8d4;strokeColor=#000000;verticalLabelPosition=bottom;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="200" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="fa" value="Falha&lt;br&gt;status = failed + motivo + célula&lt;br&gt;(collision, time_exceeded, stuck,&lt;br&gt;out_of_track, falha_componente,&lt;br&gt;encerrado_operador)" style="ellipse;html=1;shape=endState;fillColor=#f8cecc;strokeColor=#000000;verticalLabelPosition=bottom;verticalAlign=top;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="400" y="580" width="50" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nota" value="A telemetria é coletada e enviada em paralelo, em todos os estados, sem bloquear o laço de decisão." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5c00;align=left;spacingLeft=8;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="380" width="280" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nota2" value="Toda falha encerra a tentativa e consome uma das 3. Depois do reparo, o operador aciona &lt;b&gt;Retomar tentativa (n/3)&lt;/b&gt;: o robô volta ao Health-check e continua da célula da falha, com o mapa preservado na NVS." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#7a5c00;align=left;spacingLeft=8;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="460" width="280" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Transições -->
+        <mxCell id="e1" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="ini" target="hc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="[componentes ok e DIP switch válido]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;" edge="1" parent="1" source="hc" target="ls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="[componente reprovado ou&lt;br&gt;DIP switch inválido]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="hc" target="fa">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="60" y="100" />
+              <mxPoint x="60" y="617.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="toque no BOOT (parado) /&lt;br&gt;apaga o mapa" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;align=left;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="hc" target="hc">
+          <mxGeometry x="0" y="10" relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="80" />
+              <mxPoint x="1090" y="120" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="[próximo passo definido pelo flood fill]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=0;exitY=0.4;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ls" target="dl">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="470" y="280" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="após mover" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;" edge="1" parent="1" source="dl" target="ls">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="405" />
+              <mxPoint x="660" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="[chegou a uma célula de objetivo&lt;br&gt;do tipo selecionado no DIP switch]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=0.9;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ls" target="ok">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1000" y="170" />
+              <mxPoint x="1455" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="[mapa inconsistente / sem passo válido]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ls" target="fa">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="290" />
+              <mxPoint x="1240" y="565" />
+              <mxPoint x="437.5" y="565" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" value="[falha de componente, colisão,&lt;br&gt;travamento ou fora da pista]" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=0.1;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ls" target="fa">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="545" />
+              <mxPoint x="412.5" y="545" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" value="interrupção Bluetooth (RF39),&lt;br&gt;encerramento manual (RF30)&lt;br&gt;ou toque no BOOT (RF41) /&lt;br&gt;encerrado_operador&lt;br&gt;(de qualquer estado da corrida)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;fontSize=11;exitX=0;exitY=0.15;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="ls" target="fa">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="255" />
+              <mxPoint x="190" y="592.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
