@@ -46,6 +46,9 @@ jobs:
       - name: Testes no PC (Unity)
         run: pio test -e native
 
+      - name: Verificador da serial (tools)
+        run: pip install pytest && pytest -q tools
+
       # Uma linha por labirinto no log e no resumo da execução. Falha se algum
       # labirinto for inválido; com o FIRM-01, acrescentar --exigir-sucesso.
       - name: Simulador de navegação (FIRM-02)
