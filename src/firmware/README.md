@@ -6,9 +6,9 @@ Ferramenta: [PlatformIO](https://platformio.org/) com o framework Arduino-ESP32,
 
 ## Instalação
 
-**Opção 1 — VS Code (recomendada):** instale a extensão **PlatformIO IDE** e abra a pasta `src/firmware` (não a raiz do repositório). Os botões ✓ (compilar), → (gravar) e 🔌 (monitor serial) ficam na barra inferior.
+**Opção 1, VS Code (recomendada):** instale a extensão **PlatformIO IDE** e abra a pasta `src/firmware` (não a raiz do repositório). Os botões de compilar, gravar e abrir o monitor serial ficam na barra inferior.
 
-**Opção 2 — terminal:** a versão do PlatformIO fica fixada em `requirements.txt` (a mesma do CI).
+**Opção 2, terminal:** a versão do PlatformIO fica fixada em `requirements.txt` (a mesma do CI).
 
 ```bash
 cd src/firmware
@@ -33,20 +33,42 @@ Rodar dentro de `src/firmware`:
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
+| `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
 
-Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria (`tel` a 5 Hz e `heartbeat` a 1 Hz) e linhas `#` de depuração com as leituras dos ToF simulados.
+Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos e o maior período do laço da navegação.
 
 ### Sem placa: simulador Wokwi
 
 O [Wokwi](https://wokwi.com) simula a ESP32 e roda o mesmo `firmware.bin` que iria para a placa. A configuração já está em `wokwi.toml` e `diagram.json`.
 
 1. No VS Code, instale a extensão **Wokwi Simulator**.
-2. `F1` → **Wokwi: Request a New License** (abre o navegador; a licença é gratuita, basta criar a conta). Só na primeira vez.
+2. `F1` e depois **Wokwi: Request a New License** (abre o navegador; a licença é gratuita, basta criar a conta). Só na primeira vez.
 3. Compile com `pio run`.
-4. Com a pasta `src/firmware` aberta, `F1` → **Wokwi: Start Simulator**.
+4. Com a pasta `src/firmware` aberta, `F1` e depois **Wokwi: Start Simulator**.
 
 A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial.
+
+### Verificar a serial
+
+O `tools/verificar_serial.py` lê a serial da ESP32 e diz se alguma mensagem se perdeu, sem precisar da ponte do backend. Para o teste de 10 min (600 s, o padrão), com a placa no USB e o `pio device monitor` fechado:
+
+```bash
+cd src/firmware
+source .venv/bin/activate                     # o pyserial vem do requirements.txt
+python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600
+python tools/verificar_serial.py --arquivo captura.jsonl   # confere linhas já capturadas
+```
+
+O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em cada uma das outras o script confere o tamanho (até 256 bytes contando o `\n`), o JSON, `v = 1`, o tipo e se o `seq` é o anterior mais 1 dentro do mesmo `boot`. No fim imprime o resumo:
+
+- **Linhas por tipo:** quantas `hc_item`, `hc_resultado`, `tel`, `passo`, `falha` e `sucesso` chegaram.
+- **Taxa média da tel:** perto de 5 Hz com o robô andando e de 1 Hz parado.
+- **Duração:** tempo coberto pelas linhas, medido pelo `t_ms` de cada `boot`.
+- **Buracos de seq:** cada `seq` esperado que não veio, com o número recebido no lugar.
+- **Linhas inválidas:** número da linha e o motivo.
+
+O script sai com 0 (`Resultado: OK`) só se não houver buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
 
 ## Organização
 
@@ -59,17 +81,22 @@ src/firmware/
 │   │   └── sim/          implementação simulada de cada contrato
 │   ├── simulacao/        mundo simulado: labirinto em texto + física do robô
 │   ├── simulador/        corrida célula a célula e roteiro de telemetria (FIRM-02)
+│   ├── contrato/         serializador do contrato v1 (ARQ-01) e seu teste byte a byte
+│   ├── telemetria/       buffer de 64 eventos, taxas da tel, interromper e boot na NVS (FIRM-07)
+│   ├── telemetria_nav/   conversão do rumo e das paredes da navegação para o contrato
+│   ├── energia/          estado da bateria
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
-│   └── navegacao/        flood fill (FIRM-01) — C puro
+│   └── navegacao/        flood fill (FIRM-01), C puro
 ├── src/
 │   ├── main.cpp          setup() e loop() do Arduino
 │   └── app/              tarefas FreeRTOS, estados, health-check, telemetria
 ├── simulador-navegacao/  programa de PC que roda a navegação nos labirintos (FIRM-02)
 │   └── labirintos/       24 labirintos válidos: 4x4, 8x4 e 12x4, espelhados
+├── tools/                verificar_serial.py, que confere a telemetria lida da serial
 └── test/                 testes Unity que rodam no PC
 ```
 
-As camadas só dependem das de baixo: `app → navegacao, controle → hal`. A `navegacao/` não pode incluir Arduino, FreeRTOS nem a HAL (o CI confere); ela recebe as paredes como parâmetro e devolve o próximo movimento. Assim o mesmo código roda na ESP32, nos testes e no simulador do PC (FIRM-02).
+As camadas só dependem das de baixo: `app` usa `navegacao` e `controle`, que usam a `hal`. A `navegacao/` não pode incluir Arduino, FreeRTOS nem a HAL (o CI confere); ela recebe as paredes como parâmetro e devolve o próximo movimento. Assim o mesmo código roda na ESP32, nos testes e no simulador do PC (FIRM-02).
 
 ### HAL real e HAL simulada
 
@@ -79,8 +106,8 @@ Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao ha
 
 | Tarefa | Núcleo | Função |
 |---|---|---|
-| `navegacao` | 1 | Lê os sensores, decide o movimento e põe um evento na fila (5 Hz) |
-| `telemetria` | 0 | Tira os eventos da fila e envia pelo Bluetooth; nunca bloqueia a navegação |
+| `navegacao` | 1 | Lê os sensores, decide o movimento e publica a amostra e os eventos do contrato nas filas (5 Hz); nunca espera pela telemetria |
+| `telemetria` | 0 | Envia o contrato v1 pelo Bluetooth (`tel` a 5 Hz em movimento e 1 Hz parado), guarda os últimos 64 eventos para reenviar depois de uma queda e lê o comando `interromper` vindo da ponte |
 
 ### Labirintos em texto
 
@@ -101,7 +128,7 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 ## Pendências
 
 - **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
-- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura) e as curvas de descarga da bateria (Energia, até os testes da 7.2). O formato das mensagens é provisório até o ARQ-01.
+- Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura) e as curvas de descarga da bateria (Energia, até os testes da 7.2).
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
 > [!WARNING]
