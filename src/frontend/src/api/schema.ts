@@ -13,7 +13,7 @@ export interface paths {
         };
         /**
          * Listar execuções, todas ou de um labirinto
-         * @description Sem o parâmetro, devolve 4x4, 8x4 e 12x4 na mesma lista. Com labirinto, devolve só o tipo pedido. Quando não há execução em andamento, o primeiro item é a execução mais recente já encerrada.
+         * @description Sem o parâmetro, devolve 4x4, 8x4 e 12x4 na mesma lista. Com labirinto, devolve só o tipo pedido. A execução em andamento, se houver, vem primeiro; as outras seguem da mais recente para a mais antiga. Quando não há execução em andamento, o primeiro item é a execução mais recente já encerrada. A lista é paginada por limite e offset, e o total de execuções do filtro vem no cabeçalho X-Total-Count.
          */
         get: operations["listarExecucoes"];
         put?: never;
@@ -457,6 +457,10 @@ export interface operations {
             query?: {
                 /** @example 4x4 */
                 tipo_labirinto?: components["schemas"]["Labirinto"];
+                /** @description Quantidade máxima de execuções na página. */
+                limite?: number;
+                /** @description Quantas execuções pular antes da página. */
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -467,12 +471,15 @@ export interface operations {
             /** @description Lista de execuções, da mais recente para a mais antiga. */
             200: {
                 headers: {
+                    /** @description Total de execuções do filtro, sem a paginação. */
+                    "X-Total-Count"?: number;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ResumoExecucao"][];
                 };
             };
+            422: components["responses"]["ErroValidacao"];
         };
     };
     novaExecucao: {

@@ -1,3 +1,4 @@
+import type { components } from '../api/schema'
 import type {
   Execucao,
   Falha,
@@ -8,6 +9,39 @@ import type {
   ResumoExecucao,
   Tentativa,
 } from '../api/tipos'
+
+/** Serializa os exemplos do protótipo no mesmo formato do contrato REST. */
+export function resumoAPI(dados: ResumoExecucao): components['schemas']['ResumoExecucao'] & { numero?: number } {
+  return {
+    execucao_id: dados.execucao_id,
+    numero: dados.numero,
+    tipo_labirinto: dados.labirinto,
+    status: dados.status,
+    tentativas_usadas: dados.tentativas_usadas,
+    iniciada_em: dados.iniciada_em,
+    tempo_total_s: dados.tempo_total_s,
+    velocidade_media: dados.velocidade_media,
+    consumo_bateria: dados.consumo_bateria,
+  }
+}
+
+export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDetalhe'] & { numero?: number } {
+  const { labirinto, ...restante } = dados
+  return {
+    ...restante,
+    tipo_labirinto: labirinto,
+    trajeto: dados.trajeto.map((passo) => ({ ...passo, passo_id: passo.seq })),
+    tentativas: dados.tentativas.map((tentativa) => {
+      const { tipo_descoberto, ...restanteTentativa } = tentativa
+      return {
+        ...restanteTentativa,
+        tipo_dip: tipo_descoberto,
+        health_check: tentativa.health_check.filter((item) => item.aprovado !== null)
+          .map((item) => ({ ...item, aprovado: item.aprovado! })),
+      }
+    }),
+  }
+}
 
 // Dados de exemplo do labirinto 4x4 do protótipo (execução #0042, largada em A1,
 // objetivo em D4). As datas são relativas ao carregamento da página, para que
@@ -149,7 +183,7 @@ export const ULTIMA_EXECUCAO: ResumoExecucao = {
   numero: 41,
   labirinto: '4x4',
   status: 'concluida',
-  resultado: 'success',
+  resultado: 'concluida',
   tentativas_usadas: 2,
   iniciada_em: '2026-09-24T21:12:47Z',
   tempo_total_s: 31.4,
@@ -164,7 +198,7 @@ export const HISTORICO: ResumoExecucao[] = [
     numero: 40,
     labirinto: '8x4',
     status: 'cancelada',
-    resultado: 'failed',
+    resultado: 'cancelada',
     tentativas_usadas: 3,
     iniciada_em: '2026-09-24T20:40:02Z',
     tempo_total_s: 412.7,
@@ -176,7 +210,7 @@ export const HISTORICO: ResumoExecucao[] = [
     numero: 36,
     labirinto: '4x4',
     status: 'concluida',
-    resultado: 'success',
+    resultado: 'concluida',
     tentativas_usadas: 1,
     iniciada_em: '2026-09-23T19:05:10Z',
     tempo_total_s: 27.9,
@@ -188,7 +222,7 @@ export const HISTORICO: ResumoExecucao[] = [
     numero: 32,
     labirinto: '8x4',
     status: 'concluida',
-    resultado: 'success',
+    resultado: 'concluida',
     tentativas_usadas: 1,
     iniciada_em: '2026-09-22T18:20:44Z',
     tempo_total_s: 108.6,
