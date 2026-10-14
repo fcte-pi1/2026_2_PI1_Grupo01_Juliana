@@ -212,7 +212,7 @@ Uma tarefa do cronograma de software só está **pronta** quando todos os itens 
 
 1. **Pull Request** aberto seguindo este guia (título com tag e número da issue, descrição completa).
 2. **Revisão** de pelo menos **uma pessoa** que não seja o autor do PR, com aprovação registrada no GitHub.
-3. **CI verde** nos workflows aplicáveis ao que mudou (`backend`, `frontend`, `firmware` e `destino-do-pr` quando for PR).
+3. **CI verde** nos workflows aplicáveis ao que mudou (`backend`, `frontend`, `firmware`, `simulador-telemetria` e `destino-do-pr` quando for PR).
 4. **Testes** cobrindo os critérios de aceite descritos na issue (unitários, integração ou roteiro manual documentado no PR, conforme a tarefa).
 5. **Issue fechada** após o merge (via `Closes #N` no PR ou fechamento manual com referência ao PR).
 6. **Documentação atualizada** quando o contrato ou a API pública mudar (OpenAPI, contrato de telemetria, README da área, docs em `docs/`).

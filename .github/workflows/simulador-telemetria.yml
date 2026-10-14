@@ -1,0 +1,53 @@
+name: simulador-telemetria
+
+# O simulador importa o contrato do backend (../backend), então mudanças no backend
+# também rodam aqui.
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - src/simulador-telemetria/**
+      - src/backend/**
+      - src/contrato/**
+      - .github/workflows/simulador-telemetria.yml
+  pull_request:
+    paths:
+      - src/simulador-telemetria/**
+      - src/backend/**
+      - src/contrato/**
+      - .github/workflows/simulador-telemetria.yml
+
+permissions:
+  contents: read
+
+jobs:
+  simulador-telemetria:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/simulador-telemetria
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: src/simulador-telemetria/uv.lock
+
+      # O backend não usa o uv: quando ele muda de dependência, o lock daqui fica velho.
+      - name: Conferir o uv.lock
+        run: |
+          if ! uv lock --check; then
+            echo "::error file=src/simulador-telemetria/uv.lock::uv.lock desatualizado. Rode 'uv lock' em src/simulador-telemetria e versione o arquivo."
+            exit 1
+          fi
+
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Ruff
+        run: uv run --locked ruff check .
+
+      - name: Pytest
+        run: uv run --locked pytest -q

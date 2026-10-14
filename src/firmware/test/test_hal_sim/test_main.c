@@ -107,7 +107,8 @@ static void test_relogio_virtual_anda_com_a_simulacao(void)
 static void test_bateria_boot_e_led(void)
 {
     sim_definir_bateria_mv(7500);
-    TEST_ASSERT_UINT16_WITHIN(1, (uint16_t)(7500 / BATERIA_DIVISOR), hal_bateria_ler_adc_mv());
+    TEST_ASSERT_UINT16_WITHIN(1, (uint16_t)((7500 - BATERIA_QUEDA_DIODO_MV) / BATERIA_DIVISOR),
+                              hal_bateria_ler_adc_mv());
 
     TEST_ASSERT_FALSE(hal_boot_pressionado());
     sim_definir_boot(true);

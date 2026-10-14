@@ -5,7 +5,7 @@ Esta pasta concentra o **código** do Sistema de Telemetria e do firmware do Mic
 - [`docs/2 - Requisitos.md`](../docs/2%20-%20Requisitos.md)
 - [`docs/4.4 - Projeto conceitual de software.md`](../docs/4.4%20-%20Projeto%20conceitual%20de%20software.md)
 
-Este arquivo registra **decisões de software tomadas durante o desenvolvimento** — o que foi escolhido na prática, por quê, e onde está no código ou na doc. As **12 decisões de arquitetura (ARQ-03)** e o oráculo de transições estão em [`docs/decisoes/`](../docs/decisoes/README.md). Quando uma decisão mudar a especificação, atualize também os documentos em `docs/`.
+Este arquivo registra **decisões de software tomadas durante o desenvolvimento** — o que foi escolhido na prática, por quê, e onde está no código ou na doc. As **13 decisões** em [`docs/decisoes/`](../docs/decisoes/README.md) (ARQ-03 e ADR-013) e o oráculo de transições estão nessa pasta. Quando uma decisão mudar a especificação, atualize também os documentos em `docs/`.
 
 ## Estrutura
 

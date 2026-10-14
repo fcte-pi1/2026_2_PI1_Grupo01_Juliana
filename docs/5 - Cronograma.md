@@ -79,7 +79,7 @@
 | 3.4 | ELE-07: Roteamento unificado da Placa de Circuito Impresso (PCB) / Placa Perfurada | Ana, João Vitor | 3.1, 3.2, 3.3 | 06/10/2026 | 21/10/2026 | 0% | Não iniciado | Alta |
 | **4** | **Bloco 2 (B2) — Testes de Subsistema: medição de consumo, teste de alimentação (Buck-Boost) e resposta dos sensores I²C isolados. Marco: AP12 (26/10)** | Ana, João Vitor, Juan, Anderson, Marcus, Fábio | 3 | 22/10/2026 | 26/10/2026 | 0% | Não iniciado | Alta |
 | 4.1 | ELE-08: Validação da tensão de 5V contínua pelo conversor Buck-Boost sob carga simulada | Juan, Anderson | 3.2 | 22/10/2026 | 23/10/2026 | 0% | Não iniciado | Alta |
-| 4.2 | ELE-09: Teste de resposta e calibração elétrica dos 4 sensores ToF via barramento I²C | Marcus, Fábio | 3.3 | 22/10/2026 | 25/10/2026 | 0% | Não iniciado | Alta |
+| 4.2 | ELE-09: Teste de resposta e calibração elétrica dos 3 sensores ToF via barramento I²C | Marcus, Fábio | 3.3 | 22/10/2026 | 25/10/2026 | 0% | Não iniciado | Alta |
 | 4.3 | ELE-10: Documentação das evidências de teste de hardware (AP12) | Ana, João Vitor | 4.1, 4.2 | 22/10/2026 | 26/10/2026 | 0% | Não iniciado | Alta |
 | **5** | **Bloco 3 (B3) — Integração no Robô: soldagem da placa, montagem física no chassi (30/10), calibração de sensores e ponte H com a equipe de Software. Marco: pronto em 19/11** | Ana, João Vitor, Juan, Anderson, Marcus, Fábio | 4 | 27/10/2026 | 18/11/2026 | 0% | Não iniciado | Alta |
 | 5.1 | ELE-11: Soldagem dos circuitos de controle, sensores e IHM na placa final | Marcus, Fábio | 3.4, 4.2 | 27/10/2026 | 29/10/2026 | 0% | Não iniciado | Alta |
@@ -142,7 +142,7 @@ Como previsão interna das nossas atividades planejamos para que o software fiqu
 | 2.2.4 | BACK-06 · Consultas (histórico, filtro, detalhe) | João Marcos | 2.1.4 | 02/10/2026 | 09/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.5 | FRONT-02 · Início e Nova execução | Karoline Luz | 2.2.2, 2.1.2 | 06/10/2026 | 08/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.6 | BACK-02 · Ingestão e validação da telemetria | Chris Escobar | 2.2.1, 2.1.3 | 07/10/2026 | 09/10/2026 | 0% | Não iniciado | Alta |
-| 2.2.7 | FIRM-03 · Driver dos 4 ToF (HAL simulada) | Luiza Pugas, Karoline Luz | 2.1.6 | 06/10/2026 | 09/10/2026 | 0% | Não iniciado | Alta |
+| 2.2.7 | FIRM-03 · Driver dos 3 ToF (HAL simulada) | Luiza Pugas, Karoline Luz | 2.1.6 | 06/10/2026 | 09/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.8 | BACK-03 · Gerenciador de execuções e tentativas | Amanda de Moura | 2.2.1, 2.1.1 | 07/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.9 | FRONT-05 · Encerrar e Retomar tentativa | Karoline Luz | 2.2.5 | 09/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |
 | 2.2.10 | FIRM-06 · Leitura da bateria (simulada) | Luiza Pugas, João Marcos | 2.1.6 | 10/10/2026 | 13/10/2026 | 0% | Não iniciado | Alta |

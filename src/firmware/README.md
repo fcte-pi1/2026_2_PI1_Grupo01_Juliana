@@ -33,7 +33,7 @@ Rodar dentro de `src/firmware`:
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
-| `make -C simulador` | Roda a navegação em todos os labirintos de `simulador/labirintos/` ([simulador no PC](simulador/README.md)) |
+| `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
 
 Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria (`tel` a 5 Hz e `heartbeat` a 1 Hz) e linhas `#` de depuração com as distâncias filtradas dos ToF simulados.
 
@@ -65,7 +65,7 @@ src/firmware/
 ├── src/
 │   ├── main.cpp          setup() e loop() do Arduino
 │   └── app/              tarefas FreeRTOS, estados, health-check, telemetria
-├── simulador/            programa de PC que roda a navegação nos labirintos (FIRM-02)
+├── simulador-navegacao/  programa de PC que roda a navegação nos labirintos (FIRM-02)
 │   └── labirintos/       24 labirintos válidos: 4x4, 8x4 e 12x4, espelhados
 └── test/                 testes Unity que rodam no PC
 ```
@@ -108,7 +108,7 @@ O robô tem 3 ToF: 1 frontal centralizado, apontado para a frente (0°), e 2 lat
 
 ### Labirintos em texto
 
-A simulação lê labirintos desenhados assim. No [simulador do PC](simulador/README.md), a largada é a célula marcada com `L` (sem a marca, a do canto inferior esquerdo) e o robô começa virado para a saída dela; o mundo simulado da ESP32 sempre começa em (0, 0), virado para o norte:
+A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-navegacao/README.md), a largada é a célula marcada com `L` (sem a marca, a do canto inferior esquerdo) e o robô começa virado para a saída dela; o mundo simulado da ESP32 sempre começa em (0, 0), virado para o norte:
 
 ```text
 +---+---+---+---+
