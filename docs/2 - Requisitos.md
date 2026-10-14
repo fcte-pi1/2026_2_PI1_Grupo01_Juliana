@@ -22,20 +22,27 @@
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
 | RF01 | Alimentação autônoma embarcada | O sistema de energia deve alimentar todos os subsistemas embarcados (microcontrolador, sensores, motores e módulo de comunicação) a partir de uma fonte transportada pelo próprio Micromouse, sem cabos ou fontes externas. | Must Have | Energia | Operação 100% autônoma exigida no slide 7. |
-| RF02 | Regulação das tensões de operação | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema, mantendo-os dentro da faixa de operação especificada pelos respectivos componentes. | Must Have | Energia | Faixas a definir com a Eletrônica após a escolha do microcontrolador e dos drivers. |
+| RF02 | Regulação das tensões de operação | O sistema de energia deve fornecer, a partir da fonte, os níveis de tensão exigidos por cada subsistema, mantendo-os dentro da faixa de operação especificada pelos respectivos componentes. | Must Have | Energia | Faixas definidas no 4.2 (Tabela 7): fonte LiPo 2S de 7,0 a 8,4 V úteis (corte em 7,0 V) ou 4 × AA (6,0 V nominais); 5 V com pelo menos 1 A para o ESP32 e o LDO; 3,3 V com pelo menos 200 mA para ToF e encoders; 6 V médios nos motores por limite de PWM. |
 | RF03 | Compatibilidade com Múltiplas Fontes de Energia | O sistema de energia deve prover um meio de comutação manual para selecionar a fonte de alimentação ativa a partir de entradas de energia alternativas, sem alterações físicas na placa. | Should Have | Energia | Permite operar com fontes de químicas ou especificações diferentes sem reprojeto. |
 | RF04 | Medição do nível de carga | O sistema de energia deve disponibilizar ao microcontrolador uma grandeza elétrica que permita estimar a carga restante da fonte, sem impor um método específico de medição. | Must Have | Energia | Alimenta o dado de telemetria "consumo de bateria" (slide 11). |
-| RF05 | Sinalização do estado de energia | O sistema de energia deve indicar que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação. | Should Have | Energia | Evita iniciar uma tentativa com carga insuficiente. |
+| RF05 | Sinalização do estado de energia | O sistema de energia deve indicar que o robô está energizado e sinalizar quando a carga atingir o nível mínimo de operação. | Should Have | Energia | Evita iniciar uma tentativa com carga insuficiente. Alerta em 3,7 V por célula (7,4 V) na LiPo, antes do corte em 3,5 V por célula (7,0 V); 5,0 V nas pilhas AA (4.2, seção 5.3). |
 | RF06 | Troca e recarga sem desmontagem | O sistema de energia deve permitir a troca ou a recarga da fonte sem desmontar a estrutura do Micromouse. | Must Have | Energia | Entre tentativas só são permitidos pequenos reparos com o robô em repouso (slide 10). |
-| RF07 | Instalação e remoção da fonte de energia | O sistema de energia deve permitir instalar e remover a fonte de energia sem ferramentas especiais, mantendo-a fixada à estrutura durante todo o percurso, sem deslocamento em curvas, vibração ou colisão. | Must Have | Energia | A fonte solta pode interromper a alimentação no meio da corrida; colisões são previstas no slide 10. |
+| RF07 | Instalação e remoção da fonte de energia | O sistema de energia deve permitir instalar e remover a fonte de energia sem ferramentas especiais, mantendo-a fixada à estrutura durante todo o percurso, sem deslocamento em curvas, vibração ou colisão. | Must Have | Energia | A fonte solta pode interromper a alimentação no meio da corrida; colisões são previstas no slide 10. A fonte é ligada por conector XT30 polarizado, sem solda (4.2, seção 4.4). |
 
 ### Requisitos Não Funcionais
 
 | ID | Nome do Requisito | Descrição | Prioridade | Responsável | Observações |
 | :---: | :---- | :---- | :---: | :---- | :---- |
 | RNF01 | Separação entre potência e lógica | O sistema de energia deve manter a alimentação dos motores independente da alimentação da lógica, seja por fontes distintas, seja por barramentos regulados separados, de modo que os picos de corrente do acionamento não provoquem reinicialização do microcontrolador nem leituras erradas dos sensores. | Must Have | Energia | |
-| RNF02 | Autonomia de operação | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, 30 minutos, equivalentes aos três labirintos de 10 minutos cada, sem troca nem recarga. | Must Have | Energia | Slides 21, 22 e 23: cada labirinto tem 10 minutos, com até três tentativas dentro desse tempo. |
+| RNF02 | Autonomia de operação | A fonte de energia deve manter o Micromouse em operação contínua por, no mínimo, 30 minutos, equivalentes aos três labirintos de 10 minutos cada, sem troca nem recarga. | Must Have | Energia | Slides 21, 22 e 23: cada labirinto tem 10 minutos, com até três tentativas dentro desse tempo. A LiPo de 650 mAh adotada dá cerca de 72 min no pior caso (4.2, Tabela 6). |
 | RNF03 | Dimensionamento da capacidade da fonte | A capacidade da fonte escolhida deve ser justificada por cálculo prévio do consumo médio e de pico de todos os subsistemas, considerando a autonomia exigida, a parcela realmente utilizável da capacidade nominal e uma margem de segurança mínima de 30%. | Must Have | Energia | Margem de 25% a 30% é a prática usual em robótica móvel. |
+| RNF04 | Proteções elétricas da fonte | O sistema de energia deve proteger o Micromouse contra sobrecorrente e curto-circuito, inversão de polaridade da fonte e descarga profunda da bateria. | Must Have | Energia | 4.2, Tabela 9: fusível rearmável PTC de 2,0 A, diodo Schottky em série na entrada e corte por subtensão em 7,0 V feito pelo firmware. Apontado pelo item 2.3 da EAP. |
+
+#### Histórico de Versões (Requisitos — Energia)
+
+| Versão | Data | Descrição | Autor(es) |
+| :----: | :--: | --------- | --------- |
+| 1.0 | 08/10/2026 | Revisão dos requisitos de Energia diante do projeto conceitual v1.5: faixas de tensão no RF02, limites de alerta no RF05, conector no RF07, autonomia da bateria adotada no RNF02 e criação do RNF04 (proteções) [#163](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/163). | [João Marcos Moraes de Andrade](https://github.com/JJOAOMARCOSS), [Giovana Martins de Brito](https://github.com/Giih-martins) |
 
 ## ELETRÔNICA
 
