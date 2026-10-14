@@ -1,0 +1,64 @@
+/* Tokens do protótipo no Figma (docs/figs/prototipo): cores, tipografia e espaçamento. */
+
+:root {
+  /* Superfícies */
+  --cor-fundo: #f3f5f9;
+  --cor-superficie: #ffffff;
+  --cor-superficie-suave: #f5f7fb;
+  --cor-borda: #e3e8ef;
+  --cor-borda-forte: #cfd7e3;
+
+  /* Barra lateral e labirinto */
+  --cor-lateral: #0d1628;
+  --cor-lateral-item: #18233a;
+  --cor-lateral-texto: #c9d2e3;
+  --cor-lateral-suave: #7b879e;
+  --cor-labirinto-fundo: #0d1628;
+  --cor-labirinto-celula: #1c2840;
+  --cor-labirinto-parede: #e6ebf2;
+
+  /* Texto */
+  --cor-texto: #0f172a;
+  --cor-texto-secundario: #475569;
+  --cor-texto-suave: #64748b;
+
+  /* Estados */
+  --cor-primaria: #2563eb;
+  --cor-primaria-suave: #e8effd;
+  --cor-sucesso: #16a34a;
+  --cor-sucesso-suave: #e8f6ee;
+  --cor-perigo: #dc2626;
+  --cor-perigo-suave: #fdecec;
+  --cor-alerta: #f59e0b;
+  --cor-alerta-suave: #fef6e4;
+  --cor-retomada: #7c3aed;
+  --cor-retomada-suave: #f1ebfe;
+
+  /* Tipografia */
+  --fonte-texto: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fonte-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --texto-xs: 0.6875rem;
+  --texto-sm: 0.8125rem;
+  --texto-md: 0.9375rem;
+  --texto-lg: 1.125rem;
+  --texto-xl: 1.5rem;
+  --texto-numero: 2.25rem;
+  --texto-cronometro: 3.5rem;
+
+  /* Espaçamento */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+
+  /* Forma */
+  --raio-sm: 6px;
+  --raio-md: 10px;
+  --raio-lg: 14px;
+  --raio-pilula: 999px;
+  --sombra-modal: 0 24px 64px rgb(15 23 42 / 0.25);
+  --largura-lateral: 248px;
+}

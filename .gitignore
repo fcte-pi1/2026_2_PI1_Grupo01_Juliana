@@ -2,8 +2,29 @@
 .DS_Store
 .vscode
 
-# Adicione outros arquivos a serem ignorados aqui
-# ...
+# Python (src/backend)
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# PlatformIO (src/firmware)
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# Node (src/frontend)
+node_modules/
+dist/
+dist-ssr/
+build/
+.next/
+coverage/
 
 # LaTeX
 
@@ -342,3 +363,18 @@ TSWLatexianTemp*
 .DS_Store
 Thumbs.db
 
+
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+.env
+
+# Firmware (teste no PC)
+src/firmware/**/build/
+
+# Windows (metadados de download no WSL)
+*:Zone.Identifier
+
+# Simulador (estado local: boot persistido)
+.simulador/

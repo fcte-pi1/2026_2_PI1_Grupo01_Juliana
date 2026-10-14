@@ -1,0 +1,11 @@
+# 4x4 com 2 ciclos (semente 12).
+# Largada (L) virada para o norte; o labirinto se estende à direita do robô.
++---+---+---+---+
+|               |
++   +---+---+---+
+|               |
++---+   +---+   +
+|       |       |
++   +   +   +   +
+| L |           |
++---+---+---+---+

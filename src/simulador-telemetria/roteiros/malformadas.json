@@ -1,0 +1,27 @@
+{
+  "nome": "malformadas",
+  "labirinto": "4x4",
+  "bateria_inicial_mv": 7900,
+  "s_por_celula": 0.8,
+  "tentativas": [
+    {
+      "inicio": "nova",
+      "celulas": [
+        {"x": 0, "y": 0, "paredes": 14},
+        {"x": 0, "y": 1, "paredes": 12},
+        {"x": 0, "y": 2, "paredes": 12},
+        {"x": 0, "y": 3, "paredes": 9},
+        {"x": 1, "y": 3, "paredes": 3}
+      ],
+      "eventos": [
+        {"na_celula": 1, "tipo": "linha_crua", "linha": "isto não é json"},
+        {"na_celula": 1, "tipo": "linha_crua", "linha": "{\"v\":2,\"boot\":0,\"seq\":9999,\"t_ms\":2900,\"tipo\":\"passo\",\"x\":0,\"y\":1,\"paredes\":12}"},
+        {"na_celula": 2, "tipo": "linha_crua", "linha": "{\"v\":1,\"boot\":0,\"seq\":9999,\"t_ms\":3700,\"tipo\":\"passo\",\"x\":12,\"y\":2,\"paredes\":12}"},
+        {"na_celula": 2, "tipo": "linha_crua", "linha": "{\"v\":1,\"boot\":0,\"seq\":9999,\"t_ms\":4000,\"tipo\":\"tel\",\"estado\":\"running\",\"x\":0,\"y\":2,\"rumo\":\"N\",\"bat_mv\":7890,\"vel_mm_s\":225,\"eixo_longo\":null,\"obs\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"},
+        {"na_celula": 3, "tipo": "linha_crua", "linha": "{\"v\":1,\"boot\":0,\"seq\":9999,\"t_ms\":4500,\"tipo\":\"falha\",\"motivo\":\"collision\",\"origem\":\"web\",\"x\":0,\"y\":3,\"componente\":null}"},
+        {"na_celula": 3, "tipo": "linha_crua", "linha": "{\"v\":1,\"boot\":0,\"seq\":9999,\"t_ms\":4500,\"tipo\":\"odometria\",\"x\":0,\"y\":3}"}
+      ],
+      "fim": {"tipo": "sucesso"}
+    }
+  ]
+}
