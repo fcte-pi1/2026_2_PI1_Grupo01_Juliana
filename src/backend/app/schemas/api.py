@@ -12,8 +12,7 @@ TipoInicio = Literal["nova", "retomada"]
 TipoDip = Literal["4x4", "8x4", "12x4", "invalido"]
 Componente = Literal[
     "bateria",
-    "tof_frontal_esq",
-    "tof_frontal_dir",
+    "tof_frontal",
     "tof_esquerdo",
     "tof_direito",
     "motor_esquerdo",
