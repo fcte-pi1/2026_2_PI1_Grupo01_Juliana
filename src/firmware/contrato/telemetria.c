@@ -11,8 +11,7 @@ static const char *const EIXOS[] = {"null", "\"x\"", "\"y\""};
 static const char *const COMPONENTES[] = {
     "null",
     "\"bateria\"",
-    "\"tof_frontal_esq\"",
-    "\"tof_frontal_dir\"",
+    "\"tof_frontal\"",
     "\"tof_esquerdo\"",
     "\"tof_direito\"",
     "\"motor_esquerdo\"",

@@ -166,7 +166,7 @@ export interface components {
          */
         TipoDip: "4x4" | "8x4" | "12x4" | "invalido";
         /** @enum {string} */
-        Componente: "bateria" | "tof_frontal_esq" | "tof_frontal_dir" | "tof_esquerdo" | "tof_direito" | "motor_esquerdo" | "motor_direito" | "encoder_esquerdo" | "encoder_direito";
+        Componente: "bateria" | "tof_frontal" | "tof_esquerdo" | "tof_direito" | "motor_esquerdo" | "motor_direito" | "encoder_esquerdo" | "encoder_direito";
         /** @enum {string} */
         MotivoFalha: "collision" | "stuck" | "out_of_track" | "time_exceeded" | "falha_componente" | "low_battery" | "health_check_failed" | "link_lost" | "encerrado_operador";
         /**

@@ -92,7 +92,7 @@ def test_detalhe_com_tentativas_trajeto_health_check_e_falha(client, fabrica):
     assert detalhe["tempo_total_s"] == 118.4
     assert [t["attempt_index"] for t in detalhe["tentativas"]] == [1, 2, 3]
     assert [t["status"] for t in detalhe["tentativas"]] == ["failed", "failed", "success"]
-    assert all(len(t["health_check"]) == 9 for t in detalhe["tentativas"])
+    assert all(len(t["health_check"]) == 8 for t in detalhe["tentativas"])
     assert detalhe["tentativas"][0]["falha"]["motivo"] == "collision"
     assert detalhe["tentativas"][0]["falha"]["celula_x"] == 5
     assert detalhe["tentativas"][2]["falha"] is None

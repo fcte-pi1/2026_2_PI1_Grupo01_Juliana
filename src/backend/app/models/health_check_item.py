@@ -12,8 +12,8 @@ class HealthCheckItem(Base):
     __table_args__ = (
         CheckConstraint(
             "componente IN ("
-            "'bateria', 'tof_frontal_esq', 'tof_frontal_dir', 'tof_esquerdo', "
-            "'tof_direito', 'motor_esquerdo', 'motor_direito', "
+            "'bateria', 'tof_frontal', 'tof_esquerdo', 'tof_direito', "
+            "'motor_esquerdo', 'motor_direito', "
             "'encoder_esquerdo', 'encoder_direito'"
             ")",
             name="ck_health_check_item_componente",

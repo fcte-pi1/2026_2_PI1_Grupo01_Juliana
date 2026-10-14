@@ -20,10 +20,10 @@
 #define PINO_I2C_SCL        22
 
 /* XSHUT: liga um ToF por vez na inicialização para trocar o endereço I²C */
-#define PINO_XSHUT_FE       33  /* frontal esquerdo */
-#define PINO_XSHUT_FD       18  /* frontal direito */
+#define PINO_XSHUT_F        33  /* frontal; PROVISÓRIO até o esquemático novo */
 #define PINO_XSHUT_E        4   /* lateral esquerdo */
 #define PINO_XSHUT_D        5   /* lateral direito (GPIO5 é strapping: nível alto no boot) */
+/* GPIO 18 livre (era o XSHUT do segundo frontal) */
 
 /*
  * Ponte H dupla (TB6612FNG): PWM de velocidade + 2 linhas de sentido por motor — PROVISÓRIO.
