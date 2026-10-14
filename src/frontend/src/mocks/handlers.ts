@@ -71,7 +71,7 @@ export const handlers = [
     }, { status: 201 })
   }),
 
-  http.post(`${API}/execucoes/:id/encerrar`, () => {
+  http.post(`${API}/execucoes/:id/encerrar-tentativa`, () => {
     avancarCenario('08-encerrada-como-falha')
     return HttpResponse.json(execucaoDoCenario())
   }),
