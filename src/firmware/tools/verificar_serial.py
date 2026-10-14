@@ -133,12 +133,23 @@ def ler_serial(porta: str, baud: int, duracao_s: float) -> Iterator[bytes]:
     conexao.dtr = False
     conexao.rts = False
     conexao.open()
-    fim = time.monotonic() + duracao_s
     with conexao:
-        while time.monotonic() < fim:
-            linha = conexao.readline()
-            if linha.endswith(b"\n"):
-                yield linha
+        yield from ler_linhas(conexao, duracao_s)
+
+
+def ler_linhas(conexao, duracao_s: float) -> Iterator[bytes]:
+    """Lê linhas completas de uma conexão já aberta até acabar a duração."""
+    fim = time.monotonic() + duracao_s
+    # A porta pode abrir no meio de uma linha: limpa a entrada e descarta
+    # tudo até o primeiro fim de linha, para não contar o pedaço como inválido.
+    conexao.reset_input_buffer()
+    while time.monotonic() < fim:
+        if conexao.readline().endswith(b"\n"):
+            break
+    while time.monotonic() < fim:
+        linha = conexao.readline()
+        if linha.endswith(b"\n"):
+            yield linha
 
 
 def criar_parser() -> argparse.ArgumentParser:

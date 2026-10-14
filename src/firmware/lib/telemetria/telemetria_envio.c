@@ -100,6 +100,7 @@ static uint32_t ultima_tel_ms, ultimo_evento_ms;
 static char linha_recebida[TELEMETRIA_LINHA_RECEBIDA];
 static size_t tamanho_recebido;
 static bool descartando; /* linha longa: ignora até o próximo "\n" */
+static bool linha_partida; /* escrita parcial ficou sem o "\n" do fim */
 
 uint32_t telemetria_descartados(void)
 {
@@ -124,6 +125,7 @@ void telemetria_iniciar(uint32_t boot)
     ultima_tel_ms = ultimo_evento_ms = 0;
     tamanho_recebido = 0;
     descartando = false;
+    linha_partida = false;
     atomic_store(&interrupcao, 0u);
 }
 
@@ -145,15 +147,28 @@ static uint32_t periodo_tel(const telemetria_amostra_t *amostra)
                                  : TELEMETRIA_PERIODO_TEL_PARADO_MS;
 }
 
-/* Escreve a linha inteira; menos bytes aceitos conta como queda do link. */
+/*
+ * Escreve a linha inteira; menos bytes aceitos conta como queda do link. Se
+ * uma escrita anterior saiu pela metade, manda antes um "\n" sozinho: o
+ * receptor descarta só o pedaço partido e esta linha chega íntegra.
+ */
 static bool escrever(const char *linha, int tamanho)
 {
     if (tamanho <= 0) {
         return false;
     }
-    if (hal_bt_escrever(linha, (size_t)tamanho) == (size_t)tamanho) {
+    if (linha_partida) {
+        if (hal_bt_escrever("\n", 1) != 1) {
+            conectado_antes = false;
+            return false;
+        }
+        linha_partida = false;
+    }
+    size_t escrito = hal_bt_escrever(linha, (size_t)tamanho);
+    if (escrito == (size_t)tamanho) {
         return true;
     }
+    linha_partida = escrito > 0;
     conectado_antes = false; /* a próxima volta vê a borda e rebobina */
     return false;
 }

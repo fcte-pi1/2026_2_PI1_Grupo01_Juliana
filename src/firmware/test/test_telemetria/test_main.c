@@ -357,11 +357,12 @@ static void test_escrita_parcial_forca_o_reenvio_desde_o_mais_antigo(void)
     hal_bt_sim_limitar_escrita(SIZE_MAX);
     rodar(100, 300, NULL);
 
-    TEST_ASSERT_EQUAL_INT(4, qtd_escritas);
-    TEST_ASSERT_EQUAL_STRING(escritas[0].texto, escritas[2].texto);
-    TEST_ASSERT_EQUAL_UINT32(2, campo(&escritas[3], "x"));
-    TEST_ASSERT_EQUAL_UINT32(1, campo(&escritas[3], "seq"));
-    TEST_ASSERT_EQUAL_UINT32(50, campo(&escritas[3], "t_ms"));
+    TEST_ASSERT_EQUAL_INT(5, qtd_escritas);
+    TEST_ASSERT_EQUAL_STRING("\n", escritas[2].texto);
+    TEST_ASSERT_EQUAL_STRING(escritas[0].texto, escritas[3].texto);
+    TEST_ASSERT_EQUAL_UINT32(2, campo(&escritas[4], "x"));
+    TEST_ASSERT_EQUAL_UINT32(1, campo(&escritas[4], "seq"));
+    TEST_ASSERT_EQUAL_UINT32(50, campo(&escritas[4], "t_ms"));
 }
 
 static void test_tel_parcial_nao_consome_seq(void)
@@ -372,8 +373,50 @@ static void test_tel_parcial_nao_consome_seq(void)
     relogio = 50;
     telemetria_passo(50, &PARADO);
 
-    TEST_ASSERT_EQUAL_INT(2, qtd_escritas);
-    TEST_ASSERT_EQUAL_UINT32(0, campo(&escritas[1], "seq"));
+    TEST_ASSERT_EQUAL_INT(3, qtd_escritas);
+    TEST_ASSERT_EQUAL_UINT32(0, campo(&escritas[2], "seq"));
+}
+
+/* Junta o que saiu no fio e devolve a linha de número pedido (a partir de 0). */
+static const char *linha_do_fio(int numero, char *destino, size_t tamanho)
+{
+    static char fio[MAX_ESCRITAS * 8];
+    size_t usado = 0;
+    for (int i = 0; i < qtd_escritas; i++) {
+        TEST_ASSERT_LESS_THAN_size_t(sizeof fio, usado + escritas[i].tamanho);
+        memcpy(fio + usado, escritas[i].texto, escritas[i].tamanho);
+        usado += escritas[i].tamanho;
+    }
+    fio[usado] = '\0';
+    const char *inicio = fio;
+    for (int i = 0; i < numero; i++) {
+        inicio = strchr(inicio, '\n');
+        TEST_ASSERT_NOT_NULL(inicio);
+        inicio++;
+    }
+    const char *fim = strchr(inicio, '\n');
+    TEST_ASSERT_NOT_NULL(fim);
+    size_t n = (size_t)(fim - inicio + 1);
+    TEST_ASSERT_LESS_THAN_size_t(tamanho, n);
+    memcpy(destino, inicio, n);
+    destino[n] = '\0';
+    return destino;
+}
+
+static void test_escrita_parcial_e_fechada_antes_da_proxima_linha(void)
+{
+    inserir_evento_passo(1);
+    hal_bt_sim_limitar_escrita(10);
+    telemetria_passo(0, NULL); /* o 1 sai pela metade, seq 0 */
+    hal_bt_sim_limitar_escrita(SIZE_MAX);
+    rodar(50, 300, NULL);
+
+    char inteira[CONTRATO_TAMANHO_MAXIMO + 1];
+    char linha[CONTRATO_TAMANHO_MAXIMO + 1];
+    inserir_passo(1);
+    enviar(inteira, 0);
+
+    TEST_ASSERT_EQUAL_STRING(inteira, linha_do_fio(1, linha, sizeof linha));
 }
 
 /* ---------- comando interromper ---------- */
@@ -487,6 +530,7 @@ int main(void)
     RUN_TEST(test_evento_enviado_antes_da_queda_sai_com_o_mesmo_carimbo);
     RUN_TEST(test_escrita_parcial_forca_o_reenvio_desde_o_mais_antigo);
     RUN_TEST(test_tel_parcial_nao_consome_seq);
+    RUN_TEST(test_escrita_parcial_e_fechada_antes_da_proxima_linha);
     RUN_TEST(test_comando_interromper_liga_a_flag);
     RUN_TEST(test_comando_partido_em_duas_voltas_liga_a_flag);
     RUN_TEST(test_comando_com_crlf_liga_a_flag);

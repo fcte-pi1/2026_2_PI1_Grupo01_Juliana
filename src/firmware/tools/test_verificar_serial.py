@@ -4,7 +4,7 @@ import json
 import sys
 
 import pytest
-from verificar_serial import main
+from verificar_serial import ler_linhas, main
 
 
 def mensagem(seq: int, tipo: str = "tel", boot: int = 3, t_ms: int | None = None) -> str:
@@ -92,3 +92,29 @@ def test_modo_arquivo_nao_importa_pyserial(tmp_path, capsys, monkeypatch):
     monkeypatch.setitem(sys.modules, "serial", None)  # import serial falharia
     codigo, _ = rodar(tmp_path, [mensagem(0)], capsys)
     assert codigo == 0
+
+
+class ConexaoFalsa:
+    """Imita a porta serial: devolve os pedaços pedidos, um por readline."""
+
+    def __init__(self, pedacos: list[bytes]):
+        self.pedacos = list(pedacos)
+        self.entrada_limpa = False
+
+    def reset_input_buffer(self) -> None:
+        self.entrada_limpa = True
+
+    def readline(self) -> bytes:
+        return self.pedacos.pop(0) if self.pedacos else b""
+
+
+def test_porta_aberta_no_meio_descarta_o_pedaco_da_primeira_linha():
+    inteira = mensagem(0).encode()
+    conexao = ConexaoFalsa([b'"x":0}\n', inteira, b"", mensagem(1).encode()])
+    linhas = []
+    for linha in ler_linhas(conexao, 1.0):
+        linhas.append(linha)
+        if len(linhas) == 2:
+            break
+    assert conexao.entrada_limpa
+    assert linhas == [inteira, mensagem(1).encode()]
