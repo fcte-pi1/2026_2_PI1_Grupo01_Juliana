@@ -56,8 +56,18 @@ void tarefa_navegacao(void *parametro)
 
     TickType_t proximo = xTaskGetTickCount();
     bool led = false;
+#ifdef TELEMETRIA_DEPURACAO
+    uint32_t volta_anterior = hal_tempo_ms();
+#endif
 
     for (;;) {
+#ifdef TELEMETRIA_DEPURACAO
+        uint32_t inicio_volta = hal_tempo_ms();
+        if (inicio_volta - volta_anterior > app_nav_periodo_max_ms) {
+            app_nav_periodo_max_ms = inicio_volta - volta_anterior;
+        }
+        volta_anterior = inicio_volta;
+#endif
 #ifdef HAL_SIMULADA
         /* O mundo simulado anda junto com o tempo real. */
         sim_mundo_avancar(PERIODO_MS);

@@ -79,6 +79,7 @@ typedef struct {
     uint32_t qtd;            /* eventos no buffer, até TELEMETRIA_BUFFER_EVENTOS */
     uint32_t cursor;         /* próximo evento a enviar */
     uint32_t carimbados_ate; /* eventos < carimbados_ate já têm cabeçalho */
+    uint32_t descartados;    /* eventos que saíram do buffer sem nunca ter sido enviados */
 } telemetria_buffer_t;
 
 void telemetria_buffer_iniciar(telemetria_buffer_t *b);
@@ -124,6 +125,9 @@ void telemetria_inserir_evento(const telemetria_evento_t *e);
  * TELEMETRIA_PERIODO_EVENTO_MS.
  */
 uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra);
+
+/* Eventos perdidos por buffer cheio antes do primeiro envio (depuração). */
+uint32_t telemetria_descartados(void);
 
 /*
  * true se chegou o comando interromper desde a última chamada; a flag é zerada

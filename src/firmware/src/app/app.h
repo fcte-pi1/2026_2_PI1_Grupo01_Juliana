@@ -21,6 +21,15 @@ extern uint32_t app_boot;
  */
 extern volatile uint32_t app_eventos_descartados;
 
+#ifdef TELEMETRIA_DEPURACAO
+/*
+ * Maior intervalo entre duas voltas do laço da navegação, em ms. A navegação
+ * só aumenta e a telemetria zera a cada linha "#"; um máximo perdido na
+ * corrida entre as duas só afeta a depuração.
+ */
+extern volatile uint32_t app_nav_periodo_max_ms;
+#endif
+
 void app_iniciar(void);
 
 /* Publicam para a telemetria sem nunca esperar. */

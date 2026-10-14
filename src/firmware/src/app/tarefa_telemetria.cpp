@@ -1,75 +1,69 @@
 /*
- * Tarefa de telemetria (núcleo 0): tira os eventos da fila e envia uma linha
- * JSON por mensagem para a ponte do notebook.
+ * Tarefa de telemetria (núcleo 0): liga as filas da navegação à
+ * lib/telemetria, que serializa o contrato v1 (ARQ-01, #107), guarda os
+ * eventos para reenvio e lê o comando interromper.
  *
- * O formato segue o que está descrito no ARQ-01 (#107), mas é PROVISÓRIO:
- * a serialização completa, o buffer de reenvio e a leitura do comando
- * "interromper" são o FIRM-07 (#123).
+ * A tarefa espera na fila de eventos até o próximo prazo devolvido por
+ * telemetria_passo (no máximo 50 ms), então um evento novo a acorda na hora.
  */
 
 #include <Arduino.h>
-#include <stdio.h>
 
 #include "app.h"
 #include "eventos.h"
-#include "hal_bt.h"
 #include "hal_tempo.h"
 
-#define VERSAO_CONTRATO     1
-#define PERIODO_HEARTBEAT   1000
-#define PERIODO_TEL         200
-#define TAMANHO_MENSAGEM    256  /* limite do ARQ-01 */
+#ifdef TELEMETRIA_DEPURACAO
+#include <stdio.h>
 
-static uint32_t seq;
+#include "hal_bt.h"
 
-static void enviar(const char *linha, int tamanho)
+#define PERIODO_DEPURACAO_MS 5000
+
+/* Linha "#" que o backend e o verificar_serial.py ignoram. */
+static void enviar_depuracao(void)
 {
-    if (tamanho > 0 && tamanho < TAMANHO_MENSAGEM) {
-        hal_bt_escrever(linha, (size_t)tamanho);
+    char linha[96];
+    uint32_t nav_max = app_nav_periodo_max_ms;
+    app_nav_periodo_max_ms = 0;
+    int n = snprintf(linha, sizeof(linha),
+                     "# tel desc_fila=%lu desc_buffer=%lu nav_periodo_max_ms=%lu\n",
+                     (unsigned long)app_eventos_descartados,
+                     (unsigned long)telemetria_descartados(), (unsigned long)nav_max);
+    if (n > 0 && (size_t)n < sizeof(linha)) {
+        hal_bt_escrever(linha, (size_t)n);
     }
 }
-
-static void enviar_tel(const telemetria_amostra_t *amostra)
-{
-    char linha[TAMANHO_MENSAGEM];
-    int n = snprintf(linha, sizeof(linha),
-                     "{\"v\":%d,\"seq\":%lu,\"t_ms\":%lu,\"tipo\":\"tel\","
-                     "\"x\":%u,\"y\":%u,\"bat_mv\":%u,\"vel_mm_s\":0,"
-                     "\"estado\":\"parado\",\"tipo_lab\":\"indeterminado\"}\n",
-                     VERSAO_CONTRATO, (unsigned long)seq++, (unsigned long)hal_tempo_ms(),
-                     amostra->tel.x, amostra->tel.y, amostra->tel.bat_mv);
-    enviar(linha, n);
-}
-
-static void enviar_heartbeat(void)
-{
-    char linha[TAMANHO_MENSAGEM];
-    int n = snprintf(linha, sizeof(linha),
-                     "{\"v\":%d,\"seq\":%lu,\"t_ms\":%lu,\"tipo\":\"heartbeat\"}\n",
-                     VERSAO_CONTRATO, (unsigned long)seq++, (unsigned long)hal_tempo_ms());
-    enviar(linha, n);
-}
+#endif
 
 void tarefa_telemetria(void *parametro)
 {
     (void)parametro;
-    uint32_t ultimo_heartbeat = 0;
-    uint32_t ultima_tel = 0;
+    telemetria_iniciar(app_boot);
+    uint32_t espera_ms = TELEMETRIA_PERIODO_EVENTO_MS;
     telemetria_evento_t ev;
     telemetria_amostra_t amostra;
+#ifdef TELEMETRIA_DEPURACAO
+    uint32_t ultima_depuracao = hal_tempo_ms();
+#endif
 
     for (;;) {
-        /* Por enquanto os eventos são descartados; o buffer de reenvio entra na próxima etapa. */
-        xQueueReceive(fila_eventos, &ev, pdMS_TO_TICKS(100));
+        if (xQueueReceive(fila_eventos, &ev, pdMS_TO_TICKS(espera_ms)) == pdTRUE) {
+            do {
+                telemetria_inserir_evento(&ev);
+            } while (xQueueReceive(fila_eventos, &ev, 0) == pdTRUE);
+        }
 
+        /* Antes da primeira amostra a fila está vazia e nenhuma tel sai. */
+        bool tem_amostra = xQueuePeek(fila_amostra, &amostra, 0) == pdTRUE;
         uint32_t agora = hal_tempo_ms();
-        if (agora - ultima_tel >= PERIODO_TEL && xQueuePeek(fila_amostra, &amostra, 0) == pdTRUE) {
-            ultima_tel = agora;
-            enviar_tel(&amostra);
+        espera_ms = telemetria_passo(agora, tem_amostra ? &amostra : NULL);
+
+#ifdef TELEMETRIA_DEPURACAO
+        if (agora - ultima_depuracao >= PERIODO_DEPURACAO_MS) {
+            ultima_depuracao = agora;
+            enviar_depuracao();
         }
-        if (agora - ultimo_heartbeat >= PERIODO_HEARTBEAT) {
-            ultimo_heartbeat = agora;
-            enviar_heartbeat();
-        }
+#endif
     }
 }

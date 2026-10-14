@@ -103,6 +103,7 @@ static void test_70_insercoes_guardam_as_64_mais_novas(void)
     TEST_ASSERT_EQUAL_UINT32(70, buffer.total);
     TEST_ASSERT_EQUAL_UINT32(TELEMETRIA_BUFFER_EVENTOS, buffer.qtd);
     TEST_ASSERT_EQUAL_UINT32(6, buffer.cursor);
+    TEST_ASSERT_EQUAL_UINT32(6, buffer.descartados);
 
     char linha[CONTRATO_TAMANHO_MAXIMO + 1];
     for (uint8_t x = 6; x < 70; x++) {
@@ -145,6 +146,7 @@ static void test_descartado_sem_sair_nao_consome_seq(void)
     }
     TEST_ASSERT_EQUAL_UINT32(2, buffer.cursor);
     TEST_ASSERT_EQUAL_UINT32(2, buffer.carimbados_ate);
+    TEST_ASSERT_EQUAL_UINT32(1, buffer.descartados);
 
     enviar(linha, 0);
     TEST_ASSERT_EQUAL_UINT32(1, buffer.eventos[2 % 64].cab.seq);
@@ -164,6 +166,7 @@ static void test_carimbado_descartado_leva_carimbados_ate_junto(void)
     inserir_passo(64); /* descarta o 0, já carimbado */
     TEST_ASSERT_EQUAL_UINT32(1, buffer.cursor);
     TEST_ASSERT_EQUAL_UINT32(2, buffer.carimbados_ate);
+    TEST_ASSERT_EQUAL_UINT32(0, buffer.descartados);
 
     enviar(linha, 500); /* reenvio do 1 com o carimbo guardado */
     TEST_ASSERT_EQUAL_UINT32(1, buffer.eventos[1].cab.seq);

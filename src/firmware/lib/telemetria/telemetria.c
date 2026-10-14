@@ -21,6 +21,7 @@ void telemetria_buffer_iniciar(telemetria_buffer_t *b)
     b->qtd = 0;
     b->cursor = 0;
     b->carimbados_ate = 0;
+    b->descartados = 0;
 }
 
 void telemetria_buffer_inserir(telemetria_buffer_t *b, const telemetria_evento_t *e)
@@ -34,6 +35,7 @@ void telemetria_buffer_inserir(telemetria_buffer_t *b, const telemetria_evento_t
         }
         if (b->carimbados_ate < antigo) {
             b->carimbados_ate = antigo;
+            b->descartados++; /* o que saiu nunca tinha recebido carimbo */
         }
     }
     *evento_em(b, b->total) = *e;
@@ -98,6 +100,11 @@ static uint32_t ultima_tel_ms, ultimo_evento_ms;
 static char linha_recebida[TELEMETRIA_LINHA_RECEBIDA];
 static size_t tamanho_recebido;
 static bool descartando; /* linha longa: ignora até o próximo "\n" */
+
+uint32_t telemetria_descartados(void)
+{
+    return buffer.descartados;
+}
 
 /*
  * Ligada pela tarefa de telemetria (núcleo 0) e consumida pela navegação

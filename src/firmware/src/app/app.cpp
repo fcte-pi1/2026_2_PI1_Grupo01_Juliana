@@ -27,6 +27,9 @@ QueueHandle_t fila_amostra;
 QueueHandle_t fila_eventos;
 uint32_t app_boot;
 volatile uint32_t app_eventos_descartados;
+#ifdef TELEMETRIA_DEPURACAO
+volatile uint32_t app_nav_periodo_max_ms;
+#endif
 
 #ifdef HAL_SIMULADA
 /* Com a HAL simulada, o "Bluetooth" sai pela serial USB (FIRM-07 usa o mesmo caminho). */
