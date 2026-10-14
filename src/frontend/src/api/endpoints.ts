@@ -84,7 +84,7 @@ export const criarExecucao = (pedido: NovaExecucaoPedido) =>
   api.post<RetornoNovaExecucao>('/execucoes', pedido)
 
 export const encerrarTentativa = (id: string, pedido: EncerrarPedido) =>
-  api.post<Execucao>(`/execucoes/${id}/encerrar`, pedido)
+  api.post<Execucao>(`/execucoes/${id}/encerrar-tentativa`, pedido)
 
 export const retomarTentativa = (id: string) =>
   api.post<Execucao>(`/execucoes/${id}/retomar`)
