@@ -40,6 +40,9 @@ jobs:
             echo "navegacao/ precisa ser C puro" && exit 1
           fi
 
+      - name: Contrato byte a byte (ARQ-01)
+        run: make -C lib/contrato teste
+
       - name: Testes no PC (Unity)
         run: pio test -e native
 
