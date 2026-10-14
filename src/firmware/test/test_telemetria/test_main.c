@@ -11,6 +11,7 @@
 #include <unity.h>
 
 #include "hal_bt.h"
+#include "hal_nvs.h"
 #include "sim/hal_sim.h"
 
 /* Caminho relativo: lib/contrato também tem um telemetria.h. */
@@ -437,6 +438,36 @@ static void test_consumir_duas_vezes_devolve_true_e_depois_false(void)
     TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
 }
 
+static void test_boot_sobe_a_cada_chamada_e_volta_a_1_sem_a_nvs(void)
+{
+    hal_nvs_sim_apagar_tudo();
+    TEST_ASSERT_TRUE(hal_nvs_iniciar());
+    TEST_ASSERT_EQUAL_UINT32(1, telemetria_proximo_boot());
+    TEST_ASSERT_EQUAL_UINT32(2, telemetria_proximo_boot());
+    TEST_ASSERT_EQUAL_UINT32(3, telemetria_proximo_boot());
+
+    hal_nvs_sim_apagar_tudo();
+    TEST_ASSERT_EQUAL_UINT32(1, telemetria_proximo_boot());
+}
+
+static void test_boot_com_gravacao_falhando_devolve_o_valor_somado(void)
+{
+    /* Enche a NVS simulada com outras chaves: a gravação do boot falha. */
+    hal_nvs_sim_apagar_tudo();
+    char chave[8];
+    uint8_t byte = 0;
+    for (int i = 0;; i++) {
+        snprintf(chave, sizeof(chave), "k%d", i);
+        if (!hal_nvs_gravar(chave, &byte, sizeof(byte))) {
+            break;
+        }
+    }
+
+    TEST_ASSERT_EQUAL_UINT32(1, telemetria_proximo_boot());
+    TEST_ASSERT_EQUAL_UINT32(1, telemetria_proximo_boot());
+    hal_nvs_sim_apagar_tudo();
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -460,5 +491,7 @@ int main(void)
     RUN_TEST(test_lixo_nao_liga_a_flag);
     RUN_TEST(test_linha_longa_e_descartada_e_a_seguinte_e_lida);
     RUN_TEST(test_consumir_duas_vezes_devolve_true_e_depois_false);
+    RUN_TEST(test_boot_sobe_a_cada_chamada_e_volta_a_1_sem_a_nvs);
+    RUN_TEST(test_boot_com_gravacao_falhando_devolve_o_valor_somado);
     return UNITY_END();
 }

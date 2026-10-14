@@ -47,6 +47,9 @@ extern "C" {
 /* Linha recebida da ponte, contando o "\n"; maior que isso é descartada. */
 #define TELEMETRIA_LINHA_RECEBIDA 256
 
+/* Chave da NVS com o contador de inicializações (uint32_t). */
+#define TELEMETRIA_CHAVE_BOOT "boot"
+
 typedef enum {
     TELEMETRIA_EVENTO_HC_ITEM,
     TELEMETRIA_EVENTO_HC_RESULTADO,
@@ -127,6 +130,13 @@ uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra
  * na mesma operação. Pode ser chamada de outro núcleo.
  */
 bool telemetria_consumir_interrupcao(void);
+
+/*
+ * Lê o contador boot da NVS (chave TELEMETRIA_CHAVE_BOOT), soma 1, grava e
+ * devolve o novo valor; sem a chave, o primeiro boot é 1. Se a gravação
+ * falhar, devolve o valor somado mesmo assim. Chamar depois de hal_nvs_iniciar.
+ */
+uint32_t telemetria_proximo_boot(void);
 
 #ifdef __cplusplus
 }

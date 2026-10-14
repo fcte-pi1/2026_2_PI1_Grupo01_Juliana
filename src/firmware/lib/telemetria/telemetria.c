@@ -3,6 +3,7 @@
 #include <stdatomic.h>
 
 #include "hal_bt.h"
+#include "hal_nvs.h"
 
 static uint32_t mais_antigo(const telemetria_buffer_t *b)
 {
@@ -237,4 +238,16 @@ uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra
         espera = f < espera ? f : espera;
     }
     return espera;
+}
+
+uint32_t telemetria_proximo_boot(void)
+{
+    uint32_t boot = 0;
+    if (!hal_nvs_ler(TELEMETRIA_CHAVE_BOOT, &boot, sizeof(boot))) {
+        boot = 0;
+    }
+    boot++;
+    /* Sem gravar, o próximo reboot repete este boot; melhor que não ligar. */
+    (void)hal_nvs_gravar(TELEMETRIA_CHAVE_BOOT, &boot, sizeof(boot));
+    return boot;
 }
