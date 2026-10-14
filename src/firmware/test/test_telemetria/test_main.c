@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unity.h>
 
+#include "hal_bt.h"
 #include "sim/hal_sim.h"
 
 /* Caminho relativo: lib/contrato também tem um telemetria.h. */
@@ -48,6 +49,7 @@ void setUp(void)
     telemetria_buffer_iniciar(&buffer);
     seq = 0;
     telemetria_iniciar(BOOT);
+    hal_bt_iniciar("teste"); /* esvazia a entrada simulada */
     hal_bt_sim_definir_saida(capturar);
     hal_bt_sim_definir_conectado(true);
     hal_bt_sim_limitar_escrita(SIZE_MAX);
@@ -371,6 +373,70 @@ static void test_tel_parcial_nao_consome_seq(void)
     TEST_ASSERT_EQUAL_UINT32(0, campo(&escritas[1], "seq"));
 }
 
+/* ---------- comando interromper ---------- */
+
+#define INTERROMPER "{\"v\":1,\"cmd\":\"interromper\"}"
+
+static void test_comando_interromper_liga_a_flag(void)
+{
+    hal_bt_sim_injetar(INTERROMPER "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+}
+
+static void test_comando_partido_em_duas_voltas_liga_a_flag(void)
+{
+    hal_bt_sim_injetar("{\"v\":1,\"cmd\":");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+    hal_bt_sim_injetar("\"interromper\"}\n");
+    telemetria_passo(50, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+}
+
+static void test_comando_com_crlf_liga_a_flag(void)
+{
+    hal_bt_sim_injetar(INTERROMPER "\r\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+}
+
+static void test_lixo_nao_liga_a_flag(void)
+{
+    hal_bt_sim_injetar("lixo\n{\"v\":2,\"cmd\":\"interromper\"}\n\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+}
+
+static void test_linha_longa_e_descartada_e_a_seguinte_e_lida(void)
+{
+    /* 300 bytes antes do "\n", com o comando no fim: a linha passa de 256. */
+    char pedaco[101];
+    memset(pedaco, 'x', 100);
+    pedaco[100] = '\0';
+    hal_bt_sim_injetar(pedaco);
+    telemetria_passo(0, NULL);
+    hal_bt_sim_injetar(pedaco);
+    telemetria_passo(50, NULL);
+    hal_bt_sim_injetar(pedaco + 30);
+    telemetria_passo(100, NULL);
+    hal_bt_sim_injetar(INTERROMPER "\n");
+    telemetria_passo(150, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+
+    hal_bt_sim_injetar(INTERROMPER "\n");
+    telemetria_passo(200, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+}
+
+static void test_consumir_duas_vezes_devolve_true_e_depois_false(void)
+{
+    hal_bt_sim_injetar(INTERROMPER "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -388,5 +454,11 @@ int main(void)
     RUN_TEST(test_evento_enviado_antes_da_queda_sai_com_o_mesmo_carimbo);
     RUN_TEST(test_escrita_parcial_forca_o_reenvio_desde_o_mais_antigo);
     RUN_TEST(test_tel_parcial_nao_consome_seq);
+    RUN_TEST(test_comando_interromper_liga_a_flag);
+    RUN_TEST(test_comando_partido_em_duas_voltas_liga_a_flag);
+    RUN_TEST(test_comando_com_crlf_liga_a_flag);
+    RUN_TEST(test_lixo_nao_liga_a_flag);
+    RUN_TEST(test_linha_longa_e_descartada_e_a_seguinte_e_lida);
+    RUN_TEST(test_consumir_duas_vezes_devolve_true_e_depois_false);
     return UNITY_END();
 }

@@ -20,7 +20,8 @@
  *
  * Por cima do buffer, telemetria_passo() decide o que sai em cada instante:
  * a tel a 5 Hz em movimento e a 1 Hz parado, e no máximo um evento a cada
- * TELEMETRIA_PERIODO_EVENTO_MS. O relógio entra como parâmetro.
+ * TELEMETRIA_PERIODO_EVENTO_MS. O relógio entra como parâmetro. Na mesma
+ * volta, lê o que chegou da ponte e reconhece o comando interromper.
  *
  * Todas as operações são O(1). C puro, sem Arduino nem FreeRTOS: roda igual
  * na ESP32 e nos testes do PC.
@@ -42,6 +43,9 @@ extern "C" {
 #define TELEMETRIA_PERIODO_TEL_MOVIMENTO_MS 200 /* 5 Hz */
 #define TELEMETRIA_PERIODO_TEL_PARADO_MS 1000   /* 1 Hz */
 #define TELEMETRIA_PERIODO_EVENTO_MS 50         /* drena até 20 eventos/s */
+
+/* Linha recebida da ponte, contando o "\n"; maior que isso é descartada. */
+#define TELEMETRIA_LINHA_RECEBIDA 256
 
 typedef enum {
     TELEMETRIA_EVENTO_HC_ITEM,
@@ -103,7 +107,7 @@ typedef struct {
     bool em_movimento;
 } telemetria_amostra_t;
 
-/* Zera o buffer, o seq e os prazos; boot vai em todos os cabeçalhos. */
+/* Zera o buffer, o seq, os prazos e a leitura; boot vai em todos os cabeçalhos. */
 void telemetria_iniciar(uint32_t boot);
 
 /* Guarda um evento para envio (o cabeçalho é ignorado). */
@@ -117,6 +121,12 @@ void telemetria_inserir_evento(const telemetria_evento_t *e);
  * TELEMETRIA_PERIODO_EVENTO_MS.
  */
 uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra);
+
+/*
+ * true se chegou o comando interromper desde a última chamada; a flag é zerada
+ * na mesma operação. Pode ser chamada de outro núcleo.
+ */
+bool telemetria_consumir_interrupcao(void);
 
 #ifdef __cplusplus
 }

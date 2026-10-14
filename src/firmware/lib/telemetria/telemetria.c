@@ -1,5 +1,7 @@
 #include "telemetria.h"
 
+#include <stdatomic.h>
+
 #include "hal_bt.h"
 
 static uint32_t mais_antigo(const telemetria_buffer_t *b)
@@ -91,6 +93,19 @@ static bool conectado_antes;
 static bool tel_enviada, evento_enviado;
 static uint32_t ultima_tel_ms, ultimo_evento_ms;
 
+/* Linha em montagem: até TELEMETRIA_LINHA_RECEBIDA - 1 bytes antes do "\n". */
+static char linha_recebida[TELEMETRIA_LINHA_RECEBIDA];
+static size_t tamanho_recebido;
+static bool descartando; /* linha longa: ignora até o próximo "\n" */
+
+/*
+ * Ligada pela tarefa de telemetria (núcleo 0) e consumida pela navegação
+ * (núcleo 1). stdatomic em 32 bits: a ESP32 faz a troca com S32C1I, sem
+ * trava, e ler e zerar numa só operação não perde um comando que chegue entre
+ * as duas. Um volatile só garantiria a leitura, não a troca.
+ */
+static atomic_uint interrupcao;
+
 void telemetria_iniciar(uint32_t boot)
 {
     telemetria_buffer_iniciar(&buffer);
@@ -99,6 +114,9 @@ void telemetria_iniciar(uint32_t boot)
     conectado_antes = false;
     tel_enviada = evento_enviado = false;
     ultima_tel_ms = ultimo_evento_ms = 0;
+    tamanho_recebido = 0;
+    descartando = false;
+    atomic_store(&interrupcao, 0u);
 }
 
 void telemetria_inserir_evento(const telemetria_evento_t *e)
@@ -155,8 +173,40 @@ static void enviar_evento(uint32_t agora_ms)
     }
 }
 
+/* Monta as linhas que chegaram da ponte e confere cada uma. */
+static void ler_comandos(void)
+{
+    int c;
+    while ((c = hal_bt_ler_byte()) != -1) {
+        if (c == '\r') {
+            continue;
+        }
+        if (c == '\n') {
+            if (!descartando) {
+                linha_recebida[tamanho_recebido] = '\0';
+                if (contrato_eh_interromper(linha_recebida)) {
+                    atomic_store(&interrupcao, 1u);
+                }
+            }
+            tamanho_recebido = 0;
+            descartando = false;
+        } else if (tamanho_recebido < TELEMETRIA_LINHA_RECEBIDA - 1) {
+            linha_recebida[tamanho_recebido++] = (char)c;
+        } else {
+            descartando = true;
+        }
+    }
+}
+
+bool telemetria_consumir_interrupcao(void)
+{
+    return atomic_exchange(&interrupcao, 0u) != 0u;
+}
+
 uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra)
 {
+    ler_comandos();
+
     bool conectado = hal_bt_conectado();
     if (conectado && !conectado_antes) {
         telemetria_buffer_rebobinar(&buffer);
