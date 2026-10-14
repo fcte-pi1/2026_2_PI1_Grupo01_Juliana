@@ -118,3 +118,13 @@ def test_porta_aberta_no_meio_descarta_o_pedaco_da_primeira_linha():
             break
     assert conexao.entrada_limpa
     assert linhas == [inteira, mensagem(1).encode()]
+
+
+def test_linha_partida_pelo_timeout_do_readline_sai_inteira():
+    inteira = mensagem(0).encode()
+    conexao = ConexaoFalsa([b'"x":0}\n', inteira[:20], b"", inteira[20:]])
+    linhas = []
+    for linha in ler_linhas(conexao, 1.0):
+        linhas.append(linha)
+        break
+    assert linhas == [inteira]

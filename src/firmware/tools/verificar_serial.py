@@ -143,13 +143,18 @@ def ler_linhas(conexao, duracao_s: float) -> Iterator[bytes]:
     # A porta pode abrir no meio de uma linha: limpa a entrada e descarta
     # tudo até o primeiro fim de linha, para não contar o pedaço como inválido.
     conexao.reset_input_buffer()
+    descartar = True
+    # O readline devolve só o que chegou até o timeout, então os pedaços
+    # ficam acumulados até completar a linha.
+    linha = b""
     while time.monotonic() < fim:
-        if conexao.readline().endswith(b"\n"):
-            break
-    while time.monotonic() < fim:
-        linha = conexao.readline()
-        if linha.endswith(b"\n"):
+        linha += conexao.readline()
+        if not linha.endswith(b"\n"):
+            continue
+        if not descartar:
             yield linha
+        descartar = False
+        linha = b""
 
 
 def criar_parser() -> argparse.ArgumentParser:
