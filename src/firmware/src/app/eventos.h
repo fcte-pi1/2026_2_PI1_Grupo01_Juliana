@@ -12,7 +12,6 @@
  *     que a telemetria guarda no buffer de reenvio.
  */
 
-/* Caminho relativo: lib/contrato também tem um telemetria.h. */
-#include "../../lib/telemetria/telemetria.h"
+#include "telemetria_envio.h"
 
 #endif /* APP_EVENTOS_H */

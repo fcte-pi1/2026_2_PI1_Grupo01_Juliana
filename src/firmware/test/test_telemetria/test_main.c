@@ -14,8 +14,7 @@
 #include "hal_nvs.h"
 #include "sim/hal_sim.h"
 
-/* Caminho relativo: lib/contrato também tem um telemetria.h. */
-#include "../../lib/telemetria/telemetria.h"
+#include "telemetria_envio.h"
 
 #define BOOT 7
 

@@ -1,5 +1,5 @@
-#ifndef TELEMETRIA_H
-#define TELEMETRIA_H
+#ifndef TELEMETRIA_ENVIO_H
+#define TELEMETRIA_ENVIO_H
 
 /*
  * Telemetria do firmware — FIRM-07 (#123).
@@ -35,8 +35,7 @@
 extern "C" {
 #endif
 
-/* Caminho relativo: o header do contrato também se chama telemetria.h. */
-#include "../contrato/telemetria.h"
+#include "telemetria.h" /* contrato v1, em lib/contrato */
 
 #define TELEMETRIA_BUFFER_EVENTOS 64
 
@@ -146,4 +145,4 @@ uint32_t telemetria_proximo_boot(void);
 }
 #endif
 
-#endif /* TELEMETRIA_H */
+#endif /* TELEMETRIA_ENVIO_H */

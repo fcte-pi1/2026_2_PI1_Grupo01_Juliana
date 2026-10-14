@@ -19,8 +19,7 @@
 extern "C" {
 #endif
 
-/* Caminho relativo: o header do contrato também se chama telemetria.h. */
-#include "../contrato/telemetria.h"
+#include "telemetria.h" /* contrato v1, em lib/contrato */
 
 contrato_rumo_t telemetria_rumo_do_nav(nav_direcao_t direcao);
 
