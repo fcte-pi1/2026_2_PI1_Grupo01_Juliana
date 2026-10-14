@@ -1,0 +1,82 @@
+#include "telemetria.h"
+
+static uint32_t mais_antigo(const telemetria_buffer_t *b)
+{
+    return b->total - b->qtd;
+}
+
+static telemetria_evento_t *evento_em(telemetria_buffer_t *b, uint32_t indice)
+{
+    return &b->eventos[indice % TELEMETRIA_BUFFER_EVENTOS];
+}
+
+void telemetria_buffer_iniciar(telemetria_buffer_t *b)
+{
+    b->total = 0;
+    b->qtd = 0;
+    b->cursor = 0;
+    b->carimbados_ate = 0;
+}
+
+void telemetria_buffer_inserir(telemetria_buffer_t *b, const telemetria_evento_t *e)
+{
+    if (b->qtd == TELEMETRIA_BUFFER_EVENTOS) {
+        /* O novo ocupa a posição do mais antigo, que sai do buffer. */
+        b->qtd--;
+        uint32_t antigo = mais_antigo(b);
+        if (b->cursor < antigo) {
+            b->cursor = antigo;
+        }
+        if (b->carimbados_ate < antigo) {
+            b->carimbados_ate = antigo;
+        }
+    }
+    *evento_em(b, b->total) = *e;
+    b->total++;
+    b->qtd++;
+}
+
+bool telemetria_buffer_pendente(const telemetria_buffer_t *b)
+{
+    return b->cursor < b->total;
+}
+
+int telemetria_buffer_serializar(telemetria_buffer_t *b, char *buf, size_t tam, uint32_t boot,
+                                 uint32_t *seq, uint32_t agora_ms)
+{
+    if (!telemetria_buffer_pendente(b)) {
+        return -1;
+    }
+    telemetria_evento_t *e = evento_em(b, b->cursor);
+    if (b->cursor == b->carimbados_ate) {
+        e->cab = (contrato_cabecalho_t){.boot = boot, .seq = *seq, .t_ms = agora_ms};
+        (*seq)++;
+        b->carimbados_ate++;
+    }
+
+    switch (e->tipo) {
+    case TELEMETRIA_EVENTO_HC_ITEM:
+        return contrato_hc_item(buf, tam, &e->cab, &e->m.hc_item);
+    case TELEMETRIA_EVENTO_HC_RESULTADO:
+        return contrato_hc_resultado(buf, tam, &e->cab, &e->m.hc_resultado);
+    case TELEMETRIA_EVENTO_PASSO:
+        return contrato_passo(buf, tam, &e->cab, &e->m.passo);
+    case TELEMETRIA_EVENTO_FALHA:
+        return contrato_falha(buf, tam, &e->cab, &e->m.falha);
+    case TELEMETRIA_EVENTO_SUCESSO:
+        return contrato_sucesso(buf, tam, &e->cab, &e->m.sucesso);
+    }
+    return -1;
+}
+
+void telemetria_buffer_avancar(telemetria_buffer_t *b)
+{
+    if (telemetria_buffer_pendente(b)) {
+        b->cursor++;
+    }
+}
+
+void telemetria_buffer_rebobinar(telemetria_buffer_t *b)
+{
+    b->cursor = mais_antigo(b);
+}
