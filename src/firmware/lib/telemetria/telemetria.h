@@ -18,6 +18,10 @@
  *   - buffer cheio descarta o mais antigo, e cursor e carimbados_ate avançam
  *     junto se apontavam para ele.
  *
+ * Por cima do buffer, telemetria_passo() decide o que sai em cada instante:
+ * a tel a 5 Hz em movimento e a 1 Hz parado, e no máximo um evento a cada
+ * TELEMETRIA_PERIODO_EVENTO_MS. O relógio entra como parâmetro.
+ *
  * Todas as operações são O(1). C puro, sem Arduino nem FreeRTOS: roda igual
  * na ESP32 e nos testes do PC.
  */
@@ -34,6 +38,10 @@ extern "C" {
 #include "../contrato/telemetria.h"
 
 #define TELEMETRIA_BUFFER_EVENTOS 64
+
+#define TELEMETRIA_PERIODO_TEL_MOVIMENTO_MS 200 /* 5 Hz */
+#define TELEMETRIA_PERIODO_TEL_PARADO_MS 1000   /* 1 Hz */
+#define TELEMETRIA_PERIODO_EVENTO_MS 50         /* drena até 20 eventos/s */
 
 typedef enum {
     TELEMETRIA_EVENTO_HC_ITEM,
@@ -88,6 +96,27 @@ void telemetria_buffer_avancar(telemetria_buffer_t *b);
 
 /* Volta o cursor ao evento mais antigo do buffer, para o reenvio. */
 void telemetria_buffer_rebobinar(telemetria_buffer_t *b);
+
+/* O que a navegação publica a cada volta: os campos da tel e se está andando. */
+typedef struct {
+    contrato_tel_t tel;
+    bool em_movimento;
+} telemetria_amostra_t;
+
+/* Zera o buffer, o seq e os prazos; boot vai em todos os cabeçalhos. */
+void telemetria_iniciar(uint32_t boot);
+
+/* Guarda um evento para envio (o cabeçalho é ignorado). */
+void telemetria_inserir_evento(const telemetria_evento_t *e);
+
+/*
+ * Uma volta da telemetria no instante agora_ms: confere o link (na volta dele,
+ * o reenvio recomeça do mais antigo), envia a tel se o prazo venceu e no
+ * máximo um evento. amostra NULL não envia tel. Escrita parcial conta como
+ * queda. Devolve os ms até o próximo prazo, no máximo
+ * TELEMETRIA_PERIODO_EVENTO_MS.
+ */
+uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra);
 
 #ifdef __cplusplus
 }

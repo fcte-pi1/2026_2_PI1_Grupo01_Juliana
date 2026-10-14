@@ -21,6 +21,18 @@ extern "C" {
 typedef void (*hal_bt_sim_saida_t)(const char *dados, size_t tamanho);
 void hal_bt_sim_definir_saida(hal_bt_sim_saida_t saida);
 
+/*
+ * Simula a queda e a volta do link. O padrão é ligado: hal_bt_conectado()
+ * depende só de haver uma saída definida.
+ */
+void hal_bt_sim_definir_conectado(bool conectado);
+
+/*
+ * Cada hal_bt_escrever passa a aceitar no máximo esse número de bytes, para
+ * simular uma escrita parcial. SIZE_MAX (o padrão) tira o limite.
+ */
+void hal_bt_sim_limitar_escrita(size_t maximo);
+
 /* Simula a chegada de bytes vindos da ponte (ex.: "{\"cmd\":\"interromper\"}\n"). */
 void hal_bt_sim_injetar(const char *dados);
 

@@ -1,23 +1,58 @@
 /*
  * Telemetria — FIRM-07 (#123). Buffer de 64 eventos com cursor de envio e
- * carimbo no primeiro envio.
+ * carimbo no primeiro envio; telemetria_passo com relógio fictício e o link
+ * da HAL simulada.
  */
 
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unity.h>
+
+#include "sim/hal_sim.h"
 
 /* Caminho relativo: lib/contrato também tem um telemetria.h. */
 #include "../../lib/telemetria/telemetria.h"
 
 #define BOOT 7
 
+#define MAX_ESCRITAS 400
+
 static telemetria_buffer_t buffer;
 static uint32_t seq;
+
+/* Cada hal_bt_escrever vira uma escrita, com o relógio fictício do momento. */
+typedef struct {
+    char texto[CONTRATO_TAMANHO_MAXIMO + 1];
+    size_t tamanho;
+    uint32_t t;
+} escrita_t;
+
+static escrita_t escritas[MAX_ESCRITAS];
+static int qtd_escritas;
+static uint32_t relogio;
+
+static void capturar(const char *dados, size_t tamanho)
+{
+    TEST_ASSERT_LESS_THAN_INT(MAX_ESCRITAS, qtd_escritas);
+    escrita_t *e = &escritas[qtd_escritas++];
+    memcpy(e->texto, dados, tamanho);
+    e->texto[tamanho] = '\0';
+    e->tamanho = tamanho;
+    e->t = relogio;
+}
 
 void setUp(void)
 {
     telemetria_buffer_iniciar(&buffer);
     seq = 0;
+    telemetria_iniciar(BOOT);
+    hal_bt_sim_definir_saida(capturar);
+    hal_bt_sim_definir_conectado(true);
+    hal_bt_sim_limitar_escrita(SIZE_MAX);
+    qtd_escritas = 0;
+    relogio = 0;
 }
 
 void tearDown(void) {}
@@ -164,6 +199,178 @@ static void test_sem_evento_pendente_nao_serializa(void)
     TEST_ASSERT_EQUAL_UINT32(0, seq);
 }
 
+/* ---------- telemetria_passo ---------- */
+
+static const telemetria_amostra_t EM_MOVIMENTO = {
+    .tel = {.estado = CONTRATO_ESTADO_RUNNING, .x = 1, .y = 2, .bat_mv = 7800},
+    .em_movimento = true};
+static const telemetria_amostra_t PARADO = {
+    .tel = {.estado = CONTRATO_ESTADO_HEALTH_CHECK, .bat_mv = 7800}, .em_movimento = false};
+
+/* Roda as voltas de [de, ate), saltando o tempo que telemetria_passo pede. */
+static void rodar(uint32_t de, uint32_t ate, const telemetria_amostra_t *amostra)
+{
+    for (relogio = de; relogio < ate;) {
+        uint32_t espera = telemetria_passo(relogio, amostra);
+        TEST_ASSERT_LESS_OR_EQUAL_UINT32(TELEMETRIA_PERIODO_EVENTO_MS, espera);
+        relogio += espera > 0 ? espera : 1;
+    }
+}
+
+static void inserir_evento_passo(uint8_t x)
+{
+    telemetria_evento_t e = {.tipo = TELEMETRIA_EVENTO_PASSO, .m.passo = {.x = x, .y = 0}};
+    telemetria_inserir_evento(&e);
+}
+
+static bool eh_tipo(const escrita_t *e, const char *tipo)
+{
+    char chave[32];
+    snprintf(chave, sizeof chave, "\"tipo\":\"%s\"", tipo);
+    return strstr(e->texto, chave) != NULL;
+}
+
+static uint32_t campo(const escrita_t *e, const char *nome)
+{
+    char chave[32];
+    snprintf(chave, sizeof chave, "\"%s\":", nome);
+    const char *p = strstr(e->texto, chave);
+    TEST_ASSERT_NOT_NULL_MESSAGE(p, e->texto);
+    return (uint32_t)strtoul(p + strlen(chave), NULL, 10);
+}
+
+static int contar(const char *tipo)
+{
+    int n = 0;
+    for (int i = 0; i < qtd_escritas; i++) {
+        n += eh_tipo(&escritas[i], tipo);
+    }
+    return n;
+}
+
+static void test_tel_a_5hz_em_movimento_e_1hz_parado(void)
+{
+    rodar(0, 10000, &EM_MOVIMENTO);
+    TEST_ASSERT_EQUAL_INT(50, contar("tel"));
+
+    telemetria_iniciar(BOOT);
+    qtd_escritas = 0;
+    rodar(0, 10000, &PARADO);
+    TEST_ASSERT_EQUAL_INT(10, contar("tel"));
+    TEST_ASSERT_EQUAL_INT(10, qtd_escritas);
+}
+
+static void test_amostra_nula_nao_envia_tel(void)
+{
+    rodar(0, 2000, NULL);
+    TEST_ASSERT_EQUAL_INT(0, qtd_escritas);
+}
+
+static void test_seq_sobe_de_1_em_1_com_link_estavel(void)
+{
+    for (uint8_t x = 0; x < 10; x++) {
+        inserir_evento_passo(x);
+    }
+    rodar(0, 1000, &EM_MOVIMENTO);
+    for (uint8_t x = 10; x < 15; x++) {
+        inserir_evento_passo(x);
+    }
+    rodar(1000, 3000, &PARADO);
+
+    TEST_ASSERT_EQUAL_INT(15, contar("passo"));
+    for (int i = 0; i < qtd_escritas; i++) {
+        TEST_ASSERT_EQUAL_UINT32((uint32_t)i, campo(&escritas[i], "seq"));
+        TEST_ASSERT_EQUAL_UINT32(BOOT, campo(&escritas[i], "boot"));
+    }
+}
+
+static void test_eventos_com_link_caido_saem_depois_da_reconexao(void)
+{
+    hal_bt_sim_definir_conectado(false);
+    for (uint8_t x = 0; x < 30; x++) {
+        inserir_evento_passo(x);
+        rodar(100u * x, 100u * x + 100, &EM_MOVIMENTO);
+    }
+    TEST_ASSERT_EQUAL_INT(0, qtd_escritas);
+
+    hal_bt_sim_definir_conectado(true);
+    rodar(3000, 6000, &EM_MOVIMENTO);
+
+    TEST_ASSERT_EQUAL_INT(30, contar("passo"));
+    const escrita_t *anterior = NULL;
+    int tel_no_meio = 0;
+    uint8_t x = 0;
+    for (int i = 0; i < qtd_escritas; i++) {
+        const escrita_t *e = &escritas[i];
+        TEST_ASSERT_EQUAL_UINT32((uint32_t)i, campo(e, "seq")); /* a queda não consumiu seq */
+        if (!eh_tipo(e, "passo")) {
+            tel_no_meio += anterior != NULL && x < 30;
+            continue;
+        }
+        TEST_ASSERT_EQUAL_UINT32(x++, campo(e, "x"));
+        if (anterior != NULL) {
+            TEST_ASSERT_GREATER_OR_EQUAL_UINT32(TELEMETRIA_PERIODO_EVENTO_MS, e->t - anterior->t);
+        }
+        anterior = e;
+    }
+    TEST_ASSERT_GREATER_THAN_INT(0, tel_no_meio);
+}
+
+static void test_evento_enviado_antes_da_queda_sai_com_o_mesmo_carimbo(void)
+{
+    inserir_evento_passo(1);
+    inserir_evento_passo(2);
+    rodar(0, 100, NULL);
+    TEST_ASSERT_EQUAL_INT(2, qtd_escritas);
+    escrita_t antes[2] = {escritas[0], escritas[1]};
+
+    hal_bt_sim_definir_conectado(false);
+    rodar(100, 500, NULL);
+    hal_bt_sim_definir_conectado(true);
+    rodar(500, 700, NULL);
+
+    TEST_ASSERT_EQUAL_INT(4, qtd_escritas);
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_EQUAL_size_t(antes[i].tamanho, escritas[2 + i].tamanho);
+        TEST_ASSERT_EQUAL_MEMORY(antes[i].texto, escritas[2 + i].texto, antes[i].tamanho);
+    }
+}
+
+static void test_escrita_parcial_forca_o_reenvio_desde_o_mais_antigo(void)
+{
+    inserir_evento_passo(1);
+    inserir_evento_passo(2);
+    relogio = 0;
+    telemetria_passo(0, NULL); /* o 1 sai inteiro, seq 0 */
+
+    hal_bt_sim_limitar_escrita(10);
+    relogio = 50;
+    telemetria_passo(50, NULL); /* o 2 sai pela metade, seq 1 */
+    TEST_ASSERT_EQUAL_INT(2, qtd_escritas);
+    TEST_ASSERT_EQUAL_size_t(10, escritas[1].tamanho);
+
+    hal_bt_sim_limitar_escrita(SIZE_MAX);
+    rodar(100, 300, NULL);
+
+    TEST_ASSERT_EQUAL_INT(4, qtd_escritas);
+    TEST_ASSERT_EQUAL_STRING(escritas[0].texto, escritas[2].texto);
+    TEST_ASSERT_EQUAL_UINT32(2, campo(&escritas[3], "x"));
+    TEST_ASSERT_EQUAL_UINT32(1, campo(&escritas[3], "seq"));
+    TEST_ASSERT_EQUAL_UINT32(50, campo(&escritas[3], "t_ms"));
+}
+
+static void test_tel_parcial_nao_consome_seq(void)
+{
+    hal_bt_sim_limitar_escrita(10);
+    telemetria_passo(0, &PARADO);
+    hal_bt_sim_limitar_escrita(SIZE_MAX);
+    relogio = 50;
+    telemetria_passo(50, &PARADO);
+
+    TEST_ASSERT_EQUAL_INT(2, qtd_escritas);
+    TEST_ASSERT_EQUAL_UINT32(0, campo(&escritas[1], "seq"));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -174,5 +381,12 @@ int main(void)
     RUN_TEST(test_carimbado_descartado_leva_carimbados_ate_junto);
     RUN_TEST(test_cada_tipo_usa_o_serializador_do_contrato);
     RUN_TEST(test_sem_evento_pendente_nao_serializa);
+    RUN_TEST(test_tel_a_5hz_em_movimento_e_1hz_parado);
+    RUN_TEST(test_amostra_nula_nao_envia_tel);
+    RUN_TEST(test_seq_sobe_de_1_em_1_com_link_estavel);
+    RUN_TEST(test_eventos_com_link_caido_saem_depois_da_reconexao);
+    RUN_TEST(test_evento_enviado_antes_da_queda_sai_com_o_mesmo_carimbo);
+    RUN_TEST(test_escrita_parcial_forca_o_reenvio_desde_o_mais_antigo);
+    RUN_TEST(test_tel_parcial_nao_consome_seq);
     return UNITY_END();
 }

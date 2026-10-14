@@ -1,5 +1,7 @@
 #include "telemetria.h"
 
+#include "hal_bt.h"
+
 static uint32_t mais_antigo(const telemetria_buffer_t *b)
 {
     return b->total - b->qtd;
@@ -79,4 +81,110 @@ void telemetria_buffer_avancar(telemetria_buffer_t *b)
 void telemetria_buffer_rebobinar(telemetria_buffer_t *b)
 {
     b->cursor = mais_antigo(b);
+}
+
+/* Estado da telemetria: um só link, então um só estado. */
+static telemetria_buffer_t buffer;
+static uint32_t boot_atual;
+static uint32_t seq;
+static bool conectado_antes;
+static bool tel_enviada, evento_enviado;
+static uint32_t ultima_tel_ms, ultimo_evento_ms;
+
+void telemetria_iniciar(uint32_t boot)
+{
+    telemetria_buffer_iniciar(&buffer);
+    boot_atual = boot;
+    seq = 0;
+    conectado_antes = false;
+    tel_enviada = evento_enviado = false;
+    ultima_tel_ms = ultimo_evento_ms = 0;
+}
+
+void telemetria_inserir_evento(const telemetria_evento_t *e)
+{
+    telemetria_buffer_inserir(&buffer, e);
+}
+
+/* ms que faltam para o prazo (0 se já venceu); a subtração aguenta a volta do relógio. */
+static uint32_t faltam(uint32_t agora_ms, bool houve_envio, uint32_t ultimo_ms, uint32_t periodo)
+{
+    uint32_t passou = agora_ms - ultimo_ms;
+    return (!houve_envio || passou >= periodo) ? 0 : periodo - passou;
+}
+
+static uint32_t periodo_tel(const telemetria_amostra_t *amostra)
+{
+    return amostra->em_movimento ? TELEMETRIA_PERIODO_TEL_MOVIMENTO_MS
+                                 : TELEMETRIA_PERIODO_TEL_PARADO_MS;
+}
+
+/* Escreve a linha inteira; menos bytes aceitos conta como queda do link. */
+static bool escrever(const char *linha, int tamanho)
+{
+    if (tamanho <= 0) {
+        return false;
+    }
+    if (hal_bt_escrever(linha, (size_t)tamanho) == (size_t)tamanho) {
+        return true;
+    }
+    conectado_antes = false; /* a próxima volta vê a borda e rebobina */
+    return false;
+}
+
+static void enviar_tel(uint32_t agora_ms, const telemetria_amostra_t *amostra)
+{
+    char linha[CONTRATO_TAMANHO_MAXIMO + 1];
+    contrato_cabecalho_t cab = {.boot = boot_atual, .seq = seq, .t_ms = agora_ms};
+    if (escrever(linha, contrato_tel(linha, sizeof linha, &cab, &amostra->tel))) {
+        seq++;
+        tel_enviada = true;
+        ultima_tel_ms = agora_ms;
+    }
+}
+
+static void enviar_evento(uint32_t agora_ms)
+{
+    char linha[CONTRATO_TAMANHO_MAXIMO + 1];
+    int tamanho = telemetria_buffer_serializar(&buffer, linha, sizeof linha, boot_atual, &seq,
+                                               agora_ms);
+    if (escrever(linha, tamanho)) {
+        telemetria_buffer_avancar(&buffer);
+        evento_enviado = true;
+        ultimo_evento_ms = agora_ms;
+    }
+}
+
+uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra)
+{
+    bool conectado = hal_bt_conectado();
+    if (conectado && !conectado_antes) {
+        telemetria_buffer_rebobinar(&buffer);
+    }
+    conectado_antes = conectado;
+
+    if (conectado && amostra != NULL &&
+        faltam(agora_ms, tel_enviada, ultima_tel_ms, periodo_tel(amostra)) == 0) {
+        enviar_tel(agora_ms, amostra);
+    }
+    if (conectado_antes && telemetria_buffer_pendente(&buffer) &&
+        faltam(agora_ms, evento_enviado, ultimo_evento_ms, TELEMETRIA_PERIODO_EVENTO_MS) == 0) {
+        enviar_evento(agora_ms);
+    }
+
+    /* Desconectado (ou queda agora): só volta a conferir o link daqui a pouco. */
+    uint32_t espera = TELEMETRIA_PERIODO_EVENTO_MS;
+    if (!conectado_antes) {
+        return espera;
+    }
+    if (amostra != NULL) {
+        uint32_t f = faltam(agora_ms, tel_enviada, ultima_tel_ms, periodo_tel(amostra));
+        espera = f < espera ? f : espera;
+    }
+    if (telemetria_buffer_pendente(&buffer)) {
+        uint32_t f = faltam(agora_ms, evento_enviado, ultimo_evento_ms,
+                            TELEMETRIA_PERIODO_EVENTO_MS);
+        espera = f < espera ? f : espera;
+    }
+    return espera;
 }
