@@ -111,7 +111,7 @@ O projeto compreende o desenvolvimento, a integração, os testes e a documenta�
 
 ### Orçamento estimado (R$)
 
- <img src="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/blob/feature/docs-adicionar-esforco-estimado/docs/figs/legenda-micro-mouse.png?raw=true" alt="" width=""> 
+ ![Legenda do Micromouse](figs/legenda-micro-mouse.png) 
 
 **Tabela de precificação:**
 

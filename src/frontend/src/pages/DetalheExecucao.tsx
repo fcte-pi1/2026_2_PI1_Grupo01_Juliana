@@ -32,16 +32,15 @@ export function DetalheExecucao() {
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
   const falha = ultima?.falha
-  const resultado = ultima?.status === 'success' ? 'success' : ultima?.status === 'failed' ? 'failed' : null
 
   return (
     <>
       <Cabecalho
         trilha="Histórico de execuções · detalhe"
-        titulo={`Execução ${formatarNumeroExecucao(execucao.numero)}`}
+        titulo={`Execução ${formatarNumeroExecucao(execucao.numero, execucao.execucao_id)}`}
         acoes={
           <>
-            <PilulaResultado status={execucao.status} resultado={resultado} />
+            <PilulaResultado resultado={execucao.status} />
             <Link to="/execucoes" className="botao">
               Voltar ao histórico
             </Link>

@@ -41,8 +41,8 @@ export function formatarDataHora(iso: string): string {
   return `${data.toLocaleDateString('pt-BR')} · ${data.toLocaleTimeString('pt-BR', { hour12: false })}`
 }
 
-export function formatarNumeroExecucao(numero: number): string {
-  return `#${String(numero).padStart(4, '0')}`
+export function formatarNumeroExecucao(numero: number | undefined, id?: string): string {
+  return numero === undefined ? id ?? '—' : `#${String(numero).padStart(4, '0')}`
 }
 
 export const ROTULO_MOTIVO_FALHA: Record<MotivoFalha, string> = {
