@@ -505,8 +505,8 @@ class GerenciadorFalso:
     def comandos_pendentes(self) -> list[Comando]:
         return self.comandos
 
-    def verificar_monitores(self, sessao, monitor) -> None:
-        return None
+    def verificar_monitores(self, sessao, monitor) -> bool:
+        return False
 
 
 @pytest.fixture

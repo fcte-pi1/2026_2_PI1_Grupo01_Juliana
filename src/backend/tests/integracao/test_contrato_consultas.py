@@ -5,24 +5,9 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from contrato_utils import OPENAPI
-from openapi_schema_validator import OAS30Validator
+from tests.contrato_openapi import validar_resposta
 
 LIMITE_DETALHE_S = 0.3
-
-
-def _validar(response, caminho: str, metodo: str = "get") -> None:
-    resposta = OPENAPI["paths"][caminho][metodo]["responses"][str(response.status_code)]
-    if "$ref" in resposta:
-        resposta = OPENAPI["components"]["responses"][resposta["$ref"].rsplit("/", 1)[-1]]
-    schema = resposta["content"]["application/json"]["schema"]
-    validador = OAS30Validator(
-        {**schema, "components": OPENAPI["components"]},
-        format_checker=OAS30Validator.FORMAT_CHECKER,
-    )
-    validador.validate(response.json())
-    for cabecalho in resposta.get("headers", {}):
-        assert cabecalho in response.headers
 
 
 def _popular(fabrica) -> list:
@@ -52,26 +37,26 @@ def test_lista_segue_o_contrato(client, fabrica, params):
     _popular(fabrica)
     response = client.get("/execucoes", params=params)
     assert response.status_code == 200
-    _validar(response, "/execucoes")
+    validar_resposta(response, "/execucoes")
 
 
 def test_lista_com_parametro_invalido_segue_o_contrato(client):
     response = client.get("/execucoes", params={"limite": 0})
     assert response.status_code == 422
-    _validar(response, "/execucoes")
+    validar_resposta(response, "/execucoes")
 
 
 def test_detalhe_segue_o_contrato(client, fabrica):
     for execucao in _popular(fabrica):
         response = client.get(f"/execucoes/{execucao.execucao_id}")
         assert response.status_code == 200
-        _validar(response, "/execucoes/{execucao_id}")
+        validar_resposta(response, "/execucoes/{execucao_id}")
 
 
 def test_detalhe_inexistente_segue_o_contrato(client):
     response = client.get(f"/execucoes/{uuid.uuid4()}")
     assert response.status_code == 404
-    _validar(response, "/execucoes/{execucao_id}")
+    validar_resposta(response, "/execucoes/{execucao_id}")
 
 
 def test_detalhe_12x4_com_3_tentativas_em_menos_de_300_ms(client, fabrica):

@@ -79,7 +79,7 @@ export interface paths {
         put?: never;
         /**
          * Encerrar a tentativa aberta, mantendo a execução em andamento
-         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria até a confirmação do robô ou nova tentativa.
+         * @description A tentativa passa a ser failed com origem encerrado_operador. A execução lógica permanece em_andamento, para a retomada. O backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria até a confirmação do robô ou nova tentativa. Sem tentativa aberta, ou com a execução já encerrada, responde 409 e `detail` é texto. O 422 fica para corpo inválido (`ErroValidacao`, `detail` é lista).
          */
         post: operations["encerrarTentativa"];
         delete?: never;
@@ -401,6 +401,9 @@ export interface components {
         ErroNaoEncontrado: {
             detail: string;
         };
+        ErroMensagem: {
+            detail: string;
+        };
         ErroValidacao: {
             detail: {
                 loc?: string[];
@@ -431,6 +434,20 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["Recusa"];
+            };
+        };
+        /** @description O pedido é válido, mas o estado atual não permite a ação. `detail` é texto, diferente do 422 de validação. */
+        Conflito: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "detail": "Não há tentativa aberta para encerrar."
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErroMensagem"];
             };
         };
         /** @description Corpo ou parâmetro fora do contrato. */
@@ -594,6 +611,7 @@ export interface operations {
                 };
             };
             404: components["responses"]["NaoEncontrado"];
+            409: components["responses"]["Conflito"];
             422: components["responses"]["ErroValidacao"];
         };
     };
