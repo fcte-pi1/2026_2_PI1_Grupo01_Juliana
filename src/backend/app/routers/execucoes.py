@@ -35,6 +35,7 @@ def _gerenciador(request: Request) -> GerenciadorExecucoes:
 @router.post("", response_model=RetornoNovaExecucao, status_code=201)
 def criar_execucao(
     body: NovaExecucaoRequest,
+    request: Request,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao:
@@ -47,6 +48,7 @@ def criar_execucao(
     )
 
 
+    request.app.state.monitor_conexao.registrar_mensagem()
 @router.get("", response_model=list[ResumoExecucao])
 def listar_execucoes(
     response: Response,
@@ -127,6 +129,7 @@ def encerrar_tentativa(
 )
 def retomar_execucao(
     execucao_id: UUID,
+    request: Request,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao | JSONResponse:
@@ -143,6 +146,7 @@ def retomar_execucao(
         )
         return JSONResponse(status_code=status.HTTP_409_CONFLICT, content=corpo)
     db.commit()
+    request.app.state.monitor_conexao.registrar_mensagem()
     return RetornoNovaExecucao(
         execucao_id=retorno.execucao_id,
         tentativa_id=retorno.tentativa_id,
