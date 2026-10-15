@@ -9,6 +9,7 @@ from app.services.monitor_conexao import MonitorConexao
 from app.services.publicador_sse import PublicadorSSE
 from contrato.telemetria import Deduplicador, RelogioDoRobo
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 
 
 def _configurar_logs() -> None:
@@ -47,3 +48,23 @@ app.include_router(back_health.router)
 app.include_router(execucoes.router)
 app.include_router(telemetria.router)
 app.include_router(stream.router)
+
+
+def _publicar_422_como_oneof(esquema: dict) -> None:
+    """O contrato usa oneOf: os dois corpos do 422 não cabem no mesmo esquema."""
+    conteudo = esquema["paths"]["/telemetria"]["post"]["responses"]["422"]["content"]
+    corpo = conteudo["application/json"]["schema"]
+    corpo["oneOf"] = corpo.pop("anyOf")
+    corpo.pop("title", None)
+
+
+def _esquema_openapi() -> dict:
+    if app.openapi_schema:
+        return app.openapi_schema
+    esquema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+    _publicar_422_como_oneof(esquema)
+    app.openapi_schema = esquema
+    return esquema
+
+
+app.openapi = _esquema_openapi
