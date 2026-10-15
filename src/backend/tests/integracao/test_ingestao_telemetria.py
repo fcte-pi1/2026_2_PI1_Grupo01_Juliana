@@ -220,6 +220,7 @@ def test_tel_grava_leitura_telemetria(client, db_session):
     assert segunda.fase == "health-check"
     assert (segunda.x, segunda.y) == (1, 2)
     assert (segunda.bateria, segunda.velocidade) == (Decimal("7810"), 210)
+    assert segunda.rumo == "N"
     recebido_em = datetime.fromisoformat(RECEBIDO_EM)
     assert segunda.recebido_em == recebido_em
     # âncora fixada na primeira mensagem do boot: 12:00:00 - 1 s

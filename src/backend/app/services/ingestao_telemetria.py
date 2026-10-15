@@ -146,6 +146,7 @@ class IngestaoTelemetria:
             y=tel.y,
             bateria=Decimal(tel.bat_mv),
             velocidade=tel.vel_mm_s,
+            rumo=tel.rumo,
             enviado_em=enviado_em,
             recebido_em=recebido_em,
         )
