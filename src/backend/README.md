@@ -91,6 +91,23 @@ ruff check .
 pytest -q          # resumo; use pytest -v para mais detalhe
 ```
 
+### Validação BACK-03 (GerenciadorExecucoes)
+
+Checklist da task (transições T/E/R, critérios de aceite, rotas de execução):
+
+```bash
+cd src/backend
+source .venv/bin/activate
+export TEST_DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test
+
+python -m scripts.validar_back03        # escopo completo
+python -m scripts.validar_back03 -v     # saída detalhada
+python -m scripts.validar_back03 --apenas-criterios
+python -m scripts.validar_back03 --mostrar-mapa   # T01–R05 → nome do teste
+```
+
+Sai com código **0** se tudo passar, **1** se algum teste falhar.
+
 ---
 
 ## Rodar tudo no Docker (API + Postgres)

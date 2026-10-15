@@ -62,3 +62,39 @@ class Repositorio:
             .limit(1)
         )
         return self._session.scalar(stmt)
+
+    def buscar_tentativa_aberta_da_execucao(self, execucao_id: UUID) -> Tentativa | None:
+        stmt = (
+            select(Tentativa)
+            .where(Tentativa.execucao_id == execucao_id)
+            .where(Tentativa.status.in_(("health-check", "running")))
+            .limit(1)
+        )
+        return self._session.scalar(stmt)
+
+    def buscar_execucao_em_andamento(self) -> ExecucaoLogica | None:
+        stmt = (
+            select(ExecucaoLogica)
+            .where(ExecucaoLogica.status == "em_andamento")
+            .options(joinedload(ExecucaoLogica.labirinto))
+            .limit(1)
+        )
+        return self._session.scalar(stmt)
+
+    def bloquear_execucao(self, execucao_id: UUID) -> ExecucaoLogica | None:
+        stmt = (
+            select(ExecucaoLogica)
+            .where(ExecucaoLogica.execucao_id == execucao_id)
+            .options(
+                joinedload(ExecucaoLogica.labirinto),
+                selectinload(ExecucaoLogica.tentativas),
+            )
+            .with_for_update(of=ExecucaoLogica)
+        )
+        execucao = self._session.scalar(stmt)
+        if execucao is not None:
+            execucao.tentativas.sort(key=lambda t: t.attempt_index)
+        return execucao
+
+    def labirinto_id_por_tipo(self, tipo: str) -> int | None:
+        return self._session.scalar(select(Labirinto.labirinto_id).where(Labirinto.tipo == tipo))

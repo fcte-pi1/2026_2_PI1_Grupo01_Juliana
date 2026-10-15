@@ -207,6 +207,8 @@ paths:
         em_andamento, para a retomada. O backend passa a devolver
         `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria
         até a confirmação do robô ou nova tentativa.
+        Sem tentativa aberta, ou com a execução já encerrada, responde 409 e `detail` é texto.
+        O 422 fica para corpo inválido (`ErroValidacao`, `detail` é lista).
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       requestBody:
@@ -235,6 +237,8 @@ paths:
                   $ref: "#/components/examples/Tela08EncerradaComoFalha"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
         "422":
           $ref: "#/components/responses/ErroValidacao"
 
@@ -459,6 +463,16 @@ components:
               value:
                 motivo: execucao_cancelada
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
+    Conflito:
+      description: >
+        O pedido é válido, mas o estado atual não permite a ação.
+        `detail` é texto, diferente do 422 de validação.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroMensagem"
+          example:
+            detail: Não há tentativa aberta para encerrar.
     ErroValidacao:
       description: Corpo ou parâmetro fora do contrato.
       content:
@@ -1479,6 +1493,12 @@ components:
           type: string
           format: date-time
     ErroNaoEncontrado:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    ErroMensagem:
       type: object
       required: [detail]
       properties:

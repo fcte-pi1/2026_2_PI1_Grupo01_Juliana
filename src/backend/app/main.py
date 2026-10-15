@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from app.config import settings
@@ -7,6 +8,7 @@ from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.ingestao_telemetria import IngestaoTelemetria
 from app.services.monitor_conexao import MonitorConexao
 from app.services.publicador_sse import PublicadorSSE
+from app.services.vigilancia_monitores import ciclo, vigiar
 from contrato.telemetria import Deduplicador, RelogioDoRobo
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
@@ -35,7 +37,21 @@ async def lifespan(app: FastAPI):
     app.state.ingestao_telemetria = IngestaoTelemetria(
         app.state.deduplicador, app.state.relogio_do_robo, app.state.monitor_conexao
     )
-    yield
+
+    # o POST /telemetria só vê o silêncio quando chega outra linha; esta tarefa cobre a ausência
+    def passar() -> None:
+        ciclo(app.state.gerenciador, app.state.monitor_conexao, app.state.ingestao_telemetria.trava)
+
+    parar = threading.Event()
+    varredura = threading.Thread(
+        target=vigiar, args=(parar, passar), name="monitores-link-tempo", daemon=True
+    )
+    varredura.start()
+    try:
+        yield
+    finally:
+        parar.set()
+        varredura.join(timeout=5)
 
 
 app = FastAPI(
