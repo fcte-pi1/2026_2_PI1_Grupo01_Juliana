@@ -32,7 +32,10 @@ async def lifespan(app: FastAPI):
     app.state.deduplicador = Deduplicador()
     app.state.relogio_do_robo = RelogioDoRobo()
     app.state.ingestao_telemetria = IngestaoTelemetria(
-        app.state.deduplicador, app.state.relogio_do_robo, app.state.monitor_conexao
+        app.state.deduplicador,
+        app.state.relogio_do_robo,
+        app.state.monitor_conexao,
+        app.state.publicador_sse,
     )
     yield
 
