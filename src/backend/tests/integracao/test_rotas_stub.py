@@ -23,7 +23,3 @@ def test_retomar_execucao_retorna_501(client):
     response = client.post(f"/execucoes/{EXECUCAO_ID}/retomar")
     assert response.status_code == 501
 
-
-def test_stream_execucao_retorna_501(client):
-    response = client.get(f"/execucoes/{EXECUCAO_ID}/stream")
-    assert response.status_code == 501
