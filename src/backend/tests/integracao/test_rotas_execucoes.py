@@ -31,7 +31,7 @@ def test_get_em_andamento_com_execucao(client):
     assert r.json()["status"] == "em_andamento"
 
 
-def test_encerrar_tentativa_sem_aberta_422(client, db_session, gerenciador):
+def test_encerrar_tentativa_sem_aberta_409(client, db_session, gerenciador):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     execucao_id = criado["execucao_id"]
     tentativa = db_session.get(Tentativa, UUID(criado["tentativa_id"]))
@@ -41,7 +41,18 @@ def test_encerrar_tentativa_sem_aberta_422(client, db_session, gerenciador):
         f"/execucoes/{execucao_id}/encerrar-tentativa",
         json={"motivo": "collision"},
     )
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Não há tentativa aberta para encerrar."}
+
+
+def test_encerrar_corpo_invalido_continua_422(client):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    response = client.post(
+        f"/execucoes/{criado['execucao_id']}/encerrar-tentativa",
+        json={"motivo": "link_lost"},
+    )
     assert response.status_code == 422
+    assert isinstance(response.json()["detail"], list)
 
 
 def _hc_reprovado():

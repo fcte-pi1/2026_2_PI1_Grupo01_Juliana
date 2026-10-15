@@ -87,7 +87,15 @@ def obter_execucao(execucao_id: UUID, db: Session = Depends(get_db)) -> Execucao
     return detalhe
 
 
-@router.post("/{execucao_id}/encerrar-tentativa", response_model=ExecucaoDetalhe)
+@router.post(
+    "/{execucao_id}/encerrar-tentativa",
+    response_model=ExecucaoDetalhe,
+    responses={
+        409: {
+            "description": "Não há tentativa aberta ou a execução não está em andamento.",
+        }
+    },
+)
 def encerrar_tentativa(
     execucao_id: UUID,
     body: EncerrarTentativaRequest,
@@ -102,7 +110,7 @@ def encerrar_tentativa(
         ) from None
     except TentativaIndisponivel:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Não há tentativa aberta para encerrar.",
         ) from None
     db.commit()
