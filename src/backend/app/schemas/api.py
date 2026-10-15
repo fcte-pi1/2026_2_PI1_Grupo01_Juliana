@@ -141,3 +141,69 @@ class RetornoNovaExecucao(BaseModel):
 # Alias usado antes do alinhamento ARQ-02
 ExecucaoCriadaResponse = RetornoNovaExecucao
 ExecucaoResumo = ResumoExecucao
+
+
+# Eventos do stream SSE (BACK-07). O campo `tipo` repete o nome que vai na linha
+# `event:` do frame, como o openapi exige. A bateria viaja em mV, do contrato
+# serial até aqui, e a porcentagem é calculada pelo backend (ADR-014).
+class EventoTelemetria(BaseModel):
+    tipo: Literal["telemetria"] = "telemetria"
+    ordem: int = Field(ge=1)
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    bateria: int
+    bateria_pct: float | None = None
+    velocidade: int | None = None
+    rumo: Rumo | None = None
+    eixo_longo: EixoLongo | None = None
+    enviado_em: datetime
+
+
+class EventoPasso(BaseModel):
+    tipo: Literal["passo"] = "passo"
+    passo_id: int
+    seq: int = Field(ge=1)
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    paredes_mask: int = Field(ge=0, le=15)
+    retomada: bool
+    # coluna obrigatória no banco: o evento nunca sai com entrou_em nulo
+    entrou_em: datetime
+
+
+class EventoStatus(BaseModel):
+    tipo: Literal["status"] = "status"
+    tentativa_id: UUID
+    attempt_index: int = Field(ge=1, le=3)
+    status_tentativa: StatusTentativa
+    status_execucao: StatusExecucao
+    tipo_dip: TipoDip | None = None
+
+
+class EventoHealthCheck(BaseModel):
+    tipo: Literal["health_check"] = "health_check"
+    tentativa_id: UUID
+    componente: Componente
+    aprovado: bool
+    valor_lido: float | None = None
+
+
+class EventoFalha(BaseModel):
+    tipo: Literal["falha"] = "falha"
+    tentativa_id: UUID
+    motivo: MotivoFalha
+    origem: OrigemFalha
+    celula_x: int = Field(ge=0, le=11)
+    celula_y: int = Field(ge=0, le=11)
+    componente: Componente | None = None
+    observacao: str | None = Field(default=None, max_length=100)
+    momento_falha: datetime
+    status_execucao: StatusExecucao
+
+
+class EventoSucesso(BaseModel):
+    tipo: Literal["sucesso"] = "sucesso"
+    tentativa_id: UUID
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    status_execucao: StatusExecucao
