@@ -11,7 +11,7 @@ import threading
 import time
 
 import pytest
-from ajudantes_sse import contar_keep_alives, separar
+from sse_test_utils import count_keep_alives, parse_sse_frames
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.publicador_sse import EventoSSE
 
@@ -65,7 +65,7 @@ def test_stream_responde_event_stream_e_abre_com_keep_alive(client, fabrica):
     assert resposta.status_code == 200
     assert resposta.headers["content-type"].startswith("text/event-stream")
     assert resposta.headers["cache-control"] == "no-cache, no-transform"
-    assert contar_keep_alives(resposta.text) >= 1
+    assert count_keep_alives(resposta.text) >= 1
 
 
 def test_quem_abre_no_meio_da_corrida_recebe_o_trajeto_inteiro(client, fabrica):
@@ -73,7 +73,7 @@ def test_quem_abre_no_meio_da_corrida_recebe_o_trajeto_inteiro(client, fabrica):
     tentativa = fabrica.tentativa(execucao)
     passos = fabrica.passos(tentativa, CELULAS)
 
-    frames = separar(_abrir(client, execucao.execucao_id))
+    frames = parse_sse_frames(_abrir(client, execucao.execucao_id))
 
     assert [f["event"] for f in frames] == ["passo"] * 5
     assert [f["id"] for f in frames] == [p.passo_id for p in passos]
@@ -87,7 +87,7 @@ def test_last_event_id_reenvia_so_os_seguintes_em_ordem_e_sem_duplicar(client, f
     passos = fabrica.passos(tentativa, CELULAS)
     ja_aplicado = passos[1].passo_id
 
-    frames = separar(
+    frames = parse_sse_frames(
         _abrir(client, execucao.execucao_id, headers={"Last-Event-ID": str(ja_aplicado)})
     )
 
@@ -103,7 +103,7 @@ def test_last_event_id_invalido_vale_zero_e_reenvia_tudo(client, fabrica, valor)
     tentativa = fabrica.tentativa(execucao)
     fabrica.passos(tentativa, CELULAS)
 
-    frames = separar(_abrir(client, execucao.execucao_id, headers={"Last-Event-ID": valor}))
+    frames = parse_sse_frames(_abrir(client, execucao.execucao_id, headers={"Last-Event-ID": valor}))
 
     assert len(frames) == 5
 
@@ -114,7 +114,7 @@ def test_execucao_encerrada_reenvia_o_trajeto_e_fecha_o_fluxo(client, fabrica):
     fabrica.passos(tentativa, CELULAS[:3])
 
     # se o fluxo não fechasse sozinho, esta chamada não retornaria
-    frames = separar(_abrir(client, execucao.execucao_id))
+    frames = parse_sse_frames(_abrir(client, execucao.execucao_id))
 
     assert len(frames) == 3
 
@@ -127,7 +127,7 @@ def test_trajeto_atravessa_as_tentativas_da_execucao(client, fabrica):
     fabrica.passos(primeira, CELULAS[:3], seq_inicial=1)
     fabrica.passos(segunda, CELULAS[2:], seq_inicial=4)
 
-    frames = separar(_abrir(client, execucao.execucao_id))
+    frames = parse_sse_frames(_abrir(client, execucao.execucao_id))
 
     assert [f["data"]["seq"] for f in frames] == [1, 2, 3, 4, 5, 6]
     assert frames[3]["data"]["retomada"] is True
@@ -152,7 +152,7 @@ def test_evento_publicado_de_outra_thread_chega_depois_do_reenvio(client, fabric
 
     thread = threading.Thread(target=publicar_quando_o_cliente_assinar, daemon=True)
     thread.start()
-    frames = separar(_abrir(client, execucao.execucao_id))
+    frames = parse_sse_frames(_abrir(client, execucao.execucao_id))
     thread.join(timeout=5)
 
     assert [f["event"] for f in frames] == ["passo", "passo", "passo", "sucesso"]
