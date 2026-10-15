@@ -13,7 +13,9 @@ export function EtapasExecucao({ status, healthCheckAprovados, healthCheckTotal 
   const etapas: Array<{ titulo: string; detalhe: string; situacao: Situacao }> = [
     {
       titulo: 'Health-check',
-      detalhe: status === 'health-check' ? `verificando · ${healthCheckAprovados} de ${healthCheckTotal}` : `aprovado · ${healthCheckAprovados} de ${healthCheckTotal} OK`,
+      detalhe: status === 'health-check'
+        ? healthCheckTotal === 0 ? 'aguardando dados do health-check' : `verificando · ${healthCheckAprovados} de ${healthCheckTotal}`
+        : `aprovado · ${healthCheckAprovados} de ${healthCheckTotal} OK`,
       situacao: status === 'health-check' ? 'atual' : 'feita',
     },
     {

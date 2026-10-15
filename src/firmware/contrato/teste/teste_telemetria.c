@@ -112,7 +112,7 @@ int main(int argc, char **argv)
                             UINT16_MAX, CONTRATO_EIXO_X};
         contrato_falha_t f = {CONTRATO_MOTIVO_FALHA_COMPONENTE, CONTRATO_ORIGEM_AUTOMATICA, 11, 11,
                               CONTRATO_COMPONENTE_ENCODER_ESQUERDO};
-        contrato_hc_item_t h = {CONTRATO_COMPONENTE_TOF_FRONTAL_ESQ, false, true, INT32_MIN};
+        contrato_hc_item_t h = {CONTRATO_COMPONENTE_ENCODER_ESQUERDO, false, true, INT32_MIN};
         if (contrato_tel(buf, sizeof buf, &c, &t) < 0 || contrato_falha(buf, sizeof buf, &c, &f) < 0 ||
             contrato_hc_item(buf, sizeof buf, &c, &h) < 0) {
             falhas++;

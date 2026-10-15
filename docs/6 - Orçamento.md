@@ -15,25 +15,23 @@
 
 ### Orçamento do Subsistema de Energia
 
+Itens alinhados ao [projeto conceitual de energia](4.2%20-%20Projeto%20conceitual%20de%20energia.md) (v1.5), com preços cotados em 07/10/2026. O total soma só o que precisa ser comprado. Os itens 3 a 6 só são vendidos em kit; as peças que sobram ficam de reserva para a montagem.
+
 | ID | Item / Componente | Especificação Técnica | Qtd | Valor Unit. (R$) | Valor Total (R$) | Origem / Status |
 | :-: | :--- | :--- | :-: | :-: | :-: | :--- |
-| **1** | Bateria LiPo 2S 7.4V | 850mAh - 1000mAh (mín. 25C de taxa de descarga) | 2 | R$ 45,00 | R$ 90,00 | A comprar |
-| **2** | Carregador/Balanceador LiPo | Carregador B3 Compact ou IMAX B6 com balanceamento | 1 | R$ 35,00 | R$ 35,00 | A comprar |
-| **3** | Módulo Conversor Buck-Boost DC-DC | Regulador chaveado tipo XL6009 / TPS63020 (Saída 5V estável) | 2 | R$ 15,00 | R$ 30,00 | A comprar |
-| **4** | Regulador de Tensão LDO 3.3V | CI LDO AMS1117-3.3V ou SPX3819 | 4 | R$ 2,50 | R$ 10,00 | A comprar |
-| **5** | Conectores XT60 (Macho/Fêmea) | Pares de conectores com tubos termorretráteis para bateria LiPo | 4 | R$ 4,00 | R$ 16,00 | A comprar |
-| **6** | Suporte para 4 Pilhas AA | Suporte em plástico ABS com fios (alimentação de testes) | 1 | R$ 6,00 | R$ 6,00 | Adquirido / Bancada |
-| **7** | Pilhas Alcalinas AA | Kit com 4 pilhas 1.5V para alimentação de testes em bancada | 1 | R$ 14,00 | R$ 14,00 | Adquirido / Bancada |
-| **8** | Chave Gangorra / Interruptor Liga/Desliga | Chave KCD1 2 posições (mín. 10A) para corte geral | 2 | R$ 3,00 | R$ 6,00 | A comprar |
-| **9** | Fusível Rearmável PTC (PolySwitch) | Corrente de Hold ~2A / Trip ~3.5A para proteção do circuito | 4 | R$ 2,50 | R$ 10,00 | A comprar |
-| **10** | Diodo Schottky de Potência | Diodo 1N5822 (3A) para proteção de inversão de polaridade | 4 | R$ 1,50 | R$ 6,00 | A comprar |
-| **11** | Resistores de Precisão 1% | Kit de resistores (10kΩ e 47kΩ) para divisor de tensão do ADC | 10 | R$ 0,50 | R$ 5,00 | Disponível no Lab |
-| **12** | Capacitores de Desacoplamento | Capacitores eletrolíticos (100µF) e cerâmicos (100nF) | 10 | R$ 0,80 | R$ 8,00 | Disponível no Lab |
-| **13** | Conectores JST-XH e Barra de Pinos | Pinos de 2.54mm e conectores para barramentos de alimentação | 2 | R$ 5,00 | R$ 10,00 | A comprar |
-| **14** | Kit Tubos Termorretráteis | Diâmetros variados para isolamento elétrico das conexões | 1 | R$ 12,00 | R$ 12,00 | Disponível no Lab |
-| **15** | Cabo de Silicone Flexível AWG 20 | Fios vermelho/preto de silicone de alta flexibilidade (2m) | 2 | R$ 6,00 | R$ 12,00 | A comprar |
-| **16** | Placa de Fenolite Ilhada (Protótipo) | Placa ilhada 5x7cm para montagem do módulo de alimentação | 2 | R$ 5,00 | R$ 10,00 | A comprar |
-| **—** | **TOTAL ESTIMADO (ENERGIA)** | — | — | — | **R$ 280,00** | — |
+| **1** | Bateria LiPo 2S 7,4 V | Tattu 650 mAh 75C, conector XT30, 43 g (1 em uso + 1 reserva) | 2 | R$ 90,00 | R$ 180,00 | A comprar ([Helitec](https://helitec.com.br/TATTU-650MAH-2S-75C-XT30)) |
+| **2** | Carregador/Balanceador LiPo | IMAX B3 Compact, balanceamento 2S/3S | 1 | R$ 44,90 | R$ 44,90 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/carregador-de-bateria-lipo-imaxrc-b3-compact-charger-/up/MLBU1965582183)) |
+| **3** | Regulador de Tensão LDO 3,3 V | Módulo AMS1117-3.3 (kit com 4), alimentado pelos 5 V (sensores ToF e encoders) | 1 kit | R$ 19,99 | R$ 19,99 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/4x-mini-modulos-regulador-de-tensao-digital-ams1117-33v/up/MLBU2903326297)) |
+| **4** | Conectores XT30 (Macho/Fêmea) | Kit com 3 pares: entrada do robô, pacote de pilhas AA e reserva | 1 kit | R$ 19,54 | R$ 19,54 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/3-pares-plugs-conector-de-energia-xt30-macho-e-femea/p/MLB2084002867)) |
+| **5** | Chave Gangorra / Interruptor Liga/Desliga | KCD1-101, 2 terminais, 10 A, para corte geral (kit com 10) | 1 kit | R$ 13,90 | R$ 13,90 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/10-pecas--chave-gangorra-2-terminais-liga-desliga-comum/up/MLBU2121393000)) |
+| **6** | Fusível Rearmável PTC | JK30-200: hold 2,0 A / trip 4,0 A, 30 V, PTH (kit com 5) | 1 kit | R$ 29,99 | R$ 29,99 | A comprar ([Mercado Livre](https://www.mercadolivre.com.br/kit-5-fusivel-rearmavel-pptc-jk30200-30v-2a-2000ma/up/MLBU3883832125)) |
+| **—** | **TOTAL A COMPRAR (ENERGIA)** | — | — | — | **R$ 308,32** | — |
+
+**Já disponíveis (fora do total):** suporte para 4 pilhas AA (R$ 6,00) e pilhas alcalinas AA (R$ 14,00), já adquiridos; tubos termorretráteis (R$ 12,00), do laboratório.
+
+**Orçados na Eletrônica (não repetidos aqui):** conversor buck-boost de 5 V, diodo Schottky SS34 de proteção de polaridade, resistores do divisor do ADC (22 kΩ / 10 kΩ), capacitores e insumos (fios, barras de pinos, conectores JST e estanho). O buck-boost precisa entregar 5 V com pelo menos 1 A e aceitar a faixa de entrada das duas fontes, de 3,5 V (pilhas descarregadas, depois da queda do SS34) a 8,4 V (LiPo cheia): o XL6009 comum é só elevador (boost) e o TPS63020 aceita no máximo 5,5 V na entrada, então nenhum dos dois serve.
+
+<font size="2"><p style="text-align: center">Fonte: [João Marcos](https://github.com/JJOAOMARCOSS) e [Giovana Martins](https://github.com/Giih-martins), 2026.</p></font>
 
 ### Orçamento do Subsistema de Eletrônica
 
@@ -49,7 +47,7 @@
 | Transistor NPN (P2N2222A) | 1 | 4 | 5 | 2,00 | 10,00 | Acionamento do buzzer. Terminais muito frágeis. | A comprar |
 | Kit Componentes Passivos (Resistores 10k, 22k, 1k, Caps 100nF e LEDs) | - | - | 1 kit | 35,00 | 35,00 | Utilizados no divisor de tensão (ADC), filtros e interface. | A comprar |
 | Insumos (Estanho, Fios AWG flexíveis, Barras de Pinos e Conectores JST) | - | - | 1 kit | 40,00 | 40,00 | Consumo natural de laboratório para prototipagem e solda da PCB. | A comprar |
-| **TOTAL ESTIMADO** | | | | | **R$ 498,21** | | — |
+| **TOTAL ESTIMADO** | | | | | **R$ 529,26** | | — |
 
 
 <font size="2"><p style="text-align: center">Fonte: [Ana Victória](https://github.com/navicg), [João Vitor](https://github.com/Jauzimm), [Marcus](https://github.com/MarcusVRezende), [Anderson](https://github.com/leicamAnd), [Juan](https://github.com/IndianoDev) e [Fábio](https://github.com/fabiofonteles1), 2026.</p></font>
@@ -72,8 +70,8 @@ O subsistema de software **não prevê aquisição de hardware dedicado**: o Mic
 
 | Subsistema | Valor Estimado (R$) |
 |---|---:|
-| Energia | R$ 280,00 |
-| Eletrônica | R$ 498,21 |
-| Software | R$ 15,00 |
+| Energia | R$ 308,32 |
+| Eletrônica | R$ 529,26 |
+| Software | R$ 0,00 |
 | Estrutura | R$ 440,00 |
-| **TOTAL GERAL** | **R$ 1.233,21** |
+| **TOTAL GERAL** | **R$ 1.277,58** |
