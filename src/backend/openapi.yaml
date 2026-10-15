@@ -335,14 +335,13 @@ paths:
       operationId: receberTelemetria
       tags: [telemetria]
       summary: Receber uma linha de telemetria da ponte
-      description: >
+      description: >-
         Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial
         e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1
         fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa
-        aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir
-        a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção
-        em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa;
-        a ponte escreve cada item na serial sem traduzir.
+        aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**,
+        a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha`
+        com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
@@ -370,7 +369,7 @@ paths:
                       - v: 1
                         cmd: interromper
         "422":
-          description: >
+          description: >-
             Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo
             desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do
             labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na
@@ -396,6 +395,25 @@ paths:
                     comandos:
                       - v: 1
                         cmd: interromper
+                corpo-nao-json:
+                  summary: Corpo que não é JSON
+                  value:
+                    detail:
+                      - type: json_invalid
+                        loc: [body, 1]
+                        msg: JSON decode error
+                        input: {}
+                        ctx:
+                          error: Expecting property name enclosed in double quotes
+                corpo-sem-linha:
+                  summary: EntradaPonte sem o campo linha
+                  value:
+                    detail:
+                      - type: missing
+                        loc: [body, linha]
+                        msg: Field required
+                        input:
+                          recebido_em: "2026-10-13T17:00:00.000-03:00"
 
 components:
   parameters:
