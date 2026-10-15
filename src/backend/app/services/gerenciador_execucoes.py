@@ -156,17 +156,18 @@ class GerenciadorExecucoes:
 
     def verificar_monitores(
         self, sessao: Session, monitor: MonitorConexao, agora: datetime | None = None
-    ) -> None:
+    ) -> bool:
+        """Cancela a tentativa aberta por link ou tempo. Devolve se cancelou."""
         agora = agora or datetime.now(UTC)
         repo = Repositorio(sessao)
         tentativa = repo.buscar_tentativa_aberta()
         if tentativa is None:
-            return
+            return False
         execucao = tentativa.execucao
         if execucao.status != "em_andamento":
-            return
+            return False
 
-        sem_sinal = monitor.segundos_sem_sinal(agora)
+        sem_sinal = monitor.segundos_sem_sinal(agora, inicio=tentativa.iniciada_em)
         if sem_sinal is not None and sem_sinal >= monitor.limite_sem_sinal_s:
             celula = self._ultima_celula(repo, tentativa)
             self._registrar_falha(
@@ -182,7 +183,7 @@ class GerenciadorExecucoes:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
             self._interrupcao_pendente = False
-            return
+            return True
 
         decorrido = (agora - execucao.iniciada_em).total_seconds()
         if decorrido >= self.tempo_maximo_execucao_s:
@@ -200,6 +201,8 @@ class GerenciadorExecucoes:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
             self._interrupcao_pendente = False
+            return True
+        return False
 
     def comandos_pendentes(self) -> list[Comando]:
         if self._interrupcao_pendente:
