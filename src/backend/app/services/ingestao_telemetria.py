@@ -7,6 +7,9 @@ from datetime import datetime
 from app.models import HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
+from decimal import Decimal
+
+from app.services.atualizacao_metricas import recalcular_parciais
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
 from contrato.telemetria import (
@@ -65,9 +68,11 @@ class IngestaoTelemetria:
             )
             raise
 
-        # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
-        self.monitor.registrar_mensagem()
+        # RF32: medir silêncio com base no último POST aceito, antes de marcar esta linha.
+        # (Se registrar_mensagem() vier primeiro, o gap fica ~0 e link_lost nunca dispara.)
         gerenciador.verificar_monitores(sessao, self.monitor)
+        sessao.commit()
+        self.monitor.registrar_mensagem()
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
         if tentativa is None:
@@ -97,9 +102,11 @@ class IngestaoTelemetria:
             elif isinstance(mensagem, HcItem):
                 self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
             elif isinstance(mensagem, Passo):
-                self._gravar_passo(sessao, tentativa, mensagem, enviado_em)
+                self._gravar_passo(sessao, tentativa, mensagem, enviado_em, entrada.recebido_em)
             elif isinstance(mensagem, EVENTOS):
-                gerenciador.aplicar_evento(sessao, tentativa, mensagem)
+                gerenciador.aplicar_evento(
+                    sessao, tentativa, mensagem, momento=entrada.recebido_em
+                )
             sessao.commit()
         except Exception:
             sessao.rollback()
@@ -137,12 +144,19 @@ class IngestaoTelemetria:
             fase=tentativa.status,
             x=tel.x,
             y=tel.y,
-            bateria=tel.bat_mv,
+            bateria=Decimal(tel.bat_mv),
             velocidade=tel.vel_mm_s,
             enviado_em=enviado_em,
             recebido_em=recebido_em,
         )
         Repositorio(sessao).salvar(leitura)
+        recalcular_parciais(
+            sessao,
+            tentativa,
+            tentativa.execucao,
+            recebido_em,
+            bateria_mv_atual=tel.bat_mv,
+        )
 
     def _gravar_hc_item(
         self, sessao: Session, tentativa: Tentativa, item: HcItem, enviado_em: datetime
@@ -157,7 +171,12 @@ class IngestaoTelemetria:
         Repositorio(sessao).salvar(registro)
 
     def _gravar_passo(
-        self, sessao: Session, tentativa: Tentativa, passo: Passo, enviado_em: datetime
+        self,
+        sessao: Session,
+        tentativa: Tentativa,
+        passo: Passo,
+        enviado_em: datetime,
+        recebido_em: datetime,
     ) -> None:
         """Grava o passo (D5, D6) e as paredes da célula (D7), na mesma transação."""
         repositorio = TelemetriaRepository(sessao)
@@ -184,3 +203,4 @@ class IngestaoTelemetria:
         repositorio.gravar_paredes(
             tentativa.execucao_id, passo.x, passo.y, passo.paredes, enviado_em
         )
+        recalcular_parciais(sessao, tentativa, tentativa.execucao, recebido_em)
