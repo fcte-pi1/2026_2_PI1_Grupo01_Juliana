@@ -68,8 +68,8 @@ class Fabrica:
         status: str = "success",
         tempo_s: Decimal | None = None,
         velocidade_media: Decimal | None = None,
-        bateria_inicial: Decimal | None = Decimal("8.2"),
-        bateria_final: Decimal | None = Decimal("8.1"),
+        bateria_inicial: Decimal | None = Decimal("8400"),
+        bateria_final: Decimal | None = Decimal("8200"),
         consumo_bateria: Decimal | None = None,
     ) -> Tentativa:
         iniciada_em = execucao.iniciada_em + timedelta(seconds=40 * (attempt_index - 1))
@@ -178,8 +178,8 @@ class Fabrica:
                 fase="running",
                 x=celulas[i % len(celulas)][0],
                 y=celulas[i % len(celulas)][1],
-                bateria=Decimal("8.15"),
-                velocidade=Decimal("0.21"),
+                bateria=Decimal("8100"),
+                velocidade=Decimal("210"),
                 enviado_em=tentativa.iniciada_em + timedelta(milliseconds=100 * i),
                 recebido_em=tentativa.iniciada_em + timedelta(milliseconds=100 * i + 20),
             )

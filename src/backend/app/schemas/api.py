@@ -82,6 +82,7 @@ class Tentativa(BaseModel):
     bateria_inicial: float | None = None
     bateria_final: float | None = None
     consumo_bateria: float | None = None
+    consumo_bateria_pct: float | None = None
     health_check: list[ItemHealthCheck] = Field(default_factory=list)
     falha: Falha | None = None
 

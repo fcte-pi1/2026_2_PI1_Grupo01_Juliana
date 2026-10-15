@@ -1068,14 +1068,19 @@ components:
         bateria_inicial:
           type: number
           nullable: true
-          description: Tensão em volts no início da tentativa.
+          description: Nivel bat_mv no inicio da tentativa, em mV (contrato v1).
         bateria_final:
           type: number
           nullable: true
+          description: Ultima leitura bat_mv na tentativa, em mV.
         consumo_bateria:
           type: number
           nullable: true
-          description: Queda de tensão (bateria_inicial − bateria_final), em volts.
+          description: Queda de tensao (bateria_inicial − bateria_final), em mV.
+        consumo_bateria_pct:
+          type: number
+          nullable: true
+          description: Queda de carga LiPo 2S em pontos percentuais (curva robo.h).
         health_check:
           type: array
           items:
@@ -1130,11 +1135,11 @@ components:
           maximum: 11
         bateria:
           type: number
-          description: Tensão em volts, convertida de bat_mv.
+          description: bat_mv informado pelo robo, em mV (contrato v1).
         velocidade:
           type: number
           nullable: true
-          description: Metros por segundo, convertidos de vel_mm_s.
+          description: vel_mm_s informado pelo robo, em mm/s (contrato v1).
         rumo:
           oneOf:
             - $ref: "#/components/schemas/Rumo"
@@ -1247,7 +1252,7 @@ components:
         consumo_bateria:
           type: number
           nullable: true
-          description: Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts.
+          description: Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida.
 
     EventoTelemetria:
       type: object
