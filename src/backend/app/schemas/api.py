@@ -32,6 +32,7 @@ MotivoFalha = Literal[
     "encerrado_operador",
 ]
 MotivoEncerramento = Literal["collision", "stuck", "out_of_track"]
+MotivoRecusa = Literal["tentativa_aberta", "limite_3", "execucao_cancelada"]
 OrigemFalha = Literal["automatica", "encerrado_operador"]
 Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
@@ -80,6 +81,7 @@ class Tentativa(BaseModel):
     bateria_inicial: float | None = None
     bateria_final: float | None = None
     consumo_bateria: float | None = None
+    consumo_bateria_pct: float | None = None
     health_check: list[ItemHealthCheck] = Field(default_factory=list)
     falha: Falha | None = None
 
@@ -136,6 +138,11 @@ class RetornoNovaExecucao(BaseModel):
     execucao_id: UUID
     tentativa_id: UUID
     attempt_index: int = Field(ge=1, le=3)
+
+
+class Recusa(BaseModel):
+    motivo: MotivoRecusa
+    ocorrida_em: datetime
 
 
 # Alias usado antes do alinhamento ARQ-02

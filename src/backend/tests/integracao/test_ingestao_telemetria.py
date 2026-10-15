@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from app.models import (
@@ -218,7 +219,8 @@ def test_tel_grava_leitura_telemetria(client, db_session):
     # a fase é o status da tentativa, não o estado da tel
     assert segunda.fase == "health-check"
     assert (segunda.x, segunda.y) == (1, 2)
-    assert (segunda.bateria, segunda.velocidade) == (7810, 210)
+    assert (segunda.bateria, segunda.velocidade) == (Decimal("7810"), 210)
+    assert segunda.rumo == "N"
     recebido_em = datetime.fromisoformat(RECEBIDO_EM)
     assert segunda.recebido_em == recebido_em
     # âncora fixada na primeira mensagem do boot: 12:00:00 - 1 s
@@ -311,6 +313,22 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 
     # usa o relógio do servidor, não o recebido_em da ponte (que pode ser antigo)
     assert monitor.segundos_sem_sinal() < 5
+
+
+def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
+    """RF32: gap medido antes de registrar_mensagem na linha que reconecta."""
+    monitor = client.app.state.monitor_conexao
+    monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+
+    assert _enviar(client, _linha()).status_code == 200
+
+    db_session.expire_all()
+    execucao = db_session.get(ExecucaoLogica, tentativa_aberta.execucao_id)
+    db_session.refresh(tentativa_aberta)
+    assert tentativa_aberta.status == "failed"
+    assert execucao.status == "cancelada"
+    assert tentativa_aberta.falha is not None
+    assert tentativa_aberta.falha.motivo == "link_lost"
 
 
 def _hc_item(seq: int, **campos) -> str:
@@ -480,12 +498,15 @@ class GerenciadorFalso:
         self.eventos = []
         self.comandos = [Comando()]
 
-    def aplicar_evento(self, sessao, tentativa, mensagem) -> None:
+    def aplicar_evento(self, sessao, tentativa, mensagem, *, momento=None) -> None:
         self.ordem.append("aplicar_evento")
         self.eventos.append((sessao, tentativa, mensagem))
 
     def comandos_pendentes(self) -> list[Comando]:
         return self.comandos
+
+    def verificar_monitores(self, sessao, monitor) -> None:
+        return None
 
 
 @pytest.fixture
@@ -535,7 +556,9 @@ def test_evento_vai_ao_gerenciador_antes_do_commit(client, db_session, gerenciad
     assert sessao is db_session
     assert recebida.tentativa_id == tentativa.tentativa_id
     assert mensagem == ler_linha(_evento(1, campos))
-    assert gerenciador_falso.ordem == ["aplicar_evento", "commit"]
+    # Cada POST grava o resultado dos monitores (RF32) antes do evento.
+    # aplicar_evento continua antes do commit dessa mensagem; a repetida não chega lá.
+    assert gerenciador_falso.ordem == ["commit", "aplicar_evento", "commit", "commit"]
 
 
 def test_falha_web_sem_tentativa_aberta_chega_com_none(client, gerenciador_falso):

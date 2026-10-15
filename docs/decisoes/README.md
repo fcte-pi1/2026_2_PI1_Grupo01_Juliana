@@ -18,8 +18,12 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [012](012-retomada-celula-falha.md) | Retomada na célula da falha (sem checkpoint anterior) | Front, Backend, Firmware, Testes |
 | [013](013-status-execucao-e-tentativa.md) | Dois status no contrato: execução e tentativa | Backend, Front |
 | [014](014-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
+| [014](014-session-e-repositorio-sqlalchemy.md) | `Session` (SQLAlchemy) vs `Repositorio` no BACK-04 | Backend |
+| [015](015-rumo-persistido-leitura-telemetria.md) | `rumo` da `tel` persistido em leituras (commit à parte) | Backend, Front |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
+
+**Commits sugeridos fora do núcleo BACK-04:** RF32 na ingestão (link_lost); ADR-015 / coluna `rumo` (ver [015](015-rumo-persistido-leitura-telemetria.md)).
 
 **Firmware (laço de navegação):** Tabela B em [4.4 — Diagrama de estados](../4.4%20-%20Projeto%20conceitual%20de%20software.md#diagrama-de-estados).
 

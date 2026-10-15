@@ -16,7 +16,7 @@ from typing import Any, ClassVar
 
 from app import models
 from app.schemas import api
-from app.services.calculo_metricas import nivel_bateria_pct
+from app.services.calculo_metricas import percentual_carga_mv
 from app.services.publicador_sse import EventoSSE
 from contrato.telemetria import Tel
 from pydantic import BaseModel
@@ -115,7 +115,7 @@ class FabricaTelemetria(FabricaEvento):
             x=tel.x,
             y=tel.y,
             bateria=tel.bat_mv,
-            bateria_pct=nivel_bateria_pct(tel.bat_mv),
+            bateria_pct=percentual_carga_mv(tel.bat_mv),
             velocidade=tel.vel_mm_s,
             rumo=tel.rumo,
             eixo_longo=tel.eixo_longo,
