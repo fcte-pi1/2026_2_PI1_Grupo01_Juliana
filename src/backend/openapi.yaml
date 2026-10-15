@@ -279,6 +279,13 @@ paths:
         No evento passo, a linha id é o passo_id. Ao reconectar, o navegador
         envia esse valor em Last-Event-ID e o backend reenvia os passos
         posteriores. A amostra telemetria não entra nesse replay.
+        O reenvio atravessa as três tentativas, porque o trajeto é da execução.
+        Enquanto não há evento novo, o servidor manda um comentário de keep-alive
+        a cada 15 s. O id de um passo pode repetir: quando o robô relê uma célula
+        em que já estava, só a máscara de paredes muda, e o mesmo passo_id é
+        republicado para a tela redesenhar. O servidor fecha o fluxo em dois
+        casos: execução já encerrada, logo depois do reenvio, e fila do cliente
+        estourada. Nos dois, reconectar com Last-Event-ID recompõe o trajeto.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
         - name: Last-Event-ID
@@ -287,7 +294,10 @@ paths:
           schema:
             type: integer
             minimum: 0
-          description: passo_id do último passo já aplicado na tela.
+          description: >
+            passo_id do último passo já aplicado na tela. O backend trata valor
+            ausente, vazio, negativo ou não numérico como 0, e aí reenvia o
+            trajeto inteiro.
       responses:
         "200":
           description: Fluxo text/event-stream.
@@ -297,10 +307,10 @@ paths:
                 type: string
               examples:
                 telemetria:
-                  summary: Amostra de célula, bateria e velocidade
+                  summary: Amostra de célula, bateria em mV e velocidade em mm/s
                   value: |
                     event: telemetria
-                    data: {"tipo":"telemetria","ordem":42,"x":0,"y":2,"bateria":7.81,"velocidade":0.21,"rumo":"N","eixo_longo":null,"enviado_em":"2026-10-07T14:03:21-03:00"}
+                    data: {"tipo":"telemetria","ordem":42,"x":0,"y":2,"bateria":7810,"bateria_pct":56.0,"velocidade":210,"rumo":"N","eixo_longo":null,"enviado_em":"2026-10-07T14:03:21-03:00"}
                 passo:
                   summary: id igual ao passo_id, para o Last-Event-ID
                   value: |
@@ -316,7 +326,7 @@ paths:
                   summary: Um componente verificado
                   value: |
                     event: health_check
-                    data: {"tipo":"health_check","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","componente":"bateria","aprovado":true,"valor_lido":7.84}
+                    data: {"tipo":"health_check","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","componente":"bateria","aprovado":true,"valor_lido":7840}
                 falha:
                   summary: Tentativa encerrada com falha
                   value: |
@@ -1129,7 +1139,9 @@ components:
           maximum: 11
         bateria:
           type: number
-          description: Tensão em volts, convertida de bat_mv.
+          description: >
+            Tensão em mV, como o robô envia em bat_mv (ADR-014). Converter para
+            percentual de carga é do backend, pela curva da fonte ativa.
         velocidade:
           type: number
           nullable: true
@@ -1248,6 +1260,17 @@ components:
           nullable: true
           description: Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts.
 
+    EventoSSE:
+      description: >
+        Conteúdo do campo data de um frame do stream. O campo tipo discrimina
+        qual dos seis eventos é e repete o valor da linha event do frame.
+      oneOf:
+        - $ref: "#/components/schemas/EventoTelemetria"
+        - $ref: "#/components/schemas/EventoPasso"
+        - $ref: "#/components/schemas/EventoStatus"
+        - $ref: "#/components/schemas/EventoHealthCheck"
+        - $ref: "#/components/schemas/EventoFalha"
+        - $ref: "#/components/schemas/EventoSucesso"
     EventoTelemetria:
       type: object
       required: [tipo, ordem, x, y, bateria, enviado_em]
@@ -1263,9 +1286,18 @@ components:
           type: integer
         bateria:
           type: number
+          description: Tensão em mV, igual ao bat_mv do contrato serial (ADR-014).
+        bateria_pct:
+          type: number
+          nullable: true
+          description: >
+            Percentual de carga calculado pelo backend (RF11), pela curva de
+            descarga da fonte ativa. A própria tensão diz qual é a fonte, porque
+            as faixas da LiPo 2S e do pacote de pilhas não se sobrepõem.
         velocidade:
           type: number
           nullable: true
+          description: Velocidade em mm/s, igual ao vel_mm_s do contrato serial.
         rumo:
           oneOf:
             - $ref: "#/components/schemas/Rumo"

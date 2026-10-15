@@ -158,6 +158,26 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 
 ---
 
+## Stream SSE (BACK-07)
+
+`GET /execucoes/{execucao_id}/stream` devolve `text/event-stream` com os eventos da execução. A linha `event:` repete o campo `tipo` do JSON em `data:`, e os seis tipos estão no `openapi.yaml`: `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso`.
+
+```bash
+curl -N http://localhost:8000/execucoes/<execucao_id>/stream
+curl -N -H "Last-Event-ID: 40" http://localhost:8000/execucoes/<execucao_id>/stream
+```
+
+- **Reenvio.** O fluxo começa reenviando os passos com `passo_id` maior que o `Last-Event-ID`. Sem o cabeçalho (ou com valor vazio, negativo ou não numérico), reenvia o trajeto inteiro da execução — é o que a tela recebe ao abrir no meio da corrida. Só o evento `passo` tem linha `id:`; a amostra `telemetria` não entra no reenvio.
+- **Keep-alive.** Sem evento novo, sai uma linha de comentário a cada 15 s.
+- **Fim do fluxo.** O servidor fecha em dois casos: execução já encerrada, depois do reenvio, e fila do cliente estourada (500 eventos). Nos dois, reconectar com `Last-Event-ID` recompõe o trajeto. No resto, quem fecha é o navegador.
+- **Publicação.** Acontece **depois** do COMMIT da ingestão, na mesma chamada: o evento sai em milissegundos (RNF-B04). Uma falha na publicação é registrada no log e não desfaz a gravação nem falha o `POST /telemetria` (RNF-B07).
+- **Um worker só.** A fila de cada cliente é memória do processo. Com `uvicorn --workers 2`, um `POST /telemetria` que caia no worker 2 não alcança o stream preso no worker 1. O mesmo já valia para o deduplicador e o relógio do robô.
+- **404** quando não existe execução com aquele `execucao_id`.
+
+Para ver funcionando sem robô, abra o `curl` acima e mande passos pelo `POST /telemetria` (seção anterior) ou rode o `src/simulador-telemetria`. Cada rodada precisa de um `boot` novo: o deduplicador guarda `(boot, seq)` em memória e descarta o que já viu.
+
+---
+
 ## Onde implementar cada tarefa (BACK-01 … BACK-08)
 
 | Tarefa | Pasta / arquivo |
@@ -167,7 +187,7 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 | BACK-04 Métricas | `app/services/calculo_metricas.py` |
 | BACK-05 Link / tempo | `app/services/monitor_conexao.py` (limites em `app/config.py`) |
 | BACK-06 SQL específico | `app/repositories/` |
-| BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |
+| BACK-07 SSE | `app/services/publicador_sse.py`, `app/services/fabrica_eventos.py`, `app/services/fluxo_sse.py`, `app/routers/stream.py` |
 | BACK-08 Ponte serial | `ponte/` (processo separado) |
 | HTTP / contrato ARQ-02 | `app/routers/` (501 até implementar) |
 | POST /telemetria (4.4.1) | `contrato/telemetria.py` (`EntradaPonte`, `RespostaPonte`) |
