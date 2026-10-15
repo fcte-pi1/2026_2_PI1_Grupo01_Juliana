@@ -11,9 +11,9 @@ import threading
 import time
 
 import pytest
-from sse_test_utils import count_keep_alives, parse_sse_frames
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.publicador_sse import EventoSSE
+from sse_test_utils import count_keep_alives, parse_sse_frames
 
 EXECUCAO_INEXISTENTE = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 CELULAS = [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2)]
@@ -103,7 +103,9 @@ def test_last_event_id_invalido_vale_zero_e_reenvia_tudo(client, fabrica, valor)
     tentativa = fabrica.tentativa(execucao)
     fabrica.passos(tentativa, CELULAS)
 
-    frames = parse_sse_frames(_abrir(client, execucao.execucao_id, headers={"Last-Event-ID": valor}))
+    frames = parse_sse_frames(
+        _abrir(client, execucao.execucao_id, headers={"Last-Event-ID": valor})
+    )
 
     assert len(frames) == 5
 

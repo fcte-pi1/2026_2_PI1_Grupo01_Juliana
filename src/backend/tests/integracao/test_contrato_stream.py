@@ -2,8 +2,6 @@
 
 import json
 
-from contrato_utils import validar_contra
-from sse_test_utils import parse_sse_frames
 from app.services.fabrica_eventos import (
     FABRICAS,
     OrigemFalha,
@@ -12,6 +10,8 @@ from app.services.fabrica_eventos import (
     OrigemTelemetria,
 )
 from contrato.telemetria import ler_linha
+from contrato_utils import validar_contra
+from sse_test_utils import parse_sse_frames
 
 CELULAS = [(0, 0), (0, 1), (0, 2)]
 LINHA_TEL = (
