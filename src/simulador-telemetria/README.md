@@ -1,6 +1,6 @@
 # Simulador de telemetria
 
-Faz o papel do Micromouse: lê um roteiro JSON e emite as mensagens do contrato de
+Faz o papel do Micromouse: lê um roteiro JSON (ou uma gravação `.jsonl`) e emite as mensagens do contrato de
 telemetria v1 (`docs/4.4.1 - Contrato de telemetria.md`), uma linha JSON por mensagem.
 Serve para testar a ponte, o backend e o front sem o robô. As mensagens vêm de
 `contrato.telemetria`, do backend, então o simulador nunca sai do contrato.
@@ -37,12 +37,12 @@ para o stderr.
 
 | Opção | Padrão | Efeito |
 | --- | --- | --- |
-| `roteiro` | | Arquivo JSON do cenário (formato na seção 6.1 de `tasks/prd-simulador-telemetria.md`). |
+| `roteiro` | | Arquivo JSON do cenário (formato na seção 6.1 de `tasks/prd-simulador-telemetria.md`), ou `.jsonl` com as mensagens prontas ([Reproduzir uma gravação](#reproduzir-uma-gravação-jsonl)). |
 | `--saida stdout\|pty\|http` | `stdout` | Para onde as linhas vão. |
 | `--url URL` | | URL da API, para `--saida http`. |
 | `--acelerar N` | `1` | Divide as esperas e o `t_ms` por N. |
 | `--sem-espera` | | Emite tudo de uma vez, sem dormir. |
-| `--taxa-tel HZ` | `5` | Taxa da `tel` em movimento, de 1 a 20 Hz; fora disso, código 1. |
+| `--taxa-tel HZ` | `5` | Taxa da `tel` em movimento, de 1 a 20 Hz; fora disso, código 1. Sem efeito num `.jsonl`. |
 | `--boot N` | salvo em `.simulador/boot` | Número do boot da primeira tentativa. |
 
 Mesmo acelerado, o simulador nunca passa de 20 linhas por segundo de tempo real.
@@ -115,6 +115,31 @@ Valor inválido no ambiente termina com código 1, como a opção inválida.
 | `SIMULADOR_SAIDA` | `--saida` | `stdout` | `stdout`, `pty` ou `http`. |
 | `SIMULADOR_ACELERAR` | `--acelerar` | `1` | Divide as esperas e o `t_ms`; maior que 0. |
 | `SIMULADOR_TAXA_TEL_HZ` | `--taxa-tel` | `5` | Taxa da `tel` em movimento, de 1 a 20 Hz. |
+
+## Reproduzir uma gravação (`.jsonl`)
+
+Um arquivo `.jsonl` é uma gravação: uma mensagem do contrato por linha, já pronta. É o que o
+[simulador de navegação](../firmware/simulador-navegacao/README.md#roteiro-de-telemetria) grava
+com `--telemetria`. O simulador reconhece pela extensão e envia cada linha como está, pelas
+mesmas saídas e com as mesmas opções de um roteiro:
+
+```sh
+make -C ../firmware/simulador-navegacao build/simulador
+../firmware/simulador-navegacao/build/simulador --telemetria /tmp/tel ../firmware/simulador-navegacao/labirintos/8x4-frente-01-dir.txt
+uv run python -m simulador /tmp/tel/8x4-frente-01-dir.jsonl --saida http --url http://localhost:8000
+```
+
+- **Ritmo:** cada linha sai no seu `t_ms` (dividido por `--acelerar`), com o mesmo limite de 20
+  linhas por segundo. Se o `t_ms` voltar (evento reenviado depois de uma queda), a linha sai
+  logo depois da anterior.
+- **Boot:** cada boot diferente do arquivo vira um boot novo, a partir do salvo em
+  `.simulador/boot` (ou do `--boot`), e o resto da mensagem não muda. Assim, reproduzir o mesmo
+  arquivo duas vezes gera duas execuções no backend, em vez de o Deduplicador descartar a
+  segunda.
+- **Interromper:** funciona como no roteiro. Depois da `falha` com `origem` `web`, o resto da
+  gravação não sai.
+- Uma linha fora do contrato recusa o arquivo inteiro (código 1, com o número da linha). Para
+  testar linhas malformadas, use um roteiro com `linha_crua`, como o `malformadas.json`.
 
 ## Roteiros prontos
 

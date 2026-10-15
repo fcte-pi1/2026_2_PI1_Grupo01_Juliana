@@ -1,15 +1,15 @@
 import type { StatusExecucao, StatusTentativa } from '../../api/tipos'
 
 interface PilulaResultadoProps {
-  status: StatusExecucao
-  resultado: 'success' | 'failed' | null
+  resultado: StatusExecucao | null
 }
 
 /** Resultado de uma execução lógica no histórico. */
-export function PilulaResultado({ status, resultado }: PilulaResultadoProps) {
-  if (status === 'em_andamento') return <span className="pilula pilula--primaria">Em andamento</span>
-  if (resultado === 'success') return <span className="pilula pilula--sucesso">Sucesso</span>
-  return <span className="pilula pilula--perigo">{status === 'cancelada' ? 'Cancelada' : 'Falha'}</span>
+export function PilulaResultado({ resultado }: PilulaResultadoProps) {
+  if (resultado === 'em_andamento') return <span className="pilula pilula--primaria">Em andamento</span>
+  if (resultado === 'concluida') return <span className="pilula pilula--sucesso">Concluída</span>
+  if (resultado === 'cancelada') return <span className="pilula pilula--perigo">Cancelada</span>
+  return <span className="pilula">—</span>
 }
 
 const STATUS_TENTATIVA: Record<StatusTentativa, { texto: string; classe: string }> = {

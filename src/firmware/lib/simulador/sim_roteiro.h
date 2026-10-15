@@ -7,7 +7,7 @@
  * mesma ordem que o firmware envia. Serve de entrada para o simulador de
  * robô do ARQ-07, que reproduz o roteiro para o backend como se fosse a ponte.
  *
- * Sequência gerada: health-check (9 hc_item e o hc_resultado), um "passo" a
+ * Sequência gerada: health-check (8 hc_item e o hc_resultado), um "passo" a
  * cada célula, "tel" a 5 Hz em movimento (1 Hz parado) e, no fim, "sucesso"
  * ou "falha". Os tempos vêm de um modelo simples de velocidade constante e os
  * valores do health-check são fictícios.

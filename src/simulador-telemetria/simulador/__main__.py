@@ -12,6 +12,7 @@ import httpx
 from simulador.emissor import TAXA_TEL_MAXIMA_HZ, TAXA_TEL_MINIMA_HZ, emitir
 from simulador.gerador import Opcoes, gerar
 from simulador.interrupcao import Interrupcao
+from simulador.reproducao import carregar_gravacao, reproduzir
 from simulador.roteiro import RoteiroInvalido, carregar
 from simulador.saidas import PtyIndisponivel, SaidaHttp, SaidaPty
 
@@ -33,7 +34,11 @@ def criar_parser() -> argparse.ArgumentParser:
         prog="python -m simulador",
         description="Faz o papel do Micromouse e emite a telemetria do contrato v1.",
     )
-    parser.add_argument("roteiro", type=Path, help="arquivo JSON com o roteiro do cenário")
+    parser.add_argument(
+        "roteiro",
+        type=Path,
+        help="arquivo JSON com o roteiro do cenário, ou .jsonl com as mensagens prontas",
+    )
     parser.add_argument(
         "--saida",
         choices=SAIDAS,
@@ -55,7 +60,8 @@ def criar_parser() -> argparse.ArgumentParser:
         "--taxa-tel",
         type=float,
         metavar="HZ",
-        help="taxa da tel em movimento, de 1 a 20 (padrão: $SIMULADOR_TAXA_TEL_HZ ou 5)",
+        help="taxa da tel em movimento, de 1 a 20; sem efeito num .jsonl"
+        " (padrão: $SIMULADOR_TAXA_TEL_HZ ou 5)",
     )
     parser.add_argument(
         "--boot",
@@ -158,24 +164,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.saida == "http" and not args.url:
         log.error("--saida http precisa de --url ou API_URL")
         return 1
+    # Um .jsonl é uma gravação (ex.: a do simulador de navegação): as mensagens saem como
+    # estão, só com o boot trocado. O resto é um roteiro de cenário, que o gerador expande.
+    gravado = args.roteiro.suffix == ".jsonl"
     try:
-        roteiro = carregar(args.roteiro)
+        if gravado:
+            gravacao = carregar_gravacao(args.roteiro)
+            nome, boots = gravacao.nome, gravacao.boots
+        else:
+            roteiro = carregar(args.roteiro)
+            nome, boots = roteiro.nome, len(roteiro.tentativas)
     except RoteiroInvalido as erro:
         log.error("%s", erro)
         return 1
 
     try:
-        boot = reservar_boots(ARQUIVO_BOOT, len(roteiro.tentativas), args.boot)
+        boot = reservar_boots(ARQUIVO_BOOT, boots, args.boot)
     except (ConfiguracaoInvalida, OSError) as erro:
         log.error("boot: %s", erro)
         return 1
-    opcoes = Opcoes(boot=boot, taxa_tel_hz=args.taxa_tel)
+    if gravado:
+        itens = reproduzir(gravacao, boot)
+    else:
+        itens = gerar(roteiro, Opcoes(boot=boot, taxa_tel_hz=args.taxa_tel))
 
     interrupcao = Interrupcao()
 
     def rodar(escrever: Callable[[str], None]) -> int:
         return emitir(
-            gerar(roteiro, opcoes),
+            itens,
             escrever,
             acelerar=args.acelerar,
             sem_espera=args.sem_espera,
@@ -204,7 +221,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             sys.stdout.flush()
 
         enviadas = rodar(escrever)
-    log.info("roteiro %s terminado: %d linhas", roteiro.nome, enviadas)
+    log.info("roteiro %s terminado: %d linhas", nome, enviadas)
     return 0
 
 

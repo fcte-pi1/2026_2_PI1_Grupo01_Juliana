@@ -20,8 +20,7 @@ from sqlalchemy.orm import Session
 
 COMPONENTES = [
     "bateria",
-    "tof_frontal_esq",
-    "tof_frontal_dir",
+    "tof_frontal",
     "tof_esquerdo",
     "tof_direito",
     "motor_esquerdo",

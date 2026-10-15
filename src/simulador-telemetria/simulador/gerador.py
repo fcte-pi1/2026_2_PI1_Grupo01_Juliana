@@ -27,7 +27,7 @@ COMPONENTES: tuple[Componente, ...] = get_args(Componente)  # ordem da Tabela 3
 
 PERIODO_TEL_PARADO_MS = 1000  # tel a 1 Hz parado
 INTERVALO_HC_ITEM_MS = 200  # entre um teste de componente e o próximo
-DURACAO_HC_MS = 2000  # hc_item em 100, 300, ..., 1700 ms; hc_resultado em 1900 ms
+DURACAO_HC_MS = 2000  # hc_item em 100, 300, ..., 1500 ms; hc_resultado em 1900 ms
 DURACAO_FINAL_MS = 3000  # tel a 1 Hz em success/failed depois do fim
 TAMANHO_CELULA_MM = 180
 VELOCIDADE_MAXIMA_MM_S = 2000  # teto do vel_mm_s no contrato
@@ -117,7 +117,7 @@ def _eixo_longo(labirinto: str, x: int, y: int, atual: str | None) -> str | None
 
 
 def _health_check(estado: _Boot, inicio: str) -> Iterator[tuple[int, Mensagem]]:
-    """9 hc_item e o hc_resultado, com tel a 1 Hz em estado health-check."""
+    """8 hc_item e o hc_resultado, com tel a 1 Hz em estado health-check."""
     reprovados = set(estado.tentativa.hc_reprovados)
     labirinto = estado.roteiro.labirinto
     aprovado = not reprovados and labirinto != "invalido"

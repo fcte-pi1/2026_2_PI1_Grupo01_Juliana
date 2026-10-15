@@ -460,7 +460,7 @@ components:
               - componente: bateria
                 aprovado: true
                 valor_lido: 7.84
-              - componente: tof_frontal_esq
+              - componente: tof_frontal
                 aprovado: true
                 valor_lido: 180
             falha: null
@@ -922,8 +922,7 @@ components:
       type: string
       enum:
         - bateria
-        - tof_frontal_esq
-        - tof_frontal_dir
+        - tof_frontal
         - tof_esquerdo
         - tof_direito
         - motor_esquerdo
