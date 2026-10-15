@@ -65,6 +65,60 @@
   color: var(--cor-texto-suave);
 }
 
+/* Os dados essenciais ficam juntos no primeiro trecho da tela (RNF-B03). */
+.metricas-tempo-real {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--esp-3);
+}
+
+.metricas-tempo-real .metrica {
+  min-width: 0;
+  padding: var(--esp-4);
+}
+
+.metricas-tempo-real .metrica__valor {
+  font-size: 1.75rem;
+  overflow-wrap: anywhere;
+}
+
+.metricas-tempo-real .metrica__unidade {
+  margin-left: var(--esp-1);
+  font-size: var(--texto-sm);
+}
+
+.execucao-tempo-real {
+  gap: var(--esp-3);
+  padding-top: var(--esp-4);
+}
+
+.execucao-tempo-real .resumo-execucao,
+.execucao-tempo-real .etapas {
+  padding: var(--esp-3) var(--esp-4);
+}
+
+.painel-tempo-real .pagina-duas-colunas {
+  gap: var(--esp-4);
+}
+
+@media (max-width: 1100px) {
+  .metricas-tempo-real {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .metricas-tempo-real {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .metricas-tempo-real {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .barra {
   height: 6px;
   border-radius: var(--raio-pilula);

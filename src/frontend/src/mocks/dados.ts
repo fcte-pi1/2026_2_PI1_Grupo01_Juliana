@@ -109,7 +109,7 @@ export function healthCheck(aprovados: number): ItemHealthCheck[] {
   return componentes.map((componente, i) => ({
     componente,
     aprovado: i < aprovados ? true : null,
-    valor_lido: componente === 'bateria' && i < aprovados ? 6.16 : null,
+    valor_lido: componente === 'bateria' && i < aprovados ? 7.84 : null,
   }))
 }
 
@@ -117,13 +117,14 @@ export function relativo(agora: number, segundos: number): string {
   return new Date(agora + segundos * 1000).toISOString()
 }
 
-export function leituras(agora: number, trajeto: PassoTrajeto[], ultimaHaS: number): LeituraTelemetria[] {
+/** Medições já definidas em Tela03EmExecucao do contrato OpenAPI. */
+export function leituras(agora: number, trajeto: PassoTrajeto[], ultimaHaS: number, final?: Pick<LeituraTelemetria, 'bateria' | 'velocidade'>): LeituraTelemetria[] {
   return trajeto.slice(-5).map((p, i, lista) => ({
     ordem: p.seq,
     x: p.x,
     y: p.y,
-    bateria: 6.16 - p.seq * 0.005,
-    velocidade: 0.09,
+    bateria: i === lista.length - 1 && final ? final.bateria : 7.81,
+    velocidade: i === lista.length - 1 && final ? final.velocidade : 0.21,
     enviado_em: relativo(agora, -ultimaHaS - (lista.length - 1 - i) * 1.5),
   }))
 }
@@ -137,7 +138,7 @@ export function tentativa(agora: number, parcial: Partial<Tentativa> & Pick<Tent
     encerrada_em: null,
     tempo_s: null,
     velocidade_media: null,
-    bateria_inicial: 88,
+    bateria_inicial: 7.84,
     bateria_final: null,
     consumo_bateria: null,
     health_check: healthCheck(8),

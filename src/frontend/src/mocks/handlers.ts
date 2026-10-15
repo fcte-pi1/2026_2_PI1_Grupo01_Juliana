@@ -1,6 +1,6 @@
 import { http, HttpResponse, sse } from 'msw'
 import type { EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
-import { avancarCenario, buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, registrarNovaExecucao } from './cenarioAtual'
+import { avancarCenario, buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, registrarEvento, registrarNovaExecucao } from './cenarioAtual'
 import { buscarCenario } from './cenarios'
 import { detalheAPI, execucao, HISTORICO, resumoAPI, tentativa, trajetoAte } from './dados'
 
@@ -86,27 +86,46 @@ export const handlers = [
 
 /** Stream SSE da execução. Só no navegador: o jsdom dos testes não tem EventSource. */
 export function criarHandlerStream() {
-  return sse<{ message: string }>(`${API}/execucoes/:id/stream`, ({ client }) => {
-    if (!cenarioAtual().aoVivo || execucaoDoCenario().leituras.length === 0) return
-    let ordem = 100
+  return sse<Record<EventoExecucao['tipo'], string>>(`${API}/execucoes/:id/stream`, ({ client, params, request }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id) ?? (id === 'e-0042' ? execucaoDoCenario() : null)
+    if (!atual) return
+    const cursor = Number(request.headers.get('Last-Event-ID') ?? 0)
+    for (const passo of atual.trajeto) {
+      const passoId = passo.passo_id ?? passo.seq
+      if (passoId > cursor) client.send({ event: 'passo', id: String(passoId), data: JSON.stringify({ tipo: 'passo', ...passo, passo_id: passoId }) })
+    }
+    const tentativa = atual.tentativas.at(-1)
+    if (tentativa) {
+      for (const item of tentativa.health_check) {
+        if (item.aprovado !== null) client.send({ event: 'health_check', data: JSON.stringify({ tipo: 'health_check', tentativa_id: tentativa.tentativa_id, ...item }) })
+      }
+      client.send({ event: 'status', data: JSON.stringify({ tipo: 'status', tentativa_id: tentativa.tentativa_id,
+        attempt_index: tentativa.attempt_index, status_tentativa: tentativa.status, status_execucao: atual.status, tipo_dip: tentativa.tipo_descoberto }) })
+    }
+    if (!cenarioAtual().aoVivo) return
     const intervalo = setInterval(() => {
-      const ultima = execucaoDoCenario().leituras.at(-1)
+      const atual = buscarExecucaoRegistrada(id)
+      if (!atual || atual.status !== 'em_andamento') {
+        clearInterval(intervalo)
+        return
+      }
+      const tentativa = atual.tentativas.at(-1)
+      if (tentativa?.status !== 'running') return
+      const ultima = atual.leituras.at(-1)
+      if (!ultima) return
       const evento: EventoExecucao = {
-        tipo: 'leitura',
-        leitura: {
-          ordem: ordem++,
-          x: ultima?.x ?? 0,
-          y: ultima?.y ?? 0,
-          bateria: ultima?.bateria ?? 6.1,
-          velocidade: 0.09,
-          enviado_em: new Date().toISOString(),
-        },
+        tipo: 'telemetria', ordem: ultima.ordem + 1,
+        x: ultima.x, y: ultima.y, bateria: ultima.bateria, velocidade: ultima.velocidade,
+        enviado_em: new Date().toISOString(),
       }
       try {
-        client.send({ data: JSON.stringify(evento) })
+        registrarEvento(id, evento)
+        client.send({ event: 'telemetria', data: JSON.stringify(evento) })
       } catch {
         clearInterval(intervalo)
       }
     }, 1000)
+    request.signal.addEventListener('abort', () => clearInterval(intervalo), { once: true })
   })
 }

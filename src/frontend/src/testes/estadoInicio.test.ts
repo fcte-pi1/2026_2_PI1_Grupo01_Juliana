@@ -24,10 +24,11 @@ describe('derivarEstadoInicio', () => {
     expect(derivarEstadoInicio(execucao, agora)).toBe(estado)
   })
 
-  it('passa para sem-comunicacao depois de 5 s sem mensagem', () => {
+  it('passa para sem-comunicacao a partir de 5 s sem mensagem', () => {
     const agora = Date.now()
     const { execucao } = buscarCenario('03-em-execucao').atual(agora)
-    expect(derivarEstadoInicio(execucao, agora + 4_000)).toBe('em-execucao')
-    expect(derivarEstadoInicio(execucao, agora + 6_000)).toBe('sem-comunicacao')
+    const ultima = Date.parse(execucao!.ultima_mensagem_em!)
+    expect(derivarEstadoInicio(execucao, ultima + 4_999)).toBe('em-execucao')
+    expect(derivarEstadoInicio(execucao, ultima + 5_000)).toBe('sem-comunicacao')
   })
 })

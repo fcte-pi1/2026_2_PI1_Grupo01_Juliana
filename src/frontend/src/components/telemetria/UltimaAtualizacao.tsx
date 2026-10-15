@@ -5,10 +5,10 @@ interface UltimaAtualizacaoProps {
   segundos: number | null
 }
 
-/** Pílula "Atualizado há X s" (RF04); fica vermelha sem dados por mais de 5 s. */
+/** Pílula "Atualizado há X s" (RF04); fica vermelha a partir de 5 s sem dados. */
 export function UltimaAtualizacao({ segundos }: UltimaAtualizacaoProps) {
   if (segundos === null) return <span className="pilula">Aguardando dados</span>
-  const semDados = segundos > ALERTA_SEM_DADOS_S
+  const semDados = segundos >= ALERTA_SEM_DADOS_S
   return (
     <span className={`pilula mono ${semDados ? 'pilula--perigo' : 'pilula--sucesso'}`}>
       {semDados ? 'Sem dados há' : 'Atualizado há'} {Math.floor(segundos)} s

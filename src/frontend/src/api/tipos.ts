@@ -67,6 +67,8 @@ export interface LeituraTelemetria {
 }
 
 export interface PassoTrajeto {
+  passo_id?: number
+  entrou_em?: string | null
   seq: number
   x: number
   y: number
@@ -110,6 +112,10 @@ export interface Recusa {
 /** Execução lógica com tudo o que as telas de Início e Detalhe exibem. */
 export interface Execucao {
   execucao_id: string
+  /** Última posição recebida por REST/SSE, sem fabricar uma leitura de telemetria. */
+  celula_atual?: Celula | null
+  /** Instante observado de recebimento SSE; não altera o horário informado pelo robô. */
+  ultima_atualizacao_em?: number
   numero?: number
   labirinto: TipoLabirinto
   status: StatusExecucao
@@ -158,6 +164,9 @@ export interface EncerrarPedido {
 
 /** Eventos do stream SSE da execução (GET /execucoes/{id}/stream). */
 export type EventoExecucao =
-  | { tipo: 'leitura'; leitura: LeituraTelemetria }
-  | { tipo: 'passo'; passo: PassoTrajeto }
-  | { tipo: 'tentativa'; tentativa: Tentativa }
+  | components['schemas']['EventoTelemetria']
+  | components['schemas']['EventoPasso']
+  | components['schemas']['EventoStatus']
+  | components['schemas']['EventoHealthCheck']
+  | components['schemas']['EventoFalha']
+  | components['schemas']['EventoSucesso']

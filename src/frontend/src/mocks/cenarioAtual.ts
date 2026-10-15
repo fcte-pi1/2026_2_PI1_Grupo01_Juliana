@@ -1,13 +1,17 @@
-import type { Execucao, ExecucaoAtualResposta, TipoLabirinto } from '../api/tipos'
+import type { EventoExecucao, Execucao, ExecucaoAtualResposta, TipoLabirinto } from '../api/tipos'
+import { aplicarEvento } from '../api/eventosExecucao'
 import { buscarCenario, type Cenario } from './cenarios'
 
 // Cenário exibido pelos mocks. Vem de ?cenario= na URL (útil para abrir um
 // estado direto) e fica guardado na sessão para sobreviver à navegação.
 
 const CHAVE = 'mock:cenario'
+const CHAVE_DADOS = 'mock:execucoes'
 
 let atual: string | null = null
 let criada: ExecucaoAtualResposta | null = null
+let inicioCenario: number | null = null
+let origemUrl: string | null = null
 const registradas = new Map<string, Execucao>()
 
 function lerSessao(): string | null {
@@ -22,6 +26,19 @@ export function cenarioAtual(): Cenario {
   if (atual === null) {
     const daUrl = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('cenario')
     atual = daUrl ?? lerSessao()
+    origemUrl = daUrl
+    try {
+      const salvos = JSON.parse(sessionStorage.getItem(CHAVE_DADOS) ?? 'null')
+      if (salvos && (salvos.cenario === atual || salvos.origemUrl === daUrl) && Number.isFinite(salvos.inicio)) {
+        atual = salvos.cenario
+        origemUrl = salvos.origemUrl
+        inicioCenario = salvos.inicio
+        criada = salvos.dados
+        for (const [id, execucao] of salvos.registradas ?? []) registradas.set(id, execucao)
+      }
+    } catch {
+      // Uma sessão ausente ou inválida inicia o cenário definido na URL.
+    }
   }
   return buscarCenario(atual)
 }
@@ -29,6 +46,8 @@ export function cenarioAtual(): Cenario {
 export function definirCenario(id: string): void {
   criada = null
   registradas.clear()
+  inicioCenario = Date.now()
+  origemUrl = id
   salvarCenario(id)
 }
 
@@ -36,16 +55,44 @@ function salvarCenario(id: string): void {
   atual = id
   try {
     sessionStorage.setItem(CHAVE, id)
+    salvarDados()
   } catch {
     // sem sessionStorage o cenário só vale até recarregar a página
   }
 }
 
 export function dadosAtuais(agora: number): ExecucaoAtualResposta {
-  return criada ?? cenarioAtual().atual(agora)
+  const cenario = cenarioAtual()
+  if (!criada) {
+    inicioCenario ??= agora
+    criada = cenario.atual(inicioCenario)
+    if (criada.execucao) registradas.set(criada.execucao.execucao_id, criada.execucao)
+    salvarDados()
+  }
+  return criada
+}
+
+function salvarDados(): void {
+  try {
+    sessionStorage.setItem(CHAVE_DADOS, JSON.stringify({ cenario: atual, origemUrl, inicio: inicioCenario,
+      dados: criada, registradas: [...registradas] }))
+  } catch {
+    // Sem armazenamento, os mocks continuam funcionando até a página ser recarregada.
+  }
+}
+
+/** Persiste os eventos dos exemplos existentes para o GET restaurar o mesmo estado. */
+export function registrarEvento(id: string, evento: EventoExecucao): void {
+  const atual = buscarExecucaoRegistrada(id)
+  if (!atual) return
+  const atualizada = aplicarEvento(atual, evento)
+  registradas.set(id, atualizada)
+  if (criada?.execucao?.execucao_id === id) criada = { ...criada, execucao: atualizada }
+  salvarDados()
 }
 
 export function buscarExecucaoRegistrada(id: string): Execucao | undefined {
+  cenarioAtual()
   return registradas.get(id)
 }
 

@@ -1,27 +1,44 @@
 import type { StatusTentativa } from '../../api/tipos'
+import { ROTULO_COMPONENTE } from '../../utils/formatacao'
 
 interface EtapasExecucaoProps {
   status: StatusTentativa
   healthCheckAprovados: number
+  healthCheckReprovados: number
   healthCheckTotal: number
 }
 
 type Situacao = 'feita' | 'atual' | 'pendente' | 'falha'
+const TOTAL_COMPONENTES = Object.keys(ROTULO_COMPONENTE).length
 
 /** Linha do tempo da tentativa: health-check → em execução → sucesso ou falha. */
-export function EtapasExecucao({ status, healthCheckAprovados, healthCheckTotal }: EtapasExecucaoProps) {
+export function EtapasExecucao({ status, healthCheckAprovados, healthCheckReprovados, healthCheckTotal }: EtapasExecucaoProps) {
+  const healthCheckReprovado = healthCheckReprovados > 0
+  const healthCheckAprovado = healthCheckAprovados === TOTAL_COMPONENTES && !healthCheckReprovado
   const etapas: Array<{ titulo: string; detalhe: string; situacao: Situacao }> = [
     {
       titulo: 'Health-check',
-      detalhe: status === 'health-check'
-        ? healthCheckTotal === 0 ? 'aguardando dados do health-check' : `verificando · ${healthCheckAprovados} de ${healthCheckTotal}`
-        : `aprovado · ${healthCheckAprovados} de ${healthCheckTotal} OK`,
-      situacao: status === 'health-check' ? 'atual' : 'feita',
+      detalhe: healthCheckReprovado
+        ? `reprovado · ${healthCheckReprovados} ${healthCheckReprovados === 1 ? 'componente' : 'componentes'} com falha`
+        : healthCheckAprovado
+          ? `aprovado · ${healthCheckAprovados} de ${TOTAL_COMPONENTES} OK`
+          : healthCheckTotal === 0
+            ? 'aguardando dados do health-check'
+            : `aguardando resultados · ${healthCheckAprovados} de ${TOTAL_COMPONENTES} OK`,
+      situacao: healthCheckReprovado ? 'falha' : healthCheckAprovado ? 'feita' : status === 'health-check' ? 'atual' : 'pendente',
     },
     {
       titulo: 'Em execução',
-      detalhe: 'o robô percorre o labirinto sozinho',
-      situacao: status === 'running' ? 'atual' : status === 'health-check' ? 'pendente' : 'feita',
+      detalhe: healthCheckReprovado
+        ? 'health-check reprovado'
+        : !healthCheckAprovado
+          ? 'aguardando resultados do health-check'
+          : 'o robô percorre o labirinto sozinho',
+      situacao: healthCheckReprovado || status === 'health-check'
+        ? 'pendente'
+        : status === 'running'
+          ? 'atual'
+          : healthCheckAprovado ? 'feita' : 'pendente',
     },
     {
       titulo: status === 'success' ? 'Sucesso' : status === 'failed' ? 'Falha' : 'Sucesso ou falha',

@@ -10,8 +10,14 @@ type DetalheAPI = components['schemas']['ExecucaoDetalhe'] & { numero?: number }
 type ResumoAPI = components['schemas']['ResumoExecucao'] & { numero?: number }
 
 function normalizarExecucao(dados: DetalheAPI): Execucao {
+  const leitura = dados.leituras?.at(-1)
+  const passo = dados.trajeto?.at(-1)
+  const posicao = passo?.entrou_em && (!leitura || Date.parse(passo.entrou_em) > Date.parse(leitura.enviado_em)) ? passo : leitura ?? passo
+  const tentativa = [...(dados.tentativas ?? [])].sort((a, b) => b.attempt_index - a.attempt_index)[0]
+  const falha = tentativa?.status === 'failed' ? tentativa.falha : null
   return {
     ...dados,
+    celula_atual: falha ? { x: falha.celula_x, y: falha.celula_y } : posicao ? { x: posicao.x, y: posicao.y } : null,
     labirinto: dados.tipo_labirinto,
     encerrada_em: dados.encerrada_em ?? null,
     tempo_total_s: dados.tempo_total_s ?? null,
