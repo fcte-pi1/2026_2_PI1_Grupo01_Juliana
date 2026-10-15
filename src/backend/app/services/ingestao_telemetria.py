@@ -13,7 +13,6 @@ from app.services.fabrica_eventos import OrigemTelemetria, criar_eventos
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
 from app.services.publicador_sse import EventoSSE, PublicadorSSE
-from app.services.vigilancia_monitores import gravar_se_cancelou
 from contrato.telemetria import (
     TAMANHO_MAXIMO,
     Deduplicador,
@@ -81,7 +80,10 @@ class IngestaoTelemetria:
             raise
 
         # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
-        gravar_se_cancelou(sessao, gerenciador, self.monitor)
+        cancelou = gerenciador.verificar_monitores(sessao, self.monitor)
+        sessao.commit()
+        if cancelou:
+            return
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
 
