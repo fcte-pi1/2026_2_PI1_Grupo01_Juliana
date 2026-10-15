@@ -3,12 +3,11 @@
 import logging
 import threading
 from datetime import datetime
+from decimal import Decimal
 
 from app.models import HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
-from decimal import Decimal
-
 from app.services.atualizacao_metricas import recalcular_parciais
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao

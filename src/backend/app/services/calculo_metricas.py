@@ -20,7 +20,9 @@ CURVA_LIPO_MV_PCT: tuple[tuple[int, int], ...] = (
 )
 
 
-def distancia_celulas_para_metros(num_celulas: int, lado_celula_mm: int = LADO_CELULA_MM) -> Decimal:
+def distancia_celulas_para_metros(
+    num_celulas: int, lado_celula_mm: int = LADO_CELULA_MM
+) -> Decimal:
     return Decimal(num_celulas) * Decimal(lado_celula_mm) / Decimal(1000)
 
 

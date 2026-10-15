@@ -12,6 +12,7 @@ from contrato.telemetria import HcResultado, Sucesso, escrever_linha
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+
 def _t0() -> datetime:
     """Inicio recente para nao estourar RF32 (10 min) no verificar_monitores."""
     return datetime.now(UTC) - timedelta(seconds=60)

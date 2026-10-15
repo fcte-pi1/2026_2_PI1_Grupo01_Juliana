@@ -556,7 +556,9 @@ def test_evento_vai_ao_gerenciador_antes_do_commit(client, db_session, gerenciad
     assert sessao is db_session
     assert recebida.tentativa_id == tentativa.tentativa_id
     assert mensagem == ler_linha(_evento(1, campos))
-    assert gerenciador_falso.ordem == ["aplicar_evento", "commit"]
+    # Cada POST grava o resultado dos monitores (RF32) antes do evento.
+    # aplicar_evento continua antes do commit dessa mensagem; a repetida não chega lá.
+    assert gerenciador_falso.ordem == ["commit", "aplicar_evento", "commit", "commit"]
 
 
 def test_falha_web_sem_tentativa_aberta_chega_com_none(client, gerenciador_falso):
