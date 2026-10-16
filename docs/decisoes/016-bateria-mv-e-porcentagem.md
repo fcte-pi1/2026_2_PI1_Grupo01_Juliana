@@ -1,4 +1,4 @@
-# ADR-014 — Bateria em mV no contrato, porcentagem calculada pelo backend
+# ADR-016 — Bateria em mV no contrato, porcentagem calculada pelo backend
 
 **Status:** Aceito  
 **Data:** 2026-10-15

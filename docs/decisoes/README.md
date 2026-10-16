@@ -17,9 +17,9 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [011](011-execucao-logica-tres-tentativas.md) | Execução lógica, 3 tentativas e 10 min totais | Backend, Front, Testes |
 | [012](012-retomada-celula-falha.md) | Retomada na célula da falha (sem checkpoint anterior) | Front, Backend, Firmware, Testes |
 | [013](013-status-execucao-e-tentativa.md) | Dois status no contrato: execução e tentativa | Backend, Front |
-| [014](014-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
 | [014](014-session-e-repositorio-sqlalchemy.md) | `Session` (SQLAlchemy) vs `Repositorio` no BACK-04 | Backend |
 | [015](015-rumo-persistido-leitura-telemetria.md) | `rumo` da `tel` persistido em leituras (commit à parte) | Backend, Front |
+| [016](016-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 
