@@ -7,11 +7,12 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from app.main import app
-from app.models import ExecucaoLogica, Tentativa, TentativaRejeitada
+from app.models import ExecucaoLogica, LeituraTelemetria, Tentativa, TentativaRejeitada
 from app.repositories.repositorio import Repositorio
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
-from contrato.telemetria import Falha, HcResultado, Sucesso, escrever_linha
+from app.services.vigilancia_monitores import gravar_se_cancelou
+from contrato.telemetria import Falha, HcResultado, Sucesso, Tel, escrever_linha
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -60,8 +61,10 @@ def _aplicar_perda_link(
     ret = gerenciador.nova_execucao(db_session, "4x4")
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+    inicio = datetime.now(UTC) - timedelta(seconds=20)
+    tentativa.iniciada_em = inicio
     monitor = MonitorConexao(limite_sem_sinal_s=10)
-    monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+    monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
     gerenciador.verificar_monitores(db_session, monitor)
     return execucao, tentativa
 
@@ -354,7 +357,8 @@ class TestRecusas:
             f"/execucoes/{execucao_id}/encerrar-tentativa",
             json={"motivo": "stuck"},
         )
-        assert r.status_code == 422
+        assert r.status_code == 409
+        assert r.json()["detail"] == "Não há tentativa aberta para encerrar."
 
     def test_r05_encerrar_sem_tentativa_aberta(
         self, client: TestClient, db_session: Session, gerenciador
@@ -369,7 +373,7 @@ class TestRecusas:
                 f"/execucoes/{execucao_id}/encerrar-tentativa",
                 json={"motivo": "stuck"},
             ).status_code
-            == 422
+            == 409
         )
 
     def test_confirmacao_web_nao_duplica_falha(self, db_session: Session, gerenciador):
@@ -410,3 +414,95 @@ def test_sucesso_via_telemetria_http(client: TestClient, db_session: Session):
     client.post("/telemetria", json=payload_ok)
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
     assert execucao.status == "concluida"
+
+
+def _tel() -> str:
+    return escrever_linha(
+        Tel(
+            v=1,
+            boot=1,
+            seq=9,
+            t_ms=900,
+            tipo="tel",
+            estado="running",
+            x=0,
+            y=0,
+            rumo="N",
+            bat_mv=7800,
+            vel_mm_s=0,
+            eixo_longo=None,
+        )
+    ).strip()
+
+
+def _sem_leituras(db_session: Session, tentativa_id: uuid.UUID) -> None:
+    leituras = db_session.scalars(
+        select(LeituraTelemetria).where(LeituraTelemetria.tentativa_id == tentativa_id)
+    ).all()
+    assert leituras == []
+
+
+def test_sinal_anterior_a_tentativa_nao_cancela(db_session: Session, gerenciador):
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    monitor = MonitorConexao(limite_sem_sinal_s=10)
+    monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=30))
+    assert gerenciador.verificar_monitores(db_session, monitor) is False
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    assert tentativa.status == "health-check"
+
+
+def test_silencio_grava_link_lost_sem_mensagem(db_session: Session, gerenciador):
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+    assert gravar_se_cancelou(db_session, gerenciador, MonitorConexao(10)) is True
+    db_session.expire_all()
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+    assert tentativa.status == "failed"
+    assert tentativa.falha.motivo == "link_lost"
+    assert execucao.status == "cancelada"
+
+
+def test_perda_de_link_na_ingestao_grava_falha_e_descarta_a_linha(
+    client: TestClient, db_session: Session
+):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    tentativa_id = uuid.UUID(criado["tentativa_id"])
+    tentativa = db_session.get(Tentativa, tentativa_id)
+    tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+    db_session.commit()
+
+    resposta = client.post(
+        "/telemetria",
+        json={"linha": _tel(), "recebido_em": "2026-10-07T17:00:01Z"},
+    )
+    assert resposta.status_code == 200
+    db_session.expire_all()
+    tentativa = db_session.get(Tentativa, tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))
+    assert tentativa.falha.motivo == "link_lost"
+    assert execucao.status == "cancelada"
+    _sem_leituras(db_session, tentativa_id)
+
+
+def test_tempo_excedido_na_ingestao_grava_falha_e_descarta_a_linha(
+    client: TestClient, db_session: Session
+):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    tentativa_id = uuid.UUID(criado["tentativa_id"])
+    execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))
+    execucao.iniciada_em = datetime.now(UTC) - timedelta(seconds=601)
+    db_session.commit()
+
+    resposta = client.post(
+        "/telemetria",
+        json={"linha": _tel(), "recebido_em": "2026-10-07T17:00:01Z"},
+    )
+    assert resposta.status_code == 200
+    db_session.expire_all()
+    tentativa = db_session.get(Tentativa, tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))
+    assert tentativa.falha.motivo == "time_exceeded"
+    assert execucao.status == "cancelada"
+    _sem_leituras(db_session, tentativa_id)

@@ -33,8 +33,10 @@ def _evento(seq: int, campos: dict) -> str:
     return json.dumps({"v": 1, "boot": 9, "seq": seq, "t_ms": 1000 + seq * 100} | campos)
 
 
-def _alinhar_inicio(db_session: Session, execucao_id: str) -> tuple[Tentativa, datetime]:
+def _alinhar_inicio(client, db_session: Session, execucao_id: str) -> tuple[Tentativa, datetime]:
     inicio = _t0()
+    # sinal recente para o monitor de link não cancelar a tentativa aberta há 60 s (RF32)
+    client.app.state.monitor_conexao.registrar_mensagem()
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
     tentativa = db_session.scalar(
         select(Tentativa).where(Tentativa.execucao_id == execucao.execucao_id)
@@ -62,7 +64,7 @@ def _hc_aprovado(seq: int = 1) -> str:
 
 def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
-    tentativa, inicio = _alinhar_inicio(db_session, criado["execucao_id"])
+    tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
     _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
     db_session.refresh(tentativa)
 
@@ -107,7 +109,7 @@ def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
 
 def test_velocidade_e_tempo_parcial_apos_passos(client, db_session: Session):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
-    tentativa, inicio = _alinhar_inicio(db_session, criado["execucao_id"])
+    tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
     _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
     db_session.refresh(tentativa)
     execucao = tentativa.execucao
@@ -125,7 +127,7 @@ def test_velocidade_e_tempo_parcial_apos_passos(client, db_session: Session):
 
 def test_metricas_finais_no_sucesso(client, db_session: Session):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
-    tentativa, inicio = _alinhar_inicio(db_session, criado["execucao_id"])
+    tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
     _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
     db_session.refresh(tentativa)
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))

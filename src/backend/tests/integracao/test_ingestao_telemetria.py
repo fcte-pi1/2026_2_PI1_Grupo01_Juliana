@@ -317,8 +317,11 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 
 def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     """RF32: gap medido antes de registrar_mensagem na linha que reconecta."""
+    agora = datetime.now(UTC)
+    tentativa_aberta.iniciada_em = agora - timedelta(seconds=30)
+    db_session.commit()
     monitor = client.app.state.monitor_conexao
-    monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+    monitor._ultima_mensagem = agora - timedelta(seconds=11)
 
     assert _enviar(client, _linha()).status_code == 200
 
@@ -505,8 +508,8 @@ class GerenciadorFalso:
     def comandos_pendentes(self) -> list[Comando]:
         return self.comandos
 
-    def verificar_monitores(self, sessao, monitor) -> None:
-        return None
+    def verificar_monitores(self, sessao, monitor) -> bool:
+        return False
 
 
 @pytest.fixture
@@ -556,9 +559,7 @@ def test_evento_vai_ao_gerenciador_antes_do_commit(client, db_session, gerenciad
     assert sessao is db_session
     assert recebida.tentativa_id == tentativa.tentativa_id
     assert mensagem == ler_linha(_evento(1, campos))
-    # Cada POST grava o resultado dos monitores (RF32) antes do evento.
-    # aplicar_evento continua antes do commit dessa mensagem; a repetida não chega lá.
-    assert gerenciador_falso.ordem == ["commit", "aplicar_evento", "commit", "commit"]
+    assert gerenciador_falso.ordem == ["aplicar_evento", "commit"]
 
 
 def test_falha_web_sem_tentativa_aberta_chega_com_none(client, gerenciador_falso):
