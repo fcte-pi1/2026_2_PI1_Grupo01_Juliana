@@ -188,12 +188,59 @@ nav_orientacao_t nav_orientacao(const nav_estado_t *estado)
     return estado->orientacao;
 }
 
+/*
+ * Objetivos (célula de chegada) de cada tipo. Um objetivo fora da região atual
+ * não vale: assim o incompatível sai quando a orientação é resolvida (D6).
+ */
+static bool eh_objetivo(const nav_estado_t *estado, int x, int y)
+{
+    if (!na_regiao(estado, x, y)) {
+        return false;
+    }
+    int ultimo_longo = lado_longo(estado->tipo) - 1;
+    int ultimo_curto = NAV_LADO_CURTO - 1;
+    return (x == ultimo_longo && y == ultimo_curto) || (x == ultimo_curto && y == ultimo_longo);
+}
+
+/*
+ * Flood fill de Harrison [9], como na seção "Algoritmo de navegação" do docs/4.4
+ * (D7): objetivos em 0, as demais células em infinito, e varreduras da matriz
+ * inteira fazendo valor = 1 + menor valor entre as vizinhas acessíveis, até uma
+ * varredura não mudar nada. Parede desconhecida conta como aberta (Adachi).
+ * Sem fila e sem pilha, de propósito.
+ */
 void nav_recalcular(nav_estado_t *estado)
 {
-    /* Esqueleto: a varredura de Harrison entra no próximo passo do FIRM-01. */
     for (int x = 0; x < NAV_MAX_CELULAS; x++) {
         for (int y = 0; y < NAV_MAX_CELULAS; y++) {
-            estado->mapa[x][y].distancia = NAV_DIST_INFINITA;
+            estado->mapa[x][y].distancia = eh_objetivo(estado, x, y) ? 0 : NAV_DIST_INFINITA;
+        }
+    }
+
+    bool mudou = true;
+    while (mudou) {
+        mudou = false;
+        for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+            for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+                if (!na_regiao(estado, x, y) || eh_objetivo(estado, x, y)) {
+                    continue;
+                }
+                uint8_t menor = NAV_DIST_INFINITA;
+                for (int d = NAV_NORTE; d <= NAV_OESTE; d++) {
+                    if (!nav_acessivel(estado, x, y, (nav_direcao_t)d)) {
+                        continue;
+                    }
+                    uint8_t vizinha = estado->mapa[x + PASSO_X[d]][y + PASSO_Y[d]].distancia;
+                    if (vizinha < menor) {
+                        menor = vizinha;
+                    }
+                }
+                uint8_t valor = menor == NAV_DIST_INFINITA ? NAV_DIST_INFINITA : (uint8_t)(menor + 1);
+                if (valor != estado->mapa[x][y].distancia) {
+                    estado->mapa[x][y].distancia = valor;
+                    mudou = true;
+                }
+            }
         }
     }
     estado->mapa_alterado = false;
@@ -202,6 +249,10 @@ void nav_recalcular(nav_estado_t *estado)
 nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
 {
     registrar_leitura(estado, leitura);
+    /* Sem parede nova nem orientação resolvida, os valores seriam os mesmos (D8). */
+    if (estado->mapa_alterado) {
+        nav_recalcular(estado);
+    }
     /* A decisão do movimento entra no próximo passo do FIRM-01 (#117). */
     return NAV_ACAO_SEM_PASSO;
 }

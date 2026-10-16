@@ -113,12 +113,12 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura);
  */
 bool nav_acessivel(const nav_estado_t *estado, int x, int y, nav_direcao_t direcao);
 
-/* Distância calculada da célula, ou NAV_DIST_INFINITA fora da matriz. */
+/* Distância calculada da célula, ou NAV_DIST_INFINITA fora da matriz ou da região. */
 uint8_t nav_distancia(const nav_estado_t *estado, int x, int y);
 
 nav_orientacao_t nav_orientacao(const nav_estado_t *estado);
 
-/* Refaz o flood fill do mapa inteiro. */
+/* Refaz o flood fill do mapa inteiro e desliga a flag de mapa alterado. */
 void nav_recalcular(nav_estado_t *estado);
 
 /* Direção em que o robô fica depois de executar a ação. */

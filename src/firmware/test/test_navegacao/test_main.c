@@ -1,7 +1,6 @@
 /*
  * Estes testes compilam no PC, onde não existe Arduino.h: se alguém incluir
- * Arduino na pasta navegacao/, este ambiente quebra. Os testes do flood fill
- * entram aqui com o FIRM-01 (#117).
+ * Arduino na pasta navegacao/, este ambiente quebra.
  */
 
 #include <unity.h>
@@ -60,6 +59,15 @@ static bool tem_parede(const nav_estado_t *nav, int x, int y, uint8_t parede)
     return (nav->mapa[x][y].paredes & parede) != 0;
 }
 
+/*
+ * A flag de mapa alterado é desligada pelo recálculo dentro de nav_passo: o
+ * teste adultera a distância de (2, 2) antes e vê se o flood fill a refez.
+ */
+static bool mapa_foi_recalculado(const nav_estado_t *nav)
+{
+    return nav->mapa[2][2].distancia != 99 && !nav->mapa_alterado;
+}
+
 /* Põe o robô numa célula e rumo quaisquer, como se já tivesse andado até lá. */
 static void posicionar(nav_estado_t *nav, int x, int y, nav_direcao_t direcao)
 {
@@ -86,13 +94,13 @@ static void test_parede_gravada_nos_dois_lados(void)
     nav_iniciar(&nav, NAV_TIPO_4X4);
     posicionar(&nav, 0, 1, NAV_NORTE);
     nav.lado = NAV_LADO_DIREITA;
-    nav.mapa_alterado = false;
+    nav.mapa[2][2].distancia = 99;
     nav_passo(&nav, leitura(true, true, true));
     TEST_ASSERT_TRUE(tem_parede(&nav, 0, 1, NAV_PAREDE_N));
     TEST_ASSERT_TRUE(tem_parede(&nav, 0, 2, NAV_PAREDE_S));
     TEST_ASSERT_TRUE(tem_parede(&nav, 0, 1, NAV_PAREDE_L));
     TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_O));
-    TEST_ASSERT_TRUE(nav.mapa_alterado);
+    TEST_ASSERT_TRUE(mapa_foi_recalculado(&nav));
 }
 
 static void test_leitura_com_rumo_leste_gira_as_paredes(void)
@@ -218,10 +226,10 @@ static void test_x_maior_ou_igual_a_4_resolve_longo_x_no_8x4(void)
     nav_iniciar(&nav, NAV_TIPO_8X4);
     nav.lado = NAV_LADO_DIREITA;
     posicionar(&nav, 4, 1, NAV_LESTE);
-    nav.mapa_alterado = false;
+    nav.mapa[2][2].distancia = 99;
     nav_passo(&nav, leitura(false, false, false));
     TEST_ASSERT_EQUAL_INT(NAV_ORIENTACAO_LONGO_X, nav_orientacao(&nav));
-    TEST_ASSERT_TRUE(nav.mapa_alterado);
+    TEST_ASSERT_TRUE(mapa_foi_recalculado(&nav));
 }
 
 static void test_y_maior_ou_igual_a_4_resolve_longo_y_no_8x4(void)
@@ -230,10 +238,10 @@ static void test_y_maior_ou_igual_a_4_resolve_longo_y_no_8x4(void)
     nav_iniciar(&nav, NAV_TIPO_8X4);
     nav.lado = NAV_LADO_DIREITA;
     posicionar(&nav, 1, 4, NAV_NORTE);
-    nav.mapa_alterado = false;
+    nav.mapa[2][2].distancia = 99;
     nav_passo(&nav, leitura(false, false, false));
     TEST_ASSERT_EQUAL_INT(NAV_ORIENTACAO_LONGO_Y, nav_orientacao(&nav));
-    TEST_ASSERT_TRUE(nav.mapa_alterado);
+    TEST_ASSERT_TRUE(mapa_foi_recalculado(&nav));
 }
 
 static void test_orientacao_resolvida_nao_muda(void)
@@ -303,6 +311,114 @@ static void test_leitura_aberta_para_fora_da_regiao_continua_parede(void)
     TEST_ASSERT_FALSE(nav_acessivel(&nav, 3, 1, NAV_LESTE));
 }
 
+/* Confere as distâncias de um quadrado 4x4, linha a linha de y = 3 para y = 0. */
+static void conferir_distancias_4x4(const nav_estado_t *nav, const uint8_t esperado[4][4])
+{
+    for (int linha = 0; linha < 4; linha++) {
+        int y = 3 - linha;
+        for (int x = 0; x < 4; x++) {
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(esperado[linha][x], nav_distancia(nav, x, y),
+                                            "distancia diferente da tabela");
+        }
+    }
+}
+
+static void test_largada_ja_tem_as_distancias_calculadas(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 3, 3));
+    TEST_ASSERT_EQUAL_UINT8(6, nav_distancia(&nav, 0, 0));
+    TEST_ASSERT_FALSE(nav.mapa_alterado);
+}
+
+static void test_flood_fill_4x4_com_a_parede_leste_da_largada(void)
+{
+    static const uint8_t esperado[4][4] = {
+        {3, 2, 1, 0},
+        {4, 3, 2, 1},
+        {5, 4, 3, 2},
+        {6, 5, 4, 3},
+    };
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav_passo(&nav, leitura(false, true, true));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 0, 0, NAV_PAREDE_L));
+    conferir_distancias_4x4(&nav, esperado);
+}
+
+static void test_flood_fill_contorna_parede_conhecida(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 2, 3, NAV_LESTE);
+    nav_passo(&nav, leitura(true, false, false));
+    /* Com a parede entre (2, 3) e (3, 3), o caminho desce por (2, 2). */
+    TEST_ASSERT_EQUAL_UINT8(3, nav_distancia(&nav, 2, 3));
+    TEST_ASSERT_EQUAL_UINT8(1, nav_distancia(&nav, 3, 2));
+}
+
+static void test_8x4_indefinido_tem_os_dois_objetivos(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_8X4);
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 7, 3));
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 3, 7));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 5, 5));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 7, 7));
+    TEST_ASSERT_EQUAL_UINT8(10, nav_distancia(&nav, 0, 0));
+}
+
+static void test_12x4_indefinido_tem_os_dois_objetivos(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_12X4);
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 11, 3));
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 3, 11));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 11, 11));
+    TEST_ASSERT_EQUAL_UINT8(14, nav_distancia(&nav, 0, 0));
+}
+
+static void test_orientacao_resolvida_descarta_o_objetivo_incompativel(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_8X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 4, 0, NAV_LESTE);
+    nav_passo(&nav, leitura(false, false, false));
+    TEST_ASSERT_EQUAL_UINT8(0, nav_distancia(&nav, 7, 3));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 3, 7));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 1, 5));
+    TEST_ASSERT_FALSE(nav.mapa_alterado);
+}
+
+static void test_celula_isolada_fica_infinita(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav_passo(&nav, leitura(true, true, true));
+    posicionar(&nav, 1, 1, NAV_SUL);
+    nav_passo(&nav, leitura(true, false, false));
+    TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 1, 1));
+}
+
+static void test_mapa_sem_mudanca_nao_recalcula(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav.mapa[2][2].distancia = 99;
+    nav_passo(&nav, leitura(false, false, false));
+    TEST_ASSERT_FALSE(mapa_foi_recalculado(&nav));
+    nav_passo(&nav, leitura(true, false, false));
+    TEST_ASSERT_TRUE(mapa_foi_recalculado(&nav));
+    TEST_ASSERT_EQUAL_UINT8(2, nav_distancia(&nav, 2, 2));
+}
+
 static void test_direcao_depois_de_cada_acao(void)
 {
     TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav_direcao_apos(NAV_NORTE, NAV_ACAO_DIREITA));
@@ -339,6 +455,14 @@ int main(void)
     RUN_TEST(test_regiao_em_l_no_8x4_indefinido);
     RUN_TEST(test_regiao_vira_retangulo_depois_de_resolvida);
     RUN_TEST(test_leitura_aberta_para_fora_da_regiao_continua_parede);
+    RUN_TEST(test_largada_ja_tem_as_distancias_calculadas);
+    RUN_TEST(test_flood_fill_4x4_com_a_parede_leste_da_largada);
+    RUN_TEST(test_flood_fill_contorna_parede_conhecida);
+    RUN_TEST(test_8x4_indefinido_tem_os_dois_objetivos);
+    RUN_TEST(test_12x4_indefinido_tem_os_dois_objetivos);
+    RUN_TEST(test_orientacao_resolvida_descarta_o_objetivo_incompativel);
+    RUN_TEST(test_celula_isolada_fica_infinita);
+    RUN_TEST(test_mapa_sem_mudanca_nao_recalcula);
     RUN_TEST(test_direcao_depois_de_cada_acao);
     return UNITY_END();
 }
