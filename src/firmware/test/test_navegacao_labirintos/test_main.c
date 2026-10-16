@@ -2,6 +2,8 @@
  * A navegação de verdade (nav_passo) nos labirintos do FIRM-02, lidos de
  * simulador-navegacao/labirintos. Cada labirinto existe nas versões -dir e
  * -esq; no referencial do robô as duas têm de dar o mesmo trajeto (D5, D9).
+ * Com 5% de leituras erradas, a corrida pode falhar, mas sempre termina e
+ * nunca declara sucesso fora do objetivo.
  */
 
 #include <stdio.h>
@@ -15,6 +17,8 @@
 #define PASTA_LABIRINTOS "simulador-navegacao/labirintos/"
 #define TAMANHO_ARQUIVO 4096
 #define MAX_CELULAS 256
+#define RUIDO_PCT 5
+#define SEMENTES 20
 
 static const char *const PARES[] = {
     "4x4-01",         "4x4-02",         "4x4-03",          "4x4-04",
@@ -57,11 +61,14 @@ static void carregar(sim_labirinto_t *lab, const char *nome, const char *versao)
     TEST_ASSERT_TRUE_MESSAGE(sim_validar(lab, erro, sizeof(erro)), erro);
 }
 
-static sim_relatorio_t correr(const char *nome, const char *versao, trajeto_t *trajeto)
+static sim_relatorio_t correr_com_ruido(const char *nome, const char *versao, trajeto_t *trajeto,
+                                        uint8_t ruido_pct, uint32_t semente)
 {
     sim_labirinto_t lab;
     sim_relatorio_t rel;
     sim_config_t config = {0};
+    config.ruido_pct = ruido_pct;
+    config.semente = semente;
     config.observador = anotar_celula;
     config.observador_ctx = trajeto;
 
@@ -69,6 +76,11 @@ static sim_relatorio_t correr(const char *nome, const char *versao, trajeto_t *t
     carregar(&lab, nome, versao);
     sim_correr(&lab, &config, &rel);
     return rel;
+}
+
+static sim_relatorio_t correr(const char *nome, const char *versao, trajeto_t *trajeto)
+{
+    return correr_com_ruido(nome, versao, trajeto, 0, 0);
 }
 
 static void test_todos_os_labirintos_terminam_em_sucesso(void)
@@ -105,10 +117,30 @@ static void test_versoes_espelhadas_dao_o_mesmo_trajeto(void)
     }
 }
 
+static void test_com_ruido_a_corrida_termina_sem_sucesso_falso(void)
+{
+    static trajeto_t trajeto;
+    static const char *const VERSOES[] = {"dir", "esq"};
+    char mensagem[64];
+
+    for (size_t i = 0; i < QTD_PARES; i++) {
+        for (size_t v = 0; v < 2; v++) {
+            for (uint32_t semente = 1; semente <= SEMENTES; semente++) {
+                sim_relatorio_t rel = correr_com_ruido(PARES[i], VERSOES[v], &trajeto, RUIDO_PCT, semente);
+                snprintf(mensagem, sizeof(mensagem), "%s-%s, semente %u", PARES[i], VERSOES[v],
+                         (unsigned)semente);
+                TEST_ASSERT_NOT_EQUAL_MESSAGE(SIM_RESULTADO_LIMITE, rel.resultado, mensagem);
+                TEST_ASSERT_NOT_EQUAL_MESSAGE(SIM_RESULTADO_SUCESSO_FALSO, rel.resultado, mensagem);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_todos_os_labirintos_terminam_em_sucesso);
     RUN_TEST(test_versoes_espelhadas_dao_o_mesmo_trajeto);
+    RUN_TEST(test_com_ruido_a_corrida_termina_sem_sucesso_falso);
     return UNITY_END();
 }
