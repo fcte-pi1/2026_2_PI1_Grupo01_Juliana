@@ -63,6 +63,24 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Com 5% de leituras erradas a corrida pode falhar (sem_caminho ou
+      # colisao), mas tem de terminar e nunca declarar sucesso fora do
+      # objetivo. A taxa de sucesso vai para o resumo só como informação.
+      - name: Simulador de navegação com ruído
+        run: |
+          sucessos=0
+          total=0
+          for semente in $(seq 1 20); do
+            ./simulador-navegacao/build/simulador --ruido 5 --semente "$semente" --exigir-termino simulador-navegacao/labirintos/*.txt > simulador-navegacao/build/ruido.txt || { cat simulador-navegacao/build/ruido.txt; exit 1; }
+            sucessos=$((sucessos + $(grep -c ' sucesso ' simulador-navegacao/build/ruido.txt || true)))
+            total=$((total + $(ls simulador-navegacao/labirintos/*.txt | wc -l)))
+          done
+          echo "Com 5% de ruído, sementes 1 a 20: $sucessos de $total corridas em sucesso"
+          {
+            echo '### Simulador de navegação com 5% de ruído'
+            echo "Sementes 1 a 20: $sucessos de $total corridas em sucesso, nenhuma em limite ou sucesso_falso."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Guardar roteiros de telemetria
         if: always()
         uses: actions/upload-artifact@v4
