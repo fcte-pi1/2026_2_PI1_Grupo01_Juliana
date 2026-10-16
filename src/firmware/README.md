@@ -70,6 +70,16 @@ O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em
 
 O script sai com 0 (`Resultado: OK`) só se não houver buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
 
+### Medir o desempenho da navegação na placa
+
+O flood fill precisa recalcular em menos de 5 ms na ESP32. O teste `test_desempenho_nav` monta o pior caso (12x4 com a orientação indefinida e paredes em serpentina) e mede `nav_recalcular` 100 vezes. Com a ESP32 ligada no USB:
+
+```bash
+pio test -e esp32_sim -f test_desempenho_nav
+```
+
+Ele grava o teste, abre a serial e mostra uma linha `nav_recalcular em 100 execucoes: media ... us, maximo ... us`. O teste passa (`PASSED`) se o máximo ficar abaixo de 5000 µs; anote a média e o máximo no PR ou na issue. No PC, o mesmo teste roda dentro de `pio test -e native`.
+
 ## Organização
 
 ```text
