@@ -1,7 +1,8 @@
 /*
- * Testes do simulador de navegação (FIRM-02). Enquanto o flood fill (FIRM-01)
- * não existe, a corrida é conferida com um dublê: um seguidor de parede que
- * sabe onde fica o objetivo.
+ * Testes do simulador de navegação (FIRM-02). A corrida é conferida com um
+ * dublê, um seguidor de parede que sabe onde fica o objetivo, para não depender
+ * do flood fill (FIRM-01); a navegação de verdade nos labirintos do simulador
+ * fica em test/test_navegacao_labirintos.
  */
 
 #include <string.h>
