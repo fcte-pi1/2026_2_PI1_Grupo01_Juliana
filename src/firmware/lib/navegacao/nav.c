@@ -246,15 +246,82 @@ void nav_recalcular(nav_estado_t *estado)
     estado->mapa_alterado = false;
 }
 
+static nav_acao_t terminar(nav_estado_t *estado, nav_acao_t acao)
+{
+    estado->terminou = true;
+    estado->acao_terminal = acao;
+    return acao;
+}
+
+/*
+ * Vizinha acessível de menor valor. No empate (D9) vence a primeira desta
+ * ordem: frente, giro horário no referencial do labirinto, anti-horário e
+ * meia-volta. Assim as versões espelhadas de um labirinto têm o mesmo trajeto.
+ */
+static nav_direcao_t escolher_direcao(const nav_estado_t *estado)
+{
+    nav_direcao_t atual = estado->direcao;
+    const nav_direcao_t ordem[4] = {
+        atual, girar_horario(atual), girar_anti_horario(atual), oposta(atual)
+    };
+    nav_direcao_t escolhida = atual;
+    uint8_t menor = NAV_DIST_INFINITA;
+    for (int i = 0; i < 4; i++) {
+        nav_direcao_t d = ordem[i];
+        if (!nav_acessivel(estado, estado->x, estado->y, d)) {
+            continue;
+        }
+        uint8_t valor = estado->mapa[estado->x + PASSO_X[d]][estado->y + PASSO_Y[d]].distancia;
+        if (valor < menor) {
+            menor = valor;
+            escolhida = d;
+        }
+    }
+    return escolhida;
+}
+
+/* Ação física: com o x positivo à esquerda do robô, os giros trocam (D5). */
+static nav_acao_t acao_para(const nav_estado_t *estado, nav_direcao_t destino)
+{
+    nav_direcao_t atual = estado->direcao;
+    if (destino == atual) {
+        return NAV_ACAO_FRENTE;
+    }
+    if (destino == oposta(atual)) {
+        return NAV_ACAO_MEIA_VOLTA;
+    }
+    bool horario = destino == girar_horario(atual);
+    if (estado->lado == NAV_LADO_ESQUERDA) {
+        horario = !horario;
+    }
+    return horario ? NAV_ACAO_DIREITA : NAV_ACAO_ESQUERDA;
+}
+
 nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
 {
+    /* Depois do fim, a mesma resposta e nenhuma mudança no estado (D10). */
+    if (estado->terminou) {
+        return estado->acao_terminal;
+    }
     registrar_leitura(estado, leitura);
+    if (eh_objetivo(estado, estado->x, estado->y)) {
+        return terminar(estado, NAV_ACAO_SUCESSO);
+    }
     /* Sem parede nova nem orientação resolvida, os valores seriam os mesmos (D8). */
     if (estado->mapa_alterado) {
         nav_recalcular(estado);
     }
-    /* A decisão do movimento entra no próximo passo do FIRM-01 (#117). */
-    return NAV_ACAO_SEM_PASSO;
+    if (estado->mapa[estado->x][estado->y].distancia == NAV_DIST_INFINITA) {
+        return terminar(estado, NAV_ACAO_SEM_PASSO);
+    }
+
+    /* Supõe que o app executa a ação: o estado já fica na célula de destino (D4). */
+    nav_direcao_t destino = escolher_direcao(estado);
+    nav_acao_t acao = acao_para(estado, destino);
+    estado->direcao = destino;
+    estado->x = (int8_t)(estado->x + PASSO_X[destino]);
+    estado->y = (int8_t)(estado->y + PASSO_Y[destino]);
+    return acao;
 }
 
 nav_direcao_t nav_direcao_apos(nav_direcao_t atual, nav_acao_t acao)

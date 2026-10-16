@@ -224,11 +224,11 @@ static void test_rejeita_objetivo_inalcancavel(void)
 
 static void test_navegacao_real_e_chamada_por_padrao(void)
 {
-    /* Sem decisor, quem decide é nav_passo(). O esqueleto atual não anda. */
+    /* Sem decisor, quem decide é nav_passo(), que anda até o objetivo. */
     sim_relatorio_t rel = correr(DEMO_DIR, NULL, NULL);
-    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_SEM_CAMINHO, rel.resultado);
-    TEST_ASSERT_EQUAL_UINT16(0, rel.celulas);
-    TEST_ASSERT_EQUAL_UINT16(1, rel.distintas);
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_SUCESSO, rel.resultado);
+    TEST_ASSERT_TRUE(rel.celulas > 0);
+    TEST_ASSERT_TRUE(rel.distintas > 1);
 }
 
 static void test_seguidor_de_parede_chega_ao_objetivo(void)

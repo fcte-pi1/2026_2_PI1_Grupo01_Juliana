@@ -75,7 +75,7 @@ typedef enum {
     NAV_ACAO_DIREITA,
     NAV_ACAO_ESQUERDA,
     NAV_ACAO_MEIA_VOLTA,
-    NAV_ACAO_SUCESSO,   /* chegou ao objetivo com a borda provada */
+    NAV_ACAO_SUCESSO,   /* chegou a uma célula de objetivo */
     NAV_ACAO_SEM_PASSO  /* nenhum caminho possível (mapa inconsistente) */
 } nav_acao_t;
 

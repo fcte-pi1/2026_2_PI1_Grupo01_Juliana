@@ -3,6 +3,7 @@
  * Arduino na pasta navegacao/, este ambiente quebra.
  */
 
+#include <string.h>
 #include <unity.h>
 
 #include "nav.h"
@@ -137,6 +138,7 @@ static void test_leitura_aberta_nao_apaga_parede(void)
     posicionar(&nav, 1, 1, NAV_NORTE);
     nav.lado = NAV_LADO_DIREITA;
     nav_passo(&nav, leitura(true, true, true));
+    posicionar(&nav, 1, 1, NAV_NORTE);
     nav.mapa_alterado = false;
     nav_passo(&nav, leitura(false, false, false));
     TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
@@ -153,6 +155,7 @@ static void test_parede_ja_conhecida_nao_liga_a_flag(void)
     posicionar(&nav, 1, 1, NAV_NORTE);
     nav.lado = NAV_LADO_DIREITA;
     nav_passo(&nav, leitura(true, false, false));
+    posicionar(&nav, 1, 1, NAV_NORTE);
     nav.mapa_alterado = false;
     nav_passo(&nav, leitura(true, false, false));
     TEST_ASSERT_FALSE(nav.mapa_alterado);
@@ -419,6 +422,125 @@ static void test_mapa_sem_mudanca_nao_recalcula(void)
     TEST_ASSERT_EQUAL_UINT8(2, nav_distancia(&nav, 2, 2));
 }
 
+static void test_empate_entre_frente_e_giro_fica_com_a_frente(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    /* (1, 2) e (2, 1) valem 3: a frente vence o giro. */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(&nav, leitura(false, false, false)));
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(2, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_NORTE, nav.direcao);
+}
+
+/*
+ * Frente fechada e as duas laterais com o mesmo valor. A parede já está no
+ * mapa, então a leitura não muda nada e as distâncias postas à mão ficam.
+ */
+static void preparar_empate_entre_os_giros(nav_estado_t *nav, nav_lado_t lado)
+{
+    nav_iniciar(nav, NAV_TIPO_4X4);
+    nav->lado = lado;
+    posicionar(nav, 1, 1, NAV_NORTE);
+    nav->mapa[1][1].paredes |= NAV_PAREDE_N;
+    nav->mapa[1][2].paredes |= NAV_PAREDE_S;
+    nav->mapa[1][1].distancia = 4;
+    nav->mapa[0][1].distancia = 3;
+    nav->mapa[2][1].distancia = 3;
+}
+
+static void test_empate_entre_os_giros_fica_com_o_horario_do_labirinto(void)
+{
+    nav_estado_t nav;
+    preparar_empate_entre_os_giros(&nav, NAV_LADO_DIREITA);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, nav_passo(&nav, leitura(true, false, false)));
+    TEST_ASSERT_EQUAL_INT8(2, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+}
+
+static void test_lado_esquerda_devolve_o_giro_horario_como_esquerda(void)
+{
+    nav_estado_t nav;
+    preparar_empate_entre_os_giros(&nav, NAV_LADO_ESQUERDA);
+    /* O leste do labirinto fica à esquerda do robô. */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_ESQUERDA, nav_passo(&nav, leitura(true, false, false)));
+    TEST_ASSERT_EQUAL_INT8(2, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+}
+
+static void test_beco_da_meia_volta(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_MEIA_VOLTA, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(0, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_SUL, nav.direcao);
+}
+
+static void test_sucesso_na_celula_de_objetivo(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 3, 3, NAV_NORTE);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SUCESSO, nav_passo(&nav, leitura(true, false, true)));
+    TEST_ASSERT_TRUE(nav.terminou);
+    TEST_ASSERT_EQUAL_INT8(3, nav.x);
+    TEST_ASSERT_EQUAL_INT8(3, nav.y);
+}
+
+static void test_sem_passo_quando_fica_cercado(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav.mapa[1][1].paredes |= NAV_PAREDE_S;
+    nav.mapa[1][0].paredes |= NAV_PAREDE_N;
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_TRUE(nav.terminou);
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+}
+
+static void conferir_fim_idempotente(nav_estado_t *nav, nav_acao_t fim)
+{
+    nav_estado_t antes;
+    memcpy(&antes, nav, sizeof(antes));
+    TEST_ASSERT_EQUAL_INT(fim, nav_passo(nav, leitura(false, false, false)));
+    TEST_ASSERT_EQUAL_INT(fim, nav_passo(nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_MEMORY(&antes, nav, sizeof(antes));
+}
+
+static void test_sucesso_e_idempotente(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 3, 3, NAV_NORTE);
+    nav_passo(&nav, leitura(true, false, true));
+    conferir_fim_idempotente(&nav, NAV_ACAO_SUCESSO);
+}
+
+static void test_sem_passo_e_idempotente(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav.mapa[1][1].paredes |= NAV_PAREDE_S;
+    nav.mapa[1][0].paredes |= NAV_PAREDE_N;
+    nav_passo(&nav, leitura(true, true, true));
+    conferir_fim_idempotente(&nav, NAV_ACAO_SEM_PASSO);
+}
+
 static void test_direcao_depois_de_cada_acao(void)
 {
     TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav_direcao_apos(NAV_NORTE, NAV_ACAO_DIREITA));
@@ -463,6 +585,14 @@ int main(void)
     RUN_TEST(test_orientacao_resolvida_descarta_o_objetivo_incompativel);
     RUN_TEST(test_celula_isolada_fica_infinita);
     RUN_TEST(test_mapa_sem_mudanca_nao_recalcula);
+    RUN_TEST(test_empate_entre_frente_e_giro_fica_com_a_frente);
+    RUN_TEST(test_empate_entre_os_giros_fica_com_o_horario_do_labirinto);
+    RUN_TEST(test_lado_esquerda_devolve_o_giro_horario_como_esquerda);
+    RUN_TEST(test_beco_da_meia_volta);
+    RUN_TEST(test_sucesso_na_celula_de_objetivo);
+    RUN_TEST(test_sem_passo_quando_fica_cercado);
+    RUN_TEST(test_sucesso_e_idempotente);
+    RUN_TEST(test_sem_passo_e_idempotente);
     RUN_TEST(test_direcao_depois_de_cada_acao);
     return UNITY_END();
 }
