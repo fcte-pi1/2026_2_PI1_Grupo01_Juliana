@@ -2,9 +2,11 @@
  * Tarefa de navegação (núcleo 1): lê os sensores, pede a decisão à navegação
  * e publica para a telemetria a amostra da tel e os eventos do contrato.
  *
- * Por enquanto o robô não se move (as primitivas de movimento são o FIRM-05)
- * e a navegação ainda não decide nada (FIRM-01). O laço já mostra o caminho
- * completo: sensores -> navegação -> filas -> telemetria.
+ * Por enquanto o robô não se move (as primitivas de movimento são o FIRM-05):
+ * a navegação decide a cada período, como se o robô já estivesse na célula
+ * seguinte. O laço por tempo vira um laço por célula no FIRM-09 (#138),
+ * quando houver movimento (FIRM-05). O laço já mostra o caminho completo:
+ * sensores -> navegação -> filas -> telemetria.
  */
 
 #include <Arduino.h>
@@ -56,6 +58,8 @@ void tarefa_navegacao(void *parametro)
 #ifdef TELEMETRIA_DEPURACAO
     uint32_t volta_anterior = hal_tempo_ms();
 #endif
+    bool terminou = false;
+    nav_acao_t acao = NAV_ACAO_SEM_PASSO;
 
     for (;;) {
 #ifdef TELEMETRIA_DEPURACAO
@@ -108,7 +112,12 @@ void tarefa_navegacao(void *parametro)
                 ultimo_y = nav.y;
             }
 
-            nav_acao_t acao = nav_passo(&nav, leitura);
+            /* Depois de SUCESSO ou SEM_PASSO a corrida acabou: os sensores e os
+             * eventos seguem, mas o evento repete a última ação. */
+            if (!terminou) {
+                acao = nav_passo(&nav, leitura);
+                terminou = acao == NAV_ACAO_SUCESSO || acao == NAV_ACAO_SEM_PASSO;
+            }
 
             /* Campos que ainda não existem (FIRM-01 e máquina de estados): valores fixos. */
             telemetria_amostra_t amostra = {};
