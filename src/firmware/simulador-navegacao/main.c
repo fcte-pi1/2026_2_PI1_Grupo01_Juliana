@@ -27,6 +27,7 @@ typedef struct {
     unsigned long limite;
     const char *pasta_telemetria;
     int exigir_sucesso;
+    int exigir_termino;
 } opcoes_t;
 
 static void uso(FILE *saida)
@@ -39,7 +40,8 @@ static void uso(FILE *saida)
             "  --limite N         passos antes de desistir (padrao %d)\n"
             "  --telemetria PASTA grava PASTA/<labirinto>.jsonl no formato do contrato v1 (ARQ-01)\n"
             "  --boot N           campo \"boot\" do roteiro de telemetria (padrao 1)\n"
-            "  --exigir-sucesso   sai com codigo 1 se algum labirinto nao terminar em sucesso\n",
+            "  --exigir-sucesso   sai com codigo 1 se algum labirinto nao terminar em sucesso\n"
+            "  --exigir-termino   sai com codigo 1 se algum labirinto terminar em limite ou sucesso_falso\n",
             SIM_LIMITE_PASSOS_PADRAO);
 }
 
@@ -81,7 +83,11 @@ static void nome_do_labirinto(const char *caminho, char *nome, size_t tamanho)
 
 static void escrever_no_arquivo(void *ctx, const char *linha) { fputs(linha, (FILE *)ctx); }
 
-/* Devolve 0 = sucesso, 1 = a navegação falhou, 2 = labirinto ou arquivo com problema. */
+/*
+ * Devolve 0 = sucesso, 1 = a navegação falhou (sem_caminho ou colisao),
+ * 3 = a navegação não terminou ou declarou sucesso falso (limite ou
+ * sucesso_falso), 2 = labirinto ou arquivo com problema.
+ */
 static int simular(const char *caminho, const opcoes_t *op)
 {
     static char texto[TAMANHO_ARQUIVO];
@@ -135,12 +141,18 @@ static int simular(const char *caminho, const opcoes_t *op)
     printf("%-24s %-9s %-13s celulas=%-4u distintas=%-3u giros90=%-4u giros180=%-3u leituras_erradas=%u\n",
            nome, sim_tipo_nome(rel.tipo), sim_resultado_nome(rel.resultado), rel.celulas, rel.distintas,
            rel.giros_90, rel.giros_180, rel.leituras_erradas);
-    return rel.resultado == SIM_RESULTADO_SUCESSO ? 0 : 1;
+    if (rel.resultado == SIM_RESULTADO_SUCESSO) {
+        return 0;
+    }
+    if (rel.resultado == SIM_RESULTADO_LIMITE || rel.resultado == SIM_RESULTADO_SUCESSO_FALSO) {
+        return 3;
+    }
+    return 1;
 }
 
 int main(int argc, char **argv)
 {
-    opcoes_t op = {0, 1, 1, 0, NULL, 0};
+    opcoes_t op = {0, 1, 1, 0, NULL, 0, 0};
     int primeiro = 1;
 
     for (; primeiro < argc && strncmp(argv[primeiro], "--", 2) == 0; primeiro++) {
@@ -150,6 +162,10 @@ int main(int argc, char **argv)
 
         if (strcmp(opcao, "--exigir-sucesso") == 0) {
             op.exigir_sucesso = 1;
+            continue;
+        }
+        if (strcmp(opcao, "--exigir-termino") == 0) {
+            op.exigir_termino = 1;
             continue;
         }
         if (strcmp(opcao, "--ajuda") == 0 || strcmp(opcao, "--help") == 0) {
@@ -187,18 +203,22 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    int total = 0, sucessos = 0, invalidos = 0;
+    int total = 0, sucessos = 0, invalidos = 0, sem_termino = 0;
     for (int i = primeiro; i < argc; i++) {
         int r = simular(argv[i], &op);
         total++;
         sucessos += r == 0;
         invalidos += r == 2;
+        sem_termino += r == 3;
     }
     printf("total: %d labirintos, %d sucesso, %d falha, %d invalido\n", total, sucessos,
            total - sucessos - invalidos, invalidos);
 
     if (invalidos > 0) {
         return 2;
+    }
+    if (op.exigir_termino && sem_termino > 0) {
+        return 1;
     }
     return op.exigir_sucesso && sucessos < total ? 1 : 0;
 }

@@ -26,6 +26,7 @@ make                        # compila e roda todos os labirintos de labirintos/
 | `--telemetria PASTA` | Grava `PASTA/<labirinto>.jsonl`, o roteiro de telemetria da corrida |
 | `--boot N` | Valor do campo `boot` no roteiro (padrão 1) |
 | `--exigir-sucesso` | Sai com código 1 se algum labirinto não terminar em sucesso |
+| `--exigir-termino` | Sai com código 1 se algum labirinto terminar em `limite` ou `sucesso_falso`; `sem_caminho` e `colisao` são aceitos (para as corridas com ruído) |
 
 ## Relatório
 
