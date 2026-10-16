@@ -41,7 +41,7 @@ describe('VisualizacaoLabirinto', () => {
     expect(container.querySelector('.labirinto__trajeto--novo')).toBeInTheDocument()
   })
 
-  it('separa a retomada em outro trecho e marca checkpoint e falha', () => {
+  it('separa a retomada em outro trecho e marca a retomada na célula da falha', () => {
     const trajeto = passos(
       [
         [0, 0],
@@ -58,8 +58,45 @@ describe('VisualizacaoLabirinto', () => {
 
     expect(container.querySelectorAll('polyline.labirinto__trajeto')).toHaveLength(2)
     expect(container.querySelector('.labirinto__trajeto--retomada')).toBeInTheDocument()
-    expect(screen.getByText('CKPT')).toBeInTheDocument()
+    expect(screen.getByText('RETOMADA')).toBeInTheDocument()
     expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+    const falha = container.querySelector('.labirinto__destaque--falha')!
+    const retomada = container.querySelector('.labirinto__destaque--retomada')!
+    expect([retomada.getAttribute('x'), retomada.getAttribute('y')]).toEqual([falha.getAttribute('x'), falha.getAttribute('y')])
+    // a falha da tentativa 1 continua no mapa, mas o robô já seguiu na tentativa 2
+    expect(container.querySelector('.labirinto__robo--falha')).not.toBeInTheDocument()
+  })
+
+  it('pinta o robô de vermelho quando a tentativa termina em falha', () => {
+    const { container } = render(
+      <VisualizacaoLabirinto largura={4} altura={4} trajeto={passos([[0, 0], [0, 1], [1, 1]])} falhas={[{ x: 1, y: 1, tentativa: 1 }]} />,
+    )
+
+    expect(container.querySelector('.labirinto__robo--falha')).toBeInTheDocument()
+  })
+
+  it('move o marcador a cada passo, mesmo com a última leitura atrasada', () => {
+    const trajeto = passos([[0, 0], [0, 1], [0, 2]])
+    const { rerender } = render(
+      <VisualizacaoLabirinto largura={4} altura={4} trajeto={trajeto.slice(0, 2)} celulaAtual={{ x: 0, y: 0 }} />,
+    )
+    expect(screen.getByText('Robô em A2')).toBeInTheDocument()
+
+    rerender(<VisualizacaoLabirinto largura={4} altura={4} trajeto={trajeto} celulaAtual={{ x: 0, y: 0 }} />)
+    expect(screen.getByText('Robô em A3')).toBeInTheDocument()
+  })
+
+  it('mostra só o 4x4 até saber a orientação e depois abre o tamanho completo', () => {
+    const { container, rerender } = render(
+      <VisualizacaoLabirinto largura={12} altura={4} trajeto={passos([[0, 0], [1, 0], [2, 0], [3, 0]])} />,
+    )
+    expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(16)
+    expect(screen.queryByText('OBJETIVO')).not.toBeInTheDocument()
+    expect(screen.getByText(/até o robô revelar a orientação/)).toBeInTheDocument()
+
+    rerender(<VisualizacaoLabirinto largura={12} altura={4} trajeto={passos([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]])} />)
+    expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(48)
+    expect(screen.getByText('Objetivo L4')).toBeInTheDocument()
   })
 
   it('põe o lado longo em y quando o robô passa de y = 3', () => {
@@ -83,6 +120,8 @@ describe('funções do trajeto', () => {
   it('deduz o eixo longo e as dimensões da grade', () => {
     expect(deduzirEixo(passos([[11, 3]]), 4)).toBe('x')
     expect(deduzirEixo(passos([[3, 11]]), 4)).toBe('y')
+    expect(deduzirEixo(passos([[3, 3]]), 4)).toBeNull()
+    expect(dimensoes(12, 4, null)).toEqual({ colunas: 4, linhas: 4 })
     expect(dimensoes(12, 4, 'x')).toEqual({ colunas: 12, linhas: 4 })
     expect(dimensoes(12, 4, 'y')).toEqual({ colunas: 4, linhas: 12 })
   })

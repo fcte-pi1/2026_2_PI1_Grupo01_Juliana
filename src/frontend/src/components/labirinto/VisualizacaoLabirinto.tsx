@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react'
 import type { Celula, PassoTrajeto } from '../../api/tipos'
 import { nomeCelula } from '../../utils/formatacao'
-import { deduzirEixo, dimensoes, dividirEmTrechos, type EixoLongo, type FalhaNoMapa } from './trajeto'
+import { celulasDeRetomada, deduzirEixo, dimensoes, dividirEmTrechos, type EixoLongo, type FalhaNoMapa } from './trajeto'
 import './labirinto.css'
 
 const PAREDE_N = 1
@@ -20,12 +20,12 @@ interface VisualizacaoLabirintoProps {
   altura: number
   /**
    * Lado em que o labirinto se estende (4.4, "Orientação"). Sem ele, a orientação
-   * é deduzida do trajeto: se o robô passou de y = 3, o lado longo está em y.
+   * é deduzida do trajeto; até lá, o 8x4 e o 12x4 aparecem só no quadrado 4x4 da largada.
    */
   eixoLongo?: EixoLongo | null
   /** Passos na ordem de visita (RF09). A cada evento `passo`, o trajeto cresce um ponto. */
   trajeto: PassoTrajeto[]
-  /** Posição do robô; sem ela, o marcador fica no último passo. */
+  /** Posição do robô antes do primeiro passo; depois, o marcador segue o último passo. */
   celulaAtual?: Celula | null
   /** Células de falha de cada tentativa, destacadas em vermelho (RF15). */
   falhas?: FalhaNoMapa[]
@@ -45,7 +45,8 @@ export function VisualizacaoLabirinto({
 }: VisualizacaoLabirintoProps) {
   const eixo = eixoLongo ?? deduzirEixo(trajeto, Math.min(largura, altura))
   const { colunas, linhas } = dimensoes(largura, altura, eixo)
-  const objetivo = { x: colunas - 1, y: linhas - 1 }
+  const aguardandoOrientacao = eixo === null && largura !== altura
+  const objetivo = aguardandoOrientacao ? null : { x: colunas - 1, y: linhas - 1 }
 
   const ultimoPasso = useMemo(() => {
     const mapa = new Map<string, PassoTrajeto>()
@@ -53,7 +54,7 @@ export function VisualizacaoLabirinto({
     return mapa
   }, [trajeto])
   const trechos = useMemo(() => dividirEmTrechos(trajeto), [trajeto])
-  const retomadas = useMemo(() => trajeto.filter((p) => p.retomada), [trajeto])
+  const retomadas = useMemo(() => celulasDeRetomada(trechos, falhas), [trechos, falhas])
 
   const margemEsq = compacto ? MARGEM : MARGEM + MARGEM_EIXO
   const margemBaixo = compacto ? MARGEM : MARGEM + MARGEM_EIXO
@@ -62,7 +63,16 @@ export function VisualizacaoLabirinto({
   const centro = (c: Celula) => ({ cx: margemEsq + c.x * LADO + LADO / 2, cy: MARGEM + (linhas - 1 - c.y) * LADO + LADO / 2 })
   const canto = (c: Celula) => ({ x: margemEsq + c.x * LADO, y: MARGEM + (linhas - 1 - c.y) * LADO })
 
-  const robo = celulaAtual ?? trajeto.at(-1) ?? null
+  const destaques: Destaque[] = [
+    { chave: 'largada', classe: 'largada', celula: { x: 0, y: 0 }, rotulo: 'LARGADA' },
+    ...(objetivo ? [{ chave: 'objetivo', classe: 'objetivo' as const, celula: objetivo, rotulo: 'OBJETIVO' }] : []),
+    ...falhas.map((f) => ({ chave: `f${f.tentativa}`, classe: 'falha' as const, celula: f, rotulo: `FALHA T${f.tentativa}` })),
+    ...retomadas.map((r) => ({ chave: `r${r.tentativa}`, classe: 'retomada' as const, celula: r, rotulo: 'RETOMADA' })),
+  ]
+
+  const robo = trajeto.at(-1) ?? celulaAtual ?? null
+  // cada falha fecha um trecho; sem retomada depois dela, o robô parou ali
+  const roboFalhou = trechos.length > 0 && falhas.length >= trechos.length
   const novo = trajeto.length >= 2 && !trajeto.at(-1)!.retomada ? trajeto.slice(-2) : null
 
   return (
@@ -77,13 +87,8 @@ export function VisualizacaoLabirinto({
 
         <Grade colunas={colunas} linhas={linhas} margemEsq={margemEsq} compacto={compacto} />
 
-        <CelulaDestaque classe="largada" celula={{ x: 0, y: 0 }} canto={canto} rotulo={compacto ? null : 'LARGADA'} />
-        <CelulaDestaque classe="objetivo" celula={objetivo} canto={canto} rotulo={compacto ? null : 'OBJETIVO'} />
-        {retomadas.map((p) => (
-          <CelulaDestaque key={`r${p.seq}`} classe="retomada" celula={p} canto={canto} rotulo={compacto ? null : 'CKPT'} />
-        ))}
-        {falhas.map((f) => (
-          <CelulaDestaque key={`f${f.tentativa}`} classe="falha" celula={f} canto={canto} rotulo={compacto ? null : `FALHA T${f.tentativa}`} />
+        {destaques.map((d) => (
+          <CelulaDestaque key={d.chave} {...d} canto={canto} />
         ))}
 
         {!compacto &&
@@ -121,13 +126,15 @@ export function VisualizacaoLabirinto({
             )),
           )}
 
+        {!compacto && destaques.map((d) => <Rotulo key={d.chave} {...d} canto={canto} />)}
+
         {robo && (
           <circle
-            className="labirinto__robo"
+            className={`labirinto__robo ${roboFalhou ? 'labirinto__robo--falha' : ''}`}
             r={compacto ? 22 : 16}
             style={{ transform: `translate(${centro(robo).cx}px, ${centro(robo).cy}px)` }}
           >
-            <title>{`Robô em ${nomeCelula(robo)}`}</title>
+            <title>{`Robô em ${nomeCelula(robo)}${roboFalhou ? ' · falhou' : ''}`}</title>
           </circle>
         )}
       </svg>
@@ -136,8 +143,9 @@ export function VisualizacaoLabirinto({
           <span className="legenda legenda--trajeto">Tentativa 1</span>
           <span className="legenda legenda--retomada">Retomada</span>
           <span className="legenda legenda--largada">Largada A1</span>
-          <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>
+          {objetivo && <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>}
           <span className="legenda legenda--falha">Falha</span>
+          {aguardandoOrientacao && <span className="legenda legenda--aviso">Mostrando 4x4 até o robô revelar a orientação</span>}
         </figcaption>
       )}
     </figure>
@@ -190,26 +198,44 @@ const Grade = memo(function Grade({ colunas, linhas, margemEsq, compacto }: Grad
   )
 })
 
-/** Como no protótipo: objetivo e falha no alto da célula, largada e checkpoint embaixo, sem se cobrirem. */
-const ROTULO_EM_CIMA = new Set(['objetivo', 'falha'])
-
-interface CelulaDestaqueProps {
+interface Destaque {
+  chave: string
   classe: 'largada' | 'objetivo' | 'retomada' | 'falha'
   celula: Celula
-  canto: (c: Celula) => { x: number; y: number }
-  rotulo: string | null
+  rotulo: string
 }
 
-function CelulaDestaque({ classe, celula, canto, rotulo }: CelulaDestaqueProps) {
+type Canto = (c: Celula) => { x: number; y: number }
+
+function CelulaDestaque({ classe, celula, canto }: Destaque & { canto: Canto }) {
   const { x, y } = canto(celula)
   return (
-    <g className={`labirinto__destaque labirinto__destaque--${classe}`}>
-      <rect x={x + FOLGA} y={y + FOLGA} width={LADO - 2 * FOLGA} height={LADO - 2 * FOLGA} rx={8} />
-      {rotulo && (
-        <text x={x + LADO / 2} y={ROTULO_EM_CIMA.has(classe) ? y + FOLGA + 22 : y + LADO - FOLGA - 10}>
-          {rotulo}
-        </text>
-      )}
+    <rect
+      className={`labirinto__destaque labirinto__destaque--${classe}`}
+      x={x + FOLGA}
+      y={y + FOLGA}
+      width={LADO - 2 * FOLGA}
+      height={LADO - 2 * FOLGA}
+      rx={8}
+    />
+  )
+}
+
+/** Como no protótipo: objetivo e falha no alto da célula, largada e retomada embaixo, sem se cobrirem. */
+const ROTULO_EM_CIMA = new Set(['objetivo', 'falha'])
+const LARGURA_LETRA = 8.6
+
+/** Etiqueta com fundo, desenhada por cima do trajeto para a linha não passar sobre o texto. */
+function Rotulo({ classe, celula, rotulo, canto }: Destaque & { canto: Canto }) {
+  const { x, y } = canto(celula)
+  const largura = rotulo.length * LARGURA_LETRA + 12
+  const topo = ROTULO_EM_CIMA.has(classe) ? y + FOLGA + 4 : y + LADO - FOLGA - 26
+  return (
+    <g className={`labirinto__rotulo labirinto__rotulo--${classe}`}>
+      <rect x={x + (LADO - largura) / 2} y={topo} width={largura} height={22} rx={5} />
+      <text x={x + LADO / 2} y={topo + 16}>
+        {rotulo}
+      </text>
     </g>
   )
 }

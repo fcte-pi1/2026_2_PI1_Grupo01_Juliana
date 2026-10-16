@@ -8,13 +8,12 @@
 .labirinto__svg {
   display: block;
   width: 100%;
-  max-height: 520px;
+  max-height: 680px;
   margin: 0 auto;
 }
 
 .labirinto--compacto .labirinto__svg {
-  max-width: 360px;
-  margin: 0;
+  max-height: 420px;
 }
 
 .labirinto__fundo {
@@ -32,51 +31,69 @@
   text-anchor: middle;
 }
 
-/* Células com significado: largada, objetivo, checkpoint de retomada e falha */
-.labirinto__destaque rect {
+/* Células com significado: largada, objetivo, retomada e falha */
+.labirinto__destaque {
   stroke-width: 3;
 }
 
-.labirinto__destaque text {
-  font-family: var(--fonte-mono);
-  font-size: 15px;
-  font-weight: 700;
-  text-anchor: middle;
-}
-
-.labirinto__destaque--largada rect {
+.labirinto__destaque--largada {
   fill: rgb(22 163 74 / 0.25);
   stroke: var(--cor-sucesso);
 }
 
-.labirinto__destaque--largada text {
-  fill: #86efac;
-}
-
-.labirinto__destaque--objetivo rect {
+.labirinto__destaque--objetivo {
   fill: rgb(245 158 11 / 0.25);
   stroke: var(--cor-alerta);
 }
 
-.labirinto__destaque--objetivo text {
-  fill: #fcd34d;
-}
-
-.labirinto__destaque--retomada rect {
-  fill: rgb(124 58 237 / 0.3);
-  stroke: #a78bfa;
-}
-
-.labirinto__destaque--retomada text {
-  fill: #ddd6fe;
-}
-
-.labirinto__destaque--falha rect {
+.labirinto__destaque--falha {
   fill: rgb(220 38 38 / 0.35);
   stroke: #f87171;
 }
 
-.labirinto__destaque--falha text {
+/* a retomada fica na célula da falha: só a borda tracejada, para o vermelho continuar visível */
+.labirinto__destaque--retomada {
+  fill: none;
+  stroke: #a78bfa;
+  stroke-dasharray: 10 6;
+}
+
+.labirinto__rotulo text {
+  font-family: var(--fonte-mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.labirinto__rotulo--largada rect {
+  fill: #14532d;
+}
+
+.labirinto__rotulo--largada text {
+  fill: #86efac;
+}
+
+.labirinto__rotulo--objetivo rect {
+  fill: #78350f;
+}
+
+.labirinto__rotulo--objetivo text {
+  fill: #fcd34d;
+}
+
+.labirinto__rotulo--retomada rect {
+  fill: #3b0764;
+}
+
+.labirinto__rotulo--retomada text {
+  fill: #ddd6fe;
+}
+
+.labirinto__rotulo--falha rect {
+  fill: #7f1d1d;
+}
+
+.labirinto__rotulo--falha text {
   fill: #fecaca;
 }
 
@@ -126,7 +143,14 @@
   fill: #22c55e;
   stroke: #dcfce7;
   stroke-width: 4;
-  transition: transform 0.3s ease-out;
+  transition:
+    transform 0.3s ease-out,
+    fill 0.3s;
+}
+
+.labirinto__robo--falha {
+  fill: #ef4444;
+  stroke: #fee2e2;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -176,4 +200,14 @@
 
 .legenda--falha::before {
   background: var(--cor-perigo);
+}
+
+.legenda--aviso::before {
+  display: none;
+}
+
+.legenda--aviso {
+  width: 100%;
+  text-align: center;
+  font-style: italic;
 }
