@@ -3,7 +3,8 @@
  * simulador-navegacao/labirintos. Cada labirinto existe nas versões -dir e
  * -esq; no referencial do robô as duas têm de dar o mesmo trajeto (D5, D9).
  * Com 5% de leituras erradas, a corrida pode falhar, mas sempre termina e
- * nunca declara sucesso fora do objetivo.
+ * nunca declara sucesso fora do objetivo. Copiar o estado com memcpy no
+ * meio da corrida e seguir com a cópia não muda nada (retomada, FIRM-08).
  */
 
 #include <stdio.h>
@@ -83,6 +84,63 @@ static sim_relatorio_t correr(const char *nome, const char *versao, trajeto_t *t
     return correr_com_ruido(nome, versao, trajeto, 0, 0);
 }
 
+/* Decisor que, no passo "parada", copia o estado e segue com a cópia. */
+typedef struct {
+    nav_estado_t original;
+    nav_estado_t copia;
+    nav_estado_t *atual;
+    int passo;
+    int parada;
+} retomada_t;
+
+static nav_acao_t decidir_com_retomada(void *ctx, nav_leitura_t leitura)
+{
+    retomada_t *r = (retomada_t *)ctx;
+    if (r->passo == r->parada) {
+        memcpy(&r->copia, &r->original, sizeof(r->copia));
+        memset(&r->original, 0xAA, sizeof(r->original)); /* o original não pode mais ser usado */
+        r->atual = &r->copia;
+    }
+    r->passo++;
+    return nav_passo(r->atual, leitura);
+}
+
+static nav_tipo_t tipo_da_navegacao(sim_tipo_t tipo)
+{
+    switch (tipo) {
+    case SIM_TIPO_8X4:
+        return NAV_TIPO_8X4;
+    case SIM_TIPO_12X4:
+        return NAV_TIPO_12X4;
+    default:
+        return NAV_TIPO_4X4;
+    }
+}
+
+static sim_relatorio_t correr_com_retomada(const char *nome, trajeto_t *trajeto, uint8_t ruido_pct,
+                                           int parada)
+{
+    static retomada_t retomada;
+    sim_labirinto_t lab;
+    sim_relatorio_t rel;
+    sim_config_t config = {0};
+    config.ruido_pct = ruido_pct;
+    config.semente = 1;
+    config.decisor = decidir_com_retomada;
+    config.decisor_ctx = &retomada;
+    config.observador = anotar_celula;
+    config.observador_ctx = trajeto;
+
+    memset(trajeto, 0, sizeof(*trajeto));
+    carregar(&lab, nome, "dir");
+    nav_iniciar(&retomada.original, tipo_da_navegacao(sim_tipo(&lab)));
+    retomada.atual = &retomada.original;
+    retomada.passo = 0;
+    retomada.parada = parada;
+    sim_correr(&lab, &config, &rel);
+    return rel;
+}
+
 static void test_todos_os_labirintos_terminam_em_sucesso(void)
 {
     static trajeto_t trajeto;
@@ -136,11 +194,39 @@ static void test_com_ruido_a_corrida_termina_sem_sucesso_falso(void)
     }
 }
 
+static void test_estado_copiado_no_meio_da_corrida_da_o_mesmo_trajeto(void)
+{
+    static const char *const UM_DE_CADA_TIPO[] = {"4x4-02", "8x4-frente-01", "12x4-lateral-01"};
+    static const uint8_t RUIDOS[] = {0, RUIDO_PCT};
+    static trajeto_t inteiro;
+    static trajeto_t retomado;
+    char mensagem[64];
+
+    for (size_t i = 0; i < 3; i++) {
+        for (size_t r = 0; r < 2; r++) {
+            sim_relatorio_t esperado = correr_com_ruido(UM_DE_CADA_TIPO[i], "dir", &inteiro, RUIDOS[r], 1);
+            TEST_ASSERT_TRUE_MESSAGE(inteiro.qtd <= MAX_CELULAS, UM_DE_CADA_TIPO[i]);
+
+            for (int parada = 0; parada < inteiro.qtd; parada++) {
+                sim_relatorio_t rel = correr_com_retomada(UM_DE_CADA_TIPO[i], &retomado, RUIDOS[r], parada);
+                snprintf(mensagem, sizeof(mensagem), "%s, ruido %u, parada no passo %d",
+                         UM_DE_CADA_TIPO[i], (unsigned)RUIDOS[r], parada);
+                TEST_ASSERT_EQUAL_INT_MESSAGE(esperado.resultado, rel.resultado, mensagem);
+                TEST_ASSERT_EQUAL_INT_MESSAGE(inteiro.qtd, retomado.qtd, mensagem);
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(inteiro.celulas, retomado.celulas,
+                                                 sizeof(sim_celula_t) * (size_t)inteiro.qtd, mensagem);
+                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&esperado, &rel, sizeof(rel), mensagem);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_todos_os_labirintos_terminam_em_sucesso);
     RUN_TEST(test_versoes_espelhadas_dao_o_mesmo_trajeto);
     RUN_TEST(test_com_ruido_a_corrida_termina_sem_sucesso_falso);
+    RUN_TEST(test_estado_copiado_no_meio_da_corrida_da_o_mesmo_trajeto);
     return UNITY_END();
 }
