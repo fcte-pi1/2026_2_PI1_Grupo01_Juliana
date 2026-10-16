@@ -54,9 +54,7 @@ Resultados possíveis:
 | `INVALIDO` | O arquivo não é um labirinto válido (o código de saída é 2) |
 
 > [!NOTE]
-> Enquanto o flood fill (FIRM-01, [#117](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/117)) não entra, `nav_passo()` é um esqueleto que não sai do lugar, e todos os labirintos terminam em `sem_caminho`. O CI só falha hoje se algum labirinto for inválido. Quando o FIRM-01 entrar, basta acrescentar `--exigir-sucesso` no passo do CI (`.github/workflows/firmware.yml`).
->
-> O tipo do labirinto ainda não é passado para a navegação: o `nav.h` atual não tem onde recebê-lo. Quando o FIRM-01 definir essa entrada (o tipo lido no DIP switch), o simulador passa o tipo do arquivo por ela.
+> A navegação recebe o tipo do labirinto (o que o robô lê no DIP switch) pelo `nav_iniciar()`, e o simulador passa o tipo do arquivo. Os 24 labirintos terminam em `sucesso`, e o CI (`.github/workflows/firmware.yml`) roda com `--exigir-sucesso`: falha se algum deixar de ser resolvido. O teste `test/test_navegacao_labirintos` confere ainda que as versões `-dir` e `-esq` dão o mesmo trajeto no referencial do robô.
 
 ## Labirintos
 

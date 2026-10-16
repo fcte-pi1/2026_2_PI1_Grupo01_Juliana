@@ -50,12 +50,12 @@ jobs:
         run: pip install pytest && pytest -q tools
 
       # Uma linha por labirinto no log e no resumo da execução. Falha se algum
-      # labirinto for inválido; com o FIRM-01, acrescentar --exigir-sucesso.
+      # labirinto for inválido ou não terminar em sucesso.
       - name: Simulador de navegação (FIRM-02)
         run: |
           set -o pipefail
           make -C simulador-navegacao build/simulador
-          ./simulador-navegacao/build/simulador --telemetria simulador-navegacao/build/telemetria simulador-navegacao/labirintos/*.txt | tee simulador-navegacao/build/relatorio.txt
+          ./simulador-navegacao/build/simulador --exigir-sucesso --telemetria simulador-navegacao/build/telemetria simulador-navegacao/labirintos/*.txt | tee simulador-navegacao/build/relatorio.txt
           {
             echo '### Simulador de navegação'
             echo '```text'
