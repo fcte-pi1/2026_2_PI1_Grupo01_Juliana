@@ -42,7 +42,7 @@ void tarefa_navegacao(void *parametro)
 {
     (void)parametro;
     nav_estado_t nav;
-    nav_iniciar(&nav);
+    nav_iniciar(&nav, ROBO_TIPO_LABIRINTO);
     bateria_t bateria;
     bateria_iniciar(&bateria);
 

@@ -203,6 +203,18 @@ static bool ler_sensor(bool verdade, uint8_t ruido_pct, uint32_t *sorteio, uint1
     return verdade;
 }
 
+static nav_tipo_t tipo_da_navegacao(sim_tipo_t tipo)
+{
+    switch (tipo) {
+    case SIM_TIPO_8X4:
+        return NAV_TIPO_8X4;
+    case SIM_TIPO_12X4:
+        return NAV_TIPO_12X4;
+    default:
+        return NAV_TIPO_4X4;
+    }
+}
+
 static nav_acao_t decidir_com_nav(void *ctx, nav_leitura_t leitura)
 {
     return nav_passo((nav_estado_t *)ctx, leitura);
@@ -214,7 +226,7 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
     sim_decisor_t decidir = config->decisor;
     void *decisor_ctx = config->decisor_ctx;
     if (decidir == NULL) {
-        nav_iniciar(&nav);
+        nav_iniciar(&nav, tipo_da_navegacao(sim_tipo(lab)));
         decidir = decidir_com_nav;
         decisor_ctx = &nav;
     }
