@@ -107,6 +107,12 @@ void nav_iniciar(nav_estado_t *estado, nav_tipo_t tipo);
 /* Chamada uma vez por célula: registra a leitura e devolve o próximo movimento. */
 nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura);
 
+/*
+ * O robô pode passar de (x, y) para a vizinha na direção dada: não há parede
+ * gravada e a vizinha está na região válida do tipo e da orientação.
+ */
+bool nav_acessivel(const nav_estado_t *estado, int x, int y, nav_direcao_t direcao);
+
 /* Distância calculada da célula, ou NAV_DIST_INFINITA fora da matriz. */
 uint8_t nav_distancia(const nav_estado_t *estado, int x, int y);
 
