@@ -5,7 +5,7 @@ import type { ExecucaoAtualResposta } from '../api/tipos'
 import { useRequisicao } from './useRequisicao'
 
 /**
- * Execução da tela inicial: busca GET /execucoes/atual e, havendo execução,
+ * Execução da tela inicial: busca GET /execucoes/em-andamento e, havendo execução,
  * assina o stream SSE. Por enquanto só as leituras são aplicadas; o tratamento
  * completo dos eventos fica para o FRONT-03.
  */
@@ -19,7 +19,7 @@ export function useExecucaoAtual() {
     return api.assinar(execucaoId, (evento) => {
       if (evento.tipo !== 'leitura') return
       definirDados((atual) => {
-        if (!atual?.execucao) return atual
+        if (!atual?.execucao || atual.execucao.execucao_id !== execucaoId) return atual
         const { execucao } = atual
         return {
           ...atual,

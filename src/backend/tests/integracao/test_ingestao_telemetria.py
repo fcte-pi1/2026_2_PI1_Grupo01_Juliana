@@ -487,6 +487,9 @@ class GerenciadorFalso:
     def comandos_pendentes(self) -> list[Comando]:
         return self.comandos
 
+    def verificar_monitores(self, sessao, monitor) -> bool:
+        return False
+
 
 @pytest.fixture
 def gerenciador_falso(client, db_session, monkeypatch) -> GerenciadorFalso:

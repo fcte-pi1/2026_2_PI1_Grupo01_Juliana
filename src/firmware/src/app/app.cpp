@@ -11,6 +11,7 @@
 #include "hal_nvs.h"
 #include "hal_tof.h"
 #include "movimento.h"
+#include "sensores.h"
 
 #ifdef HAL_SIMULADA
 #include "labirinto_demo.h"
@@ -60,6 +61,7 @@ void app_iniciar(void)
     if (!hal_tof_iniciar()) {
         Serial.println("# aviso: algum ToF não respondeu");
     }
+    sensores_iniciar();
 
     fila_eventos = xQueueCreate(TAMANHO_FILA, sizeof(evento_leitura_t));
 

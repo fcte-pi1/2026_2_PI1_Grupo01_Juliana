@@ -12,8 +12,8 @@ export function CartaoUltimaExecucao({ execucao }: CartaoUltimaExecucaoProps) {
     <section className="cartao">
       <span className="rotulo">Última execução · {execucao.labirinto}</span>
       <div className="cartao__cabecalho">
-        <strong className="mono texto-grande">{formatarNumeroExecucao(execucao.numero)}</strong>
-        <PilulaResultado status={execucao.status} resultado={execucao.resultado} />
+        <strong className="mono texto-grande">{formatarNumeroExecucao(execucao.numero, execucao.execucao_id)}</strong>
+        <PilulaResultado resultado={execucao.resultado ?? execucao.status} />
       </div>
       <p className="texto-suave">
         {execucao.tentativas_usadas} tentativa(s) · {formatarDataHora(execucao.iniciada_em)}

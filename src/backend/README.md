@@ -91,6 +91,23 @@ ruff check .
 pytest -q          # resumo; use pytest -v para mais detalhe
 ```
 
+### Validação BACK-03 (GerenciadorExecucoes)
+
+Checklist da task (transições T/E/R, critérios de aceite, rotas de execução):
+
+```bash
+cd src/backend
+source .venv/bin/activate
+export TEST_DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test
+
+python -m scripts.validar_back03        # escopo completo
+python -m scripts.validar_back03 -v     # saída detalhada
+python -m scripts.validar_back03 --apenas-criterios
+python -m scripts.validar_back03 --mostrar-mapa   # T01–R05 → nome do teste
+```
+
+Sai com código **0** se tudo passar, **1** se algum teste falhar.
+
 ---
 
 ## Rodar tudo no Docker (API + Postgres)
@@ -131,7 +148,7 @@ A ponte serial envia cada linha recebida do robô, sem alterar, para `POST /tele
 
 A resposta traz os comandos para o robô: `{"comandos": []}`. O formato das mensagens é o contrato v1 (`contrato/telemetria.py`, exemplos em `src/contrato/exemplos.jsonl`).
 
-- **422**: linha inválida (mais de 256 B, não é JSON, `v` ≠ 1, `tipo` desconhecido, campo faltando ou fora da faixa, `falha` incoerente ou célula fora do labirinto da execução). Nada é gravado e o motivo vai para o log (WARNING, logger `app.telemetria`). **A ponte não deve reenviar respostas 4xx**: a mesma linha vai falhar de novo.
+- **422**: linha inválida (mais de 256 B, não é JSON, `v` diferente de 1, `tipo` desconhecido, campo faltando ou fora da faixa, `falha` incoerente ou célula fora do labirinto da execução). Nada é gravado e o motivo vai para o log (WARNING, logger `app.telemetria`). A resposta é `{"detail": "<motivo>", "comandos": [...]}`: **a ponte escreve os `comandos` na serial como no 200**, para não perder uma interrupção pendente. Se o próprio corpo `EntradaPonte` vier malformado, o 422 é o padrão do FastAPI (`detail` em lista, sem `comandos`). **A ponte não deve reenviar respostas 4xx**: a mesma linha vai falhar de novo.
 - **200**: mensagem aceita e gravada na tentativa aberta (`health-check` ou `running`). Também devolve 200, sem gravar e com INFO no log, a mensagem sem tentativa aberta, o evento repetido e o `hc_item` fora do health-check.
 - **Deduplicação**: eventos (`hc_item`, `hc_resultado`, `passo`, `falha`, `sucesso`) com `seq` menor ou igual ao último aceito no mesmo `boot` são repetidos (o firmware reenvia o buffer ao reconectar). O `seq` só é marcado como visto depois do commit; se a gravação falhar, o reenvio é aceito. A `tel` nunca é repetida.
 

@@ -70,10 +70,25 @@ static void test_tof_mede_distancia_ate_as_paredes(void)
 
     /* Laterais a 45°: sensor a 30 mm do centro, paredes a 84 mm do centro,
      * então o feixe percorre 54 / sen(45°) = 76 mm. */
+    TEST_ASSERT_TRUE(sim_tof_medir(1, &mm));
+    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
     TEST_ASSERT_TRUE(sim_tof_medir(2, &mm));
     TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
-    TEST_ASSERT_TRUE(sim_tof_medir(3, &mm));
-    TEST_ASSERT_UINT16_WITHIN(2, 76, mm);
+
+    /* Só existem 3 sensores: frontal, esquerdo e direito. */
+    TEST_ASSERT_FALSE(sim_tof_medir(3, &mm));
+    TEST_ASSERT_FALSE(sim_tof_medir(-1, &mm));
+}
+
+static void test_tof_frontal_centrado_ve_a_parede_da_frente(void)
+{
+    TEST_ASSERT_TRUE(sim_mundo_iniciar(CORREDOR_1X3));
+    uint16_t mm;
+
+    /* Centro da última célula: sensor em y = 450 + 40, parede em y = 540 - 6. */
+    sim_definir_pose(90.0f, 450.0f, 1.5707963f); /* norte */
+    TEST_ASSERT_TRUE(sim_tof_medir(0, &mm));
+    TEST_ASSERT_UINT16_WITHIN(5, 45, mm);
 }
 
 static void test_tof_fora_de_alcance(void)
@@ -149,13 +164,15 @@ static void test_giro_no_lugar(void)
 static void test_bateria_descarrega_e_passa_pelo_divisor(void)
 {
     sim_mundo_iniciar(CORREDOR_1X3);
-    TEST_ASSERT_UINT16_WITHIN(1, (uint16_t)(BATERIA_CHEIA_MV / BATERIA_DIVISOR), sim_bateria_adc_mv());
+    uint16_t cheia_adc = (uint16_t)((BATERIA_CHEIA_MV - BATERIA_QUEDA_DIODO_MV) / BATERIA_DIVISOR);
+    TEST_ASSERT_UINT16_WITHIN(1, cheia_adc, sim_bateria_adc_mv());
 
     sim_mundo_avancar(60000);
-    TEST_ASSERT_TRUE(sim_bateria_adc_mv() < (uint16_t)(BATERIA_CHEIA_MV / BATERIA_DIVISOR));
+    TEST_ASSERT_TRUE(sim_bateria_adc_mv() < cheia_adc);
 
     sim_definir_bateria_mv(7000);
-    TEST_ASSERT_UINT16_WITHIN(1, (uint16_t)(7000 / BATERIA_DIVISOR), sim_bateria_adc_mv());
+    TEST_ASSERT_UINT16_WITHIN(1, (uint16_t)((7000 - BATERIA_QUEDA_DIODO_MV) / BATERIA_DIVISOR),
+                              sim_bateria_adc_mv());
 }
 
 typedef struct { uint16_t mv; uint8_t pct; } ponto_curva_t;
@@ -175,12 +192,16 @@ static void test_curvas_da_bateria_batem_com_os_limites(void)
     const ponto_curva_t lipo[] = BATERIA_CURVA_LIPO;
     const ponto_curva_t aa[] = BATERIA_CURVA_AA;
     int n_lipo = (int)(sizeof(lipo) / sizeof(lipo[0]));
+    int n_aa = (int)(sizeof(aa) / sizeof(aa[0]));
 
     conferir_curva(lipo, n_lipo);
-    conferir_curva(aa, (int)(sizeof(aa) / sizeof(aa[0])));
+    conferir_curva(aa, n_aa);
 
     TEST_ASSERT_EQUAL_UINT16(BATERIA_CHEIA_MV, lipo[0].mv);
     TEST_ASSERT_EQUAL_UINT16(BATERIA_CORTE_MV, lipo[n_lipo - 1].mv);
+    TEST_ASSERT_EQUAL_UINT16(BATERIA_AA_CORTE_MV, aa[n_aa - 1].mv);
+    TEST_ASSERT_TRUE(aa[0].mv < BATERIA_LIMIAR_FONTE_MV); /* pilhas cheias não passam por LiPo */
+    TEST_ASSERT_TRUE(BATERIA_CORTE_MV > BATERIA_LIMIAR_FONTE_MV);
     TEST_ASSERT_TRUE(BATERIA_ALERTA_MV > BATERIA_CORTE_MV); /* o aviso vem antes do corte */
     TEST_ASSERT_TRUE(BATERIA_ALERTA_MV < BATERIA_CHEIA_MV);
     TEST_ASSERT_TRUE(MOTOR_TENSAO_NOMINAL_MV < BATERIA_CHEIA_MV); /* por isso o PWM é limitado */
@@ -192,6 +213,7 @@ int main(void)
     RUN_TEST(test_labirinto_le_paredes_dos_dois_lados);
     RUN_TEST(test_labirinto_rejeita_desenho_malformado);
     RUN_TEST(test_tof_mede_distancia_ate_as_paredes);
+    RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);
     RUN_TEST(test_tof_fora_de_alcance);
     RUN_TEST(test_motores_desabilitados_nao_movem);
     RUN_TEST(test_encoders_acompanham_o_deslocamento);
