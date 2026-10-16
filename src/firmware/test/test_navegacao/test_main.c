@@ -362,6 +362,72 @@ static void test_flood_fill_contorna_parede_conhecida(void)
     TEST_ASSERT_EQUAL_UINT8(1, nav_distancia(&nav, 3, 2));
 }
 
+/*
+ * Exemplo resolvido do docs/4.4 (labirinto 4x4), com o lado longo à direita:
+ * bordas, parede leste da largada e parede entre (2, 3) e (3, 3).
+ */
+static bool parede_do_exemplo(int x, int y, nav_direcao_t direcao)
+{
+    switch (direcao) {
+    case NAV_NORTE: return y == 3;
+    case NAV_SUL:   return y == 0;
+    case NAV_OESTE: return x == 0 || (x == 3 && y == 3);
+    case NAV_LESTE: return x == 3 || (x == 0 && y == 0) || (x == 2 && y == 3);
+    }
+    return true;
+}
+
+/* O que os sensores veem na célula atual do exemplo, relativo ao rumo. */
+static nav_leitura_t leitura_do_exemplo(const nav_estado_t *nav)
+{
+    nav_direcao_t frente = nav->direcao;
+    nav_direcao_t direita = nav_direcao_apos(frente, NAV_ACAO_DIREITA);
+    nav_direcao_t esquerda = nav_direcao_apos(frente, NAV_ACAO_ESQUERDA);
+    return leitura(parede_do_exemplo(nav->x, nav->y, frente),
+                   parede_do_exemplo(nav->x, nav->y, esquerda),
+                   parede_do_exemplo(nav->x, nav->y, direita));
+}
+
+static void test_exemplo_4x4_do_documento(void)
+{
+    static const uint8_t antes_da_parede[4][4] = {
+        {3, 2, 1, 0},
+        {4, 3, 2, 1},
+        {5, 4, 3, 2},
+        {6, 5, 4, 3},
+    };
+    static const uint8_t depois_da_parede[4][4] = {
+        {5, 4, 3, 0},
+        {4, 3, 2, 1},
+        {5, 4, 3, 2},
+        {6, 5, 4, 3},
+    };
+    static const int8_t trajeto[][2] = {
+        {0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 3}, {2, 3}, {2, 2}, {3, 2}, {3, 3},
+    };
+    const int celulas = (int)(sizeof(trajeto) / sizeof(trajeto[0]));
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav_acao_t acao = NAV_ACAO_FRENTE;
+    for (int i = 0; i < celulas; i++) {
+        TEST_ASSERT_EQUAL_INT8_MESSAGE(trajeto[i][0], nav.x, "trajeto diferente do 4.4");
+        TEST_ASSERT_EQUAL_INT8_MESSAGE(trajeto[i][1], nav.y, "trajeto diferente do 4.4");
+        int x = nav.x;
+        int y = nav.y;
+        acao = nav_passo(&nav, leitura_do_exemplo(&nav));
+        if (x == 0 && y == 1) {
+            conferir_distancias_4x4(&nav, antes_da_parede);
+        }
+        if (x == 2 && y == 3) {
+            conferir_distancias_4x4(&nav, depois_da_parede);
+        }
+        if (i < celulas - 1) {
+            TEST_ASSERT_TRUE_MESSAGE(acao < NAV_ACAO_SUCESSO, "terminou antes de (3, 3)");
+        }
+    }
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SUCESSO, acao);
+}
+
 static void test_8x4_indefinido_tem_os_dois_objetivos(void)
 {
     nav_estado_t nav;
@@ -580,6 +646,7 @@ int main(void)
     RUN_TEST(test_largada_ja_tem_as_distancias_calculadas);
     RUN_TEST(test_flood_fill_4x4_com_a_parede_leste_da_largada);
     RUN_TEST(test_flood_fill_contorna_parede_conhecida);
+    RUN_TEST(test_exemplo_4x4_do_documento);
     RUN_TEST(test_8x4_indefinido_tem_os_dois_objetivos);
     RUN_TEST(test_12x4_indefinido_tem_os_dois_objetivos);
     RUN_TEST(test_orientacao_resolvida_descarta_o_objetivo_incompativel);
