@@ -10,7 +10,7 @@ import { renderizarRota } from './renderizar'
 /** Texto que identifica cada um dos 12 estados do protótipo na rota `/`. */
 const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '01-inicio': /Nenhuma execução ativa/,
-  '02-health-check': /6 de 9 OK/,
+  '02-health-check': /6 de 8 OK/,
   '03-em-execucao': /Tempo da execução/,
   '04-concluida': /concluída na tentativa 1/,
   '05-execucao-recusada': /Nova execução recusada/,

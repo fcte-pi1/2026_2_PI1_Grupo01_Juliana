@@ -7,6 +7,7 @@
 #include <freertos/queue.h>
 
 #include "eventos.h"
+#include "hal_tof.h"
 
 /* Da navegação (núcleo 1) para a telemetria (núcleo 0). */
 extern QueueHandle_t fila_amostra;  /* telemetria_amostra_t, tamanho 1 */
@@ -28,6 +29,10 @@ extern volatile uint32_t app_eventos_descartados;
  * corrida entre as duas só afeta a depuração.
  */
 extern volatile uint32_t app_nav_periodo_max_ms;
+
+/* Últimas distâncias filtradas dos ToF (mm) e bit i = 1 se o ToF i tem leitura válida. */
+extern volatile uint16_t app_tof_mm[TOF_QTD];
+extern volatile uint8_t app_tof_ok;
 #endif
 
 void app_iniciar(void);

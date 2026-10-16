@@ -12,8 +12,7 @@ TipoInicio = Literal["nova", "retomada"]
 TipoDip = Literal["4x4", "8x4", "12x4", "invalido"]
 Componente = Literal[
     "bateria",
-    "tof_frontal_esq",
-    "tof_frontal_dir",
+    "tof_frontal",
     "tof_esquerdo",
     "tof_direito",
     "motor_esquerdo",
@@ -33,6 +32,7 @@ MotivoFalha = Literal[
     "encerrado_operador",
 ]
 MotivoEncerramento = Literal["collision", "stuck", "out_of_track"]
+MotivoRecusa = Literal["tentativa_aberta", "limite_3", "execucao_cancelada"]
 OrigemFalha = Literal["automatica", "encerrado_operador"]
 Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
@@ -137,6 +137,11 @@ class RetornoNovaExecucao(BaseModel):
     execucao_id: UUID
     tentativa_id: UUID
     attempt_index: int = Field(ge=1, le=3)
+
+
+class Recusa(BaseModel):
+    motivo: MotivoRecusa
+    ocorrida_em: datetime
 
 
 # Alias usado antes do alinhamento ARQ-02

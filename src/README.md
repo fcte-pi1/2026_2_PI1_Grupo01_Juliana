@@ -58,7 +58,7 @@ Formato sugerido para novas entradas:
 ### 2026-09 — Stack embarcada e telemetria
 
 - **Contexto:** Alinhamento com Estrutura, Eletrônica e Energia.
-- **Decisão:** Motores **DC N20** + encoder, **PID** de velocidade, sensores **ToF** (I²C); detecção de **`stuck`** por encoders parados (**US45**); Bluetooth **SPP** da ESP32 (`BluetoothSerial`); health-check com **9 componentes** fixos; reconexão ≤10 s com reenvio e deduplicação por **`seq`** (RNF08).
+- **Decisão:** Motores **DC N20** + encoder, **PID** de velocidade, sensores **ToF** (I²C); detecção de **`stuck`** por encoders parados (**US45**); Bluetooth **SPP** da ESP32 (`BluetoothSerial`); health-check com **8 componentes** fixos (bateria, 3 ToF, 2 motores e 2 encoders, RF29); reconexão ≤10 s com reenvio e deduplicação por **`seq`** (RNF08).
 - **Consequência:** Métricas no backend: distância base células × 18 cm (RF12); bateria V/% pela curva do doc 4.2 (RF11).
 - **Doc/código:** `docs/3 - EAP.md`, RF20–RF22, RF29; DER `HEALTH_CHECK_ITEM` no 4.4.
 

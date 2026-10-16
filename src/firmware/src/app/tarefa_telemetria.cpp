@@ -23,13 +23,16 @@
 /* Linha "#" que o backend e o verificar_serial.py ignoram. */
 static void enviar_depuracao(void)
 {
-    char linha[96];
+    char linha[160];
     uint32_t nav_max = app_nav_periodo_max_ms;
     app_nav_periodo_max_ms = 0;
     int n = snprintf(linha, sizeof(linha),
-                     "# tel desc_fila=%lu desc_buffer=%lu nav_periodo_max_ms=%lu\n",
+                     "# tel desc_fila=%lu desc_buffer=%lu nav_periodo_max_ms=%lu"
+                     " tof_mm f=%u e=%u d=%u ok=0x%X\n",
                      (unsigned long)app_eventos_descartados,
-                     (unsigned long)telemetria_descartados(), (unsigned long)nav_max);
+                     (unsigned long)telemetria_descartados(), (unsigned long)nav_max,
+                     app_tof_mm[TOF_FRONTAL], app_tof_mm[TOF_ESQUERDO], app_tof_mm[TOF_DIREITO],
+                     app_tof_ok);
     if (n > 0 && (size_t)n < sizeof(linha)) {
         hal_bt_escrever(linha, (size_t)n);
     }
