@@ -1196,7 +1196,7 @@ components:
         bateria:
           type: number
           description: >
-            Tensão em mV, como o robô envia em bat_mv (ADR-014). Converter para
+            Tensão em mV, como o robô envia em bat_mv (ADR-016). Converter para
             percentual de carga é do backend, pela curva da fonte ativa.
         velocidade:
           type: number
@@ -1342,7 +1342,7 @@ components:
           type: integer
         bateria:
           type: number
-          description: Tensão em mV, igual ao bat_mv do contrato serial (ADR-014).
+          description: Tensão em mV, igual ao bat_mv do contrato serial (ADR-016).
         bateria_pct:
           type: number
           nullable: true
