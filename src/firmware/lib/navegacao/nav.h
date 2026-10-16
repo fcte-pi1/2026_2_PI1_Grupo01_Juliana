@@ -87,6 +87,9 @@ typedef struct {
 /*
  * Tudo o que a navegação sabe, sem ponteiros. As coordenadas são do
  * referencial do labirinto: x cresce para o lado fixado em "lado".
+ *
+ * A struct é plana: pode ser copiada com memcpy ou gravada e lida byte a
+ * byte (na NVS, pelo FIRM-08) para retomar a tentativa de onde parou.
  */
 typedef struct {
     int8_t x;
