@@ -307,7 +307,8 @@ static bool desfazer_lado(nav_estado_t *estado)
      * Só um lado aberto, e ele era falso: o lado volta a indefinido, que
      * espelha como direita. Se era direita, o robô olha para o leste, e a
      * parede que ele viu ganha 2 votos; se era esquerda, olha para o oeste,
-     * que é borda.
+     * que é borda, e o leste é a direita física, lida fechada na mesma
+     * leitura (gravada como oeste e perdida na borda): ganha 1 voto.
      */
     bool olha_leste = estado->lado == NAV_LADO_DIREITA;
     estado->lado = NAV_LADO_INDEFINIDO;
@@ -317,6 +318,7 @@ static bool desfazer_lado(nav_estado_t *estado)
         votar(estado, 0, estado->y, NAV_LESTE, true);
     } else {
         estado->direcao = NAV_OESTE;
+        votar(estado, 0, estado->y, NAV_LESTE, true);
     }
     return true;
 }

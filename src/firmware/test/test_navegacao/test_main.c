@@ -975,14 +975,16 @@ static void test_bloqueio_com_so_a_esquerda_aberta_volta_o_lado_a_indefinido(voi
     TEST_ASSERT_EQUAL_INT(NAV_ACAO_ESQUERDA, fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, true)));
     /*
      * O robô virado para a esquerda física olha para o oeste quando o lado
-     * espelha como direita: a borda, sem voto. O leste fica atrás dele.
+     * espelha como direita: a borda. O leste, atrás dele, é a direita física,
+     * que foi lida fechada e ganha 1 voto de parede. Sobra o sul, à esquerda.
      */
-    TEST_ASSERT_EQUAL_INT(NAV_ACAO_MEIA_VOLTA, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_ESQUERDA, nav_bloqueado(&nav));
     TEST_ASSERT_EQUAL_INT(NAV_LADO_INDEFINIDO, nav.lado);
-    TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[0][1][1].votos_parede);
-    TEST_ASSERT_EQUAL_INT8(1, nav.x);
-    TEST_ASSERT_EQUAL_INT8(1, nav.y);
-    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+    TEST_ASSERT_EQUAL_UINT8(1, nav.paredes[0][1][1].votos_parede);
+    TEST_ASSERT_TRUE(tem_parede(&nav, 0, 1, NAV_PAREDE_L));
+    TEST_ASSERT_EQUAL_INT8(0, nav.x);
+    TEST_ASSERT_EQUAL_INT8(0, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_SUL, nav.direcao);
 }
 
 static void test_desfazer_o_lado_apaga_as_paredes_leste_da_coluna_0(void)
