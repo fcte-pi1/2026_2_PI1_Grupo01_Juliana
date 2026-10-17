@@ -220,16 +220,47 @@ static nav_acao_t decidir_com_nav(void *ctx, nav_leitura_t leitura)
     return nav_passo((nav_estado_t *)ctx, leitura);
 }
 
+static nav_acao_t bloquear_com_nav(void *ctx) { return nav_bloqueado((nav_estado_t *)ctx); }
+
+static bool eh_movimento(nav_acao_t acao) { return acao != NAV_ACAO_SUCESSO && acao != NAV_ACAO_SEM_PASSO; }
+
+static void contar_giro(sim_relatorio_t *rel, nav_acao_t acao)
+{
+    if (acao == NAV_ACAO_DIREITA || acao == NAV_ACAO_ESQUERDA) {
+        rel->giros_90++;
+    } else if (acao == NAV_ACAO_MEIA_VOLTA) {
+        rel->giros_180++;
+    }
+}
+
+/* Mais da metade das amostras diz parede à frente. */
+static bool frente_bloqueada(bool verdade, uint8_t amostras, uint8_t ruido_pct, uint32_t *sorteio,
+                             uint16_t *erradas)
+{
+    int paredes = 0;
+    for (int i = 0; i < amostras; i++) {
+        paredes += ler_sensor(verdade, ruido_pct, sorteio, erradas);
+    }
+    return 2 * paredes > amostras;
+}
+
 void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_relatorio_t *rel)
 {
     nav_estado_t nav;
     sim_decisor_t decidir = config->decisor;
     void *decisor_ctx = config->decisor_ctx;
+    sim_bloqueio_t bloquear = config->bloqueio;
+    void *bloqueio_ctx = config->bloqueio_ctx;
     if (decidir == NULL) {
         nav_iniciar(&nav, tipo_da_navegacao(sim_tipo(lab)));
         decidir = decidir_com_nav;
         decisor_ctx = &nav;
+        if (bloquear == NULL) {
+            bloquear = bloquear_com_nav;
+            bloqueio_ctx = &nav;
+        }
     }
+    uint8_t amostras = bloquear != NULL ? config->amostras_frente : 0;
 
     uint16_t limite = config->limite_passos ? config->limite_passos : SIM_LIMITE_PASSOS_PADRAO;
     uint32_t sorteio = config->semente ? config->semente : 1; /* xorshift não sai do 0 */
@@ -258,16 +289,34 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
         leitura.direita = ler_sensor(parede(lab, x, y, direita), config->ruido_pct, &sorteio, &rel->leituras_erradas);
 
         nav_acao_t acao = decidir(decisor_ctx, leitura);
+        nav_direcao_t rumo_na_celula = rumo;
+
+        /* Gira e confere a frente antes de andar; cada conferência que bloqueia é um passo. */
+        bool estourou = false;
+        while (eh_movimento(acao)) {
+            contar_giro(rel, acao);
+            rumo = girar(rumo, acao);
+            if (amostras == 0 || !frente_bloqueada(parede(lab, x, y, rumo), amostras, config->ruido_pct, &sorteio,
+                                                   &rel->leituras_erradas)) {
+                break;
+            }
+            if (rel->celulas + rel->bloqueios == limite) {
+                estourou = true;
+                break;
+            }
+            rel->bloqueios++;
+            acao = bloquear(bloqueio_ctx);
+        }
 
         /* Zerada inteira para os bytes de preenchimento não levarem lixo da pilha ao observador. */
         sim_celula_t celula;
         memset(&celula, 0, sizeof(celula));
         celula_no_robo(&ref, x, y, &celula.x, &celula.y);
-        celula.rumo = direcao_no_robo(&ref, rumo);
+        celula.rumo = direcao_no_robo(&ref, rumo_na_celula);
         celula.acao = acao;
-        celula.rumo_depois = direcao_no_robo(&ref, girar(rumo, acao));
+        celula.rumo_depois = direcao_no_robo(&ref, rumo);
         /* Atrás não tem sensor: ou o robô acabou de passar por ali (aberto) ou é o fundo do beco da largada. */
-        celula.paredes = (uint8_t)((leitura.frente ? MASCARA_NAV[direcao_no_robo(&ref, rumo)] : 0) |
+        celula.paredes = (uint8_t)((leitura.frente ? MASCARA_NAV[direcao_no_robo(&ref, rumo_na_celula)] : 0) |
                                    (leitura.esquerda ? MASCARA_NAV[direcao_no_robo(&ref, esquerda)] : 0) |
                                    (leitura.direita ? MASCARA_NAV[direcao_no_robo(&ref, direita)] : 0) |
                                    (parede(lab, x, y, tras) ? MASCARA_NAV[direcao_no_robo(&ref, tras)] : 0));
@@ -286,19 +335,16 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
             rel->resultado = SIM_RESULTADO_SEM_CAMINHO;
             return;
         }
-
-        if (acao == NAV_ACAO_DIREITA || acao == NAV_ACAO_ESQUERDA) {
-            rel->giros_90++;
-        } else if (acao == NAV_ACAO_MEIA_VOLTA) {
-            rel->giros_180++;
+        if (estourou) {
+            rel->resultado = SIM_RESULTADO_LIMITE;
+            return;
         }
-        rumo = girar(rumo, acao);
 
         if (parede(lab, x, y, rumo)) {
             rel->resultado = SIM_RESULTADO_COLISAO;
             return;
         }
-        if (rel->celulas == limite) {
+        if (rel->celulas + rel->bloqueios == limite) {
             rel->resultado = SIM_RESULTADO_LIMITE;
             return;
         }

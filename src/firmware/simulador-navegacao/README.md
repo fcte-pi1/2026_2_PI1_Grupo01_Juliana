@@ -6,7 +6,9 @@ O código da navegação é o mesmo da ESP32 (`lib/navegacao/nav.c`). A cada cé
 
 1. lê as paredes da frente, da esquerda e da direita no labirinto (com ruído, se pedido);
 2. chama `nav_passo()` com essas leituras;
-3. gira e anda uma célula conforme a resposta, ou termina a corrida.
+3. gira conforme a resposta, ou termina a corrida;
+4. confere a frente antes de andar, como o robô vai fazer (FIRM-05): lê a frente `--amostras-frente` vezes e, se mais da metade disser parede, não anda e chama `nav_bloqueado()`, que escolhe outro movimento; repete até a frente dar aberta;
+5. anda uma célula.
 
 ## Uso
 
@@ -22,7 +24,8 @@ make                        # compila e roda todos os labirintos de labirintos/
 |---|---|
 | `--ruido PCT` | Chance (0 a 100) de cada leitura de parede vir trocada: parede vira passagem e vice-versa |
 | `--semente N` | Semente do sorteio do ruído. Mesma semente, mesma corrida |
-| `--limite N` | Células percorridas antes de desistir (padrão 1000) |
+| `--limite N` | Passos antes de desistir: células percorridas mais bloqueios (padrão 1000) |
+| `--amostras-frente N` | Leituras da frente na conferência antes de andar, com o mesmo ruído das outras (padrão 3, máximo 9). `0` desliga a conferência |
 | `--telemetria PASTA` | Grava `PASTA/<labirinto>.jsonl`, o roteiro de telemetria da corrida |
 | `--boot N` | Valor do campo `boot` no roteiro (padrão 1) |
 | `--exigir-sucesso` | Sai com código 1 se algum labirinto não terminar em sucesso |
@@ -33,7 +36,7 @@ make                        # compila e roda todos os labirintos de labirintos/
 Uma linha por labirinto e um total no fim:
 
 ```text
-8x4-frente-01-dir        8x4       sucesso       celulas=26   distintas=26  giros90=15   giros180=1   leituras_erradas=0
+8x4-frente-01-dir        8x4       sucesso       celulas=26   distintas=26  giros90=15   giros180=1   leituras_erradas=0   bloqueios=0
 ```
 
 | Campo | Significado |
@@ -41,7 +44,8 @@ Uma linha por labirinto e um total no fim:
 | `celulas` | Células percorridas, contando as repetidas |
 | `distintas` | Células diferentes visitadas, contando a largada |
 | `giros90`, `giros180` | Giros de 90° (direita ou esquerda) e de 180° |
-| `leituras_erradas` | Leituras que o ruído trocou |
+| `leituras_erradas` | Leituras que o ruído trocou, contando as da conferência da frente |
+| `bloqueios` | Conferências em que a frente deu parede e o robô não andou |
 
 Resultados possíveis:
 
@@ -49,9 +53,9 @@ Resultados possíveis:
 |---|---|
 | `sucesso` | A navegação declarou sucesso na célula de objetivo |
 | `sem_caminho` | A navegação devolveu `NAV_ACAO_SEM_PASSO` |
-| `colisao` | A navegação mandou andar para uma parede |
+| `colisao` | O robô andou para uma parede (a conferência não viu ou estava desligada) |
 | `sucesso_falso` | A navegação declarou sucesso fora do objetivo |
-| `limite` | Passou do `--limite` sem terminar |
+| `limite` | Passou do `--limite` (células mais bloqueios) sem terminar |
 | `INVALIDO` | O arquivo não é um labirinto válido (o código de saída é 2) |
 
 > [!NOTE]

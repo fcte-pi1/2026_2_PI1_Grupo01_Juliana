@@ -355,6 +355,161 @@ static void test_mesma_semente_mesma_corrida(void)
     TEST_ASSERT_TRUE(a.leituras_erradas > 0);
 }
 
+/* ---- Conferência da frente -------------------------------------------- */
+
+/* Devolve as ações da lista, uma por chamada; depois da última, repete a última. */
+typedef struct {
+    const nav_acao_t *acoes;
+    int quantas;
+    int chamadas;
+} bloqueio_dubl_t;
+
+static nav_acao_t bloquear(void *ctx)
+{
+    bloqueio_dubl_t *b = (bloqueio_dubl_t *)ctx;
+    int i = b->chamadas < b->quantas ? b->chamadas : b->quantas - 1;
+    b->chamadas++;
+    return b->acoes[i];
+}
+
+/* Guarda as células entregues ao observador. */
+static sim_celula_t celulas_vistas[64];
+static int qtd_celulas_vistas;
+
+static void guardar_celula(void *ctx, const sim_celula_t *celula)
+{
+    (void)ctx;
+    TEST_ASSERT_TRUE(qtd_celulas_vistas < 64);
+    celulas_vistas[qtd_celulas_vistas++] = *celula;
+}
+
+static sim_relatorio_t correr_com_bloqueio(uint8_t amostras, uint8_t ruido, bloqueio_dubl_t *b)
+{
+    static nav_acao_t frente = NAV_ACAO_FRENTE;
+    sim_relatorio_t rel;
+    sim_config_t config = {0};
+    config.decisor = sempre;
+    config.decisor_ctx = &frente;
+    config.amostras_frente = amostras;
+    config.ruido_pct = ruido;
+    config.bloqueio = b != NULL ? bloquear : NULL;
+    config.bloqueio_ctx = b;
+    config.observador = guardar_celula;
+
+    qtd_celulas_vistas = 0;
+    TEST_ASSERT_TRUE(sim_labirinto_carregar(&lab, DEMO_DIR));
+    sim_correr(&lab, &config, &rel);
+    return rel;
+}
+
+static void test_sem_ruido_a_navegacao_real_nao_bloqueia(void)
+{
+    sim_relatorio_t rel;
+    sim_config_t config = {0};
+    config.amostras_frente = 3;
+
+    TEST_ASSERT_TRUE(sim_labirinto_carregar(&lab, DEMO_DIR));
+    sim_correr(&lab, &config, &rel);
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_SUCESSO, rel.resultado);
+    TEST_ASSERT_EQUAL_UINT16(0, rel.bloqueios);
+    TEST_ASSERT_EQUAL_UINT16(0, rel.leituras_erradas);
+}
+
+static void test_com_ruido_a_navegacao_real_e_conferida_pela_nav_bloqueado(void)
+{
+    /* Sem bloqueio no config, o padrão é nav_bloqueado: com 10% de erro alguma frente falsa aparece. */
+    uint32_t bloqueios = 0;
+    for (uint32_t semente = 1; semente <= 50; semente++) {
+        sim_relatorio_t rel;
+        sim_config_t config = {0};
+        config.amostras_frente = 1;
+        config.ruido_pct = 10;
+        config.semente = semente;
+        TEST_ASSERT_TRUE(sim_labirinto_carregar(&lab, DEMO_DIR));
+        sim_correr(&lab, &config, &rel);
+        bloqueios += rel.bloqueios;
+    }
+    TEST_ASSERT_TRUE(bloqueios > 0);
+}
+
+static void test_andar_para_a_parede_chama_o_bloqueio(void)
+{
+    /* Sobe a coluna 0, bate no norte de (0, 3), vira à direita, anda até (2, 3) e bate de novo. */
+    static const nav_acao_t ACOES[] = {NAV_ACAO_DIREITA, NAV_ACAO_SEM_PASSO};
+    bloqueio_dubl_t b = {ACOES, 2, 0};
+    sim_relatorio_t rel = correr_com_bloqueio(3, 0, &b);
+
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_SEM_CAMINHO, rel.resultado);
+    TEST_ASSERT_EQUAL_INT(2, b.chamadas);
+    TEST_ASSERT_EQUAL_UINT16(2, rel.bloqueios);
+    TEST_ASSERT_EQUAL_UINT16(5, rel.celulas);
+    TEST_ASSERT_EQUAL_UINT16(1, rel.giros_90);
+    TEST_ASSERT_EQUAL_UINT8(2, rel.x);
+    TEST_ASSERT_EQUAL_UINT8(3, rel.y);
+
+    /* O observador vê a ação final de cada célula, depois das conferências. */
+    TEST_ASSERT_EQUAL_INT(6, qtd_celulas_vistas);
+    TEST_ASSERT_EQUAL_UINT8(3, celulas_vistas[3].y);
+    TEST_ASSERT_EQUAL_INT(NAV_NORTE, celulas_vistas[3].rumo);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, celulas_vistas[3].acao);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, celulas_vistas[3].rumo_depois);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, celulas_vistas[5].acao);
+}
+
+static void test_leituras_da_conferencia_tem_ruido(void)
+{
+    /* Com 100% de erro, a frente aberta de (0, 0) dá parede nas 3 amostras. */
+    static const nav_acao_t ACOES[] = {NAV_ACAO_SEM_PASSO};
+    bloqueio_dubl_t b = {ACOES, 1, 0};
+    sim_relatorio_t rel = correr_com_bloqueio(3, 100, &b);
+
+    TEST_ASSERT_EQUAL_INT(1, b.chamadas);
+    TEST_ASSERT_EQUAL_UINT16(0, rel.celulas);
+    TEST_ASSERT_EQUAL_UINT16(6, rel.leituras_erradas);
+}
+
+static void test_cada_bloqueio_conta_para_o_limite(void)
+{
+    /* O dublê insiste na frente fechada: sem o limite, a corrida não terminaria. */
+    static const nav_acao_t ACOES[] = {NAV_ACAO_FRENTE};
+    bloqueio_dubl_t b = {ACOES, 1, 0};
+    sim_relatorio_t rel;
+    sim_config_t config = {0};
+    nav_acao_t frente = NAV_ACAO_FRENTE;
+    config.decisor = sempre;
+    config.decisor_ctx = &frente;
+    config.amostras_frente = 3;
+    config.bloqueio = bloquear;
+    config.bloqueio_ctx = &b;
+    config.limite_passos = 10;
+
+    TEST_ASSERT_TRUE(sim_labirinto_carregar(&lab, DEMO_DIR));
+    sim_correr(&lab, &config, &rel);
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_LIMITE, rel.resultado);
+    TEST_ASSERT_EQUAL_UINT16(3, rel.celulas);
+    TEST_ASSERT_EQUAL_UINT16(7, rel.bloqueios);
+}
+
+static void test_sem_amostras_a_conferencia_fica_desligada(void)
+{
+    static const nav_acao_t ACOES[] = {NAV_ACAO_DIREITA};
+    bloqueio_dubl_t b = {ACOES, 1, 0};
+    sim_relatorio_t rel = correr_com_bloqueio(0, 0, &b);
+
+    /* Igual a test_andar_contra_a_parede_e_colisao. */
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_COLISAO, rel.resultado);
+    TEST_ASSERT_EQUAL_INT(0, b.chamadas);
+    TEST_ASSERT_EQUAL_UINT16(0, rel.bloqueios);
+    TEST_ASSERT_EQUAL_UINT16(3, rel.celulas);
+}
+
+static void test_decisor_de_teste_sem_bloqueio_nao_confere(void)
+{
+    sim_relatorio_t rel = correr_com_bloqueio(3, 0, NULL);
+    TEST_ASSERT_EQUAL_INT(SIM_RESULTADO_COLISAO, rel.resultado);
+    TEST_ASSERT_EQUAL_UINT16(0, rel.bloqueios);
+}
+
 /* ---- Roteiro de telemetria --------------------------------------------- */
 
 #define MAX_LINHAS 200
@@ -496,6 +651,13 @@ int main(void)
     RUN_TEST(test_para_no_limite_de_passos);
     RUN_TEST(test_ruido_troca_as_leituras);
     RUN_TEST(test_mesma_semente_mesma_corrida);
+    RUN_TEST(test_sem_ruido_a_navegacao_real_nao_bloqueia);
+    RUN_TEST(test_com_ruido_a_navegacao_real_e_conferida_pela_nav_bloqueado);
+    RUN_TEST(test_andar_para_a_parede_chama_o_bloqueio);
+    RUN_TEST(test_leituras_da_conferencia_tem_ruido);
+    RUN_TEST(test_cada_bloqueio_conta_para_o_limite);
+    RUN_TEST(test_sem_amostras_a_conferencia_fica_desligada);
+    RUN_TEST(test_decisor_de_teste_sem_bloqueio_nao_confere);
     RUN_TEST(test_roteiro_segue_o_formato_do_contrato);
     RUN_TEST(test_roteiro_numera_e_ordena_as_mensagens);
     RUN_TEST(test_roteiro_usa_o_referencial_do_robo_e_o_eixo_longo);
