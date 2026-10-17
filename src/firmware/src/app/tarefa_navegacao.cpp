@@ -30,13 +30,13 @@
 #define PERIODO_MS              50   /* 20 Hz: leitura dos ToF (FIRM-03) */
 #define CICLOS_POR_DECISAO      4    /* a navegação decide a 5 Hz; a taxa da tel quem decide é a telemetria */
 
-static void publicar_passo(const nav_estado_t *nav, nav_leitura_t leitura)
+static void publicar_passo(int8_t x, int8_t y, uint8_t paredes)
 {
     telemetria_evento_t ev = {};
     ev.tipo = TELEMETRIA_EVENTO_PASSO;
-    ev.m.passo.x = (uint8_t)nav->x;
-    ev.m.passo.y = (uint8_t)nav->y;
-    ev.m.passo.paredes = telemetria_paredes_do_nav(nav->direcao, leitura);
+    ev.m.passo.x = (uint8_t)x;
+    ev.m.passo.y = (uint8_t)y;
+    ev.m.passo.paredes = paredes;
     app_publicar_evento(&ev);
 }
 
@@ -106,18 +106,23 @@ void tarefa_navegacao(void *parametro)
             leitura.esquerda = paredes.esquerda;
             leitura.direita = paredes.direita;
 
-            /* A leitura é da célula atual: se ela mudou desde a última decisão, vai um passo. */
-            if (nav.x != ultimo_x || nav.y != ultimo_y) {
-                publicar_passo(&nav, leitura);
-                ultimo_x = nav.x;
-                ultimo_y = nav.y;
-            }
+            /* A leitura é da célula atual; a pose é guardada antes de o nav_passo levá-la à próxima. */
+            int8_t x = nav.x;
+            int8_t y = nav.y;
+            nav_direcao_t direcao = nav.direcao;
 
             /* Depois de SUCESSO ou SEM_PASSO a corrida acabou: os sensores e os
              * eventos seguem, mas o evento repete a última ação. */
             if (!terminou) {
                 acao = nav_passo(&nav, leitura);
                 terminou = acao == NAV_ACAO_SUCESSO || acao == NAV_ACAO_SEM_PASSO;
+            }
+
+            /* Se a célula mudou desde a última decisão, vai um passo, já com o lado que o nav_passo fixou. */
+            if (x != ultimo_x || y != ultimo_y) {
+                publicar_passo(x, y, telemetria_paredes_do_nav(direcao, nav.lado, leitura));
+                ultimo_x = x;
+                ultimo_y = y;
             }
 
             /* Campos que ainda não existem (FIRM-01 e máquina de estados): valores fixos. */
