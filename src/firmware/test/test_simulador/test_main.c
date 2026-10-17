@@ -456,6 +456,42 @@ static void test_andar_para_a_parede_chama_o_bloqueio(void)
     TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, celulas_vistas[5].acao);
 }
 
+static void test_parede_vista_na_conferencia_vai_para_a_celula(void)
+{
+    /*
+     * Sempre em frente, e o bloqueio encerra: a última célula vista é a da
+     * conferência. Mesmo quando a primeira leitura disse "aberto" (ruído), a
+     * parede da frente que a conferência viu tem de estar na célula.
+     */
+    static const nav_acao_t ACOES[] = {NAV_ACAO_SEM_PASSO};
+    static const uint8_t MASCARA[4] = {NAV_PAREDE_N, NAV_PAREDE_L, NAV_PAREDE_S, NAV_PAREDE_O};
+    int conferidas = 0;
+    for (uint32_t semente = 1; semente <= 200; semente++) {
+        static nav_acao_t frente = NAV_ACAO_FRENTE;
+        bloqueio_dubl_t b = {ACOES, 1, 0};
+        sim_relatorio_t rel;
+        sim_config_t config = {0};
+        config.decisor = sempre;
+        config.decisor_ctx = &frente;
+        config.amostras_frente = 3;
+        config.ruido_pct = 30;
+        config.semente = semente;
+        config.bloqueio = bloquear;
+        config.bloqueio_ctx = &b;
+        config.observador = guardar_celula;
+        qtd_celulas_vistas = 0;
+        TEST_ASSERT_TRUE(sim_labirinto_carregar(&lab, DEMO_DIR));
+        sim_correr(&lab, &config, &rel);
+        if (b.chamadas == 0) {
+            continue;
+        }
+        const sim_celula_t *ultima = &celulas_vistas[qtd_celulas_vistas - 1];
+        TEST_ASSERT_TRUE(ultima->paredes & MASCARA[ultima->rumo_depois]);
+        conferidas++;
+    }
+    TEST_ASSERT_TRUE(conferidas > 0);
+}
+
 static void test_leituras_da_conferencia_tem_ruido(void)
 {
     /* Com 100% de erro, a frente aberta de (0, 0) dá parede nas 3 amostras. */
@@ -658,6 +694,7 @@ int main(void)
     RUN_TEST(test_cada_bloqueio_conta_para_o_limite);
     RUN_TEST(test_sem_amostras_a_conferencia_fica_desligada);
     RUN_TEST(test_decisor_de_teste_sem_bloqueio_nao_confere);
+    RUN_TEST(test_parede_vista_na_conferencia_vai_para_a_celula);
     RUN_TEST(test_roteiro_segue_o_formato_do_contrato);
     RUN_TEST(test_roteiro_numera_e_ordena_as_mensagens);
     RUN_TEST(test_roteiro_usa_o_referencial_do_robo_e_o_eixo_longo);

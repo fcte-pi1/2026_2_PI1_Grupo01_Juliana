@@ -293,6 +293,7 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
 
         /* Gira e confere a frente antes de andar; cada conferência que bloqueia é um passo. */
         bool estourou = false;
+        uint8_t vistas_na_conferencia = 0; /* rumos bloqueados, no referencial do labirinto */
         while (eh_movimento(acao)) {
             contar_giro(rel, acao);
             rumo = girar(rumo, acao);
@@ -305,6 +306,7 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
                 break;
             }
             rel->bloqueios++;
+            vistas_na_conferencia |= (uint8_t)(1u << rumo);
             acao = bloquear(bloqueio_ctx);
         }
 
@@ -320,6 +322,12 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
                                    (leitura.esquerda ? MASCARA_NAV[direcao_no_robo(&ref, esquerda)] : 0) |
                                    (leitura.direita ? MASCARA_NAV[direcao_no_robo(&ref, direita)] : 0) |
                                    (parede(lab, x, y, tras) ? MASCARA_NAV[direcao_no_robo(&ref, tras)] : 0));
+        /* As paredes que a conferência da frente viu também são o que o robô sabe da célula. */
+        for (int d = 0; d < 4; d++) {
+            if (vistas_na_conferencia & (1u << d)) {
+                celula.paredes |= MASCARA_NAV[direcao_no_robo(&ref, (nav_direcao_t)d)];
+            }
+        }
         if (config->observador != NULL) {
             config->observador(config->observador_ctx, &celula);
         }
