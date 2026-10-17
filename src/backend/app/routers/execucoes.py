@@ -18,6 +18,7 @@ from app.services.excecoes_execucao import (
     TentativaIndisponivel,
 )
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
+from app.services.publicacao_eventos import publicar_apos_commit
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -35,7 +36,6 @@ def _gerenciador(request: Request) -> GerenciadorExecucoes:
 @router.post("", response_model=RetornoNovaExecucao, status_code=201)
 def criar_execucao(
     body: NovaExecucaoRequest,
-    request: Request,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao:
@@ -48,7 +48,6 @@ def criar_execucao(
     )
 
 
-    request.app.state.monitor_conexao.registrar_mensagem()
 @router.get("", response_model=list[ResumoExecucao])
 def listar_execucoes(
     response: Response,
@@ -101,11 +100,12 @@ def obter_execucao(execucao_id: UUID, db: Session = Depends(get_db)) -> Execucao
 def encerrar_tentativa(
     execucao_id: UUID,
     body: EncerrarTentativaRequest,
+    request: Request,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> ExecucaoDetalhe:
     try:
-        gerenciador.encerrar_tentativa(db, execucao_id, body.motivo, body.observacao)
+        eventos = gerenciador.encerrar_tentativa(db, execucao_id, body.motivo, body.observacao)
     except ExecucaoNaoEncontrada:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."
@@ -116,6 +116,7 @@ def encerrar_tentativa(
             detail="Não há tentativa aberta para encerrar.",
         ) from None
     db.commit()
+    publicar_apos_commit(request.app.state.publicador_sse, execucao_id, eventos)
     detalhe = consulta_execucoes.buscar_detalhe(ExecucaoRepository(db), execucao_id)
     assert detalhe is not None
     return detalhe
@@ -129,7 +130,6 @@ def encerrar_tentativa(
 )
 def retomar_execucao(
     execucao_id: UUID,
-    request: Request,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao | JSONResponse:
@@ -141,12 +141,9 @@ def retomar_execucao(
         ) from None
     except RecusaTentativa as recusa:
         db.commit()
-        corpo = Recusa(motivo=recusa.motivo, ocorrida_em=recusa.ocorrida_em).model_dump(
-            mode="json"
-        )
+        corpo = Recusa(motivo=recusa.motivo, ocorrida_em=recusa.ocorrida_em).model_dump(mode="json")
         return JSONResponse(status_code=status.HTTP_409_CONFLICT, content=corpo)
     db.commit()
-    request.app.state.monitor_conexao.registrar_mensagem()
     return RetornoNovaExecucao(
         execucao_id=retorno.execucao_id,
         tentativa_id=retorno.tentativa_id,

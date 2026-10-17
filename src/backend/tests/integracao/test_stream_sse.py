@@ -9,8 +9,11 @@ terminal. Entrega ao vivo contínua e keep-alive ficam nos testes de `fluxo_sse`
 import json
 import threading
 import time
+from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 import pytest
+from app.models import Tentativa
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.publicador_sse import EventoSSE
 from sse_test_utils import count_keep_alives, parse_sse_frames
@@ -36,6 +39,18 @@ class Espia:
     @property
     def eventos(self) -> list[EventoSSE]:
         return [evento for _, _, lote in self.publicados for evento in lote]
+
+
+class EspiaPersistencia(Espia):
+    def __init__(self, db_session, tentativa_id) -> None:
+        super().__init__()
+        self.db_session = db_session
+        self.tentativa_id = UUID(str(tentativa_id))
+
+    def publicar(self, execucao_id: str, eventos: list[EventoSSE]) -> None:
+        self.db_session.expire_all()
+        assert self.db_session.get(Tentativa, self.tentativa_id).status == "failed"
+        super().publicar(execucao_id, eventos)
 
 
 def _abrir(client, execucao_id, **kwargs) -> str:
@@ -260,3 +275,40 @@ def test_falha_na_publicacao_nao_desfaz_a_gravacao(client, fabrica, db_session, 
 
     assert resposta.status_code == 200
     assert TelemetriaRepository(db_session).ultimo_passo(execucao.execucao_id) is not None
+
+
+def test_link_lost_na_ingestao_publica_falha_retomavel_apos_commit(
+    client, fabrica, db_session, monkeypatch
+):
+    inicio = datetime.now(UTC) - timedelta(seconds=20)
+    execucao = fabrica.execucao(status="em_andamento", iniciada_em=inicio)
+    tentativa = fabrica.tentativa(execucao, status="running")
+    db_session.commit()
+    client.app.state.monitor_conexao._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+    espia = EspiaPersistencia(db_session, tentativa.tentativa_id)
+    monkeypatch.setattr(client.app.state.ingestao_telemetria, "publicador", espia)
+
+    assert _enviar(client, LINHA_PASSO).status_code == 200
+
+    [evento] = espia.eventos
+    assert evento.tipo == "falha"
+    assert evento.encerra is False
+    assert json.loads(evento.dados)["motivo"] == "link_lost"
+
+
+def test_encerrar_tentativa_publica_falha_retomavel_apos_commit(client, db_session, monkeypatch):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    tentativa_id = criado["tentativa_id"]
+    espia = EspiaPersistencia(db_session, tentativa_id)
+    monkeypatch.setattr(client.app.state, "publicador_sse", espia)
+
+    resposta = client.post(
+        f"/execucoes/{criado['execucao_id']}/encerrar-tentativa",
+        json={"motivo": "collision"},
+    )
+
+    assert resposta.status_code == 200
+    [evento] = espia.eventos
+    assert evento.tipo == "falha"
+    assert evento.encerra is False
+    assert json.loads(evento.dados)["origem"] == "encerrado_operador"

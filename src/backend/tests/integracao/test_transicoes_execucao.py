@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -118,10 +119,13 @@ class TestTransicoesTentativa:
         gerenciador.aplicar_evento(db_session, tentativa, _hc())
         gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
         db_session.commit()
+        instante_anterior = datetime.now(UTC) - timedelta(seconds=5)
+        client.app.state.monitor_conexao._ultima_mensagem = instante_anterior
 
         r = client.post(f"/execucoes/{execucao_id}/retomar")
         assert r.status_code == 201
         assert r.json()["attempt_index"] == 2
+        assert client.app.state.monitor_conexao._ultima_mensagem == instante_anterior
         execucao = db_session.get(ExecucaoLogica, uuid.UUID(execucao_id))
         assert execucao.tentativas_usadas == 2
 
@@ -183,11 +187,13 @@ class TestTransicoesTentativa:
             {"v": 1, "cmd": "interromper"}
         ]
 
-    def test_t08_link_lost_cancela_execucao(self, db_session: Session, gerenciador):
+    def test_t08_link_lost_permite_retomada(self, db_session: Session, gerenciador):
         execucao, tentativa = _aplicar_perda_link(db_session, gerenciador)
         assert tentativa.status == "failed"
-        assert execucao.status == "cancelada"
+        assert execucao.status == "em_andamento"
         assert tentativa.falha.motivo == "link_lost"
+        retomada = gerenciador.retomar(db_session, execucao.execucao_id)
+        assert retomada.attempt_index == 2
 
     def test_t09_tempo_excedido_cancela_execucao(self, db_session: Session, gerenciador):
         execucao, tentativa = _aplicar_tempo_excedido(db_session, gerenciador)
@@ -282,9 +288,23 @@ class TestTransicoesExecucao:
         gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
         assert execucao.status == "cancelada"
 
-    def test_e06_perda_link_cancela(self, db_session: Session, gerenciador):
+    def test_e06_perda_link_mantem_execucao(self, db_session: Session, gerenciador):
         execucao, _ = _aplicar_perda_link(db_session, gerenciador)
-        assert execucao.status == "cancelada"
+        assert execucao.status == "em_andamento"
+
+    def test_link_lost_na_terceira_tentativa_cancela(self, db_session: Session, gerenciador):
+        helper = TestTransicoesTentativa()
+        execucao_id = helper._execucao_com_duas_falhas(db_session, gerenciador)
+        ret = gerenciador.retomar(db_session, execucao_id)
+        tentativa = db_session.get(Tentativa, ret.tentativa_id)
+        tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+
+        resultado = gerenciador.verificar_monitores(db_session, MonitorConexao(10))
+
+        assert resultado is not None
+        assert resultado.eventos[0].encerra is True
+        assert tentativa.status == "failed"
+        assert tentativa.execucao.status == "cancelada"
 
     def test_e07_tempo_execucao_cancela(self, db_session: Session, gerenciador):
         execucao, _ = _aplicar_tempo_excedido(db_session, gerenciador)
@@ -446,7 +466,7 @@ def test_sinal_anterior_a_tentativa_nao_cancela(db_session: Session, gerenciador
     ret = gerenciador.nova_execucao(db_session, "4x4")
     monitor = MonitorConexao(limite_sem_sinal_s=10)
     monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=30))
-    assert gerenciador.verificar_monitores(db_session, monitor) is False
+    assert gerenciador.verificar_monitores(db_session, monitor) is None
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     assert tentativa.status == "health-check"
 
@@ -461,7 +481,37 @@ def test_silencio_grava_link_lost_sem_mensagem(db_session: Session, gerenciador)
     execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
     assert tentativa.status == "failed"
     assert tentativa.falha.motivo == "link_lost"
-    assert execucao.status == "cancelada"
+    assert execucao.status == "em_andamento"
+
+
+@pytest.mark.parametrize("motivo", ["link_lost", "time_exceeded"])
+def test_varredura_publica_falha_terminal_uma_vez(db_session: Session, gerenciador, motivo: str):
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
+    if motivo == "link_lost":
+        tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+    else:
+        execucao.iniciada_em = datetime.now(UTC) - timedelta(seconds=601)
+
+    class Espia:
+        def __init__(self) -> None:
+            self.eventos = []
+
+        def publicar(self, execucao_id, eventos) -> None:
+            db_session.expire_all()
+            assert db_session.get(Tentativa, ret.tentativa_id).status == "failed"
+            self.eventos.extend(eventos)
+
+    espia = Espia()
+    monitor = MonitorConexao(10)
+    assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is True
+    assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is False
+
+    [evento] = espia.eventos
+    assert evento.tipo == "falha"
+    assert evento.encerra is (motivo == "time_exceeded")
+    assert json.loads(evento.dados)["motivo"] == motivo
 
 
 def test_perda_de_link_na_ingestao_grava_falha_e_descarta_a_linha(
@@ -482,7 +532,7 @@ def test_perda_de_link_na_ingestao_grava_falha_e_descarta_a_linha(
     tentativa = db_session.get(Tentativa, tentativa_id)
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))
     assert tentativa.falha.motivo == "link_lost"
-    assert execucao.status == "cancelada"
+    assert execucao.status == "em_andamento"
     _sem_leituras(db_session, tentativa_id)
 
 
