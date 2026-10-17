@@ -12,6 +12,7 @@ from app.services.atualizacao_metricas import recalcular_parciais
 from app.services.fabrica_eventos import OrigemTelemetria, criar_eventos
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
+from app.services.publicacao_eventos import publicar_apos_commit
 from app.services.publicador_sse import EventoSSE, PublicadorSSE
 from contrato.telemetria import (
     TAMANHO_MAXIMO,
@@ -80,9 +81,12 @@ class IngestaoTelemetria:
             raise
 
         # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
-        cancelou = gerenciador.verificar_monitores(sessao, self.monitor)
+        resultado_monitor = gerenciador.verificar_monitores(sessao, self.monitor)
         sessao.commit()
-        if cancelou:
+        if resultado_monitor:
+            publicar_apos_commit(
+                self.publicador, resultado_monitor.execucao_id, resultado_monitor.eventos
+            )
             return
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
@@ -124,9 +128,12 @@ class IngestaoTelemetria:
                     sessao, tentativa, mensagem, enviado_em, entrada.recebido_em
                 )
             elif isinstance(mensagem, EVENTOS):
-                eventos = gerenciador.aplicar_evento(
-                    sessao, tentativa, mensagem, momento=entrada.recebido_em
-                ) or []
+                eventos = (
+                    gerenciador.aplicar_evento(
+                        sessao, tentativa, mensagem, momento=entrada.recebido_em
+                    )
+                    or []
+                )
             sessao.commit()
         except Exception:
             sessao.rollback()
@@ -139,11 +146,8 @@ class IngestaoTelemetria:
         # gravada, então nada daqui para frente pode falhar a requisição: a
         # ingestão não para por causa de um navegador (RNF-B07) e o cliente
         # recupera o que perdeu pelo reenvio.
-        if self.publicador is not None and execucao_id is not None:
-            try:
-                self.publicador.publicar(execucao_id, eventos)
-            except Exception:
-                logger.exception("eventos não publicados na execução %s", execucao_id)
+        if execucao_id is not None:
+            publicar_apos_commit(self.publicador, execucao_id, eventos)
 
     def _conferir_limites(self, mensagem: Mensagem, tentativa: Tentativa) -> None:
         """A célula precisa caber no labirinto da execução, em qualquer orientação (D4)."""
