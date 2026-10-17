@@ -590,11 +590,11 @@ nav_direcao_t nav_direcao_apos(nav_direcao_t atual, nav_acao_t acao)
 {
     switch (acao) {
     case NAV_ACAO_DIREITA:
-        return (nav_direcao_t)((atual + 1) % 4);
+        return girar_horario(atual);
     case NAV_ACAO_ESQUERDA:
-        return (nav_direcao_t)((atual + 3) % 4);
+        return girar_anti_horario(atual);
     case NAV_ACAO_MEIA_VOLTA:
-        return (nav_direcao_t)((atual + 2) % 4);
+        return oposta(atual);
     default:
         return atual;
     }
