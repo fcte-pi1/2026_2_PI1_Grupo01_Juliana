@@ -180,7 +180,7 @@ class GerenciadorExecucoes:
         self, sessao: Session, monitor: MonitorConexao, agora: datetime | None = None
     ) -> ResultadoMonitor | None:
         """Encerra a tentativa por link ou tempo e devolve a publicação pendente."""
-        agora = agora or datetime.now(UTC)
+        agora = agora or monitor.agora()
         repo = Repositorio(sessao)
         tentativa = repo.buscar_tentativa_aberta()
         if tentativa is None:
@@ -203,12 +203,7 @@ class GerenciadorExecucoes:
             )
             self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
-            return ResultadoMonitor(
-                execucao_id=execucao.execucao_id,
-                eventos=criar_eventos(
-                    OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)
-                ),
-            )
+            return self._resultado_monitor(tentativa, execucao)
 
         decorrido = (agora - execucao.iniciada_em).total_seconds()
         if decorrido >= self.tempo_maximo_execucao_s:
@@ -227,13 +222,19 @@ class GerenciadorExecucoes:
             execucao.encerrada_em = agora
             finalizar_tentativa(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
-            return ResultadoMonitor(
-                execucao_id=execucao.execucao_id,
-                eventos=criar_eventos(
-                    OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)
-                ),
-            )
+            return self._resultado_monitor(tentativa, execucao)
         return None
+
+    @staticmethod
+    def _resultado_monitor(tentativa: Tentativa, execucao: ExecucaoLogica) -> ResultadoMonitor:
+        """Status antes da falha: a falha que cancela a execução fecha o stream."""
+        return ResultadoMonitor(
+            execucao_id=execucao.execucao_id,
+            eventos=criar_eventos(
+                OrigemStatus(tentativa=tentativa, status_execucao=execucao.status)
+            )
+            + criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)),
+        )
 
     def comandos_pendentes(self) -> list[Comando]:
         if self._interrupcao_pendente:
