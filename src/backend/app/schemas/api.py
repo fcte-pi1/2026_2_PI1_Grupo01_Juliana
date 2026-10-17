@@ -5,7 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 Labirinto = Literal["4x4", "8x4", "12x4"]
-TipoLabirinto = Labirinto 
+TipoLabirinto = Labirinto
 StatusExecucao = Literal["em_andamento", "concluida", "cancelada"]
 StatusTentativa = Literal["health-check", "running", "success", "failed"]
 TipoInicio = Literal["nova", "retomada"]
@@ -150,9 +150,6 @@ ExecucaoCriadaResponse = RetornoNovaExecucao
 ExecucaoResumo = ResumoExecucao
 
 
-# Eventos do stream SSE (BACK-07). O campo `tipo` repete o nome que vai na linha
-# `event:` do frame, como o openapi exige. A bateria viaja em mV, do contrato
-# serial até aqui, e a porcentagem é calculada pelo backend (ADR-014).
 class EventoTelemetria(BaseModel):
     tipo: Literal["telemetria"] = "telemetria"
     ordem: int = Field(ge=1)

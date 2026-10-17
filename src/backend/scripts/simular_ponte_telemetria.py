@@ -217,9 +217,7 @@ def _fmt(valor) -> str:
 
 
 def _imprimir_cabecalho() -> None:
-    print(
-        "tick  seq  bat_mv  cons_mV  cons_%   tempo_s  vel_med  status      msg"
-    )
+    print("tick  seq  bat_mv  cons_mV  cons_%   tempo_s  vel_med  status      msg")
     print("-" * 78)
 
 
@@ -416,7 +414,7 @@ def main() -> int:
         choices=("nenhum", "sucesso", "falha", "cancelada", "interrompida"),
         default="nenhum",
         help=(
-            "fim simulado: sucesso/falha (collision); cancelada = link_lost (RF32); "
+            "fim simulado: sucesso/falha (collision); cancelada = link_lost (nome legado); "
             "interrompida = operador encerra tentativa (execução em_andamento, cmd interromper)"
         ),
     )
@@ -590,9 +588,7 @@ def main() -> int:
             if args.confirmar_firmware:
                 seq += 1
                 t_ms += 50
-                resp = _post_telemetria(
-                    client, _falha_web(boot, seq, t_ms, ultima[0], ultima[1])
-                )
+                resp = _post_telemetria(client, _falha_web(boot, seq, t_ms, ultima[0], ultima[1]))
                 if resp.status_code != 200:
                     print(f"falha web: {resp.status_code} {resp.text}", file=sys.stderr)
                     return 1
@@ -628,7 +624,11 @@ def main() -> int:
                 return 1
             detalhe = client.get(f"/execucoes/{execucao_id}").json()
             _imprimir_linha(
-                args.ticks, seq, bat_mv, _ultima_tentativa(detalhe), "tel (link_lost → cancelada)"
+                args.ticks,
+                seq,
+                bat_mv,
+                _ultima_tentativa(detalhe),
+                "tel (link_lost → failed, retomável se restarem tentativas)",
             )
             print(f"execucao.status={detalhe.get('status')}")
         elif args.encerrar != "nenhum":
