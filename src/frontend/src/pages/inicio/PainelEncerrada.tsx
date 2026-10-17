@@ -1,5 +1,6 @@
 import type { Execucao, Labirinto, Tentativa } from '../../api/tipos'
 import { CartaoFalha } from '../../components/execucao/CartaoFalha'
+import { falhasDasTentativas } from '../../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../../components/labirinto/VisualizacaoLabirinto'
 import { CartaoMetrica } from '../../components/telemetria/CartaoMetrica'
 import { formatarNumero, formatarTempo, LADO_CELULA_M } from '../../utils/formatacao'
@@ -31,8 +32,9 @@ export function PainelEncerrada({ execucao, tentativa, labirinto }: PainelEncerr
         <VisualizacaoLabirinto
           largura={labirinto.largura}
           altura={labirinto.altura}
+          eixoLongo={execucao.eixo_longo}
           trajeto={execucao.trajeto}
-          celulaFalha={falha ? { x: falha.celula_x, y: falha.celula_y } : null}
+          falhas={falhasDasTentativas(execucao.tentativas)}
         />
       </section>
 

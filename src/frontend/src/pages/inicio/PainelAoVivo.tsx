@@ -4,6 +4,7 @@ import { CartaoComunicacao } from '../../components/telemetria/CartaoComunicacao
 import { CartaoTempo } from '../../components/telemetria/CartaoTempo'
 import { BlocoHealthCheck } from '../../components/telemetria/BlocoHealthCheck'
 import { TabelaLeituras } from '../../components/telemetria/TabelaLeituras'
+import { falhasDasTentativas } from '../../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../../components/labirinto/VisualizacaoLabirinto'
 import { formatarNumero, LADO_CELULA_M, nomeCelula } from '../../utils/formatacao'
 
@@ -61,13 +62,15 @@ export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAo
           <VisualizacaoLabirinto
             largura={labirinto.largura}
             altura={labirinto.altura}
+            eixoLongo={execucao.eixo_longo}
             trajeto={execucao.trajeto}
             celulaAtual={ultima ?? null}
+            falhas={falhasDasTentativas(execucao.tentativas)}
             compacto
           />
           <p className="texto-suave espaco-acima">
-            O trajeto é desenhado célula a célula conforme o robô entra em cada uma; o mapa completo aparece quando a execução
-            terminar.
+            O trajeto é desenhado célula a célula conforme o robô entra em cada uma. No 8x4 e no 12x4, o mapa mostra só o 4x4 da
+            largada até o robô revelar a orientação; o mapa com rótulos e paredes aparece quando a tentativa terminar.
           </p>
         </section>
         <CartaoComunicacao ultimaMensagemEm={execucao.ultima_mensagem_em} />
