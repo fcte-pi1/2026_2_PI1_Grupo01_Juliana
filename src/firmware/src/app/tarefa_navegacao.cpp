@@ -43,7 +43,8 @@ static void publicar_passo(const nav_estado_t *nav, nav_leitura_t leitura)
 void tarefa_navegacao(void *parametro)
 {
     (void)parametro;
-    nav_estado_t nav;
+    /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
+    static nav_estado_t nav;
     nav_iniciar(&nav, ROBO_TIPO_LABIRINTO);
     bateria_t bateria;
     bateria_iniciar(&bateria);
