@@ -144,4 +144,10 @@ int contrato_sucesso(char *buf, size_t tam, const contrato_cabecalho_t *cab, con
 /* true se a linha recebida da ponte for o comando de interrupção da versão 1. */
 bool contrato_eh_interromper(const char *linha);
 
+/* true se a linha for a largada dada pelo operador (Nova execução ou Retomar). */
+bool contrato_eh_largar(const char *linha);
+
+/* true se a linha for o pedido de um novo health-check feito pelo operador. */
+bool contrato_eh_health_check(const char *linha);
+
 #endif /* CONTRATO_TELEMETRIA_H */
