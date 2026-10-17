@@ -62,6 +62,7 @@ export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAo
           <VisualizacaoLabirinto
             largura={labirinto.largura}
             altura={labirinto.altura}
+            eixoLongo={execucao.eixo_longo}
             trajeto={execucao.trajeto}
             celulaAtual={ultima ?? null}
             falhas={falhasDasTentativas(execucao.tentativas)}

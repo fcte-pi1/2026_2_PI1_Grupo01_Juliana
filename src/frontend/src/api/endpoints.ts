@@ -16,6 +16,7 @@ function normalizarExecucao(dados: DetalheAPI): Execucao {
     encerrada_em: dados.encerrada_em ?? null,
     tempo_total_s: dados.tempo_total_s ?? null,
     ultima_mensagem_em: dados.ultima_mensagem_em ?? null,
+    eixo_longo: dados.eixo_longo ?? null,
     trajeto: dados.trajeto ?? [],
     leituras: (dados.leituras ?? []).map((leitura) => ({ ...leitura, velocidade: leitura.velocidade ?? null })),
     tentativas: (dados.tentativas ?? []).map((tentativa) => ({

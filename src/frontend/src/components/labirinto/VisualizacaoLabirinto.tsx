@@ -19,8 +19,8 @@ interface VisualizacaoLabirintoProps {
   largura: number
   altura: number
   /**
-   * Lado em que o labirinto se estende (4.4, "Orientação"). Sem ele, a orientação
-   * é deduzida do trajeto; até lá, o 8x4 e o 12x4 aparecem só no quadrado 4x4 da largada.
+   * Lado em que o labirinto se estende (4.4, "Orientação"), vindo do `eixo_longo` do backend.
+   * O DIP só diz o tamanho, não o lado. Sem ele, a orientação é deduzida do trajeto; até lá, o 8x4 e o 12x4 aparecem só no quadrado 4x4 da largada.
    */
   eixoLongo?: EixoLongo | null
   /** Passos na ordem de visita (RF09). A cada evento `passo`, o trajeto cresce um ponto. */

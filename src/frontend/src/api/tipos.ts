@@ -6,6 +6,9 @@ export type TipoLabirinto = components['schemas']['Labirinto']
 
 export type StatusExecucao = components['schemas']['StatusExecucao']
 
+/** Lado em que o 8x4 ou o 12x4 se estende, informado pelo backend. */
+export type EixoLongo = components['schemas']['EixoLongo']
+
 export type StatusTentativa = components['schemas']['StatusTentativa']
 
 export type TipoInicio = 'nova' | 'retomada'
@@ -121,6 +124,8 @@ export interface Execucao {
   trajeto: PassoTrajeto[]
   leituras: LeituraTelemetria[]
   ultima_mensagem_em: string | null
+  /** Null no 4x4 e enquanto o robô não saiu do canto 4x4 da largada. */
+  eixo_longo: EixoLongo | null
 }
 
 /** Linha do histórico (GET /execucoes). */

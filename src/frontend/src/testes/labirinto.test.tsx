@@ -108,6 +108,16 @@ describe('VisualizacaoLabirinto', () => {
     expect(eixo).toEqual(['A', 'B', 'C', 'D', '1', '2', '3', '4', '5', '6', '7', '8'])
     expect(screen.getByText('Objetivo D8')).toBeInTheDocument()
   })
+
+  it('usa o eixo_longo do backend sem esperar o robô sair do 4x4', () => {
+    const { container } = render(
+      <VisualizacaoLabirinto largura={8} altura={4} eixoLongo="y" trajeto={passos([[0, 0], [0, 1]])} />,
+    )
+
+    expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(32)
+    expect(screen.getByText('Objetivo D8')).toBeInTheDocument()
+    expect(screen.queryByText(/até o robô revelar a orientação/)).not.toBeInTheDocument()
+  })
 })
 
 describe('funções do trajeto', () => {

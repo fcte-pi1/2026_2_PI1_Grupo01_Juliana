@@ -187,6 +187,7 @@ export function execucao(agora: number, parcial: Partial<Execucao> = {}): Execuc
     trajeto: [],
     leituras: [],
     ultima_mensagem_em: relativo(agora, -1),
+    eixo_longo: null,
     ...parcial,
   }
 }

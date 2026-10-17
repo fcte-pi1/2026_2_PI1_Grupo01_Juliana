@@ -62,6 +62,7 @@ export function DetalheExecucao() {
           <VisualizacaoLabirinto
             largura={largura}
             altura={altura}
+            eixoLongo={execucao.eixo_longo}
             trajeto={execucao.trajeto}
             falhas={falhasDasTentativas(execucao.tentativas)}
           />

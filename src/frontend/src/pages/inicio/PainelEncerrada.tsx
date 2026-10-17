@@ -32,6 +32,7 @@ export function PainelEncerrada({ execucao, tentativa, labirinto }: PainelEncerr
         <VisualizacaoLabirinto
           largura={labirinto.largura}
           altura={labirinto.altura}
+          eixoLongo={execucao.eixo_longo}
           trajeto={execucao.trajeto}
           falhas={falhasDasTentativas(execucao.tentativas)}
         />
