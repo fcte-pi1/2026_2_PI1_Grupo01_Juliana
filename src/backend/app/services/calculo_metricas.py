@@ -6,6 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 
 LADO_CELULA_MM = 180
+BATERIA_LIMIAR_FONTE_MV = 6700
 
 # Espelho de BATERIA_CURVA_LIPO em src/firmware/include/config/robo.h
 CURVA_LIPO_MV_PCT: tuple[tuple[int, int], ...] = (
@@ -17,6 +18,15 @@ CURVA_LIPO_MV_PCT: tuple[tuple[int, int], ...] = (
     (7400, 15),
     (7200, 5),
     (7000, 0),
+)
+
+# Espelho de BATERIA_CURVA_AA em src/firmware/include/config/robo.h
+CURVA_AA_MV_PCT: tuple[tuple[int, int], ...] = (
+    (6400, 100),
+    (6000, 80),
+    (5600, 50),
+    (5200, 20),
+    (5000, 0),
 )
 
 
@@ -38,8 +48,9 @@ def velocidade_media_por_celulas(num_celulas: int, tempo_s: Decimal) -> Decimal 
     return velocidade_media_ms(distancia_celulas_para_metros(num_celulas), tempo_s)
 
 
-def contar_celulas_unicas(coordenadas: list[tuple[int, int]]) -> int:
-    return len({(x, y) for x, y in coordenadas})
+def contar_deslocamentos(coordenadas: list[tuple[int, int]]) -> int:
+    """Conta transições entre células; a posição inicial não é deslocamento."""
+    return max(len(coordenadas) - 1, 0)
 
 
 def tempo_decorrido_s(inicio: datetime, fim: datetime) -> Decimal:
@@ -48,9 +59,10 @@ def tempo_decorrido_s(inicio: datetime, fim: datetime) -> Decimal:
 
 def percentual_carga_mv(
     mv: Decimal | int,
-    curva: tuple[tuple[int, int], ...] = CURVA_LIPO_MV_PCT,
+    curva: tuple[tuple[int, int], ...] | None = None,
 ) -> Decimal:
     valor = int(mv)
+    curva = curva or curva_bateria_por_tensao_inicial(valor)
     if valor >= curva[0][0]:
         return Decimal(curva[0][1])
     if valor <= curva[-1][0]:
@@ -64,6 +76,15 @@ def percentual_carga_mv(
     return Decimal(curva[-1][1])
 
 
+def curva_bateria_por_tensao_inicial(
+    inicial_mv: Decimal | int,
+) -> tuple[tuple[int, int], ...]:
+    """Seleciona uma vez por tentativa, com o mesmo limiar usado pelo firmware."""
+    if int(inicial_mv) >= BATERIA_LIMIAR_FONTE_MV:
+        return CURVA_LIPO_MV_PCT
+    return CURVA_AA_MV_PCT
+
+
 def consumo_bateria_mv(inicial_mv: Decimal | None, atual_mv: Decimal | None) -> Decimal | None:
     if inicial_mv is None or atual_mv is None:
         return None
@@ -73,10 +94,11 @@ def consumo_bateria_mv(inicial_mv: Decimal | None, atual_mv: Decimal | None) -> 
 def consumo_bateria_pct(
     inicial_mv: Decimal | None,
     atual_mv: Decimal | None,
-    curva: tuple[tuple[int, int], ...] = CURVA_LIPO_MV_PCT,
+    curva: tuple[tuple[int, int], ...] | None = None,
 ) -> Decimal | None:
     if inicial_mv is None or atual_mv is None:
         return None
+    curva = curva or curva_bateria_por_tensao_inicial(inicial_mv)
     return percentual_carga_mv(inicial_mv, curva) - percentual_carga_mv(atual_mv, curva)
 
 
