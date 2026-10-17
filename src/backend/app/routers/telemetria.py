@@ -16,8 +16,9 @@ DESCRICAO = (
     "tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou "
     "**Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel` "
     "em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de "
-    "interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte "
-    "escreve cada item na serial sem traduzir."
+    "interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa. Depois "
+    "de POST /health-check/solicitar, inclui `health_check` até o primeiro `hc_item` ou "
+    "`hc_resultado`; a ponte escreve cada item na serial sem traduzir."
 )
 DESCRICAO_422 = (
     "Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo "

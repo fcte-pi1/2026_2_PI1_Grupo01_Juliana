@@ -130,6 +130,8 @@ class IngestaoTelemetria:
                 isinstance(mensagem, Tel) and mensagem.estado == "running"
             ):
                 gerenciador.confirmar_largada()
+            if isinstance(mensagem, HEALTH_CHECK):
+                gerenciador.confirmar_health_check()
             sessao.commit()
         except Exception:
             sessao.rollback()

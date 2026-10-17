@@ -18,3 +18,9 @@ class TentativaIndisponivel(Exception):
     """Encerrar ou ação similar sem tentativa aberta na execução."""
 
     pass
+
+
+class TentativaEmAndamento(Exception):
+    """Pedido que exige o robô parado, feito com uma tentativa em running."""
+
+    pass

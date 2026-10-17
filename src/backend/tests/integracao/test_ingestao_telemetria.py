@@ -390,6 +390,34 @@ def test_novo_health_check_depois_do_resultado_comeca_outro_registro(client, db_
     assert (segundo.aprovado, len(segundo.itens)) == (True, 1)
 
 
+HEALTH_CHECK_CMD = {"v": 1, "cmd": "health_check"}
+
+
+def test_pedido_de_health_check_vai_nas_respostas_ate_o_robo_comecar(client, db_session):
+    pedido = client.post("/health-check/solicitar")
+    assert pedido.status_code == 202
+    assert "solicitado_em" in pedido.json()
+
+    parado = _enviar(client, _linha(seq=1, estado="health-check"))
+    assert parado.json() == {"comandos": [HEALTH_CHECK_CMD]}
+    repetido = _enviar(client, _linha(seq=2, estado="health-check"))
+    assert repetido.json() == {"comandos": [HEALTH_CHECK_CMD]}
+
+    assert _enviar(client, _hc_item(3)).json() == {"comandos": []}
+    assert _enviar(client, _hc_resultado(4)).json() == {"comandos": []}
+    assert len(_health_checks(db_session)) == 1
+
+
+def test_pedido_de_health_check_recusado_com_tentativa_em_execucao(client, db_session):
+    _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
+
+    resposta = client.post("/health-check/solicitar")
+
+    assert resposta.status_code == 409
+    assert "tentativa em execução" in resposta.json()["detail"]
+    assert _enviar(client, _linha(seq=1)).json() == {"comandos": []}
+
+
 def test_health_check_nao_mexe_na_tentativa_aberta(client, db_session):
     tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
 
@@ -530,6 +558,9 @@ class GerenciadorFalso:
 
     def confirmar_largada(self) -> None:
         self.ordem.append("confirmar_largada")
+
+    def confirmar_health_check(self) -> None:
+        self.ordem.append("confirmar_health_check")
 
     def verificar_monitores(self, sessao, monitor) -> bool:
         return False

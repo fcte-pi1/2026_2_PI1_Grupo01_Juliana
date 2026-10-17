@@ -173,6 +173,29 @@ paths:
         "204":
           description: O robô ainda não enviou nenhum health-check.
 
+  /health-check/solicitar:
+    post:
+      operationId: solicitarHealthCheck
+      tags: [health-check]
+      summary: Pedir ao robô um novo health-check
+      description: >
+        O operador pede um novo health-check, por exemplo depois de um reprovado,
+        de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao
+        POST /telemetria passa a incluir o comando `health_check` até o robô
+        enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada.
+        O resultado aparece em GET /health-check/ultimo.
+      responses:
+        "202":
+          description: Pedido registrado; o robô recebe o comando na próxima resposta da ponte.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitacaoHealthCheck"
+              example:
+                solicitado_em: "2026-10-07T14:10:00-03:00"
+        "409":
+          $ref: "#/components/responses/Conflito"
+
   /execucoes/em-andamento:
     get:
       operationId: buscarExecucaoEmAndamento
@@ -382,8 +405,9 @@ paths:
         tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou
         **Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel`
         em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de
-        interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte
-        escreve cada item na serial sem traduzir.
+        interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa. Depois
+        de POST /health-check/solicitar, inclui `health_check` até o primeiro `hc_item` ou
+        `hc_resultado`; a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
@@ -1099,6 +1123,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ItemHealthCheck"
+    SolicitacaoHealthCheck:
+      type: object
+      description: >
+        Pedido de novo health-check registrado. O resultado é o primeiro
+        health-check com iniciado_em a partir de solicitado_em.
+      required: [solicitado_em]
+      properties:
+        solicitado_em:
+          type: string
+          format: date-time
     Falha:
       type: object
       required: [motivo, origem, celula_x, celula_y, momento_falha]
@@ -1499,8 +1533,9 @@ components:
           type: string
           description: >
             interromper: encerramento manual da tentativa. largar: largada pedida
-            pelo operador em Nova execução ou Retomar.
-          enum: [interromper, largar]
+            pelo operador em Nova execução ou Retomar. health_check: o operador
+            pediu um novo health-check.
+          enum: [interromper, largar, health_check]
     EntradaPonte:
       type: object
       required: [linha, recebido_em]

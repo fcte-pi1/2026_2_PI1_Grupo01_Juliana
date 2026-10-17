@@ -110,6 +110,15 @@ class TestTransicoesTentativa:
             {"v": 1, "cmd": "largar"}
         ]
 
+    def test_largada_descarta_pedido_de_health_check_nao_atendido(
+        self, client: TestClient, health_check_aprovado
+    ):
+        assert client.post("/health-check/solicitar").status_code == 202
+        assert client.post("/execucoes", json={"tipo_labirinto": "4x4"}).status_code == 201
+        assert [c.model_dump() for c in app.state.gerenciador.comandos_pendentes()] == [
+            {"v": 1, "cmd": "largar"}
+        ]
+
     def test_t02_retomar_abre_proxima_tentativa(
         self, client: TestClient, db_session: Session, gerenciador
     ):

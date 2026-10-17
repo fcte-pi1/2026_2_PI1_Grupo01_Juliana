@@ -14,6 +14,7 @@ from app.services.atualizacao_metricas import finalizar_tentativa
 from app.services.excecoes_execucao import (
     ExecucaoNaoEncontrada,
     RecusaTentativa,
+    TentativaEmAndamento,
     TentativaIndisponivel,
 )
 from app.services.monitor_conexao import MonitorConexao
@@ -42,6 +43,18 @@ class GerenciadorExecucoes:
         self.validade_health_check_s = validade_health_check_s
         self._interrupcao_pendente = False
         self._largada_pendente = False
+        self._health_check_pendente = False
+
+    def solicitar_health_check(self, sessao: Session) -> datetime:
+        """Pede ao robô um novo health-check. Com o robô correndo, o pedido é recusado."""
+        if Repositorio(sessao).buscar_tentativa_aberta() is not None:
+            raise TentativaEmAndamento()
+        self._health_check_pendente = True
+        return datetime.now(UTC)
+
+    def confirmar_health_check(self) -> None:
+        """O robô começou o health-check: o pedido deixa de ir nas respostas."""
+        self._health_check_pendente = False
 
     def nova_execucao(self, sessao: Session, tipo_labirinto: str) -> RetornoTentativa:
         repo = Repositorio(sessao)
@@ -235,6 +248,8 @@ class GerenciadorExecucoes:
             comandos.append(Comando(cmd="interromper"))
         if self._largada_pendente:
             comandos.append(Comando(cmd="largar"))
+        if self._health_check_pendente:
+            comandos.append(Comando(cmd="health_check"))
         return comandos
 
     def confirmar_largada(self) -> None:
@@ -360,6 +375,8 @@ class GerenciadorExecucoes:
         repo.salvar(tentativa)
         self._interrupcao_pendente = False
         self._largada_pendente = True
+        # a largada vence um pedido de health-check que o robô ainda não atendeu
+        self._health_check_pendente = False
         return tentativa
 
     def _registrar_falha(

@@ -2,10 +2,11 @@ from datetime import timedelta
 
 from app.db import get_db
 from app.repositories import Repositorio
-from app.schemas.api import UltimoHealthCheck
+from app.schemas.api import SolicitacaoHealthCheck, UltimoHealthCheck
 from app.services.consulta_execucoes import itens_health_check
+from app.services.excecoes_execucao import TentativaEmAndamento
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/health-check", tags=["health-check"])
@@ -36,3 +37,22 @@ def buscar_ultimo_health_check(
         valido_ate=valido_ate,
         itens=itens_health_check(health_check),
     )
+
+
+@router.post(
+    "/solicitar",
+    response_model=SolicitacaoHealthCheck,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def solicitar_health_check(
+    db: Session = Depends(get_db),
+    gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
+) -> SolicitacaoHealthCheck:
+    try:
+        solicitado_em = gerenciador.solicitar_health_check(db)
+    except TentativaEmAndamento as erro:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Há uma tentativa em execução; encerre-a antes de pedir um novo health-check.",
+        ) from erro
+    return SolicitacaoHealthCheck(solicitado_em=solicitado_em)

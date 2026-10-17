@@ -75,6 +75,10 @@ class UltimoHealthCheck(BaseModel):
     itens: list[ItemHealthCheck] = Field(default_factory=list)
 
 
+class SolicitacaoHealthCheck(BaseModel):
+    solicitado_em: datetime
+
+
 class Falha(BaseModel):
     motivo: MotivoFalha
     origem: OrigemFalha

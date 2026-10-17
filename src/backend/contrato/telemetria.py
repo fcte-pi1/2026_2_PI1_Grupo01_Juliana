@@ -216,12 +216,12 @@ class RelogioDoRobo:
 
 
 class Comando(BaseModel):
-    """Comando da web para o robô: interrupção (RF39) ou largada pelo operador."""
+    """Comando da web para o robô: interrupção (RF39), largada ou novo health-check."""
 
     model_config = ConfigDict(frozen=True)
 
     v: Literal[1] = VERSAO
-    cmd: Literal["interromper", "largar"] = "interromper"
+    cmd: Literal["interromper", "largar", "health_check"] = "interromper"
 
 
 class EntradaPonte(BaseModel):
