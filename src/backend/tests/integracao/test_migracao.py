@@ -1,6 +1,7 @@
 from app.models import (
     ExecucaoLogica,
     Falha,
+    HealthCheck,
     HealthCheckItem,
     Labirinto,
     LeituraTelemetria,
@@ -12,7 +13,7 @@ from app.models import (
 from sqlalchemy import inspect, text
 
 
-def test_nove_tabelas_registradas_no_metadata():
+def test_dez_tabelas_registradas_no_metadata():
     nomes = {
         Labirinto.__tablename__,
         ExecucaoLogica.__tablename__,
@@ -20,11 +21,12 @@ def test_nove_tabelas_registradas_no_metadata():
         LeituraTelemetria.__tablename__,
         PassoTrajeto.__tablename__,
         ParedeCelula.__tablename__,
+        HealthCheck.__tablename__,
         HealthCheckItem.__tablename__,
         Falha.__tablename__,
         TentativaRejeitada.__tablename__,
     }
-    assert len(nomes) == 9
+    assert len(nomes) == 10
 
 
 def test_indice_parcial_tentativa_aberta(engine):
@@ -40,7 +42,7 @@ def test_indice_parcial_tentativa_aberta(engine):
             )
         ).first()
     assert row is not None
-    assert "health-check" in row.indexdef
+    assert "health-check" not in row.indexdef
     assert "running" in row.indexdef
 
 

@@ -2,11 +2,12 @@ import json
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from app.models import (
     ExecucaoLogica,
-    HealthCheckItem,
+    HealthCheck,
     Labirinto,
     LeituraTelemetria,
     ParedeCelula,
@@ -132,7 +133,7 @@ def test_sem_tentativa_aberta_descarta_com_200(client, db_session, caplog):
 def test_tentativa_aberta_e_a_mais_recente_com_labirinto(db_session):
     antiga = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
     antiga.iniciada_em = datetime(2026, 10, 1, tzinfo=UTC)
-    recente = _nova_tentativa(db_session, _nova_execucao(db_session, "8x4"), "health-check")
+    recente = _nova_tentativa(db_session, _nova_execucao(db_session, "8x4"), "running")
     _nova_tentativa(db_session, _nova_execucao(db_session, "12x4"), "failed")
     db_session.flush()
 
@@ -203,9 +204,10 @@ def test_limites_valem_para_falha(client, db_session):
 
 
 def test_tel_grava_leitura_telemetria(client, db_session):
-    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "health-check")
+    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
 
-    _enviar(client, _linha(t_ms=1000))
+    # o robô ainda parado na largada manda a tel com o estado anterior
+    _enviar(client, _linha(t_ms=1000, estado="health-check"))
     resposta = client.post(
         "/telemetria",
         json={"linha": _linha(t_ms=1500, x=1, estado="running"), "recebido_em": RECEBIDO_EM},
@@ -216,9 +218,10 @@ def test_tel_grava_leitura_telemetria(client, db_session):
     primeira, segunda = _leituras(db_session, tentativa)
     assert (primeira.ordem, segunda.ordem) == (1, 2)
     # a fase é o status da tentativa, não o estado da tel
-    assert segunda.fase == "health-check"
+    assert primeira.fase == "running"
     assert (segunda.x, segunda.y) == (1, 2)
-    assert (segunda.bateria, segunda.velocidade) == (7810, 210)
+    assert (segunda.bateria, segunda.velocidade) == (Decimal("7810"), 210)
+    assert segunda.rumo == "N"
     recebido_em = datetime.fromisoformat(RECEBIDO_EM)
     assert segunda.recebido_em == recebido_em
     # âncora fixada na primeira mensagem do boot: 12:00:00 - 1 s
@@ -313,6 +316,25 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
     assert monitor.segundos_sem_sinal() < 5
 
 
+def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
+    """RF32: gap medido antes de registrar_mensagem na linha que reconecta."""
+    agora = datetime.now(UTC)
+    tentativa_aberta.iniciada_em = agora - timedelta(seconds=30)
+    db_session.commit()
+    monitor = client.app.state.monitor_conexao
+    monitor._ultima_mensagem = agora - timedelta(seconds=11)
+
+    assert _enviar(client, _linha()).status_code == 200
+
+    db_session.expire_all()
+    execucao = db_session.get(ExecucaoLogica, tentativa_aberta.execucao_id)
+    db_session.refresh(tentativa_aberta)
+    assert tentativa_aberta.status == "failed"
+    assert execucao.status == "cancelada"
+    assert tentativa_aberta.falha is not None
+    assert tentativa_aberta.falha.motivo == "link_lost"
+
+
 def _hc_item(seq: int, **campos) -> str:
     return json.dumps(
         {"v": 1, "boot": 7, "seq": seq, "t_ms": 1000 + seq * 100, "tipo": "hc_item"}
@@ -322,24 +344,34 @@ def _hc_item(seq: int, **campos) -> str:
     )
 
 
-def _itens(db_session, tentativa: Tentativa) -> list[HealthCheckItem]:
-    stmt = (
-        select(HealthCheckItem)
-        .where(HealthCheckItem.tentativa_id == tentativa.tentativa_id)
-        .order_by(HealthCheckItem.item_id)
+def _hc_resultado(seq: int, **campos) -> str:
+    return json.dumps(
+        {"v": 1, "boot": 7, "seq": seq, "t_ms": 1000 + seq * 100, "tipo": "hc_resultado"}
+        | {"aprovado": True, "tipo_dip": "4x4", "inicio": "nova"}
+        | campos,
+        separators=(",", ":"),
     )
-    return list(db_session.scalars(stmt))
 
 
-def test_hc_item_em_health_check_grava_health_check_item(client, db_session):
-    tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "health-check")
+def _health_checks(db_session) -> list[HealthCheck]:
+    return list(db_session.scalars(select(HealthCheck).order_by(HealthCheck.iniciado_em)))
 
+
+def test_health_check_sem_tentativa_aberta_e_gravado(client, db_session):
     assert _enviar(client, _hc_item(0)).status_code == 200
-    resposta = _enviar(client, _hc_item(1, componente="motor_esquerdo", aprovado=False, valor=None))
+    _enviar(client, _hc_item(1, componente="motor_esquerdo", aprovado=False, valor=None))
+    resposta = _enviar(client, _hc_resultado(2, aprovado=False))
 
     assert resposta.status_code == 200
     assert resposta.json() == {"comandos": []}
-    bateria, motor = _itens(db_session, tentativa)
+    [health_check] = _health_checks(db_session)
+    assert (health_check.boot, health_check.aprovado, health_check.tipo_dip) == (
+        7,
+        False,
+        "4x4",
+    )
+    assert health_check.concluido_em is not None
+    bateria, motor = health_check.itens
     assert (bateria.componente, bateria.aprovado, bateria.valor_lido) == ("bateria", True, 7840)
     assert (motor.componente, motor.aprovado, motor.valor_lido) == ("motor_esquerdo", False, None)
     recebido_em = datetime.fromisoformat(RECEBIDO_EM)
@@ -347,18 +379,27 @@ def test_hc_item_em_health_check_grava_health_check_item(client, db_session):
     assert motor.verificado_em == recebido_em + timedelta(milliseconds=100)
 
 
-def test_hc_item_em_running_nao_grava_e_loga_info(client, db_session, caplog):
+def test_novo_health_check_depois_do_resultado_comeca_outro_registro(client, db_session):
+    _enviar(client, _hc_item(0))
+    _enviar(client, _hc_resultado(1, aprovado=False))
+    _enviar(client, _hc_item(2))
+    _enviar(client, _hc_resultado(3))
+
+    primeiro, segundo = _health_checks(db_session)
+    assert (primeiro.aprovado, len(primeiro.itens)) == (False, 1)
+    assert (segundo.aprovado, len(segundo.itens)) == (True, 1)
+
+
+def test_health_check_nao_mexe_na_tentativa_aberta(client, db_session):
     tentativa = _nova_tentativa(db_session, _nova_execucao(db_session, "4x4"), "running")
 
-    with caplog.at_level(logging.INFO, logger="app.telemetria"):
-        resposta = _enviar(client, _hc_item(0))
+    _enviar(client, _hc_item(0))
+    _enviar(client, _hc_resultado(1, aprovado=False))
 
-    assert resposta.status_code == 200
-    assert resposta.json() == {"comandos": []}
-    assert _itens(db_session, tentativa) == []
-    assert any(
-        r.levelno == logging.INFO and "hc_item descartado" in r.getMessage() for r in caplog.records
-    )
+    db_session.refresh(tentativa)
+    assert tentativa.status == "running"
+    assert tentativa.hc_id is None
+    assert len(_health_checks(db_session)) == 1
 
 
 def _parede(db_session, execucao_id, x: int, y: int) -> ParedeCelula:
@@ -480,12 +521,15 @@ class GerenciadorFalso:
         self.eventos = []
         self.comandos = [Comando()]
 
-    def aplicar_evento(self, sessao, tentativa, mensagem) -> None:
+    def aplicar_evento(self, sessao, tentativa, mensagem, *, momento=None) -> None:
         self.ordem.append("aplicar_evento")
         self.eventos.append((sessao, tentativa, mensagem))
 
     def comandos_pendentes(self) -> list[Comando]:
         return self.comandos
+
+    def confirmar_largada(self) -> None:
+        self.ordem.append("confirmar_largada")
 
     def verificar_monitores(self, sessao, monitor) -> bool:
         return False
@@ -507,7 +551,6 @@ def gerenciador_falso(client, db_session, monkeypatch) -> GerenciadorFalso:
 
 
 EVENTOS = {
-    "hc_resultado": {"tipo": "hc_resultado", "aprovado": True, "tipo_dip": "4x4", "inicio": "nova"},
     "falha": {
         "tipo": "falha",
         "motivo": "stuck",
@@ -566,6 +609,30 @@ def test_comandos_do_gerenciador_vao_na_resposta_da_tel(
     resposta = _enviar(client, _linha())
 
     assert resposta.json() == {"comandos": [{"v": 1, "cmd": "interromper"}]}
+    assert gerenciador_falso.eventos == []
+
+
+@pytest.mark.parametrize(
+    ("linha", "confirma"),
+    [
+        (_linha(estado="running"), True),
+        (_linha(estado="health-check"), False),
+        (_passo(1), True),
+    ],
+    ids=["tel_running", "tel_parado", "passo"],
+)
+def test_largada_confirmada_pela_tel_running_ou_passo(
+    client, tentativa_aberta, gerenciador_falso, linha, confirma
+):
+    _enviar(client, linha)
+
+    assert ("confirmar_largada" in gerenciador_falso.ordem) is confirma
+
+
+def test_hc_resultado_nao_vai_ao_gerenciador(client, tentativa_aberta, gerenciador_falso):
+    hc = {"tipo": "hc_resultado", "aprovado": True, "tipo_dip": "4x4", "inicio": "nova"}
+    _enviar(client, _evento(1, hc))
+
     assert gerenciador_falso.eventos == []
 
 

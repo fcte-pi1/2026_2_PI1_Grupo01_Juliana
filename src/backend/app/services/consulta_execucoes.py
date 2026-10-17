@@ -6,11 +6,11 @@ from uuid import UUID
 from app import models
 from app.repositories import ExecucaoRepository, FiltroExecucoes
 from app.schemas import api
+from app.services.calculo_metricas import variacao_melhor_tempo_pct
 
 # Bits do paredes_mask, iguais ao openapi.yaml.
 NORTE, SUL, LESTE, OESTE = 1, 2, 4, 8
 TAMANHO_CANTO = 4
-STATUS_ENCERRADOS = ("success", "failed")
 
 
 def listar_historico(
@@ -54,7 +54,6 @@ def buscar_detalhe(repo: ExecucaoRepository, execucao_id: UUID) -> api.ExecucaoD
 def _resumo(execucao: models.ExecucaoLogica) -> api.ResumoExecucao:
     tentativas = sorted(execucao.tentativas, key=lambda t: t.attempt_index)
     ultima = tentativas[-1] if tentativas else None
-    encerradas = [t for t in tentativas if t.status in STATUS_ENCERRADOS]
     return api.ResumoExecucao(
         execucao_id=execucao.execucao_id,
         tipo_labirinto=execucao.labirinto.tipo,
@@ -64,8 +63,24 @@ def _resumo(execucao: models.ExecucaoLogica) -> api.ResumoExecucao:
         encerrada_em=execucao.encerrada_em,
         tempo_total_s=execucao.tempo_total_s,
         velocidade_media=ultima.velocidade_media if ultima else None,
-        consumo_bateria=_consumo(encerradas[-1]) if encerradas else None,
+        consumo_bateria=_consumo_geral(tentativas),
     )
+
+
+def _consumo_geral(tentativas: list[models.Tentativa]) -> Decimal | None:
+    """Queda desde a leitura inicial da primeira tentativa até a última conhecida.
+
+    O consumo de cada tentativa continua o dela. No painel da execução, a
+    referência não muda quando outra tentativa começa: só uma execução nova
+    passa a ter outra leitura inicial.
+    """
+    if not tentativas:
+        return None
+    inicial = tentativas[0].bateria_inicial
+    finais = [t.bateria_final for t in tentativas if t.bateria_final is not None]
+    if inicial is None or not finais:
+        return None
+    return inicial - finais[-1]
 
 
 def _consumo(tentativa: models.Tentativa) -> Decimal | None:
@@ -85,9 +100,10 @@ def _variacao_melhor_tempo(
     if not tempos:
         return None
     melhor = repo.melhor_tempo_anterior(execucao)
-    if not melhor:
+    variacao = variacao_melhor_tempo_pct(min(tempos), melhor)
+    if variacao is None:
         return None
-    return round(float((min(tempos) - melhor) / melhor * 100), 1)
+    return round(float(variacao), 1)
 
 
 def _eixo_longo(execucao: models.ExecucaoLogica) -> api.EixoLongo | None:
@@ -139,23 +155,35 @@ def _tentativa(tentativa: models.Tentativa, passos: list[models.PassoTrajeto]) -
         bateria_inicial=tentativa.bateria_inicial,
         bateria_final=tentativa.bateria_final,
         consumo_bateria=_consumo(tentativa),
-        health_check=[
-            api.ItemHealthCheck(
-                componente=item.componente,
-                aprovado=item.aprovado,
-                valor_lido=item.valor_lido,
-            )
-            for item in sorted(tentativa.health_check_itens, key=lambda i: i.verificado_em)
-        ],
+        consumo_bateria_pct=(
+            float(tentativa.consumo_bateria_pct)
+            if tentativa.consumo_bateria_pct is not None
+            else None
+        ),
+        health_check=itens_health_check(tentativa.health_check),
         falha=_falha(tentativa, passos) if tentativa.falha else None,
     )
+
+
+def itens_health_check(health_check: models.HealthCheck | None) -> list[api.ItemHealthCheck]:
+    if health_check is None:
+        return []
+    return [
+        api.ItemHealthCheck(
+            componente=item.componente,
+            aprovado=item.aprovado,
+            valor_lido=item.valor_lido,
+        )
+        for item in sorted(health_check.itens, key=lambda i: i.verificado_em)
+    ]
 
 
 def _falha(tentativa: models.Tentativa, passos: list[models.PassoTrajeto]) -> api.Falha:
     falha = tentativa.falha
     x, y = falha.celula_x, falha.celula_y
     if x is None or y is None:
-        # Sem célula gravada (ex.: health-check reprovado): usa a última célula
+        # Sem célula gravada (ex.: health-check reprovado, de antes de ele sair
+        # da tentativa): usa a última célula
         # da tentativa ou a largada.
         da_tentativa = [p for p in passos if p.tentativa_id == tentativa.tentativa_id]
         ultimo = da_tentativa[-1] if da_tentativa else None
@@ -182,6 +210,6 @@ def _leitura(leitura: models.LeituraTelemetria) -> api.LeituraTelemetria:
         y=leitura.y,
         bateria=leitura.bateria,
         velocidade=leitura.velocidade,
-        rumo=None,
+        rumo=leitura.rumo,
         enviado_em=leitura.enviado_em or leitura.recebido_em,
     )

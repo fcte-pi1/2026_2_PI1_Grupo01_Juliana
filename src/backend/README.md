@@ -161,7 +161,20 @@ cd src/backend
 python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
 ```
 
-O script lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
+### Simular ponte (métricas / bateria)
+
+Com a API rodando, o script abre uma execução, envia `hc_resultado`, depois `tel` a cada 1 s (bateria caindo, posição e velocidade), `passo` periódico e imprime consumo (mV e %), tempo e velocidade após cada POST — útil para validar BACK-04 como no hardware:
+
+```bash
+cd src/backend
+python -m scripts.simular_ponte_telemetria
+python -m scripts.simular_ponte_telemetria --ticks 30 --queda-mv 15 --passo-a-cada 2 --encerrar sucesso
+python -m scripts.simular_ponte_telemetria --ticks 5 --encerrar cancelada
+python -m scripts.simular_ponte_telemetria --ticks 8 --encerrar interrompida --confirmar-firmware
+python -m scripts.simular_ponte_telemetria --health-check item-falha --componente-falha tof_direito
+```
+
+O `carga_telemetria` lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
 
 ```bash
 docker compose exec db psql -U micromouse -d micromouse -c "
@@ -181,7 +194,7 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 |--------|------------------|
 | BACK-01 Persistência / consultas | `app/repositories/`, `app/models/` |
 | BACK-03 Máquina de estados | `app/services/gerenciador_execucoes.py` |
-| BACK-04 Métricas | `app/services/calculo_metricas.py` |
+| BACK-04 Métricas | `app/services/calculo_metricas.py`, `app/services/atualizacao_metricas.py` · `python -m scripts.validar_back04` |
 | BACK-05 Link / tempo | `app/services/monitor_conexao.py` (limites em `app/config.py`) |
 | BACK-06 SQL específico | `app/repositories/` |
 | BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |

@@ -6,24 +6,24 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from decimal import Decimal
 
-from app.models import ExecucaoLogica, Falha, Tentativa, TentativaRejeitada
+from app.models import ExecucaoLogica, Falha, HealthCheck, Tentativa, TentativaRejeitada
 from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.repositorio import Repositorio
+from app.services.atualizacao_metricas import finalizar_tentativa
 from app.services.excecoes_execucao import (
     ExecucaoNaoEncontrada,
     RecusaTentativa,
     TentativaIndisponivel,
 )
 from app.services.monitor_conexao import MonitorConexao
-from contrato.telemetria import Comando, HcResultado, Mensagem, Sucesso
+from contrato.telemetria import Comando, Mensagem, Sucesso
 from contrato.telemetria import Falha as FalhaMsg
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger("app.gerenciador")
 
-ABERTA = ("health-check", "running")
+ABERTA = ("running",)
 TERMINAL_TENTATIVA = ("success", "failed")
 
 
@@ -37,13 +37,20 @@ class RetornoTentativa:
 class GerenciadorExecucoes:
     limite_tentativas: int = 3
 
-    def __init__(self, tempo_maximo_execucao_s: int) -> None:
+    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 420) -> None:
         self.tempo_maximo_execucao_s = tempo_maximo_execucao_s
+        self.validade_health_check_s = validade_health_check_s
         self._interrupcao_pendente = False
+        self._largada_pendente = False
 
     def nova_execucao(self, sessao: Session, tipo_labirinto: str) -> RetornoTentativa:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
+        motivo, health_check = self._conferir_health_check(repo, tipo_labirinto, agora)
+        if motivo is not None:
+            # sem execução aberta, a recusa não tem onde ser gravada
+            raise RecusaTentativa(motivo, agora)
+
         anterior = repo.buscar_execucao_em_andamento()
         if anterior is not None:
             self._cancelar_execucao(sessao, anterior, agora)
@@ -61,7 +68,12 @@ class GerenciadorExecucoes:
         )
         repo.salvar(execucao)
         tentativa = self._abrir_tentativa(
-            repo, execucao, attempt_index=1, tipo_inicio="nova", agora=agora
+            repo,
+            execucao,
+            health_check,
+            attempt_index=1,
+            tipo_inicio="nova",
+            agora=agora,
         )
         execucao.tentativas_usadas = 1
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, 1)
@@ -86,12 +98,20 @@ class GerenciadorExecucoes:
         if ultima is None or ultima.status != "failed":
             raise self._recusar(sessao, execucao.execucao_id, "execucao_cancelada", agora)
 
+        motivo, health_check = self._conferir_health_check(repo, execucao.labirinto.tipo, agora)
+        if motivo is not None:
+            raise self._recusar(sessao, execucao.execucao_id, motivo, agora)
+
         proximo = execucao.tentativas_usadas + 1
         tentativa = self._abrir_tentativa(
-            repo, execucao, attempt_index=proximo, tipo_inicio="retomada", agora=agora
+            repo,
+            execucao,
+            health_check,
+            attempt_index=proximo,
+            tipo_inicio="retomada",
+            agora=agora,
         )
         execucao.tentativas_usadas = proximo
-        self._interrupcao_pendente = False
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, proximo)
 
     def encerrar_tentativa(
@@ -125,11 +145,16 @@ class GerenciadorExecucoes:
             observacao=observacao,
             agora=agora,
         )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = True
 
     def aplicar_evento(
-        self, sessao: Session, tentativa: Tentativa | None, mensagem: Mensagem
+        self,
+        sessao: Session,
+        tentativa: Tentativa | None,
+        mensagem: Mensagem,
+        *,
+        momento: datetime | None = None,
     ) -> None:
         logger.info(
             "evento %s recebido (tentativa %s)",
@@ -144,15 +169,13 @@ class GerenciadorExecucoes:
             return
 
         repo = Repositorio(sessao)
-        agora = datetime.now(UTC)
+        agora = momento or datetime.now(UTC)
         execucao = tentativa.execucao
 
-        if isinstance(mensagem, HcResultado):
-            self._aplicar_hc_resultado(repo, tentativa, execucao, mensagem, agora)
-        elif isinstance(mensagem, FalhaMsg):
-            self._aplicar_falha_telemetria(repo, tentativa, execucao, mensagem, agora)
+        if isinstance(mensagem, FalhaMsg):
+            self._aplicar_falha_telemetria(sessao, repo, tentativa, execucao, mensagem, agora)
         elif isinstance(mensagem, Sucesso):
-            self._aplicar_sucesso(tentativa, execucao, mensagem, agora)
+            self._aplicar_sucesso(sessao, tentativa, execucao, agora)
 
     def verificar_monitores(
         self, sessao: Session, monitor: MonitorConexao, agora: datetime | None = None
@@ -179,9 +202,10 @@ class GerenciadorExecucoes:
                 y=celula[1],
                 agora=agora,
             )
-            self._fechar_tentativa_falha(tentativa, execucao, agora)
+            self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
+            finalizar_tentativa(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
             return True
 
@@ -197,50 +221,45 @@ class GerenciadorExecucoes:
                 y=celula[1],
                 agora=agora,
             )
-            self._fechar_tentativa_falha(tentativa, execucao, agora)
+            self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
+            finalizar_tentativa(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
             return True
         return False
 
     def comandos_pendentes(self) -> list[Comando]:
+        comandos = []
         if self._interrupcao_pendente:
-            return [Comando()]
-        return []
+            comandos.append(Comando(cmd="interromper"))
+        if self._largada_pendente:
+            comandos.append(Comando(cmd="largar"))
+        return comandos
 
-    def _aplicar_hc_resultado(
-        self,
-        repo: Repositorio,
-        tentativa: Tentativa,
-        execucao: ExecucaoLogica,
-        mensagem: HcResultado,
-        agora: datetime,
-    ) -> None:
-        if tentativa.status != "health-check":
-            return
+    def confirmar_largada(self) -> None:
+        """O robô já está correndo: o `largar` deixa de ir nas respostas."""
+        self._largada_pendente = False
 
-        tipo_esperado = execucao.labirinto.tipo
-        dip_ok = mensagem.tipo_dip == tipo_esperado
-        if mensagem.aprovado and dip_ok:
-            tentativa.status = "running"
-            tentativa.tipo_dip = mensagem.tipo_dip
-            return
-
-        motivo = "health_check_failed"
-        self._registrar_falha(
-            repo,
-            tentativa,
-            motivo=motivo,
-            origem="automatica",
-            x=0,
-            y=0,
-            agora=agora,
-        )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+    def _conferir_health_check(
+        self, repo: Repositorio, tipo_labirinto: str, agora: datetime
+    ) -> tuple[str | None, HealthCheck | None]:
+        """Devolve o motivo da recusa, ou None e o health-check que libera a largada."""
+        health_check = repo.ultimo_health_check_concluido()
+        if health_check is None:
+            return "health_check_ausente", None
+        if not health_check.aprovado:
+            return "health_check_reprovado", None
+        idade = (agora - health_check.concluido_em).total_seconds()
+        if idade > self.validade_health_check_s:
+            return "health_check_expirado", None
+        if health_check.tipo_dip != tipo_labirinto:
+            return "dip_divergente", None
+        return None, health_check
 
     def _aplicar_falha_telemetria(
         self,
+        sessao: Session,
         repo: Repositorio,
         tentativa: Tentativa,
         execucao: ExecucaoLogica,
@@ -262,15 +281,15 @@ class GerenciadorExecucoes:
             componente=mensagem.componente,
             agora=agora,
         )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
         if mensagem.origem == "boot":
             self._interrupcao_pendente = False
 
     def _aplicar_sucesso(
         self,
+        sessao: Session,
         tentativa: Tentativa,
         execucao: ExecucaoLogica,
-        mensagem: Sucesso,
         agora: datetime,
     ) -> None:
         if tentativa.status != "running":
@@ -279,9 +298,9 @@ class GerenciadorExecucoes:
         tentativa.encerrada_em = agora
         execucao.status = "concluida"
         execucao.encerrada_em = agora
-        segundos = (agora - execucao.iniciada_em).total_seconds()
-        execucao.tempo_total_s = Decimal(str(round(segundos, 3)))
+        finalizar_tentativa(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = False
+        self._largada_pendente = False
 
     def _confirmar_interrupcao(self, tentativa: Tentativa | None) -> None:
         if tentativa is not None and tentativa.status in ABERTA:
@@ -289,13 +308,19 @@ class GerenciadorExecucoes:
         self._interrupcao_pendente = False
 
     def _fechar_tentativa_falha(
-        self, tentativa: Tentativa, execucao: ExecucaoLogica, agora: datetime
+        self,
+        sessao: Session,
+        tentativa: Tentativa,
+        execucao: ExecucaoLogica,
+        agora: datetime,
     ) -> None:
         tentativa.status = "failed"
         tentativa.encerrada_em = agora
+        self._largada_pendente = False
         if tentativa.attempt_index >= self.limite_tentativas:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
+        finalizar_tentativa(sessao, tentativa, execucao, agora)
 
     def _cancelar_execucao(
         self, sessao: Session, execucao: ExecucaoLogica, agora: datetime
@@ -305,27 +330,36 @@ class GerenciadorExecucoes:
         if aberta is not None:
             aberta.status = "failed"
             aberta.encerrada_em = agora
+            self._largada_pendente = False
         execucao.status = "cancelada"
         execucao.encerrada_em = agora
+        if aberta is not None:
+            finalizar_tentativa(sessao, aberta, execucao, agora)
 
     def _abrir_tentativa(
         self,
         repo: Repositorio,
         execucao: ExecucaoLogica,
+        health_check: HealthCheck,
         *,
         attempt_index: int,
         tipo_inicio: str,
         agora: datetime,
     ) -> Tentativa:
+        """Abre a tentativa já em running: a largada é o clique do operador."""
         tentativa = Tentativa(
             tentativa_id=uuid.uuid4(),
             execucao_id=execucao.execucao_id,
             attempt_index=attempt_index,
-            status="health-check",
+            status="running",
             tipo_inicio=tipo_inicio,
+            tipo_dip=health_check.tipo_dip,
+            hc_id=health_check.hc_id,
             iniciada_em=agora,
         )
         repo.salvar(tentativa)
+        self._interrupcao_pendente = False
+        self._largada_pendente = True
         return tentativa
 
     def _registrar_falha(
