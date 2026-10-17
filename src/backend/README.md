@@ -197,10 +197,10 @@ curl -N http://localhost:8000/execucoes/<execucao_id>/stream
 curl -N -H "Last-Event-ID: 40" http://localhost:8000/execucoes/<execucao_id>/stream
 ```
 
-- **Reenvio.** O fluxo começa reenviando os passos com `passo_id` maior que o `Last-Event-ID`. Sem o cabeçalho (ou com valor vazio, negativo ou não numérico), reenvia o trajeto inteiro da execução — é o que a tela recebe ao abrir no meio da corrida. Só o evento `passo` tem linha `id:`; a amostra `telemetria` não entra no reenvio.
+- **Reenvio.** O fluxo começa reenviando os passos com `passo_id` maior que o `Last-Event-ID`. Sem o cabeçalho (ou com valor vazio, negativo ou não numérico), reenvia o trajeto inteiro da execução — é o que a tela recebe ao abrir no meio da corrida. Só o evento `passo` tem linha `id:`; amostras de `telemetria` e eventos terminais não entram no reenvio.
 - **Keep-alive.** Sem evento novo, sai uma linha de comentário a cada 15 s.
-- **Fim do fluxo.** O servidor fecha em dois casos: execução já encerrada, depois do reenvio, e fila do cliente estourada (500 eventos). Nos dois, reconectar com `Last-Event-ID` recompõe o trajeto. No resto, quem fecha é o navegador.
-- **Publicação.** Acontece **depois** do COMMIT da ingestão, na mesma chamada: o evento sai em milissegundos (RNF-B04). Uma falha na publicação é registrada no log e não desfaz a gravação nem falha o `POST /telemetria` (RNF-B07).
+- **Fim do fluxo.** O servidor fecha quando recebe ao vivo um evento terminal (`falha` que cancela a execução ou `sucesso`), quando a execução já está encerrada após o reenvio, ou quando a fila do cliente estoura (500 eventos). Reconectar com `Last-Event-ID` recompõe o trajeto, mas não repete o evento terminal.
+- **Publicação.** Acontece **depois** do COMMIT da ingestão, da varredura de link/tempo ou do encerramento pelo operador. Uma falha na publicação é registrada no log e não desfaz a gravação nem falha a requisição (RNF-B07).
 - **Um worker só.** A fila de cada cliente é memória do processo. Com `uvicorn --workers 2`, um `POST /telemetria` que caia no worker 2 não alcança o stream preso no worker 1. O mesmo já valia para o deduplicador e o relógio do robô.
 - **404** quando não existe execução com aquele `execucao_id`.
 
