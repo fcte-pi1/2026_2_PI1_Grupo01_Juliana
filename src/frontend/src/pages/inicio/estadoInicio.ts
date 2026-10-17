@@ -30,8 +30,9 @@ export function tentativaAtual(execucao: Execucao): Tentativa | null {
 }
 
 export function segundosSemDados(execucao: Execucao, agora: number): number | null {
-  if (!execucao.ultima_mensagem_em) return null
-  return Math.max((agora - new Date(execucao.ultima_mensagem_em).getTime()) / 1000, 0)
+  const ultima = execucao.ultima_atualizacao_em ?? (execucao.ultima_mensagem_em ? Date.parse(execucao.ultima_mensagem_em) : null)
+  if (ultima === null || !Number.isFinite(ultima)) return null
+  return Math.max((agora - ultima) / 1000, 0)
 }
 
 export function podeRetomar(execucao: Execucao): boolean {
@@ -50,7 +51,7 @@ export function derivarEstadoInicio(execucao: Execucao | null, agora: number): E
     case 'health-check':
       return 'health-check'
     case 'running':
-      return (segundosSemDados(execucao, agora) ?? 0) > ALERTA_SEM_DADOS_S ? 'sem-comunicacao' : 'em-execucao'
+      return (segundosSemDados(execucao, agora) ?? 0) >= ALERTA_SEM_DADOS_S ? 'sem-comunicacao' : 'em-execucao'
     case 'success':
       return 'em-execucao'
     default:

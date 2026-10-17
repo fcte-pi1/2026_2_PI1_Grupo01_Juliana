@@ -164,6 +164,12 @@ export function Inicio() {
       Não foi possível concluir a ação: {erroAcao}
     </div>
   )
+  const faixaSincronizacao = atual.erroSincronizacao && (
+    <div className="faixa faixa--alerta" role="status">
+      {atual.erroSincronizacao}
+      <button type="button" className="botao faixa__acao" onClick={atual.sincronizar}>Atualizar dados</button>
+    </div>
+  )
   const novaExecucao = (
     <button
       type="button"
@@ -226,6 +232,7 @@ export function Inicio() {
       <>
         <Cabecalho trilha="Início" titulo={`${titulo} ${numero}`} acoes={novaExecucao} />
         {modal !== 'nova' && faixaErro}
+        {faixaSincronizacao}
         <div className="conteudo">
           {tentativaCriada?.execucao_id === execucao.execucao_id && <ContadorTentativas atual={tentativaCriada.attempt_index} />}
           <p className="estado-vazio">Aguardando os dados da tentativa enviados pelo backend.</p>
@@ -269,9 +276,10 @@ export function Inicio() {
       />
 
       {modal !== 'nova' && faixaErro}
+      {faixaSincronizacao}
       <FaixaEstado estado={estado} execucao={execucao} agora={agora} />
 
-      <div className="conteudo">
+      <div className="conteudo execucao-tempo-real">
         <ResumoExecucao
           numero={numero}
           labirinto={execucao.labirinto}
@@ -284,12 +292,13 @@ export function Inicio() {
         <EtapasExecucao
           status={tentativa.status}
           healthCheckAprovados={tentativa.health_check.filter((i) => i.aprovado).length}
+          healthCheckReprovados={tentativa.health_check.filter((i) => i.aprovado === false).length}
           healthCheckTotal={tentativa.health_check.length}
         />
         {aberta ? (
           <PainelAoVivo execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} />
         ) : (
-          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} />
+          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} />
         )}
       </div>
 

@@ -48,7 +48,21 @@ Nova execução envia `POST /execucoes` com `tipo_labirinto`. Havendo uma em and
 
 `src/api/schema.ts` acompanha o contrato OpenAPI integrado à `dev`, incluindo `EntradaPonte` e `RespostaPonte`. Para atualizar os tipos após mudanças no contrato, execute `npm run gerar-tipos`. Os endpoints normalizam os campos opcionais para a View; dados ausentes de leituras, trajeto ou health-check ficam pendentes. O UUID é usado quando a API não informa um número sequencial; os números do protótipo ficam nos mocks.
 
-A integração completa depende da implementação de `POST /execucoes` e `GET /execucoes/em-andamento`, ainda pendentes no backend da `dev`. Histórico e detalhe já possuem implementação. O tratamento dos eventos SSE permanece no FRONT-03 e os comandos existentes de encerrar/retomar continuam provisórios para suas respectivas issues; não foram implementados nesta entrega.
+A integração completa depende da implementação de `POST /execucoes` e `GET /execucoes/em-andamento`, ainda pendentes no backend da `dev`. Histórico e detalhe já possuem implementação. Os comandos existentes de encerrar/retomar continuam no escopo das respectivas issues.
+
+### FRONT-03 — tela de tempo real
+
+O `ClienteAPI` assina os eventos nomeados `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso` do contrato. O mesmo `EventSource` faz a reconexão automática e conserva `Last-Event-ID`. Na conexão e após mudanças de estado, o GET de detalhe reidrata a execução; passos repetidos são deduplicados e uma consulta atrasada não apaga amostras recentes. Se o GET falhar, os dados conhecidos ficam visíveis e a ação **Atualizar dados** permite tentar novamente.
+
+Os cinco cartões mostram os tempos da tentativa e da execução, célula, bateria e velocidade sem rolar a tela em 1366×768. Os cronômetros usam as datas do servidor e o relógio corrigido pelo cabeçalho HTTP `Date`; ao término, usam os tempos/datas finais recebidos. O health-check fica em bloco separado com os oito componentes do contrato atual. O alerta começa aos 5 s sem atualização. Medições mantêm a precisão recebida: tensão em V, velocidade em m/s e consumo de bateria em V; nenhum valor ausente vira zero.
+
+A aprovação do health-check depende dos oito resultados positivos; componentes sem resposta permanecem pendentes, e uma reprovação não marca o percurso como concluído. A célula de uma falha persistida prevalece sobre uma leitura anterior ao restaurar o GET. Os tempos arredondados para décimos fazem a virada do minuto corretamente; a tabela conta desde o início da tentativa, incluindo o health-check.
+
+Eventos identificados de tentativas anteriores atualizam somente o próprio histórico, sem alterar célula, estado ou horário da tentativa atual. Passos atrasados completam o trajeto sem mover a posição quando antecedem o início da tentativa atual ou chegam após o término. Quando o evento não informa `entrou_em`, a ordenação usa apenas o `passo_id`, conforme os dados disponíveis no contrato.
+
+No modo mock, o estado fica na sessão da aba para o GET restaurar IDs, início e leituras após recarregar. As medições dos cenários de bateria seguem os exemplos `Tela02HealthCheck`, `Tela03EmExecucao`, `Tela04Concluida`, `Tela08EncerradaComoFalha` e `Tela11ConcluidaAposRetomada` do OpenAPI, sem simular novas medições.
+
+Validação local: testes de eventos nomeados, alerta de 5 s, valores/unidades, reconexão, deduplicação, relógio do servidor, valores finais e recarregamento. A verificação de até 2 s nos testes mede do recebimento do evento à atualização da interface, usando transporte controlado. A medição completa com o simulador, desde o COMMIT do backend, depende do BACK-07 (#126): a rota `/stream` ainda retorna 501. Também existe uma divergência no backend atual, que persiste `bat_mv`/`vel_mm_s` e os devolve sem converter para V/m/s; esse ajuste é do backend e deve ser resolvido antes da validação real do RNF-B01.
 
 ## Rotas
 

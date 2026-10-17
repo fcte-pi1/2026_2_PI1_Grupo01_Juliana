@@ -14,6 +14,12 @@ describe('formatação', () => {
     expect(formatarTempo(600)).toBe('10:00,0')
   })
 
+  it('faz a virada do minuto ao arredondar para décimos', () => {
+    expect(formatarTempo(59.94)).toBe('00:59,9')
+    expect(formatarTempo(59.96)).toBe('01:00,0')
+    expect(formatarTempo(119.96)).toBe('02:00,0')
+  })
+
   it('formata o número da execução com 4 dígitos', () => {
     expect(formatarNumeroExecucao(42)).toBe('#0042')
   })

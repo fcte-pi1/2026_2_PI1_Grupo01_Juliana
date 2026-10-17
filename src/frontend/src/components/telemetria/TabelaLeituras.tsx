@@ -1,9 +1,9 @@
 import type { LeituraTelemetria } from '../../api/tipos'
-import { formatarHora, formatarNumero, nomeCelula } from '../../utils/formatacao'
+import { formatarHora, formatarMedicao, formatarNumero, nomeCelula } from '../../utils/formatacao'
 
 interface TabelaLeiturasProps {
   leituras: LeituraTelemetria[]
-  /** Início da tentativa, para a coluna "desde a largada". */
+  /** Data de início da tentativa, incluindo o período de health-check. */
   largadaEm: string
 }
 
@@ -23,7 +23,8 @@ export function TabelaLeituras({ leituras, largadaEm }: TabelaLeiturasProps) {
               <th>Hora do envio</th>
               <th>Célula</th>
               <th>Bateria</th>
-              <th className="alinhar-direita">Desde a largada</th>
+              <th>Velocidade</th>
+              <th className="alinhar-direita">Desde o início da tentativa</th>
             </tr>
           </thead>
           <tbody>
@@ -33,7 +34,8 @@ export function TabelaLeituras({ leituras, largadaEm }: TabelaLeiturasProps) {
                 <td>
                   <strong>{nomeCelula(leitura)}</strong>
                 </td>
-                <td>{formatarNumero(leitura.bateria, 2)} V</td>
+                <td>{formatarMedicao(leitura.bateria)} V</td>
+                <td>{leitura.velocidade === null ? '—' : `${formatarMedicao(leitura.velocidade)} m/s`}</td>
                 <td className="alinhar-direita">
                   +{formatarNumero(Math.max((new Date(leitura.enviado_em).getTime() - largada) / 1000, 0), 1)} s
                 </td>
