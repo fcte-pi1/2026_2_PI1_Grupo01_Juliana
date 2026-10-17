@@ -9,6 +9,7 @@ from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
+from app.services.vigilancia_monitores import gravar_se_cancelou
 from contrato.telemetria import (
     TAMANHO_MAXIMO,
     Deduplicador,
@@ -44,7 +45,12 @@ class IngestaoTelemetria:
         self.relogio = relogio
         self.monitor = monitor
         # a rota síncrona roda no threadpool: protege o max+1 e o estado em memória
+        # a varredura de link/tempo usa a mesma trava
         self._trava = threading.Lock()
+
+    @property
+    def trava(self) -> threading.Lock:
+        return self._trava
 
     def processar(
         self, sessao: Session, entrada: EntradaPonte, gerenciador: GerenciadorExecucoes
@@ -65,6 +71,8 @@ class IngestaoTelemetria:
             )
             raise
 
+        # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
+        gravar_se_cancelou(sessao, gerenciador, self.monitor)
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
 

@@ -85,8 +85,8 @@ Estado derivado das tentativas e dos monitores de tempo/link. Use com a tabela 1
 | R01 | Existe tentativa **aberta**                                  | **Retomar tentativa** ou abrir outra tentativa na mesma exec | Recusa RF19; registro tentativa rejeitada |
 | R02 | Execução não `em_andamento` ou última tentativa não `failed` | **Retomar tentativa**                                        | Recusa RF19                               |
 | R03 | `attempt_index`=3 já consumido                               | **Retomar tentativa**                                        | Recusa RF19                               |
-| R04 | Execução `cancelada` ou `concluida`                          | **Encerrar tentativa**                                       | HTTP erro / ação ignorada; sem mudança    |
-| R05 | Nenhuma tentativa aberta                                     | **Encerrar tentativa**                                       | HTTP erro / ação ignorada                 |
+| R04 | Execução `cancelada` ou `concluida`                          | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
+| R05 | Nenhuma tentativa aberta                                     | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
 
 
 **Nova execução** com execução anterior `em_andamento` **não** é recusa: cancela a anterior (E02), conforme US12.

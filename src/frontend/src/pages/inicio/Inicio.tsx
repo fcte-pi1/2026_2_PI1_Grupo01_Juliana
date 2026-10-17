@@ -27,6 +27,12 @@ import { PainelEncerrada } from './PainelEncerrada'
 
 type TipoModal = 'nova' | 'encerrar' | 'retomar' | null
 
+function detalheTexto(corpo: unknown): string | null {
+  if (!corpo || typeof corpo !== 'object' || !('detail' in corpo)) return null
+  const { detail } = corpo as { detail: unknown }
+  return typeof detail === 'string' && detail.length > 0 ? detail : null
+}
+
 function lerRecusa(corpo: unknown): Recusa | null {
   if (!corpo || typeof corpo !== 'object' || !('motivo' in corpo) || !('ocorrida_em' in corpo)) return null
   const { motivo, ocorrida_em } = corpo
@@ -88,9 +94,11 @@ export function Inicio() {
         setErroAcao(null)
       } else {
         setRecusaLocal(null)
-        setErroAcao(e instanceof ErroApi && e.status === 409
-          ? 'O servidor recusou o pedido, mas não informou um motivo válido.'
-          : e instanceof Error ? e.message : String(e))
+        const detalhe = e instanceof ErroApi ? detalheTexto(e.corpo) : null
+        if (detalhe) setErroAcao(detalhe)
+        else if (e instanceof ErroApi && e.status === 409) {
+          setErroAcao('O servidor recusou o pedido, mas não informou um motivo válido.')
+        } else setErroAcao(e instanceof Error ? e.message : String(e))
       }
     } finally {
       envioEmAndamento.current = false

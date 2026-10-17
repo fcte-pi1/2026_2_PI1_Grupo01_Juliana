@@ -207,6 +207,8 @@ paths:
         em_andamento, para a retomada. O backend passa a devolver
         `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria
         até a confirmação do robô ou nova tentativa.
+        Sem tentativa aberta, ou com a execução já encerrada, responde 409 e `detail` é texto.
+        O 422 fica para corpo inválido (`ErroValidacao`, `detail` é lista).
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       requestBody:
@@ -235,6 +237,8 @@ paths:
                   $ref: "#/components/examples/Tela08EncerradaComoFalha"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
         "422":
           $ref: "#/components/responses/ErroValidacao"
 
@@ -335,14 +339,13 @@ paths:
       operationId: receberTelemetria
       tags: [telemetria]
       summary: Receber uma linha de telemetria da ponte
-      description: >
+      description: >-
         Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial
         e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1
         fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa
-        aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir
-        a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção
-        em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa;
-        a ponte escreve cada item na serial sem traduzir.
+        aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**,
+        a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha`
+        com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
@@ -370,13 +373,51 @@ paths:
                       - v: 1
                         cmd: interromper
         "422":
-          description: >
-            Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da
-            faixa, célula fora do labirinto). A ponte não deve reenviar 4xx.
+          description: >-
+            Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo
+            desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do
+            labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na
+            serial como no 200. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`,
+            por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`.
+            A ponte não deve reenviar 4xx.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErroValidacao"
+                oneOf:
+                  - $ref: "#/components/schemas/ErroLinhaInvalida"
+                  - $ref: "#/components/schemas/ErroValidacao"
+              examples:
+                linha-invalida:
+                  summary: Linha recusada sem downlink pendente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos: []
+                linha-invalida-interrupcao-pendente:
+                  summary: Linha recusada depois de encerrar a tentativa manualmente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos:
+                      - v: 1
+                        cmd: interromper
+                corpo-nao-json:
+                  summary: Corpo que não é JSON
+                  value:
+                    detail:
+                      - type: json_invalid
+                        loc: [body, 1]
+                        msg: JSON decode error
+                        input: {}
+                        ctx:
+                          error: Expecting property name enclosed in double quotes
+                corpo-sem-linha:
+                  summary: EntradaPonte sem o campo linha
+                  value:
+                    detail:
+                      - type: missing
+                        loc: [body, linha]
+                        msg: Field required
+                        input:
+                          recebido_em: "2026-10-13T17:00:00.000-03:00"
 
 components:
   parameters:
@@ -422,6 +463,16 @@ components:
               value:
                 motivo: execucao_cancelada
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
+    Conflito:
+      description: >
+        O pedido é válido, mas o estado atual não permite a ação.
+        `detail` é texto, diferente do 422 de validação.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroMensagem"
+          example:
+            detail: Não há tentativa aberta para encerrar.
     ErroValidacao:
       description: Corpo ou parâmetro fora do contrato.
       content:
@@ -1422,6 +1473,16 @@ components:
             Comandos para a ponte escrever na serial (JSON compacto + \\n).
             Vazio quando não há downlink pendente.
 
+    ErroLinhaInvalida:
+      allOf:
+        - $ref: "#/components/schemas/RespostaPonte"
+        - type: object
+          required: [detail]
+          properties:
+            detail:
+              type: string
+              description: Motivo da recusa da linha, só para log.
+
     Recusa:
       type: object
       required: [motivo, ocorrida_em]
@@ -1432,6 +1493,12 @@ components:
           type: string
           format: date-time
     ErroNaoEncontrado:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    ErroMensagem:
       type: object
       required: [detail]
       properties:
@@ -1448,8 +1515,13 @@ components:
             properties:
               loc:
                 type: array
+                description: >
+                  Caminho do erro; o FastAPI usa inteiros para posições (por exemplo,
+                  o caractere em que o JSON do corpo quebrou).
                 items:
-                  type: string
+                  oneOf:
+                    - type: string
+                    - type: integer
               msg:
                 type: string
               type:
