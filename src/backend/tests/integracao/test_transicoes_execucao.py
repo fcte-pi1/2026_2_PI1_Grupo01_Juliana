@@ -302,7 +302,8 @@ class TestTransicoesExecucao:
         resultado = gerenciador.verificar_monitores(db_session, MonitorConexao(10))
 
         assert resultado is not None
-        assert resultado.eventos[0].encerra is True
+        assert [e.tipo for e in resultado.eventos] == ["status", "falha"]
+        assert resultado.eventos[-1].encerra is True
         assert tentativa.status == "failed"
         assert tentativa.execucao.status == "cancelada"
 
@@ -508,7 +509,10 @@ def test_varredura_publica_falha_terminal_uma_vez(db_session: Session, gerenciad
     assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is True
     assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is False
 
-    [evento] = espia.eventos
+    status, evento = espia.eventos
+    assert status.tipo == "status"
+    assert json.loads(status.dados)["status_tentativa"] == "failed"
+    assert status.encerra is False
     assert evento.tipo == "falha"
     assert evento.encerra is (motivo == "time_exceeded")
     assert json.loads(evento.dados)["motivo"] == motivo
