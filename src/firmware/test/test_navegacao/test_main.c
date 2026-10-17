@@ -69,12 +69,16 @@ static bool mapa_foi_recalculado(const nav_estado_t *nav)
     return nav->mapa[2][2].distancia != 99 && !nav->mapa_alterado;
 }
 
-/* Põe o robô numa célula e rumo quaisquer, como se já tivesse andado até lá. */
+/*
+ * Põe o robô numa célula e rumo quaisquer, como se já tivesse andado até lá.
+ * Desliga o movimento pendente: a travessia não vale para uma pose escrita à mão.
+ */
 static void posicionar(nav_estado_t *nav, int x, int y, nav_direcao_t direcao)
 {
     nav->x = (int8_t)x;
     nav->y = (int8_t)y;
     nav->direcao = direcao;
+    nav->movimento_pendente = false;
 }
 
 static void test_largada_grava_as_bordas_sul_e_oeste(void)
@@ -131,21 +135,99 @@ static void test_lado_esquerda_espelha_as_leituras_laterais(void)
     TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_O));
 }
 
-static void test_leitura_aberta_nao_apaga_parede(void)
+/* Lê só a frente em (1, 1), rumo norte, quantas vezes a sequência pedir. */
+static void ler_frente_em_1_1(nav_estado_t *nav, const char *sequencia)
+{
+    nav->lado = NAV_LADO_DIREITA;
+    for (const char *c = sequencia; *c; c++) {
+        posicionar(nav, 1, 1, NAV_NORTE);
+        nav_passo(nav, leitura(*c == 'P', true, true));
+    }
+}
+
+static void test_maioria_dos_votos_vence(void)
 {
     nav_estado_t nav;
     nav_iniciar(&nav, NAV_TIPO_4X4);
-    posicionar(&nav, 1, 1, NAV_NORTE);
-    nav.lado = NAV_LADO_DIREITA;
-    nav_passo(&nav, leitura(true, true, true));
-    posicionar(&nav, 1, 1, NAV_NORTE);
-    nav.mapa_alterado = false;
-    nav_passo(&nav, leitura(false, false, false));
+    ler_frente_em_1_1(&nav, "PPA");
     TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
-    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_L));
-    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_O));
     TEST_ASSERT_TRUE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
-    TEST_ASSERT_FALSE(nav.mapa_alterado);
+}
+
+static void test_empate_nos_votos_da_aberto(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    ler_frente_em_1_1(&nav, "PA");
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
+}
+
+static void test_leitura_aberta_apaga_parede_e_liga_a_flag(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    ler_frente_em_1_1(&nav, "P");
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav.mapa[2][2].distancia = 99;
+    nav_passo(&nav, leitura(false, true, true));
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_TRUE(mapa_foi_recalculado(&nav));
+}
+
+static void test_travessia_prova_aberto_mesmo_com_votos_de_parede_depois(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(&nav, leitura(false, true, true)));
+    TEST_ASSERT_EQUAL_INT8(2, nav.y);
+    /* A chamada seguinte, já em (1, 2), confirma a passagem por cima da parede sul. */
+    nav_passo(&nav, leitura(false, false, false));
+    TEST_ASSERT_TRUE(nav.paredes[1][1][0].trocas & NAV_PROVADA_ABERTA);
+    ler_frente_em_1_1(&nav, "PPP");
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
+}
+
+static void test_leitura_aberta_na_borda_nao_abre(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    for (int i = 0; i < 3; i++) {
+        posicionar(&nav, 0, 1, NAV_NORTE);
+        nav_passo(&nav, leitura(false, false, true));
+    }
+    TEST_ASSERT_TRUE(tem_parede(&nav, 0, 1, NAV_PAREDE_O));
+}
+
+static void test_na_quinta_mudanca_o_mapa_nao_muda_mais(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    ler_frente_em_1_1(&nav, "PAP");
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    ler_frente_em_1_1(&nav, "A");
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    /* Já foram 4 trocas: 3 votos de parede contra 2 não fecham mais. */
+    ler_frente_em_1_1(&nav, "P");
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_EQUAL_UINT8(3, nav.paredes[1][1][0].votos_parede);
+    TEST_ASSERT_EQUAL_UINT8(2, nav.paredes[1][1][0].votos_aberto);
+}
+
+static void test_votos_saturam_em_255(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    for (int i = 0; i < 300; i++) {
+        ler_frente_em_1_1(&nav, "P");
+    }
+    TEST_ASSERT_EQUAL_UINT8(255, nav.paredes[1][1][0].votos_parede);
+    TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[1][1][0].votos_aberto);
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
 }
 
 static void test_parede_ja_conhecida_nao_liga_a_flag(void)
@@ -470,7 +552,7 @@ static void test_celula_isolada_fica_infinita(void)
     posicionar(&nav, 1, 1, NAV_NORTE);
     nav_passo(&nav, leitura(true, true, true));
     posicionar(&nav, 1, 1, NAV_SUL);
-    nav_passo(&nav, leitura(true, false, false));
+    nav_passo(&nav, leitura(true, true, true));
     TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 1, 1));
 }
 
@@ -627,7 +709,13 @@ int main(void)
     RUN_TEST(test_parede_gravada_nos_dois_lados);
     RUN_TEST(test_leitura_com_rumo_leste_gira_as_paredes);
     RUN_TEST(test_lado_esquerda_espelha_as_leituras_laterais);
-    RUN_TEST(test_leitura_aberta_nao_apaga_parede);
+    RUN_TEST(test_maioria_dos_votos_vence);
+    RUN_TEST(test_empate_nos_votos_da_aberto);
+    RUN_TEST(test_leitura_aberta_apaga_parede_e_liga_a_flag);
+    RUN_TEST(test_travessia_prova_aberto_mesmo_com_votos_de_parede_depois);
+    RUN_TEST(test_leitura_aberta_na_borda_nao_abre);
+    RUN_TEST(test_na_quinta_mudanca_o_mapa_nao_muda_mais);
+    RUN_TEST(test_votos_saturam_em_255);
     RUN_TEST(test_parede_ja_conhecida_nao_liga_a_flag);
     RUN_TEST(test_so_a_direita_aberta_fixa_o_lado_direita);
     RUN_TEST(test_so_a_esquerda_aberta_fixa_o_lado_esquerda);

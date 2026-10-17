@@ -60,20 +60,101 @@ static bool na_regiao(const nav_estado_t *estado, int x, int y)
     }
 }
 
-/* Grava a parede na célula e no lado oposto da vizinha. Nunca apaga (D2). */
-static void gravar_parede(nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
+static bool na_matriz(int x, int y)
 {
-    uint8_t parede = PAREDE_DA_DIRECAO[direcao];
-    if (estado->mapa[x][y].paredes & parede) {
-        return;
-    }
-    estado->mapa[x][y].paredes |= parede;
-    estado->mapa_alterado = true;
+    return x >= 0 && y >= 0 && x < NAV_MAX_CELULAS && y < NAV_MAX_CELULAS;
+}
 
+/*
+ * Votos da parede de (x, y) na direção dada: a sul e a oeste são a norte e a
+ * leste da vizinha. NULL quando a parede fica fora da matriz, que é borda.
+ */
+static nav_parede_t *parede_de(nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
+{
+    if (direcao == NAV_SUL) {
+        y--;
+        direcao = NAV_NORTE;
+    } else if (direcao == NAV_OESTE) {
+        x--;
+        direcao = NAV_LESTE;
+    }
+    if (!na_matriz(x, y)) {
+        return NULL;
+    }
+    return &estado->paredes[x][y][direcao == NAV_NORTE ? 0 : 1];
+}
+
+/* Regra da D11. */
+static bool parede_existe(const nav_parede_t *parede)
+{
+    if (parede->trocas & NAV_BORDA) {
+        return true;
+    }
+    if (parede->trocas & NAV_PROVADA_ABERTA) {
+        return false;
+    }
+    return parede->votos_parede > parede->votos_aberto;
+}
+
+/* Põe ou tira a parede do mapa, na célula e no lado oposto da vizinha. */
+static void aplicar_parede(nav_estado_t *estado, int x, int y, nav_direcao_t direcao, bool existe)
+{
     int vx = x + PASSO_X[direcao];
     int vy = y + PASSO_Y[direcao];
-    if (vx >= 0 && vy >= 0 && vx < NAV_MAX_CELULAS && vy < NAV_MAX_CELULAS) {
-        estado->mapa[vx][vy].paredes |= PAREDE_DA_DIRECAO[oposta(direcao)];
+    if (existe) {
+        estado->mapa[x][y].paredes |= PAREDE_DA_DIRECAO[direcao];
+        if (na_matriz(vx, vy)) {
+            estado->mapa[vx][vy].paredes |= PAREDE_DA_DIRECAO[oposta(direcao)];
+        }
+    } else {
+        estado->mapa[x][y].paredes &= (uint8_t)~PAREDE_DA_DIRECAO[direcao];
+        if (na_matriz(vx, vy)) {
+            estado->mapa[vx][vy].paredes &= (uint8_t)~PAREDE_DA_DIRECAO[oposta(direcao)];
+        }
+    }
+    estado->mapa_alterado = true;
+}
+
+static bool parede_no_mapa(const nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
+{
+    return (estado->mapa[x][y].paredes & PAREDE_DA_DIRECAO[direcao]) != 0;
+}
+
+/*
+ * Uma leitura soma 1 voto. Se a parede mudar de estado, conta uma troca;
+ * depois de NAV_TROCAS_MAX trocas, as leituras só somam votos (D13).
+ */
+static void votar(nav_estado_t *estado, int x, int y, nav_direcao_t direcao, bool parede)
+{
+    nav_parede_t *p = parede_de(estado, x, y, direcao);
+    if (p == NULL) {
+        return;
+    }
+    uint8_t *votos = parede ? &p->votos_parede : &p->votos_aberto;
+    if (*votos < 255) {
+        (*votos)++;
+    }
+    bool existe = parede_existe(p);
+    if (existe == parede_no_mapa(estado, x, y, direcao)) {
+        return;
+    }
+    if ((p->trocas & NAV_TROCAS_MASCARA) >= NAV_TROCAS_MAX) {
+        return;
+    }
+    p->trocas++;
+    aplicar_parede(estado, x, y, direcao, existe);
+}
+
+/* O robô passou pela parede: ela fica aberta para sempre (D12). */
+static void provar_aberta(nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
+{
+    nav_parede_t *p = parede_de(estado, x, y, direcao);
+    if (p == NULL) {
+        return;
+    }
+    p->trocas |= NAV_PROVADA_ABERTA;
+    if (parede_no_mapa(estado, x, y, direcao)) {
+        aplicar_parede(estado, x, y, direcao, false);
     }
 }
 
@@ -133,15 +214,9 @@ static void registrar_leitura(nav_estado_t *estado, nav_leitura_t leitura)
 
     int x = estado->x;
     int y = estado->y;
-    if (leitura.frente) {
-        gravar_parede(estado, x, y, estado->direcao);
-    }
-    if (leitura.direita) {
-        gravar_parede(estado, x, y, direita);
-    }
-    if (leitura.esquerda) {
-        gravar_parede(estado, x, y, esquerda);
-    }
+    votar(estado, x, y, estado->direcao, leitura.frente);
+    votar(estado, x, y, direita, leitura.direita);
+    votar(estado, x, y, esquerda, leitura.esquerda);
 
     estado->mapa[x][y].paredes |= NAV_VISITADA;
     resolver_orientacao(estado);
@@ -156,10 +231,18 @@ void nav_iniciar(nav_estado_t *estado, nav_tipo_t tipo)
     estado->tipo = tipo;
     estado->lado = NAV_LADO_INDEFINIDO;
     estado->orientacao = NAV_ORIENTACAO_INDEFINIDA;
-    /* Do lado -x e atrás da largada só existe borda. */
+    /*
+     * Do lado -x e atrás da largada só existe borda. Essas paredes ficam fora
+     * da matriz de votos; as da outra ponta da matriz são marcadas como borda.
+     */
+    int ultima = NAV_MAX_CELULAS - 1;
     for (int i = 0; i < NAV_MAX_CELULAS; i++) {
         estado->mapa[i][0].paredes |= NAV_PAREDE_S;
         estado->mapa[0][i].paredes |= NAV_PAREDE_O;
+        estado->mapa[i][ultima].paredes |= NAV_PAREDE_N;
+        estado->mapa[ultima][i].paredes |= NAV_PAREDE_L;
+        estado->paredes[i][ultima][0].trocas = NAV_BORDA;
+        estado->paredes[ultima][i][1].trocas = NAV_BORDA;
     }
     nav_recalcular(estado);
 }
@@ -303,11 +386,16 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
     if (estado->terminou) {
         return estado->acao_terminal;
     }
+    /* Pela D4, a origem do movimento é a célula atual menos o passo do rumo. */
+    if (estado->movimento_pendente) {
+        estado->movimento_pendente = false;
+        provar_aberta(estado, estado->x, estado->y, oposta(estado->direcao));
+    }
     registrar_leitura(estado, leitura);
     if (eh_objetivo(estado, estado->x, estado->y)) {
         return terminar(estado, NAV_ACAO_SUCESSO);
     }
-    /* Sem parede nova nem orientação resolvida, os valores seriam os mesmos (D8). */
+    /* Sem parede mudada nem orientação resolvida, os valores seriam os mesmos (D8). */
     if (estado->mapa_alterado) {
         nav_recalcular(estado);
     }
@@ -321,6 +409,7 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
     estado->direcao = destino;
     estado->x = (int8_t)(estado->x + PASSO_X[destino]);
     estado->y = (int8_t)(estado->y + PASSO_Y[destino]);
+    estado->movimento_pendente = true;
     return acao;
 }
 

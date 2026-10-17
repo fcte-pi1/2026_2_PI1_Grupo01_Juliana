@@ -23,13 +23,33 @@ extern "C" {
 
 #define NAV_MAX_CELULAS 12
 
-/* Máscara de paredes de uma célula (ordem N/S/L/O, a confirmar com o ARQ-01). */
+/*
+ * Máscara de paredes de uma célula (ordem N/S/L/O, a confirmar com o ARQ-01).
+ * É derivada dos votos de nav_parede_t e é o que o flood fill usa.
+ */
 #define NAV_PAREDE_N 0x01
 #define NAV_PAREDE_S 0x02
 #define NAV_PAREDE_L 0x04
 #define NAV_PAREDE_O 0x08
 /* Bit extra na mesma máscara: o robô já esteve na célula. */
 #define NAV_VISITADA 0x10
+
+/*
+ * Votos de uma parede (D11): ela existe no mapa se for borda, ou se não foi
+ * provada aberta e tem mais votos de parede que de aberto. Empate e ausência
+ * de votos contam como aberto (Adachi). O byte "trocas" guarda nos bits
+ * baixos quantas vezes as leituras mudaram a parede no mapa (D13).
+ */
+#define NAV_TROCAS_MAX 4
+#define NAV_TROCAS_MASCARA 0x0F
+#define NAV_BORDA 0x40           /* sempre parede */
+#define NAV_PROVADA_ABERTA 0x80  /* o robô passou por ela (D12) */
+
+typedef struct {
+    uint8_t votos_parede;
+    uint8_t votos_aberto;
+    uint8_t trocas;  /* contador de trocas, NAV_BORDA e NAV_PROVADA_ABERTA */
+} nav_parede_t;
 
 /* Distância de uma célula que não alcança nenhum objetivo. */
 #define NAV_DIST_INFINITA 255
@@ -96,10 +116,13 @@ typedef struct {
     int8_t y;
     nav_direcao_t direcao;
     nav_celula_t mapa[NAV_MAX_CELULAS][NAV_MAX_CELULAS]; /* [x][y] */
+    /* Só a parede norte [0] e a leste [1]: a sul e a oeste são as da vizinha. */
+    nav_parede_t paredes[NAV_MAX_CELULAS][NAV_MAX_CELULAS][2];
     nav_tipo_t tipo;
     nav_lado_t lado;
     nav_orientacao_t orientacao;
-    bool mapa_alterado;         /* parede nova ou orientação resolvida: recalcular */
+    bool mapa_alterado;         /* parede mudou ou orientação resolvida: recalcular */
+    bool movimento_pendente;    /* devolveu um movimento: a próxima chamada é depois dele */
     bool terminou;              /* já devolveu SUCESSO ou SEM_PASSO */
     nav_acao_t acao_terminal;
 } nav_estado_t;
