@@ -317,10 +317,11 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 
 def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     """RF32: gap medido antes de registrar_mensagem na linha que reconecta."""
-    monitor = client.app.state.monitor_conexao
-    tentativa_aberta.iniciada_em = datetime.now(UTC) - timedelta(seconds=20)
+    agora = datetime.now(UTC)
+    tentativa_aberta.iniciada_em = agora - timedelta(seconds=20)
     db_session.commit()
-    monitor._ultima_mensagem = datetime.now(UTC) - timedelta(seconds=11)
+    monitor = client.app.state.monitor_conexao
+    monitor._ultima_mensagem = agora - timedelta(seconds=11)
 
     assert _enviar(client, _linha()).status_code == 200
 

@@ -2,7 +2,8 @@
 
 import logging
 import threading
-from datetime import datetime
+from collections.abc import Callable
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from app.models import HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
@@ -48,11 +49,13 @@ class IngestaoTelemetria:
         relogio: RelogioDoRobo,
         monitor: MonitorConexao,
         publicador: PublicadorSSE | None = None,
+        relogio_backend: Callable[[], datetime] | None = None,
     ) -> None:
         self.deduplicador = deduplicador
         self.relogio = relogio
         self.monitor = monitor
         self.publicador = publicador
+        self.relogio_backend = relogio_backend or (lambda: datetime.now(UTC))
         # a rota síncrona roda no threadpool: protege o max+1 e o estado em memória
         # a varredura de link/tempo usa a mesma trava
         self._trava = threading.Lock()
@@ -80,6 +83,7 @@ class IngestaoTelemetria:
             )
             raise
 
+        agora_backend = self.relogio_backend()
         # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
         resultado_monitor = gerenciador.verificar_monitores(sessao, self.monitor)
         if resultado_monitor:
@@ -119,19 +123,20 @@ class IngestaoTelemetria:
         try:
             if isinstance(mensagem, Tel):
                 eventos = self._gravar_tel(
-                    sessao, tentativa, mensagem, enviado_em, entrada.recebido_em
+                    sessao,
+                    tentativa,
+                    mensagem,
+                    enviado_em,
+                    entrada.recebido_em,
+                    agora_backend,
                 )
             elif isinstance(mensagem, HcItem):
                 eventos = self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
             elif isinstance(mensagem, Passo):
-                eventos = self._gravar_passo(
-                    sessao, tentativa, mensagem, enviado_em, entrada.recebido_em
-                )
+                eventos = self._gravar_passo(sessao, tentativa, mensagem, enviado_em, agora_backend)
             elif isinstance(mensagem, EVENTOS):
                 eventos = (
-                    gerenciador.aplicar_evento(
-                        sessao, tentativa, mensagem, momento=entrada.recebido_em
-                    )
+                    gerenciador.aplicar_evento(sessao, tentativa, mensagem, momento=agora_backend)
                     or []
                 )
             sessao.commit()
@@ -141,7 +146,7 @@ class IngestaoTelemetria:
         # a âncora do boot só é fixada por uma mensagem aceita
         self.relogio.fixar(mensagem, entrada.recebido_em)
         self.deduplicador.confirmar(mensagem)
-        
+
         if execucao_id is not None:
             publicar_apos_commit(self.publicador, execucao_id, eventos)
 
@@ -166,6 +171,7 @@ class IngestaoTelemetria:
         tel: Tel,
         enviado_em: datetime,
         recebido_em: datetime,
+        agora_backend: datetime,
     ) -> list[EventoSSE]:
         ordem = TelemetriaRepository(sessao).proxima_ordem_leitura(tentativa.tentativa_id)
         leitura = LeituraTelemetria(
@@ -187,7 +193,7 @@ class IngestaoTelemetria:
             sessao,
             tentativa,
             tentativa.execucao,
-            recebido_em,
+            agora_backend,
             bateria_mv_atual=tel.bat_mv,
         )
         return criar_eventos(OrigemTelemetria(tel=tel, ordem=ordem, enviado_em=enviado_em))
@@ -211,7 +217,7 @@ class IngestaoTelemetria:
         tentativa: Tentativa,
         passo: Passo,
         enviado_em: datetime,
-        recebido_em: datetime,
+        agora_backend: datetime,
     ) -> list[EventoSSE]:
         """Grava o passo (D5, D6) e as paredes da célula (D7), na mesma transação."""
         repositorio = TelemetriaRepository(sessao)
@@ -242,5 +248,5 @@ class IngestaoTelemetria:
         repositorio.gravar_paredes(
             tentativa.execucao_id, passo.x, passo.y, passo.paredes, enviado_em
         )
-        recalcular_parciais(sessao, tentativa, tentativa.execucao, recebido_em)
+        recalcular_parciais(sessao, tentativa, tentativa.execucao, agora_backend)
         return eventos

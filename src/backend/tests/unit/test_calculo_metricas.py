@@ -4,7 +4,7 @@ from decimal import Decimal
 from app.services.calculo_metricas import (
     consumo_bateria_mv,
     consumo_bateria_pct,
-    contar_celulas_unicas,
+    contar_deslocamentos,
     distancia_celulas_para_metros,
     percentual_carga_mv,
     tempo_decorrido_s,
@@ -32,8 +32,10 @@ def test_velocidade_media_por_celulas():
     assert velocidade_media_por_celulas(0, Decimal("3")) is None
 
 
-def test_contar_celulas_unicas():
-    assert contar_celulas_unicas([(0, 0), (0, 1), (0, 1), (1, 1)]) == 3
+def test_contar_deslocamentos_inclui_revisitas_e_exclui_largada():
+    assert contar_deslocamentos([(0, 0), (0, 1), (0, 0), (1, 0)]) == 3
+    assert contar_deslocamentos([(0, 0)]) == 0
+    assert contar_deslocamentos([]) == 0
 
 
 def test_tempo_decorrido_s():
@@ -48,6 +50,17 @@ def test_percentual_carga_mv_pontos_exatos_lipo():
     assert percentual_carga_mv(7000) == Decimal("0")
 
 
+def test_percentual_carga_mv_pontos_exatos_aa():
+    assert percentual_carga_mv(6400) == Decimal("100")
+    assert percentual_carga_mv(5600) == Decimal("50")
+    assert percentual_carga_mv(5000) == Decimal("0")
+
+
+def test_limiar_6700_seleciona_lipo():
+    assert percentual_carga_mv(6700) == Decimal("0")
+    assert percentual_carga_mv(6699) == Decimal("100")
+
+
 def test_consumo_bateria_mv():
     assert consumo_bateria_mv(Decimal("8400"), Decimal("7800")) == Decimal("600")
     assert consumo_bateria_mv(None, Decimal("7800")) is None
@@ -55,6 +68,10 @@ def test_consumo_bateria_mv():
 
 def test_consumo_bateria_pct_pontos_exatos():
     assert consumo_bateria_pct(Decimal("8400"), Decimal("7800")) == Decimal("45")
+
+
+def test_consumo_bateria_pct_usa_curva_aa_da_tensao_inicial():
+    assert consumo_bateria_pct(Decimal("6400"), Decimal("5600")) == Decimal("50")
 
 
 def test_variacao_melhor_tempo():
