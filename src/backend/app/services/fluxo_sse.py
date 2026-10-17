@@ -37,8 +37,9 @@ async def fluxo_eventos(
         # abre furando buffer de proxy e tornando o stream observável de imediato
         yield COMENTARIO_KEEPALIVE
 
-        # ids que acabaram de ir no reenvio: a mesma cópia não vai duas vezes
-        pendentes = {evento.id for evento in reenvio if evento.id is not None}
+        # passos que acabaram de ir no reenvio, com o conteúdo enviado: a mesma
+        # cópia não vai duas vezes
+        pendentes = {evento.id: evento.dados for evento in reenvio if evento.id is not None}
         for evento in reenvio:
             yield montar_frame(evento)
 
@@ -55,10 +56,11 @@ async def fluxo_eventos(
                 # sentinela do publicador: fila estourada, o cliente reconecta
                 return
             if evento.id is not None and evento.id in pendentes:
-                # consome só esta cópia; o id volta a valer para a próxima
-                # publicação do mesmo passo, que é a releitura das paredes
-                pendentes.discard(evento.id)
-                continue
+                # a primeira cópia ao vivo consome o id: igual ao reenvio, é
+                # duplicata e não vai; diferente, é a releitura das paredes e
+                # vai, assim como toda publicação seguinte do mesmo passo
+                if pendentes.pop(evento.id) == evento.dados:
+                    continue
             yield montar_frame(evento)
             if evento.encerra:
                 return

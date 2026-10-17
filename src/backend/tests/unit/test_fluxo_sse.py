@@ -57,6 +57,41 @@ async def test_passo_ja_reenviado_nao_repete_mas_a_atualizacao_de_parede_passa()
     assert _ids(pedacos) == [1, 2, 3, 2]
 
 
+def _passo_com_parede(n: int, paredes: int) -> EventoSSE:
+    return EventoSSE(
+        tipo="passo", dados=f'{{"tipo":"passo","passo_id":{n},"paredes":{paredes}}}', id=n
+    )
+
+
+async def test_parede_nova_de_passo_reenviado_passa_mesmo_sem_copia_na_fila():
+    publicador = PublicadorSSE()
+    assinatura = publicador.assinar(EXECUCAO)
+    # o passo 2 foi commitado antes da assinatura, então só veio no reenvio; a
+    # única cópia ao vivo é a releitura da célula, com a parede nova
+    parede_nova = _passo_com_parede(2, 5)
+    assinatura.fila.put_nowait(parede_nova)
+    assinatura.fila.put_nowait(None)
+
+    pedacos = [pedaco async for pedaco in fluxo_eventos(assinatura, [_passo(1), _passo(2)])]
+
+    assert pedacos[-1] == montar_frame(parede_nova)
+
+
+async def test_copia_anterior_ao_reenvio_nao_engole_a_versao_atual_do_passo():
+    publicador = PublicadorSSE()
+    assinatura = publicador.assinar(EXECUCAO)
+    antiga, atual = _passo_com_parede(2, 1), _passo_com_parede(2, 5)
+    # as duas versões foram publicadas entre a assinatura e a consulta do
+    # reenvio, que já leu a atual
+    assinatura.fila.put_nowait(antiga)
+    assinatura.fila.put_nowait(atual)
+    assinatura.fila.put_nowait(None)
+
+    pedacos = [pedaco async for pedaco in fluxo_eventos(assinatura, [atual])]
+
+    assert pedacos[-1] == montar_frame(atual)
+
+
 async def test_quem_abre_no_meio_recebe_o_reenvio_inteiro_antes_do_ao_vivo():
     publicador = PublicadorSSE()
     assinatura = publicador.assinar(EXECUCAO)
@@ -64,8 +99,7 @@ async def test_quem_abre_no_meio_recebe_o_reenvio_inteiro_antes_do_ao_vivo():
     assinatura.fila.put_nowait(None)
 
     pedacos = [
-        pedaco
-        async for pedaco in fluxo_eventos(assinatura, [_passo(n) for n in range(1, 6)])
+        pedaco async for pedaco in fluxo_eventos(assinatura, [_passo(n) for n in range(1, 6)])
     ]
 
     assert _ids(pedacos) == [1, 2, 3, 4, 5, 6]
