@@ -57,6 +57,9 @@ typedef struct {
  */
 #define NAV_PERDOES_MAX 8
 
+/* Conferências da frente por corrida (D15): na seguinte, SEM_PASSO. */
+#define NAV_BLOQUEIOS_MAX 64
+
 /* Distância de uma célula que não alcança nenhum objetivo. */
 #define NAV_DIST_INFINITA 255
 
@@ -130,6 +133,7 @@ typedef struct {
     bool mapa_alterado;         /* parede mudou ou orientação resolvida: recalcular */
     bool movimento_pendente;    /* devolveu um movimento: a próxima chamada é depois dele */
     uint8_t perdoes;            /* perdões já usados, até NAV_PERDOES_MAX */
+    uint8_t bloqueios;          /* chamadas da nav_bloqueado, até NAV_BLOQUEIOS_MAX */
     bool terminou;              /* já devolveu SUCESSO ou SEM_PASSO */
     nav_acao_t acao_terminal;
 } nav_estado_t;
@@ -139,6 +143,17 @@ void nav_iniciar(nav_estado_t *estado, nav_tipo_t tipo);
 
 /* Chamada uma vez por célula: registra a leitura e devolve o próximo movimento. */
 nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura);
+
+/*
+ * Conferência da frente (D15): o app, já virado para o rumo da última ação,
+ * viu parede à frente antes de andar. Chamar só depois de uma ação de
+ * movimento devolvida pela nav_passo ou pela própria nav_bloqueado. A
+ * navegação volta a pose para a célula de origem (mantendo o rumo novo),
+ * soma um voto de parede, escolhe outro movimento e devolve a ação relativa
+ * ao rumo atual. Com o robô parado, o app pode chamá-la de novo. Sem
+ * movimento pendente, devolve SEM_PASSO sem mudar o estado.
+ */
+nav_acao_t nav_bloqueado(nav_estado_t *estado);
 
 /*
  * O robô pode passar de (x, y) para a vizinha na direção dada: não há parede

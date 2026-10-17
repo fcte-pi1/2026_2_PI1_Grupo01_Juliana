@@ -796,6 +796,114 @@ static void test_sem_passo_e_idempotente(void)
     conferir_fim_idempotente(&nav, NAV_ACAO_SEM_PASSO);
 }
 
+/*
+ * Em (1, 1), rumo norte, tudo aberto: a navegação manda seguir em frente e
+ * já deixa a pose em (1, 2). O app, parado, ainda pode conferir a frente.
+ */
+static void mandar_em_frente_de_1_1(nav_estado_t *nav)
+{
+    nav_iniciar(nav, NAV_TIPO_4X4);
+    nav->lado = NAV_LADO_DIREITA;
+    posicionar(nav, 1, 1, NAV_NORTE);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(nav, leitura(false, false, false)));
+}
+
+static void test_bloqueio_grava_a_parede_volta_a_pose_e_gira(void)
+{
+    nav_estado_t nav;
+    mandar_em_frente_de_1_1(&nav);
+    /* O voto de parede empata com o de aberto da leitura: a frente continua. */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(2, nav.y);
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    /* A segunda conferência fecha a parede e o robô vira para (2, 1). */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, nav_bloqueado(&nav));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
+    TEST_ASSERT_EQUAL_UINT8(2, nav.paredes[1][1][0].votos_parede);
+    TEST_ASSERT_EQUAL_INT8(2, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+    TEST_ASSERT_TRUE(nav.movimento_pendente);
+    TEST_ASSERT_EQUAL_UINT8(2, nav.bloqueios);
+    TEST_ASSERT_FALSE(nav.terminou);
+}
+
+static void test_bloqueio_seguido_de_passo_prova_aberta_a_parede_do_giro(void)
+{
+    nav_estado_t nav;
+    mandar_em_frente_de_1_1(&nav);
+    nav_bloqueado(&nav);
+    nav_bloqueado(&nav);
+    nav_passo(&nav, leitura(false, false, false));
+    TEST_ASSERT_TRUE(nav.paredes[1][1][1].trocas & NAV_PROVADA_ABERTA);
+    TEST_ASSERT_FALSE(nav.paredes[1][1][0].trocas & NAV_PROVADA_ABERTA);
+}
+
+/*
+ * Defeito visto no 12x4: a parede da frente já tinha trocado 4 vezes e
+ * estava aberta no mapa, então nenhuma leitura a fechava e o robô batia.
+ */
+static void test_bloqueio_fecha_parede_que_ja_trocou_4_vezes(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    nav.paredes[1][1][0].votos_parede = 2;
+    nav.paredes[1][1][0].votos_aberto = 3;
+    nav.paredes[1][1][0].trocas = NAV_TROCAS_MAX;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    /* A leitura de parede empata os votos, e o limite de trocas a ignoraria. */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(&nav, leitura(true, false, false)));
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, nav_bloqueado(&nav));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
+    TEST_ASSERT_EQUAL_INT8(2, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+}
+
+static void test_depois_de_64_bloqueios_sem_passo(void)
+{
+    nav_estado_t nav;
+    mandar_em_frente_de_1_1(&nav);
+    nav.bloqueios = NAV_BLOQUEIOS_MAX - 1;
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_UINT8(NAV_BLOQUEIOS_MAX, nav.bloqueios);
+    TEST_ASSERT_FALSE(nav.terminou);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_bloqueado(&nav));
+    TEST_ASSERT_TRUE(nav.terminou);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav.acao_terminal);
+}
+
+static void test_bloqueio_depois_do_fim_e_idempotente(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 3, 3, NAV_NORTE);
+    nav_passo(&nav, leitura(true, false, true));
+    nav.movimento_pendente = true;
+    nav_estado_t antes;
+    memcpy(&antes, &nav, sizeof(antes));
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SUCESSO, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SUCESSO, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_MEMORY(&antes, &nav, sizeof(antes));
+}
+
+static void test_bloqueio_sem_movimento_pendente_nao_muda_o_estado(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    nav_estado_t antes;
+    memcpy(&antes, &nav, sizeof(antes));
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_MEMORY(&antes, &nav, sizeof(antes));
+}
+
 static void test_direcao_depois_de_cada_acao(void)
 {
     TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav_direcao_apos(NAV_NORTE, NAV_ACAO_DIREITA));
@@ -859,6 +967,12 @@ int main(void)
     RUN_TEST(test_cercado_por_bordas_e_paredes_firmes_termina_sem_passo);
     RUN_TEST(test_sucesso_e_idempotente);
     RUN_TEST(test_sem_passo_e_idempotente);
+    RUN_TEST(test_bloqueio_grava_a_parede_volta_a_pose_e_gira);
+    RUN_TEST(test_bloqueio_seguido_de_passo_prova_aberta_a_parede_do_giro);
+    RUN_TEST(test_bloqueio_fecha_parede_que_ja_trocou_4_vezes);
+    RUN_TEST(test_depois_de_64_bloqueios_sem_passo);
+    RUN_TEST(test_bloqueio_depois_do_fim_e_idempotente);
+    RUN_TEST(test_bloqueio_sem_movimento_pendente_nao_muda_o_estado);
     RUN_TEST(test_direcao_depois_de_cada_acao);
     return UNITY_END();
 }

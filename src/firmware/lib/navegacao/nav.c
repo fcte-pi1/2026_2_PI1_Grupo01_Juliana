@@ -145,6 +145,29 @@ static void votar(nav_estado_t *estado, int x, int y, nav_direcao_t direcao, boo
     aplicar_parede(estado, x, y, direcao, existe);
 }
 
+/*
+ * Voto da conferência da frente (D15): o robô parado viu a parede, então ela
+ * muda o mapa mesmo depois de NAV_TROCAS_MAX trocas.
+ */
+static void votar_bloqueio(nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
+{
+    nav_parede_t *p = parede_de(estado, x, y, direcao);
+    if (p == NULL) {
+        return;
+    }
+    if (p->votos_parede < 255) {
+        p->votos_parede++;
+    }
+    bool existe = parede_existe(p);
+    if (existe == parede_no_mapa(estado, x, y, direcao)) {
+        return;
+    }
+    if ((p->trocas & NAV_TROCAS_MASCARA) < NAV_TROCAS_MASCARA) {
+        p->trocas++;
+    }
+    aplicar_parede(estado, x, y, direcao, existe);
+}
+
 /* O robô passou pela parede: ela fica aberta para sempre (D12). */
 static void provar_aberta(nav_estado_t *estado, int x, int y, nav_direcao_t direcao)
 {
@@ -427,6 +450,18 @@ static nav_acao_t acao_para(const nav_estado_t *estado, nav_direcao_t destino)
     return horario ? NAV_ACAO_DIREITA : NAV_ACAO_ESQUERDA;
 }
 
+/* Supõe que o app executa a ação: o estado já fica na célula de destino (D4). */
+static nav_acao_t mover(nav_estado_t *estado)
+{
+    nav_direcao_t destino = escolher_direcao(estado);
+    nav_acao_t acao = acao_para(estado, destino);
+    estado->direcao = destino;
+    estado->x = (int8_t)(estado->x + PASSO_X[destino]);
+    estado->y = (int8_t)(estado->y + PASSO_Y[destino]);
+    estado->movimento_pendente = true;
+    return acao;
+}
+
 nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
 {
     /* Depois do fim, a mesma resposta e nenhuma mudança no estado (D10). */
@@ -450,15 +485,30 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
     if ((estado->mapa_alterado || sem_caminho) && !recalcular_com_perdao(estado)) {
         return terminar(estado, NAV_ACAO_SEM_PASSO);
     }
+    return mover(estado);
+}
 
-    /* Supõe que o app executa a ação: o estado já fica na célula de destino (D4). */
-    nav_direcao_t destino = escolher_direcao(estado);
-    nav_acao_t acao = acao_para(estado, destino);
-    estado->direcao = destino;
-    estado->x = (int8_t)(estado->x + PASSO_X[destino]);
-    estado->y = (int8_t)(estado->y + PASSO_Y[destino]);
-    estado->movimento_pendente = true;
-    return acao;
+nav_acao_t nav_bloqueado(nav_estado_t *estado)
+{
+    if (estado->terminou) {
+        return estado->acao_terminal;
+    }
+    if (!estado->movimento_pendente) {
+        return NAV_ACAO_SEM_PASSO;
+    }
+    /* Garantia de término: a conferência não pode girar para sempre. */
+    if (estado->bloqueios >= NAV_BLOQUEIOS_MAX) {
+        return terminar(estado, NAV_ACAO_SEM_PASSO);
+    }
+    estado->bloqueios++;
+    /* O robô não andou: volta à origem e fica com o rumo novo (D4). */
+    estado->x = (int8_t)(estado->x - PASSO_X[estado->direcao]);
+    estado->y = (int8_t)(estado->y - PASSO_Y[estado->direcao]);
+    votar_bloqueio(estado, estado->x, estado->y, estado->direcao);
+    if (estado->mapa_alterado && !recalcular_com_perdao(estado)) {
+        return terminar(estado, NAV_ACAO_SEM_PASSO);
+    }
+    return mover(estado);
 }
 
 nav_direcao_t nav_direcao_apos(nav_direcao_t atual, nav_acao_t acao)
