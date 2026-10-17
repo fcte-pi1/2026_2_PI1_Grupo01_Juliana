@@ -248,7 +248,77 @@ static void fixar_lado(nav_estado_t *estado, nav_leitura_t leitura)
         estado->lado = NAV_LADO_DIREITA;
     } else if (aberta_esquerda_da_largada) {
         estado->lado = NAV_LADO_ESQUERDA;
+    } else {
+        return;
     }
+    /* Provisório até o robô sair da coluna 0: a abertura pode ser falsa (D16). */
+    estado->lado_provisorio = true;
+    estado->lado_y = estado->y;
+    estado->lado_duas_abertas = aberta_direita_da_largada && aberta_esquerda_da_largada;
+}
+
+/*
+ * Sair da coluna 0 torna o lado definitivo (D17). Indefinido vira direita, o
+ * espelho que a navegação já vinha usando.
+ */
+static void tornar_lado_definitivo(nav_estado_t *estado)
+{
+    if (estado->x == 0) {
+        return;
+    }
+    estado->lado_provisorio = false;
+    if (estado->lado == NAV_LADO_INDEFINIDO) {
+        estado->lado = NAV_LADO_DIREITA;
+    }
+}
+
+/*
+ * Lado provisório (D16): a conferência viu parede no leste a partir da célula
+ * onde o lado foi fixado, então a abertura que o fixou era falsa. O robô está
+ * virado para o lado físico que se achava o leste. Devolve se desfez o lado.
+ */
+static bool desfazer_lado(nav_estado_t *estado)
+{
+    if (!estado->lado_provisorio || estado->desfazeres >= NAV_DESFAZERES_MAX) {
+        return false;
+    }
+    if (estado->x != 0 || estado->y != estado->lado_y || estado->direcao != NAV_LESTE) {
+        return false;
+    }
+    estado->desfazeres++;
+    /* As paredes leste da coluna 0 foram gravadas com o espelho errado. */
+    for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+        memset(&estado->paredes[0][y][1], 0, sizeof(nav_parede_t));
+        if (parede_no_mapa(estado, 0, y, NAV_LESTE)) {
+            aplicar_parede(estado, 0, y, NAV_LESTE, false);
+        }
+    }
+    if (estado->lado_duas_abertas) {
+        /*
+         * A outra lateral também estava aberta: o x positivo fica do outro
+         * lado, e o lado físico para onde o robô olha passa a ser o oeste.
+         */
+        estado->lado = estado->lado == NAV_LADO_DIREITA ? NAV_LADO_ESQUERDA : NAV_LADO_DIREITA;
+        estado->lado_duas_abertas = false;
+        estado->direcao = NAV_OESTE;
+        return true;
+    }
+    /*
+     * Só um lado aberto, e ele era falso: o lado volta a indefinido, que
+     * espelha como direita. Se era direita, o robô olha para o leste, e a
+     * parede que ele viu ganha 2 votos; se era esquerda, olha para o oeste,
+     * que é borda.
+     */
+    bool olha_leste = estado->lado == NAV_LADO_DIREITA;
+    estado->lado = NAV_LADO_INDEFINIDO;
+    estado->lado_provisorio = false;
+    if (olha_leste) {
+        votar(estado, 0, estado->y, NAV_LESTE, true);
+        votar(estado, 0, estado->y, NAV_LESTE, true);
+    } else {
+        estado->direcao = NAV_OESTE;
+    }
+    return true;
 }
 
 /* No 8x4 e no 12x4, pisar fora do quadrado 4x4 da largada resolve a orientação. */
@@ -473,6 +543,7 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
         estado->movimento_pendente = false;
         provar_aberta(estado, estado->x, estado->y, oposta(estado->direcao));
     }
+    tornar_lado_definitivo(estado);
     registrar_leitura(estado, leitura);
     if (eh_objetivo(estado, estado->x, estado->y)) {
         return terminar(estado, NAV_ACAO_SUCESSO);
@@ -504,7 +575,9 @@ nav_acao_t nav_bloqueado(nav_estado_t *estado)
     /* O robô não andou: volta à origem e fica com o rumo novo (D4). */
     estado->x = (int8_t)(estado->x - PASSO_X[estado->direcao]);
     estado->y = (int8_t)(estado->y - PASSO_Y[estado->direcao]);
-    votar_bloqueio(estado, estado->x, estado->y, estado->direcao);
+    if (!desfazer_lado(estado)) {
+        votar_bloqueio(estado, estado->x, estado->y, estado->direcao);
+    }
     if (estado->mapa_alterado && !recalcular_com_perdao(estado)) {
         return terminar(estado, NAV_ACAO_SEM_PASSO);
     }

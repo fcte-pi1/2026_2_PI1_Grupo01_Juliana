@@ -60,6 +60,9 @@ typedef struct {
 /* Conferências da frente por corrida (D15): na seguinte, SEM_PASSO. */
 #define NAV_BLOQUEIOS_MAX 64
 
+/* Lados desfeitos por corrida (D16): depois disso, o bloqueio só vota. */
+#define NAV_DESFAZERES_MAX 4
+
 /* Distância de uma célula que não alcança nenhum objetivo. */
 #define NAV_DIST_INFINITA 255
 
@@ -129,6 +132,10 @@ typedef struct {
     nav_parede_t paredes[NAV_MAX_CELULAS][NAV_MAX_CELULAS][2];
     nav_tipo_t tipo;
     nav_lado_t lado;
+    bool lado_provisorio;       /* fixado na coluna 0 e o robô ainda não saiu dela (D16) */
+    int8_t lado_y;              /* o lado foi fixado na célula (0, lado_y) */
+    bool lado_duas_abertas;     /* na fixação, as duas laterais estavam abertas */
+    uint8_t desfazeres;         /* lados desfeitos, até NAV_DESFAZERES_MAX */
     nav_orientacao_t orientacao;
     bool mapa_alterado;         /* parede mudou ou orientação resolvida: recalcular */
     bool movimento_pendente;    /* devolveu um movimento: a próxima chamada é depois dele */
@@ -151,7 +158,8 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura);
  * navegação volta a pose para a célula de origem (mantendo o rumo novo),
  * soma um voto de parede, escolhe outro movimento e devolve a ação relativa
  * ao rumo atual. Com o robô parado, o app pode chamá-la de novo. Sem
- * movimento pendente, devolve SEM_PASSO sem mudar o estado.
+ * movimento pendente, devolve SEM_PASSO sem mudar o estado. Parede no leste
+ * da célula onde o lado provisório foi fixado desfaz o lado (D16).
  */
 nav_acao_t nav_bloqueado(nav_estado_t *estado);
 

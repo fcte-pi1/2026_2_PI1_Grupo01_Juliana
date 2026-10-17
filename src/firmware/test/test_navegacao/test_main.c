@@ -904,6 +904,214 @@ static void test_bloqueio_sem_movimento_pendente_nao_muda_o_estado(void)
     TEST_ASSERT_EQUAL_MEMORY(&antes, &nav, sizeof(antes));
 }
 
+/*
+ * Em (0, 1), rumo norte, frente fechada: a leitura fixa o lado e a navegação
+ * manda virar para o leste. O app, já virado, ainda não andou.
+ */
+static nav_acao_t fixar_lado_e_virar_para_o_leste(nav_estado_t *nav, nav_leitura_t lida)
+{
+    nav_iniciar(nav, NAV_TIPO_4X4);
+    posicionar(nav, 0, 1, NAV_NORTE);
+    nav_acao_t acao = nav_passo(nav, lida);
+    TEST_ASSERT_EQUAL_INT8(1, nav->x);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav->direcao);
+    return acao;
+}
+
+static void test_fixar_o_lado_guarda_a_celula_e_as_laterais(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    posicionar(&nav, 0, 1, NAV_NORTE);
+    nav_passo(&nav, leitura(true, false, false));
+    TEST_ASSERT_TRUE(nav.lado_provisorio);
+    TEST_ASSERT_EQUAL_INT8(1, nav.lado_y);
+    TEST_ASSERT_TRUE(nav.lado_duas_abertas);
+    TEST_ASSERT_EQUAL_UINT8(0, nav.desfazeres);
+}
+
+static void test_bloqueio_com_a_outra_lateral_aberta_troca_o_lado(void)
+{
+    nav_estado_t nav;
+    /* As duas laterais abertas: o lado vira direita e o leste é a direita física. */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, false)));
+    /*
+     * Com o lado trocado, o robô virado para a direita física olha para o
+     * oeste: a meia-volta o leva para a esquerda física, o leste de verdade.
+     */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_MEIA_VOLTA, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_ESQUERDA, nav.lado);
+    TEST_ASSERT_TRUE(nav.lado_provisorio);
+    TEST_ASSERT_FALSE(nav.lado_duas_abertas);
+    TEST_ASSERT_EQUAL_UINT8(1, nav.desfazeres);
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+    TEST_ASSERT_TRUE(nav.movimento_pendente);
+}
+
+static void test_bloqueio_com_so_a_direita_aberta_volta_o_lado_a_indefinido(void)
+{
+    nav_estado_t nav;
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, fixar_lado_e_virar_para_o_leste(&nav, leitura(true, true, false)));
+    /*
+     * Indefinido espelha como direita: o robô virado para a direita física
+     * olha para o leste, que ganha 2 votos de parede. Sobra o sul, à direita.
+     */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_DIREITA, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_INDEFINIDO, nav.lado);
+    TEST_ASSERT_EQUAL_UINT8(2, nav.paredes[0][1][1].votos_parede);
+    TEST_ASSERT_TRUE(tem_parede(&nav, 0, 1, NAV_PAREDE_L));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_O));
+    TEST_ASSERT_EQUAL_UINT8(1, nav.desfazeres);
+    TEST_ASSERT_EQUAL_INT8(0, nav.x);
+    TEST_ASSERT_EQUAL_INT8(0, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_SUL, nav.direcao);
+}
+
+static void test_bloqueio_com_so_a_esquerda_aberta_volta_o_lado_a_indefinido(void)
+{
+    nav_estado_t nav;
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_ESQUERDA, fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, true)));
+    /*
+     * O robô virado para a esquerda física olha para o oeste quando o lado
+     * espelha como direita: a borda, sem voto. O leste fica atrás dele.
+     */
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_MEIA_VOLTA, nav_bloqueado(&nav));
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_INDEFINIDO, nav.lado);
+    TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[0][1][1].votos_parede);
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(1, nav.y);
+    TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav.direcao);
+}
+
+static void test_desfazer_o_lado_apaga_as_paredes_leste_da_coluna_0(void)
+{
+    nav_estado_t nav;
+    fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, false));
+    fechar_com_votos(&nav, 0, 2, NAV_LESTE, 3);
+    nav.paredes[0][2][1].votos_aberto = 1;
+    nav.paredes[0][2][1].trocas = 2;
+    nav_bloqueado(&nav);
+    for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+        TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[0][y][1].votos_parede);
+        TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[0][y][1].votos_aberto);
+        TEST_ASSERT_EQUAL_UINT8(0, nav.paredes[0][y][1].trocas);
+        TEST_ASSERT_FALSE(tem_parede(&nav, 0, y, NAV_PAREDE_L));
+        TEST_ASSERT_FALSE(tem_parede(&nav, 1, y, NAV_PAREDE_O));
+    }
+}
+
+static void test_depois_de_4_desfazeres_o_bloqueio_so_vota(void)
+{
+    nav_estado_t nav;
+    fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, false));
+    nav.desfazeres = NAV_DESFAZERES_MAX;
+    nav_bloqueado(&nav);
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_DIREITA, nav.lado);
+    TEST_ASSERT_EQUAL_UINT8(1, nav.paredes[0][1][1].votos_parede);
+}
+
+static void test_sair_da_coluna_0_torna_o_lado_definitivo(void)
+{
+    nav_estado_t nav;
+    fixar_lado_e_virar_para_o_leste(&nav, leitura(true, false, false));
+    nav_passo(&nav, leitura(false, false, false));
+    TEST_ASSERT_FALSE(nav.lado_provisorio);
+    /* De volta à célula onde o lado foi fixado, um bloqueio para o leste só vota. */
+    posicionar(&nav, 1, 1, NAV_LESTE);
+    nav.movimento_pendente = true;
+    nav_bloqueado(&nav);
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_DIREITA, nav.lado);
+    TEST_ASSERT_EQUAL_UINT8(0, nav.desfazeres);
+}
+
+/*
+ * Defeito visto no 12x4: o robô saiu da coluna 0 com o lado indefinido e, ao
+ * voltar, uma abertura lateral falsa fixava o lado com o espelho trocado.
+ */
+static void test_sair_da_coluna_0_com_lado_indefinido_fixa_direita(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_12X4);
+    posicionar(&nav, 1, 0, NAV_LESTE);
+    nav_passo(&nav, leitura(false, true, true));
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_DIREITA, nav.lado);
+    TEST_ASSERT_FALSE(nav.lado_provisorio);
+    posicionar(&nav, 0, 1, NAV_NORTE);
+    nav_passo(&nav, leitura(false, false, true));
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_DIREITA, nav.lado);
+}
+
+/*
+ * Labirinto 4x4 do lado esquerdo do robô, no referencial do labirinto: bordas,
+ * parede leste de (0, 0) e parede norte de (0, 1).
+ */
+static bool parede_a_esquerda(int x, int y, nav_direcao_t direcao)
+{
+    switch (direcao) {
+    case NAV_NORTE: return y == 3 || (x == 0 && y == 1);
+    case NAV_SUL:   return y == 0 || (x == 0 && y == 2);
+    case NAV_OESTE: return x == 0 || (x == 1 && y == 0);
+    case NAV_LESTE: return x == 3 || (x == 0 && y == 0);
+    }
+    return true;
+}
+
+/*
+ * Defeito visto no 4x4: em (0, 1) a direita, que é borda, foi lida aberta.
+ * O lado fixava como direita, o robô virava para a borda e nunca chegava.
+ * O teste segue o robô de verdade (com o lado esquerda) e confere a frente
+ * antes de cada passo, como o app.
+ */
+static void test_leitura_falsa_a_direita_com_o_labirinto_a_esquerda_chega(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    int x = 0;
+    int y = 0;
+    nav_direcao_t rumo = NAV_NORTE;
+    nav_acao_t acao = NAV_ACAO_FRENTE;
+    int bloqueios = 0;
+    for (int passo = 0; passo < 50; passo++) {
+        /* Com o labirinto à esquerda, a direita física é o giro anti-horário. */
+        nav_direcao_t direita = nav_direcao_apos(rumo, NAV_ACAO_ESQUERDA);
+        nav_direcao_t esquerda = nav_direcao_apos(rumo, NAV_ACAO_DIREITA);
+        nav_leitura_t lida = leitura(parede_a_esquerda(x, y, rumo),
+                                     parede_a_esquerda(x, y, esquerda),
+                                     parede_a_esquerda(x, y, direita));
+        if (x == 0 && y == 1) {
+            lida.direita = false;
+        }
+        acao = nav_passo(&nav, lida);
+        if (acao >= NAV_ACAO_SUCESSO) {
+            break;
+        }
+        for (;;) {
+            if (acao == NAV_ACAO_DIREITA) {
+                rumo = nav_direcao_apos(rumo, NAV_ACAO_ESQUERDA);
+            } else if (acao == NAV_ACAO_ESQUERDA) {
+                rumo = nav_direcao_apos(rumo, NAV_ACAO_DIREITA);
+            } else {
+                rumo = nav_direcao_apos(rumo, acao);
+            }
+            if (!parede_a_esquerda(x, y, rumo)) {
+                break;
+            }
+            bloqueios++;
+            acao = nav_bloqueado(&nav);
+            TEST_ASSERT_TRUE_MESSAGE(acao < NAV_ACAO_SUCESSO, "terminou num bloqueio");
+        }
+        x += rumo == NAV_LESTE ? 1 : rumo == NAV_OESTE ? -1 : 0;
+        y += rumo == NAV_NORTE ? 1 : rumo == NAV_SUL ? -1 : 0;
+    }
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SUCESSO, acao);
+    TEST_ASSERT_EQUAL_INT(3, x);
+    TEST_ASSERT_EQUAL_INT(3, y);
+    TEST_ASSERT_EQUAL_INT(1, bloqueios);
+    TEST_ASSERT_EQUAL_INT(NAV_LADO_ESQUERDA, nav.lado);
+}
+
 static void test_direcao_depois_de_cada_acao(void)
 {
     TEST_ASSERT_EQUAL_INT(NAV_LESTE, nav_direcao_apos(NAV_NORTE, NAV_ACAO_DIREITA));
@@ -973,6 +1181,15 @@ int main(void)
     RUN_TEST(test_depois_de_64_bloqueios_sem_passo);
     RUN_TEST(test_bloqueio_depois_do_fim_e_idempotente);
     RUN_TEST(test_bloqueio_sem_movimento_pendente_nao_muda_o_estado);
+    RUN_TEST(test_fixar_o_lado_guarda_a_celula_e_as_laterais);
+    RUN_TEST(test_bloqueio_com_a_outra_lateral_aberta_troca_o_lado);
+    RUN_TEST(test_bloqueio_com_so_a_direita_aberta_volta_o_lado_a_indefinido);
+    RUN_TEST(test_bloqueio_com_so_a_esquerda_aberta_volta_o_lado_a_indefinido);
+    RUN_TEST(test_desfazer_o_lado_apaga_as_paredes_leste_da_coluna_0);
+    RUN_TEST(test_depois_de_4_desfazeres_o_bloqueio_so_vota);
+    RUN_TEST(test_sair_da_coluna_0_torna_o_lado_definitivo);
+    RUN_TEST(test_sair_da_coluna_0_com_lado_indefinido_fixa_direita);
+    RUN_TEST(test_leitura_falsa_a_direita_com_o_labirinto_a_esquerda_chega);
     RUN_TEST(test_direcao_depois_de_cada_acao);
     return UNITY_END();
 }
