@@ -161,7 +161,20 @@ cd src/backend
 python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
 ```
 
-O script lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
+### Simular ponte (métricas / bateria)
+
+Com a API rodando, o script abre uma execução, envia `hc_resultado`, depois `tel` a cada 1 s (bateria caindo, posição e velocidade), `passo` periódico e imprime consumo (mV e %), tempo e velocidade após cada POST — útil para validar BACK-04 como no hardware:
+
+```bash
+cd src/backend
+python -m scripts.simular_ponte_telemetria
+python -m scripts.simular_ponte_telemetria --ticks 30 --queda-mv 15 --passo-a-cada 2 --encerrar sucesso
+python -m scripts.simular_ponte_telemetria --ticks 5 --encerrar cancelada
+python -m scripts.simular_ponte_telemetria --ticks 8 --encerrar interrompida --confirmar-firmware
+python -m scripts.simular_ponte_telemetria --health-check item-falha --componente-falha tof_direito
+```
+
+O `carga_telemetria` lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
 
 ```bash
 docker compose exec db psql -U micromouse -d micromouse -c "
@@ -175,16 +188,36 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 
 ---
 
+## Stream SSE (BACK-07)
+
+`GET /execucoes/{execucao_id}/stream` devolve `text/event-stream` com os eventos da execução. A linha `event:` repete o campo `tipo` do JSON em `data:`, e os seis tipos estão no `openapi.yaml`: `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso`.
+
+```bash
+curl -N http://localhost:8000/execucoes/<execucao_id>/stream
+curl -N -H "Last-Event-ID: 40" http://localhost:8000/execucoes/<execucao_id>/stream
+```
+
+- **Reenvio.** O fluxo começa reenviando os passos com `passo_id` maior que o `Last-Event-ID`. Sem o cabeçalho (ou com valor vazio, negativo ou não numérico), reenvia o trajeto inteiro da execução — é o que a tela recebe ao abrir no meio da corrida. Só o evento `passo` tem linha `id:`; amostras de `telemetria` e eventos terminais não entram no reenvio.
+- **Keep-alive.** Sem evento novo, sai uma linha de comentário a cada 15 s.
+- **Fim do fluxo.** O servidor fecha quando recebe ao vivo um evento terminal (`falha` que cancela a execução ou `sucesso`), quando a execução já está encerrada após o reenvio, ou quando a fila do cliente estoura (500 eventos). Reconectar com `Last-Event-ID` recompõe o trajeto, mas não repete o evento terminal.
+- **Publicação.** Acontece **depois** do COMMIT da ingestão, da varredura de link/tempo ou do encerramento pelo operador. Uma falha na publicação é registrada no log e não desfaz a gravação nem falha a requisição (RNF-B07).
+- **Um worker só.** A fila de cada cliente é memória do processo. Com `uvicorn --workers 2`, um `POST /telemetria` que caia no worker 2 não alcança o stream preso no worker 1. O mesmo já valia para o deduplicador e o relógio do robô.
+- **404** quando não existe execução com aquele `execucao_id`.
+
+Para ver funcionando sem robô, abra o `curl` acima e mande passos pelo `POST /telemetria` (seção anterior) ou rode o `src/simulador-telemetria`. Cada rodada precisa de um `boot` novo: o deduplicador guarda `(boot, seq)` em memória e descarta o que já viu.
+
+---
+
 ## Onde implementar cada tarefa (BACK-01 … BACK-08)
 
 | Tarefa | Pasta / arquivo |
 |--------|------------------|
 | BACK-01 Persistência / consultas | `app/repositories/`, `app/models/` |
 | BACK-03 Máquina de estados | `app/services/gerenciador_execucoes.py` |
-| BACK-04 Métricas | `app/services/calculo_metricas.py` |
+| BACK-04 Métricas | `app/services/calculo_metricas.py`, `app/services/atualizacao_metricas.py` · `python -m scripts.validar_back04` |
 | BACK-05 Link / tempo | `app/services/monitor_conexao.py` (limites em `app/config.py`) |
 | BACK-06 SQL específico | `app/repositories/` |
-| BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |
+| BACK-07 SSE | `app/services/publicador_sse.py`, `app/services/fabrica_eventos.py`, `app/services/fluxo_sse.py`, `app/routers/stream.py` |
 | BACK-08 Ponte serial | `ponte/` (processo separado) |
 | HTTP / contrato ARQ-02 | `app/routers/` (501 até implementar) |
 | POST /telemetria (4.4.1) | `contrato/telemetria.py` (`EntradaPonte`, `RespostaPonte`) |

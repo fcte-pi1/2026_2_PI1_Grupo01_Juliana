@@ -6,17 +6,24 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from decimal import Decimal
 
 from app.models import ExecucaoLogica, Falha, Tentativa, TentativaRejeitada
 from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.repositorio import Repositorio
+from app.services.atualizacao_metricas import finalizar_tentativa
 from app.services.excecoes_execucao import (
     ExecucaoNaoEncontrada,
     RecusaTentativa,
     TentativaIndisponivel,
 )
+from app.services.fabrica_eventos import (
+    OrigemFalha,
+    OrigemStatus,
+    OrigemSucesso,
+    criar_eventos,
+)
 from app.services.monitor_conexao import MonitorConexao
+from app.services.publicador_sse import EventoSSE
 from contrato.telemetria import Comando, HcResultado, Mensagem, Sucesso
 from contrato.telemetria import Falha as FalhaMsg
 from sqlalchemy.orm import Session
@@ -32,6 +39,12 @@ class RetornoTentativa:
     execucao_id: uuid.UUID
     tentativa_id: uuid.UUID
     attempt_index: int
+
+
+@dataclass(frozen=True)
+class ResultadoMonitor:
+    execucao_id: uuid.UUID
+    eventos: list[EventoSSE]
 
 
 class GerenciadorExecucoes:
@@ -100,7 +113,7 @@ class GerenciadorExecucoes:
         execucao_id: uuid.UUID,
         motivo: str,
         observacao: str | None = None,
-    ) -> None:
+    ) -> list[EventoSSE]:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
         execucao = repo.bloquear_execucao(execucao_id)
@@ -125,12 +138,18 @@ class GerenciadorExecucoes:
             observacao=observacao,
             agora=agora,
         )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = True
+        return criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status))
 
     def aplicar_evento(
-        self, sessao: Session, tentativa: Tentativa | None, mensagem: Mensagem
-    ) -> None:
+        self,
+        sessao: Session,
+        tentativa: Tentativa | None,
+        mensagem: Mensagem,
+        *,
+        momento: datetime | None = None,
+    ) -> list[EventoSSE]:
         logger.info(
             "evento %s recebido (tentativa %s)",
             mensagem.tipo,
@@ -138,34 +157,37 @@ class GerenciadorExecucoes:
         )
         if isinstance(mensagem, FalhaMsg) and mensagem.origem == "web":
             self._confirmar_interrupcao(tentativa)
-            return
+            return []
 
         if tentativa is None:
-            return
+            return []
 
         repo = Repositorio(sessao)
-        agora = datetime.now(UTC)
+        agora = momento or datetime.now(UTC)
         execucao = tentativa.execucao
 
         if isinstance(mensagem, HcResultado):
-            self._aplicar_hc_resultado(repo, tentativa, execucao, mensagem, agora)
+            return self._aplicar_hc_resultado(sessao, repo, tentativa, execucao, mensagem, agora)
         elif isinstance(mensagem, FalhaMsg):
-            self._aplicar_falha_telemetria(repo, tentativa, execucao, mensagem, agora)
+            return self._aplicar_falha_telemetria(
+                sessao, repo, tentativa, execucao, mensagem, agora
+            )
         elif isinstance(mensagem, Sucesso):
-            self._aplicar_sucesso(tentativa, execucao, mensagem, agora)
+            return self._aplicar_sucesso(sessao, tentativa, execucao, mensagem.x, mensagem.y, agora)
+        return []
 
     def verificar_monitores(
         self, sessao: Session, monitor: MonitorConexao, agora: datetime | None = None
-    ) -> bool:
-        """Cancela a tentativa aberta por link ou tempo. Devolve se cancelou."""
+    ) -> ResultadoMonitor | None:
+        """Encerra a tentativa por link ou tempo e devolve a publicação pendente."""
         agora = agora or datetime.now(UTC)
         repo = Repositorio(sessao)
         tentativa = repo.buscar_tentativa_aberta()
         if tentativa is None:
-            return False
+            return None
         execucao = tentativa.execucao
         if execucao.status != "em_andamento":
-            return False
+            return None
 
         sem_sinal = monitor.segundos_sem_sinal(agora, inicio=tentativa.iniciada_em)
         if sem_sinal is not None and sem_sinal >= monitor.limite_sem_sinal_s:
@@ -179,11 +201,14 @@ class GerenciadorExecucoes:
                 y=celula[1],
                 agora=agora,
             )
-            self._fechar_tentativa_falha(tentativa, execucao, agora)
-            execucao.status = "cancelada"
-            execucao.encerrada_em = agora
+            self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
-            return True
+            return ResultadoMonitor(
+                execucao_id=execucao.execucao_id,
+                eventos=criar_eventos(
+                    OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)
+                ),
+            )
 
         decorrido = (agora - execucao.iniciada_em).total_seconds()
         if decorrido >= self.tempo_maximo_execucao_s:
@@ -197,12 +222,18 @@ class GerenciadorExecucoes:
                 y=celula[1],
                 agora=agora,
             )
-            self._fechar_tentativa_falha(tentativa, execucao, agora)
+            self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
+            finalizar_tentativa(sessao, tentativa, execucao, agora)
             self._interrupcao_pendente = False
-            return True
-        return False
+            return ResultadoMonitor(
+                execucao_id=execucao.execucao_id,
+                eventos=criar_eventos(
+                    OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)
+                ),
+            )
+        return None
 
     def comandos_pendentes(self) -> list[Comando]:
         if self._interrupcao_pendente:
@@ -211,21 +242,22 @@ class GerenciadorExecucoes:
 
     def _aplicar_hc_resultado(
         self,
+        sessao: Session,
         repo: Repositorio,
         tentativa: Tentativa,
         execucao: ExecucaoLogica,
         mensagem: HcResultado,
         agora: datetime,
-    ) -> None:
+    ) -> list[EventoSSE]:
         if tentativa.status != "health-check":
-            return
+            return []
 
         tipo_esperado = execucao.labirinto.tipo
         dip_ok = mensagem.tipo_dip == tipo_esperado
         if mensagem.aprovado and dip_ok:
             tentativa.status = "running"
             tentativa.tipo_dip = mensagem.tipo_dip
-            return
+            return criar_eventos(OrigemStatus(tentativa=tentativa, status_execucao=execucao.status))
 
         motivo = "health_check_failed"
         self._registrar_falha(
@@ -237,18 +269,20 @@ class GerenciadorExecucoes:
             y=0,
             agora=agora,
         )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
+        return criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status))
 
     def _aplicar_falha_telemetria(
         self,
+        sessao: Session,
         repo: Repositorio,
         tentativa: Tentativa,
         execucao: ExecucaoLogica,
         mensagem: FalhaMsg,
         agora: datetime,
-    ) -> None:
+    ) -> list[EventoSSE]:
         if tentativa.status not in ABERTA:
-            return
+            return []
 
         origem_db = "encerrado_operador" if mensagem.origem == "boot" else "automatica"
         motivo = mensagem.motivo or "collision"
@@ -262,26 +296,36 @@ class GerenciadorExecucoes:
             componente=mensagem.componente,
             agora=agora,
         )
-        self._fechar_tentativa_falha(tentativa, execucao, agora)
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
         if mensagem.origem == "boot":
             self._interrupcao_pendente = False
+        return criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status))
 
     def _aplicar_sucesso(
         self,
+        sessao: Session,
         tentativa: Tentativa,
         execucao: ExecucaoLogica,
-        mensagem: Sucesso,
+        x: int,
+        y: int,
         agora: datetime,
-    ) -> None:
+    ) -> list[EventoSSE]:
         if tentativa.status != "running":
-            return
+            return []
         tentativa.status = "success"
         tentativa.encerrada_em = agora
         execucao.status = "concluida"
         execucao.encerrada_em = agora
-        segundos = (agora - execucao.iniciada_em).total_seconds()
-        execucao.tempo_total_s = Decimal(str(round(segundos, 3)))
+        finalizar_tentativa(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = False
+        return criar_eventos(
+            OrigemSucesso(
+                tentativa=tentativa,
+                x=x,
+                y=y,
+                status_execucao=execucao.status,
+            )
+        )
 
     def _confirmar_interrupcao(self, tentativa: Tentativa | None) -> None:
         if tentativa is not None and tentativa.status in ABERTA:
@@ -289,13 +333,18 @@ class GerenciadorExecucoes:
         self._interrupcao_pendente = False
 
     def _fechar_tentativa_falha(
-        self, tentativa: Tentativa, execucao: ExecucaoLogica, agora: datetime
+        self,
+        sessao: Session,
+        tentativa: Tentativa,
+        execucao: ExecucaoLogica,
+        agora: datetime,
     ) -> None:
         tentativa.status = "failed"
         tentativa.encerrada_em = agora
         if tentativa.attempt_index >= self.limite_tentativas:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
+        finalizar_tentativa(sessao, tentativa, execucao, agora)
 
     def _cancelar_execucao(
         self, sessao: Session, execucao: ExecucaoLogica, agora: datetime
@@ -307,6 +356,8 @@ class GerenciadorExecucoes:
             aberta.encerrada_em = agora
         execucao.status = "cancelada"
         execucao.encerrada_em = agora
+        if aberta is not None:
+            finalizar_tentativa(sessao, aberta, execucao, agora)
 
     def _abrir_tentativa(
         self,

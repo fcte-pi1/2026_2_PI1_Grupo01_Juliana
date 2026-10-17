@@ -13,7 +13,9 @@ O TAP fixa **10 minutos por desafio** e menciona **tentativas** de forma genéri
 - **Tentativa** (`health-check` → `running` → `success` | `failed`): no máximo **uma aberta** por vez (RF18); até **3** por execução lógica.
 - **Sucesso** de tentativa → execução `concluida`.
 - **3 tentativas** `failed` sem sucesso → execução `cancelada`.
-- **Link 10 s** ou **tempo 600 s** → tentativa aberta `failed` + execução `cancelada` (UC12.2 / UC12.1).
+- **Link 10 s** → tentativa aberta `failed`; execução permanece `em_andamento` se
+  ainda couber retomada e fica `cancelada` na terceira tentativa (UC12.2).
+- **Tempo 600 s** → tentativa aberta `failed` + execução `cancelada` (UC12.1).
 - **Encerrar tentativa** manual → tentativa `failed`, execução permanece `em_andamento` se couber retomada (RF30).
 
 Regras tabuladas em [transicoes-execucao.md](transicoes-execucao.md) (oráculo BACK-03 e teste 4.2).
