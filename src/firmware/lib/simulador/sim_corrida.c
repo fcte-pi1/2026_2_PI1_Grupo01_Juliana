@@ -259,7 +259,9 @@ void sim_correr(const sim_labirinto_t *lab, const sim_config_t *config, sim_rela
 
         nav_acao_t acao = decidir(decisor_ctx, leitura);
 
+        /* Zerada inteira para os bytes de preenchimento não levarem lixo da pilha ao observador. */
         sim_celula_t celula;
+        memset(&celula, 0, sizeof(celula));
         celula_no_robo(&ref, x, y, &celula.x, &celula.y);
         celula.rumo = direcao_no_robo(&ref, rumo);
         celula.acao = acao;
