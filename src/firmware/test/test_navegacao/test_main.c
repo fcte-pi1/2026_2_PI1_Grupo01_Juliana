@@ -81,6 +81,38 @@ static void posicionar(nav_estado_t *nav, int x, int y, nav_direcao_t direcao)
     nav->movimento_pendente = false;
 }
 
+/*
+ * Grava à mão uma parede com votos, nos dois lados: com vantagem de 2 votos
+ * ou mais ela não é perdoada (D14). A célula e a vizinha ficam na matriz.
+ * Liga a flag de mapa alterado, como a leitura que a gravasse.
+ */
+static void fechar_com_votos(nav_estado_t *nav, int x, int y, nav_direcao_t direcao,
+                             uint8_t votos)
+{
+    static const uint8_t bit[4] = {NAV_PAREDE_N, NAV_PAREDE_L, NAV_PAREDE_S, NAV_PAREDE_O};
+    static const int8_t passo_x[4] = {0, 1, 0, -1};
+    static const int8_t passo_y[4] = {1, 0, -1, 0};
+    nav->mapa[x][y].paredes |= bit[direcao];
+    nav->mapa[x + passo_x[direcao]][y + passo_y[direcao]].paredes |= bit[(direcao + 2) % 4];
+    nav_parede_t *parede;
+    switch (direcao) {
+    case NAV_NORTE:
+        parede = &nav->paredes[x][y][0];
+        break;
+    case NAV_LESTE:
+        parede = &nav->paredes[x][y][1];
+        break;
+    case NAV_SUL:
+        parede = &nav->paredes[x][y - 1][0];
+        break;
+    default:
+        parede = &nav->paredes[x - 1][y][1];
+        break;
+    }
+    parede->votos_parede = votos;
+    nav->mapa_alterado = true;
+}
+
 static void test_largada_grava_as_bordas_sul_e_oeste(void)
 {
     nav_estado_t nav;
@@ -548,11 +580,11 @@ static void test_celula_isolada_fica_infinita(void)
 {
     nav_estado_t nav;
     nav_iniciar(&nav, NAV_TIPO_4X4);
-    nav.lado = NAV_LADO_DIREITA;
-    posicionar(&nav, 1, 1, NAV_NORTE);
-    nav_passo(&nav, leitura(true, true, true));
-    posicionar(&nav, 1, 1, NAV_SUL);
-    nav_passo(&nav, leitura(true, true, true));
+    fechar_com_votos(&nav, 1, 1, NAV_NORTE, 2);
+    fechar_com_votos(&nav, 1, 1, NAV_LESTE, 2);
+    fechar_com_votos(&nav, 1, 1, NAV_SUL, 2);
+    fechar_com_votos(&nav, 1, 1, NAV_OESTE, 2);
+    nav_recalcular(&nav);
     TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav_distancia(&nav, 1, 1));
 }
 
@@ -650,12 +682,85 @@ static void test_sem_passo_quando_fica_cercado(void)
     nav_iniciar(&nav, NAV_TIPO_4X4);
     nav.lado = NAV_LADO_DIREITA;
     posicionar(&nav, 1, 1, NAV_NORTE);
-    nav.mapa[1][1].paredes |= NAV_PAREDE_S;
-    nav.mapa[1][0].paredes |= NAV_PAREDE_N;
+    fechar_com_votos(&nav, 1, 1, NAV_NORTE, 1);
+    fechar_com_votos(&nav, 1, 1, NAV_LESTE, 1);
+    fechar_com_votos(&nav, 1, 1, NAV_SUL, 2);
+    fechar_com_votos(&nav, 1, 1, NAV_OESTE, 1);
+    /* As três lidas agora chegam a 2 votos: nenhuma parede é perdoável. */
     TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_passo(&nav, leitura(true, true, true)));
     TEST_ASSERT_TRUE(nav.terminou);
     TEST_ASSERT_EQUAL_INT8(1, nav.x);
     TEST_ASSERT_EQUAL_INT8(1, nav.y);
+}
+
+/*
+ * (1, 1) com as paredes leste, sul e oeste firmes: a única saída é o norte.
+ * Uma leitura de parede na frente fecha o caminho com vantagem de 1 voto.
+ */
+static void preparar_beco_com_a_frente_duvidosa(nav_estado_t *nav)
+{
+    nav_iniciar(nav, NAV_TIPO_4X4);
+    nav->lado = NAV_LADO_DIREITA;
+    fechar_com_votos(nav, 1, 1, NAV_LESTE, 2);
+    fechar_com_votos(nav, 1, 1, NAV_SUL, 2);
+    fechar_com_votos(nav, 1, 1, NAV_OESTE, 2);
+    posicionar(nav, 1, 1, NAV_NORTE);
+}
+
+static void test_parede_lida_uma_vez_que_fecha_o_caminho_e_perdoada(void)
+{
+    nav_estado_t nav;
+    preparar_beco_com_a_frente_duvidosa(&nav);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_INT8(1, nav.x);
+    TEST_ASSERT_EQUAL_INT8(2, nav.y);
+    TEST_ASSERT_EQUAL_UINT8(1, nav.perdoes);
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+    TEST_ASSERT_FALSE(tem_parede(&nav, 1, 2, NAV_PAREDE_S));
+    TEST_ASSERT_EQUAL_UINT8(nav.paredes[1][1][0].votos_aberto, nav.paredes[1][1][0].votos_parede);
+    /* O perdão não conta troca: só a leitura que fechou a parede contou. */
+    TEST_ASSERT_EQUAL_UINT8(1, nav.paredes[1][1][0].trocas & NAV_TROCAS_MASCARA);
+    /* As firmes ficam. */
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_L));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_S));
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_O));
+}
+
+static void test_parede_com_vantagem_de_2_votos_nao_e_perdoada(void)
+{
+    nav_estado_t nav;
+    preparar_beco_com_a_frente_duvidosa(&nav);
+    fechar_com_votos(&nav, 1, 1, NAV_NORTE, 1);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_UINT8(0, nav.perdoes);
+    TEST_ASSERT_EQUAL_UINT8(2, nav.paredes[1][1][0].votos_parede);
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+}
+
+static void test_depois_de_8_perdoes_sem_passo(void)
+{
+    nav_estado_t nav;
+    preparar_beco_com_a_frente_duvidosa(&nav);
+    nav.perdoes = NAV_PERDOES_MAX - 1;
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_FRENTE, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_UINT8(NAV_PERDOES_MAX, nav.perdoes);
+    posicionar(&nav, 1, 1, NAV_NORTE);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_UINT8(NAV_PERDOES_MAX, nav.perdoes);
+    TEST_ASSERT_TRUE(tem_parede(&nav, 1, 1, NAV_PAREDE_N));
+}
+
+static void test_cercado_por_bordas_e_paredes_firmes_termina_sem_passo(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    nav.lado = NAV_LADO_DIREITA;
+    /* Na largada, o sul e o oeste são borda: nunca perdoados. */
+    fechar_com_votos(&nav, 0, 0, NAV_NORTE, 2);
+    fechar_com_votos(&nav, 0, 0, NAV_LESTE, 2);
+    TEST_ASSERT_EQUAL_INT(NAV_ACAO_SEM_PASSO, nav_passo(&nav, leitura(true, true, true)));
+    TEST_ASSERT_EQUAL_UINT8(0, nav.perdoes);
+    TEST_ASSERT_TRUE(nav.terminou);
 }
 
 static void conferir_fim_idempotente(nav_estado_t *nav, nav_acao_t fim)
@@ -683,8 +788,10 @@ static void test_sem_passo_e_idempotente(void)
     nav_iniciar(&nav, NAV_TIPO_4X4);
     nav.lado = NAV_LADO_DIREITA;
     posicionar(&nav, 1, 1, NAV_NORTE);
-    nav.mapa[1][1].paredes |= NAV_PAREDE_S;
-    nav.mapa[1][0].paredes |= NAV_PAREDE_N;
+    fechar_com_votos(&nav, 1, 1, NAV_NORTE, 1);
+    fechar_com_votos(&nav, 1, 1, NAV_LESTE, 1);
+    fechar_com_votos(&nav, 1, 1, NAV_SUL, 2);
+    fechar_com_votos(&nav, 1, 1, NAV_OESTE, 1);
     nav_passo(&nav, leitura(true, true, true));
     conferir_fim_idempotente(&nav, NAV_ACAO_SEM_PASSO);
 }
@@ -746,6 +853,10 @@ int main(void)
     RUN_TEST(test_beco_da_meia_volta);
     RUN_TEST(test_sucesso_na_celula_de_objetivo);
     RUN_TEST(test_sem_passo_quando_fica_cercado);
+    RUN_TEST(test_parede_lida_uma_vez_que_fecha_o_caminho_e_perdoada);
+    RUN_TEST(test_parede_com_vantagem_de_2_votos_nao_e_perdoada);
+    RUN_TEST(test_depois_de_8_perdoes_sem_passo);
+    RUN_TEST(test_cercado_por_bordas_e_paredes_firmes_termina_sem_passo);
     RUN_TEST(test_sucesso_e_idempotente);
     RUN_TEST(test_sem_passo_e_idempotente);
     RUN_TEST(test_direcao_depois_de_cada_acao);

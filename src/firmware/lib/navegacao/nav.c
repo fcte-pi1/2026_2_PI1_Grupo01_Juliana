@@ -159,6 +159,53 @@ static void provar_aberta(nav_estado_t *estado, int x, int y, nav_direcao_t dire
 }
 
 /*
+ * Perdão (D14): esquece as paredes do mapa com vantagem de no máximo 1 voto,
+ * igualando os votos de parede aos de aberto, sem contar troca. Borda e
+ * provada aberta ficam como estão. Devolve se alguma parede saiu do mapa.
+ */
+static bool perdoar(nav_estado_t *estado)
+{
+    bool perdoou = false;
+    for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+        for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+            for (int i = 0; i < 2; i++) {
+                nav_direcao_t direcao = i == 0 ? NAV_NORTE : NAV_LESTE;
+                nav_parede_t *p = &estado->paredes[x][y][i];
+                if (p->trocas & (NAV_BORDA | NAV_PROVADA_ABERTA)) {
+                    continue;
+                }
+                if (!parede_no_mapa(estado, x, y, direcao) || p->votos_parede > p->votos_aberto + 1) {
+                    continue;
+                }
+                if (p->votos_parede > p->votos_aberto) {
+                    p->votos_parede = p->votos_aberto;
+                }
+                aplicar_parede(estado, x, y, direcao, false);
+                perdoou = true;
+            }
+        }
+    }
+    return perdoou;
+}
+
+/*
+ * Recalcula o flood fill e, se a célula atual não alcança nenhum objetivo,
+ * perdoa e tenta de novo. Devolve se há caminho.
+ */
+static bool recalcular_com_perdao(nav_estado_t *estado)
+{
+    nav_recalcular(estado);
+    while (estado->mapa[estado->x][estado->y].distancia == NAV_DIST_INFINITA) {
+        if (estado->perdoes >= NAV_PERDOES_MAX || !perdoar(estado)) {
+            return false;
+        }
+        estado->perdoes++;
+        nav_recalcular(estado);
+    }
+    return true;
+}
+
+/*
  * Na coluna x = 0, a primeira abertura lateral diz para que lado do robô fica
  * o x positivo (D5). As laterais são vistas como na largada: com rumo sul, a
  * direita física é o lado que era a esquerda.
@@ -395,11 +442,12 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
     if (eh_objetivo(estado, estado->x, estado->y)) {
         return terminar(estado, NAV_ACAO_SUCESSO);
     }
-    /* Sem parede mudada nem orientação resolvida, os valores seriam os mesmos (D8). */
-    if (estado->mapa_alterado) {
-        nav_recalcular(estado);
-    }
-    if (estado->mapa[estado->x][estado->y].distancia == NAV_DIST_INFINITA) {
+    /*
+     * Sem parede mudada nem orientação resolvida, os valores seriam os mesmos
+     * (D8). Sem caminho, o recálculo perdoa as paredes duvidosas (D14).
+     */
+    bool sem_caminho = estado->mapa[estado->x][estado->y].distancia == NAV_DIST_INFINITA;
+    if ((estado->mapa_alterado || sem_caminho) && !recalcular_com_perdao(estado)) {
         return terminar(estado, NAV_ACAO_SEM_PASSO);
     }
 

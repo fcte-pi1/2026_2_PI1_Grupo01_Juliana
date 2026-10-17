@@ -51,6 +51,12 @@ typedef struct {
     uint8_t trocas;  /* contador de trocas, NAV_BORDA e NAV_PROVADA_ABERTA */
 } nav_parede_t;
 
+/*
+ * Perdões por corrida (D14): sem caminho, as paredes com vantagem de no
+ * máximo 1 voto são esquecidas e o flood fill é refeito.
+ */
+#define NAV_PERDOES_MAX 8
+
 /* Distância de uma célula que não alcança nenhum objetivo. */
 #define NAV_DIST_INFINITA 255
 
@@ -123,6 +129,7 @@ typedef struct {
     nav_orientacao_t orientacao;
     bool mapa_alterado;         /* parede mudou ou orientação resolvida: recalcular */
     bool movimento_pendente;    /* devolveu um movimento: a próxima chamada é depois dele */
+    uint8_t perdoes;            /* perdões já usados, até NAV_PERDOES_MAX */
     bool terminou;              /* já devolveu SUCESSO ou SEM_PASSO */
     nav_acao_t acao_terminal;
 } nav_estado_t;
