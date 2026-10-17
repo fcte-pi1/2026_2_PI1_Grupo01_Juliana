@@ -82,8 +82,8 @@ class IngestaoTelemetria:
 
         # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
         resultado_monitor = gerenciador.verificar_monitores(sessao, self.monitor)
-        sessao.commit()
         if resultado_monitor:
+            sessao.commit()
             publicar_apos_commit(
                 self.publicador, resultado_monitor.execucao_id, resultado_monitor.eventos
             )
@@ -141,11 +141,7 @@ class IngestaoTelemetria:
         # a âncora do boot só é fixada por uma mensagem aceita
         self.relogio.fixar(mensagem, entrada.recebido_em)
         self.deduplicador.confirmar(mensagem)
-        # só depois do COMMIT (4.4, "Trajeto em tempo real"). Ainda dentro da trava,
-        # para a ordem na fila do cliente ser a ordem dos commits. A linha já está
-        # gravada, então nada daqui para frente pode falhar a requisição: a
-        # ingestão não para por causa de um navegador (RNF-B07) e o cliente
-        # recupera o que perdeu pelo reenvio.
+        
         if execucao_id is not None:
             publicar_apos_commit(self.publicador, execucao_id, eventos)
 
