@@ -21,12 +21,10 @@ class HealthCheckItem(Base):
     )
 
     item_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    tentativa_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("tentativa.tentativa_id"), nullable=False
-    )
+    hc_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("health_check.hc_id"), nullable=False)
     componente: Mapped[str] = mapped_column(nullable=False)
     aprovado: Mapped[bool] = mapped_column(Boolean, nullable=False)
     valor_lido: Mapped[Decimal | None] = mapped_column(Numeric)
     verificado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    tentativa: Mapped["Tentativa"] = relationship(back_populates="health_check_itens")
+    health_check: Mapped["HealthCheck"] = relationship(back_populates="itens")

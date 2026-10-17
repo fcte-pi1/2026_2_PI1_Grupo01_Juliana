@@ -2,11 +2,12 @@
 
 import logging
 import threading
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from app.models import HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
+from app.models import HealthCheck, HealthCheckItem, LeituraTelemetria, PassoTrajeto, Tentativa
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.atualizacao_metricas import recalcular_parciais
@@ -35,7 +36,9 @@ logger = logging.getLogger("app.telemetria")
 
 COM_CELULA = (Tel, Passo, Falha, Sucesso)
 # repassados ao GerenciadorExecucoes, que cuida das transições (D2)
-EVENTOS = (HcResultado, Falha, Sucesso)
+EVENTOS = (Falha, Sucesso)
+# o health-check é pré-requisito da largada: chega sem tentativa aberta
+HEALTH_CHECK = (HcItem, HcResultado)
 
 
 class IngestaoTelemetria:
@@ -86,16 +89,14 @@ class IngestaoTelemetria:
         self.monitor.registrar_mensagem()
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
-        if tentativa is None:
-            # a interrupção pela web pode chegar depois de a tentativa fechar
-            if not (isinstance(mensagem, Falha) and mensagem.origem == "web"):
-                logger.info("%s descartada: nenhuma tentativa aberta", mensagem.tipo)
-                return
-        else:
+        if tentativa is not None:
             self._conferir_limites(mensagem, tentativa)
-            if isinstance(mensagem, HcItem) and tentativa.status != "health-check":
-                logger.info("hc_item descartado: tentativa em %s", tentativa.status)
-                return
+        # a interrupção pela web pode chegar depois de a tentativa fechar
+        elif not isinstance(mensagem, HEALTH_CHECK) and not (
+            isinstance(mensagem, Falha) and mensagem.origem == "web"
+        ):
+            logger.info("%s descartada: nenhuma tentativa aberta", mensagem.tipo)
+            return
 
         if self.deduplicador.eh_repetida(mensagem):
             logger.info(
@@ -118,11 +119,17 @@ class IngestaoTelemetria:
                     agora_backend,
                 )
             elif isinstance(mensagem, HcItem):
-                self._gravar_hc_item(sessao, tentativa, mensagem, enviado_em)
+                self._gravar_hc_item(sessao, mensagem, enviado_em, agora_backend)
+            elif isinstance(mensagem, HcResultado):
+                self._gravar_hc_resultado(sessao, mensagem, agora_backend)
             elif isinstance(mensagem, Passo):
                 self._gravar_passo(sessao, tentativa, mensagem, enviado_em, agora_backend)
             elif isinstance(mensagem, EVENTOS):
                 gerenciador.aplicar_evento(sessao, tentativa, mensagem, momento=agora_backend)
+            if isinstance(mensagem, Passo) or (
+                isinstance(mensagem, Tel) and mensagem.estado == "running"
+            ):
+                gerenciador.confirmar_largada()
             sessao.commit()
         except Exception:
             sessao.rollback()
@@ -176,17 +183,41 @@ class IngestaoTelemetria:
             bateria_mv_atual=tel.bat_mv,
         )
 
+    def _health_check_do_boot(self, sessao: Session, boot: int, agora: datetime) -> HealthCheck:
+        """O health-check em andamento deste boot, ou um novo."""
+        repositorio = Repositorio(sessao)
+        health_check = repositorio.health_check_em_andamento(boot)
+        if health_check is None:
+            health_check = HealthCheck(hc_id=uuid.uuid4(), boot=boot, iniciado_em=agora)
+            repositorio.salvar(health_check)
+        return health_check
+
     def _gravar_hc_item(
-        self, sessao: Session, tentativa: Tentativa, item: HcItem, enviado_em: datetime
+        self, sessao: Session, item: HcItem, enviado_em: datetime, agora: datetime
     ) -> None:
+        health_check = self._health_check_do_boot(sessao, item.boot, agora)
         registro = HealthCheckItem(
-            tentativa_id=tentativa.tentativa_id,
+            hc_id=health_check.hc_id,
             componente=item.componente,
             aprovado=item.aprovado,
             valor_lido=item.valor,
             verificado_em=enviado_em,
         )
         Repositorio(sessao).salvar(registro)
+
+    def _gravar_hc_resultado(
+        self, sessao: Session, resultado: HcResultado, agora: datetime
+    ) -> None:
+        # concluido_em no relógio do backend: é com ele que a validade é conferida
+        health_check = self._health_check_do_boot(sessao, resultado.boot, agora)
+        health_check.aprovado = resultado.aprovado
+        health_check.tipo_dip = resultado.tipo_dip
+        health_check.concluido_em = agora
+        logger.info(
+            "health-check %s (DIP %s)",
+            "aprovado" if resultado.aprovado else "reprovado",
+            resultado.tipo_dip,
+        )
 
     def _gravar_passo(
         self,

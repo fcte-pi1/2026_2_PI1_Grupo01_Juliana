@@ -12,9 +12,12 @@ DESCRICAO = (
     "Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial "
     "e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 "
     "fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa "
-    "aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**, "
-    "a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha` "
-    "com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir."
+    "aberta) responde 200. O health-check (`hc_item`, `hc_resultado`) é gravado mesmo sem "
+    "tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou "
+    "**Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel` "
+    "em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de "
+    "interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte "
+    "escreve cada item na serial sem traduzir."
 )
 DESCRICAO_422 = (
     "Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo "

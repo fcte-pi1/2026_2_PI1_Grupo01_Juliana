@@ -216,12 +216,12 @@ class RelogioDoRobo:
 
 
 class Comando(BaseModel):
-    """Único comando da web para o robô (RF39, RNF06)."""
+    """Comando da web para o robô: interrupção (RF39) ou largada pelo operador."""
 
     model_config = ConfigDict(frozen=True)
 
     v: Literal[1] = VERSAO
-    cmd: Literal["interromper"] = "interromper"
+    cmd: Literal["interromper", "largar"] = "interromper"
 
 
 class EntradaPonte(BaseModel):

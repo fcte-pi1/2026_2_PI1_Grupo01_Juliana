@@ -8,6 +8,7 @@ import pytest
 from app.models import (
     ExecucaoLogica,
     Falha,
+    HealthCheck,
     HealthCheckItem,
     Labirinto,
     LeituraTelemetria,
@@ -72,7 +73,7 @@ class Fabrica:
         consumo_bateria: Decimal | None = None,
     ) -> Tentativa:
         iniciada_em = execucao.iniciada_em + timedelta(seconds=40 * (attempt_index - 1))
-        aberta = status in ("health-check", "running")
+        aberta = status == "running"
         tentativa = Tentativa(
             tentativa_id=uuid.uuid4(),
             execucao_id=execucao.execucao_id,
@@ -93,16 +94,29 @@ class Fabrica:
         return tentativa
 
     def health_check(self, tentativa: Tentativa, *, reprovado: str | None = None) -> None:
+        """Health-check com os 8 itens, concluído logo antes da largada da tentativa."""
+        inicio = tentativa.iniciada_em - timedelta(seconds=1)
+        health_check = HealthCheck(
+            hc_id=uuid.uuid4(),
+            boot=1,
+            aprovado=reprovado is None,
+            tipo_dip=tentativa.tipo_dip,
+            iniciado_em=inicio,
+            concluido_em=inicio + timedelta(milliseconds=10 * len(COMPONENTES)),
+        )
+        self.session.add(health_check)
+        self.session.flush()
         for i, componente in enumerate(COMPONENTES):
             self.session.add(
                 HealthCheckItem(
-                    tentativa_id=tentativa.tentativa_id,
+                    hc_id=health_check.hc_id,
                     componente=componente,
                     aprovado=componente != reprovado,
                     valor_lido=Decimal("8.2") if componente == "bateria" else None,
-                    verificado_em=tentativa.iniciada_em + timedelta(milliseconds=10 * i),
+                    verificado_em=inicio + timedelta(milliseconds=10 * i),
                 )
             )
+        tentativa.hc_id = health_check.hc_id
         self.session.flush()
 
     def falha(

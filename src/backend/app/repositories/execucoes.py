@@ -6,6 +6,7 @@ from uuid import UUID
 
 from app.models import (
     ExecucaoLogica,
+    HealthCheck,
     Labirinto,
     LeituraTelemetria,
     Tentativa,
@@ -58,7 +59,9 @@ class ExecucaoRepository(Repositorio):
             .where(ExecucaoLogica.execucao_id == execucao_id)
             .options(
                 joinedload(ExecucaoLogica.labirinto),
-                selectinload(ExecucaoLogica.tentativas).selectinload(Tentativa.health_check_itens),
+                selectinload(ExecucaoLogica.tentativas)
+                .selectinload(Tentativa.health_check)
+                .selectinload(HealthCheck.itens),
                 selectinload(ExecucaoLogica.tentativas).selectinload(Tentativa.falha),
                 selectinload(ExecucaoLogica.passos_trajeto),
                 selectinload(ExecucaoLogica.paredes),
