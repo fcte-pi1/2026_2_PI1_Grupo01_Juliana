@@ -14,6 +14,7 @@ from uuid import UUID
 
 import pytest
 from app.models import Tentativa
+from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.publicador_sse import EventoSSE
 from sse_test_utils import count_keep_alives, parse_sse_frames
@@ -174,6 +175,29 @@ def test_evento_publicado_de_outra_thread_chega_depois_do_reenvio(client, fabric
 
     assert [f["event"] for f in frames] == ["passo", "passo", "passo", "sucesso"]
     assert [f["id"] for f in frames[:3]] == [passos[0].passo_id, passos[1].passo_id, 9999]
+
+
+def test_execucao_que_encerra_logo_apos_a_leitura_do_status_ainda_fecha_o_fluxo(
+    client, fabrica, monkeypatch
+):
+    execucao = fabrica.execucao(status="em_andamento")
+    fabrica.tentativa(execucao, status="running")
+    execucao_id = str(execucao.execucao_id)
+    publicador = client.app.state.publicador_sse
+    terminal = EventoSSE(tipo="sucesso", dados='{"tipo":"sucesso"}', encerra=True)
+    status_de = ExecucaoRepository.status_de
+
+    def status_e_depois_encerra(self, id_execucao):
+        status_lido = status_de(self, id_execucao)
+        # a execução termina depois de o status ser lido como em_andamento
+        publicador.publicar(execucao_id, [terminal])
+        return status_lido
+
+    monkeypatch.setattr(ExecucaoRepository, "status_de", status_e_depois_encerra)
+
+    frames = parse_sse_frames(_abrir(client, execucao_id))
+
+    assert frames[-1]["event"] == "sucesso"
 
 
 def test_assinatura_sai_do_registro_quando_o_fluxo_fecha(client, fabrica):

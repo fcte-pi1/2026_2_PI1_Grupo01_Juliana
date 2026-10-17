@@ -51,17 +51,17 @@ async def stream_execucao(
     não pode consultar nada, porque a sessão do `Depends` já estará fechada.
     """
     publicador = request.app.state.publicador_sse
-    status_execucao = await run_in_threadpool(ExecucaoRepository(db).status_de, execucao_id)
-    if status_execucao is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."
-        )
-
-    # assina antes de consultar o reenvio: na ordem inversa, um passo commitado
-    # entre a consulta e o início do consumo da fila se perderia sem deixar
-    # rastro. Assim, no pior caso ele duplica, e o fluxo descarta a duplicata.
+    # assina antes de consultar o status e o reenvio: na ordem inversa, um passo
+    # ou o evento terminal commitado entre a consulta e a assinatura se perderia
+    # sem deixar rastro, e o fluxo de uma execução encerrada nunca fecharia.
+    # Assim, no pior caso o passo duplica, e o fluxo descarta a duplicata.
     assinatura = publicador.assinar(str(execucao_id))
     try:
+        status_execucao = await run_in_threadpool(ExecucaoRepository(db).status_de, execucao_id)
+        if status_execucao is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."
+            )
         ultimo = _ultimo_evento(last_event_id)
         passos = await run_in_threadpool(
             TelemetriaRepository(db).listar_passos_depois, execucao_id, ultimo
@@ -72,9 +72,7 @@ async def stream_execucao(
         raise
 
     return StreamingResponse(
-        fluxo_eventos(
-            assinatura, reenvio, encerrar_apos_reenvio=status_execucao != "em_andamento"
-        ),
+        fluxo_eventos(assinatura, reenvio, encerrar_apos_reenvio=status_execucao != "em_andamento"),
         media_type="text/event-stream",
         headers=CABECALHOS,
     )
