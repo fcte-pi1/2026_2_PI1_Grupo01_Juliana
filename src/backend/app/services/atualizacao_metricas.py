@@ -9,7 +9,7 @@ from app.models import ExecucaoLogica, LeituraTelemetria, PassoTrajeto, Tentativ
 from app.services.calculo_metricas import (
     consumo_bateria_mv,
     consumo_bateria_pct,
-    contar_celulas_unicas,
+    contar_deslocamentos,
     tempo_decorrido_s,
     velocidade_media_por_celulas,
 )
@@ -89,8 +89,8 @@ def _atualizar_tempo_e_velocidade(
     fim_tentativa = tentativa.encerrada_em or agora
     tentativa.tempo_s = tempo_decorrido_s(tentativa.iniciada_em, fim_tentativa)
 
-    celulas = contar_celulas_unicas(_coordenadas_passos(sessao, tentativa.tentativa_id))
-    tentativa.velocidade_media = velocidade_media_por_celulas(celulas, tentativa.tempo_s)
+    deslocamentos = contar_deslocamentos(_coordenadas_passos(sessao, tentativa.tentativa_id))
+    tentativa.velocidade_media = velocidade_media_por_celulas(deslocamentos, tentativa.tempo_s)
 
     if execucao.status == "em_andamento":
         execucao.tempo_total_s = tempo_decorrido_s(execucao.iniciada_em, agora)
