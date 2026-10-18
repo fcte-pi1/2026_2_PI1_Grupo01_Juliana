@@ -314,7 +314,9 @@ def test_link_lost_na_ingestao_publica_falha_retomavel_apos_commit(
 
     assert _enviar(client, LINHA_PASSO).status_code == 200
 
-    [evento] = espia.eventos
+    status, evento = espia.eventos
+    assert status.tipo == "status"
+    assert json.loads(status.dados)["status_execucao"] == "em_andamento"
     assert evento.tipo == "falha"
     assert evento.encerra is False
     assert json.loads(evento.dados)["motivo"] == "link_lost"
