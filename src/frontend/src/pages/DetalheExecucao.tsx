@@ -3,10 +3,12 @@ import { ErroApi } from '../api/clienteApi'
 import { CartaoFalha } from '../components/execucao/CartaoFalha'
 import { PilulaResultado, PilulaStatusTentativa } from '../components/execucao/PilulaResultado'
 import { Cabecalho } from '../components/layout/Cabecalho'
+import { falhasDasTentativas } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { BlocoHealthCheck } from '../components/telemetria/BlocoHealthCheck'
+import { CartaoMetrica } from '../components/telemetria/CartaoMetrica'
 import { useExecucao } from '../hooks/useExecucao'
-import { formatarDataHora, formatarNumero, formatarNumeroExecucao, formatarTempo, LIMITE_TENTATIVAS } from '../utils/formatacao'
+import { formatarDataHora, formatarMedicao, formatarNumeroExecucao, formatarTempo, LIMITE_TENTATIVAS } from '../utils/formatacao'
 import { tentativaAtual } from './inicio/estadoInicio'
 
 /** Rota `/execucoes/:id`: detalhe da execução com trajeto e tentativas (FRONT-06, RF02, RF05). */
@@ -31,7 +33,6 @@ export function DetalheExecucao() {
 
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
-  const falha = ultima?.falha
 
   return (
     <>
@@ -57,49 +58,60 @@ export function DetalheExecucao() {
           <span className="chip">Tempo total {execucao.tempo_total_s !== null ? formatarTempo(execucao.tempo_total_s) : '—'}</span>
         </section>
 
-        <div className="pagina-duas-colunas">
-          <section className="cartao">
-            <h2 className="cartao__titulo">Trajeto</h2>
-            <VisualizacaoLabirinto
-              largura={largura}
-              altura={altura}
-              trajeto={execucao.trajeto}
-              celulaFalha={falha ? { x: falha.celula_x, y: falha.celula_y } : null}
-            />
-          </section>
+        <CartaoMetrica
+          rotulo="Variação contra o melhor tempo"
+          valor={execucao.variacao_melhor_tempo_pct == null ? '—' : formatarMedicao(execucao.variacao_melhor_tempo_pct)}
+          unidade="%"
+          detalhe="em relação ao melhor tempo anterior"
+        />
 
-          <section className="cartao">
-            <h2 className="cartao__titulo">Tentativas em ordem cronológica</h2>
-            <div className="rolagem-horizontal">
-              <table className="tabela tabela--sem-destaque">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Status</th>
-                    <th className="alinhar-direita">Tempo</th>
-                    <th className="alinhar-direita">Veloc.</th>
+        <section className="cartao">
+          <h2 className="cartao__titulo">Trajeto</h2>
+          <VisualizacaoLabirinto
+            largura={largura}
+            altura={altura}
+            eixoLongo={execucao.eixo_longo}
+            trajeto={execucao.trajeto}
+            posicaoAtual={execucao.celula_atual}
+            falhas={falhasDasTentativas(execucao.tentativas)}
+          />
+        </section>
+
+        <section className="cartao">
+          <h2 className="cartao__titulo">Tentativas em ordem cronológica</h2>
+          <div className="rolagem-horizontal">
+            <table className="tabela tabela--sem-destaque">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Status</th>
+                  <th className="alinhar-direita">Tempo</th>
+                  <th className="alinhar-direita">Veloc.</th>
+                  <th className="alinhar-direita">Consumo</th>
+                  <th className="alinhar-direita">Carga usada (p.p.)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {execucao.tentativas.map((t) => (
+                  <tr key={t.tentativa_id}>
+                    <td>
+                      {t.attempt_index}/{LIMITE_TENTATIVAS}
+                    </td>
+                    <td>
+                      <PilulaStatusTentativa status={t.status} />
+                    </td>
+                    <td className="alinhar-direita">{t.tempo_s !== null ? formatarTempo(t.tempo_s) : '—'}</td>
+                    <td className="alinhar-direita">
+                      {t.velocidade_media !== null ? `${formatarMedicao(t.velocidade_media)} m/s` : '—'}
+                    </td>
+                    <td className="alinhar-direita">{t.consumo_bateria == null ? '—' : `${formatarMedicao(t.consumo_bateria)} mV`}</td>
+                    <td className="alinhar-direita">{t.consumo_bateria_pct == null ? '—' : `${formatarMedicao(t.consumo_bateria_pct)} p.p.`}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {execucao.tentativas.map((t) => (
-                    <tr key={t.tentativa_id}>
-                      <td>
-                        {t.attempt_index}/{LIMITE_TENTATIVAS}
-                      </td>
-                      <td>
-                        <PilulaStatusTentativa status={t.status} />
-                      </td>
-                      <td className="alinhar-direita">{t.tempo_s !== null ? formatarTempo(t.tempo_s) : '—'}</td>
-                      <td className="alinhar-direita">
-                        {t.velocidade_media !== null ? `${formatarNumero(t.velocidade_media, 3)} m/s` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {execucao.tentativas
           .filter((t) => t.falha)

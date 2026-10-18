@@ -1,0 +1,6 @@
+{
+  "name": "contrato",
+  "build": {
+    "srcFilter": ["+<*.c>", "-<teste/>"]
+  }
+}

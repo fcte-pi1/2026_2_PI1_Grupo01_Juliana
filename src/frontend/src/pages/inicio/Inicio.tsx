@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ErroApi } from '../../api/clienteApi'
 import { buscarExecucao, criarExecucao, encerrarTentativa, retomarTentativa } from '../../api/endpoints'
@@ -10,6 +10,7 @@ import { FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/Fo
 import { PilulaStatusTentativa } from '../../components/execucao/PilulaResultado'
 import { ResumoExecucao } from '../../components/execucao/ResumoExecucao'
 import { Cabecalho } from '../../components/layout/Cabecalho'
+import { deduzirEixo, dimensoes as dimensoesDoMapa } from '../../components/labirinto/trajeto'
 import { UltimaAtualizacao } from '../../components/telemetria/UltimaAtualizacao'
 import { AvisoRecusa } from '../../components/tentativas/AvisoRecusa'
 import { BotaoRetomar } from '../../components/tentativas/BotaoRetomar'
@@ -65,6 +66,13 @@ export function Inicio() {
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [criacaoPendente, setCriacaoPendente] = useState<RetornoNovaExecucao | null>(null)
   const [tentativaCriada, setTentativaCriada] = useState<RetornoNovaExecucao | null>(null)
+  const encerradaId = atual.dados?.execucao && atual.dados.execucao.status !== 'em_andamento'
+    ? atual.dados.execucao.execucao_id : null
+
+  useEffect(() => {
+    if (atual.carregando || !encerradaId || parametros.get('execucao') === encerradaId) return
+    setParametros((p) => { p.set('execucao', encerradaId); return p }, { replace: true })
+  }, [atual.carregando, encerradaId, parametros, setParametros])
 
   const modal = (parametros.get('modal') as TipoModal) ?? null
   const abrirModal = (novo: TipoModal) =>
@@ -85,7 +93,12 @@ export function Inicio() {
       await acao()
       setRecusaLocal(null)
       setErroAcao(null)
-      abrirModal(null)
+      setParametros((p) => {
+        p.delete('modal')
+        // A criação já carregou o detalhe novo; abandona a seleção do resultado anterior.
+        if (!recarregar) p.delete('execucao')
+        return p
+      }, { replace: true })
       if (recarregar) atual.recarregar()
     } catch (e) {
       const recusa = e instanceof ErroApi && e.status === 409 ? lerRecusa(e.corpo) : null
@@ -242,10 +255,14 @@ export function Inicio() {
     )
   }
   const labirinto = dimensoes(execucao.labirinto, labirintos.dados ?? [])
+  const eixo = execucao.eixo_longo ?? deduzirEixo(execucao.trajeto, Math.min(labirinto.largura, labirinto.altura))
+  const grade = dimensoesDoMapa(labirinto.largura, labirinto.altura, eixo)
+  const objetivo = labirinto.largura !== labirinto.altura && eixo === null
+    ? 'Objetivo pendente' : nomeCelula({ x: grade.colunas - 1, y: grade.linhas - 1 })
   const aberta = execucao.status === 'em_andamento' && (tentativa.status === 'health-check' || tentativa.status === 'running')
   const { falha } = tentativa
   const celulaFalha = falha ? { x: falha.celula_x, y: falha.celula_y } : null
-  const ultimaLeitura = execucao.leituras.at(-1)
+  const celulaAtual = execucao.celula_atual ?? execucao.leituras.at(-1) ?? execucao.trajeto.at(-1)
 
   return (
     <>
@@ -266,6 +283,7 @@ export function Inicio() {
                 <Link to={`/execucoes/${execucao.execucao_id}`} className="botao">
                   Ver detalhes
                 </Link>
+                {execucao.status !== 'em_andamento' && <Link to="/" className="botao" onClick={() => atual.recarregar()}>Voltar ao início</Link>}
                 {estado === 'falha-retomavel' ? (
                   <BotaoRetomar proxima={tentativa.attempt_index + 1} aoClicar={() => abrirModal('retomar')} />
                 ) : null}
@@ -286,19 +304,20 @@ export function Inicio() {
           attemptIndex={tentativa.attempt_index}
           criadaEm={execucao.iniciada_em}
           largada={tentativa.tipo_inicio === 'retomada' ? 'Retomada' : 'A1'}
-          objetivo={nomeCelula({ x: labirinto.largura - 1, y: labirinto.altura - 1 })}
+          objetivo={objetivo}
+          tempoHealthCheck={tentativa.status === 'health-check' ? formatarTempo(Math.max((agora - Date.parse(tentativa.iniciada_em)) / 1000, 0)) : undefined}
         />
         {recusa && modal !== 'nova' && <AvisoRecusa motivo={recusa.motivo} titulo={recusaLocal ? 'Pedido recusado' : undefined} aoFechar={fecharRecusa} />}
-        <EtapasExecucao
+        {aberta && <EtapasExecucao
           status={tentativa.status}
           healthCheckAprovados={tentativa.health_check.filter((i) => i.aprovado).length}
           healthCheckReprovados={tentativa.health_check.filter((i) => i.aprovado === false).length}
           healthCheckTotal={tentativa.health_check.length}
-        />
+        />}
         {aberta ? (
           <PainelAoVivo execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} />
         ) : (
-          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} />
+          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} aoRetomar={() => abrirModal('retomar')} />
         )}
       </div>
 
@@ -307,7 +326,7 @@ export function Inicio() {
         <ModalEncerrar
           numeroExecucao={numero}
           attemptIndex={tentativa.attempt_index}
-          ultimaCelula={ultimaLeitura ? nomeCelula(ultimaLeitura) : '—'}
+          ultimaCelula={celulaAtual ? nomeCelula(celulaAtual) : '—'}
           tempo={formatarTempo(Math.max((agora - new Date(execucao.iniciada_em).getTime()) / 1000, 0))}
           enviando={enviando}
           aoCancelar={() => abrirModal(null)}

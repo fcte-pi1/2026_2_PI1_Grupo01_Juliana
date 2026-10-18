@@ -23,6 +23,10 @@ class LeituraTelemetria(Base):
             "fase IN ('health-check', 'running')",
             name="ck_leitura_telemetria_fase",
         ),
+        CheckConstraint(
+            "rumo IS NULL OR rumo IN ('N', 'S', 'L', 'O')",
+            name="ck_leitura_telemetria_rumo",
+        ),
         UniqueConstraint("tentativa_id", "ordem", name="uq_leitura_tentativa_ordem"),
         Index("ix_leitura_telemetria_tentativa_leitura", "tentativa_id", "leitura_id"),
     )
@@ -37,6 +41,7 @@ class LeituraTelemetria(Base):
     y: Mapped[int | None] = mapped_column(Integer)
     bateria: Mapped[Decimal | None] = mapped_column(Numeric)
     velocidade: Mapped[Decimal | None] = mapped_column(Numeric)
+    rumo: Mapped[str | None] = mapped_column()
     enviado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     recebido_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

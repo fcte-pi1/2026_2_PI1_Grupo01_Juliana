@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 #include <unity.h>
 
@@ -175,6 +176,14 @@ static void test_bt_envia_para_a_saida_e_recebe_injetado(void)
     TEST_ASSERT_TRUE(hal_bt_conectado());
     hal_bt_escrever("{\"tipo\":\"heartbeat\"}\n", 21);
     TEST_ASSERT_EQUAL_STRING("{\"tipo\":\"heartbeat\"}\n", saida_bt);
+
+    hal_bt_sim_definir_conectado(false);
+    TEST_ASSERT_FALSE(hal_bt_conectado());
+    TEST_ASSERT_EQUAL_size_t(0, hal_bt_escrever("x", 1));
+    hal_bt_sim_definir_conectado(true);
+    hal_bt_sim_limitar_escrita(2);
+    TEST_ASSERT_EQUAL_size_t(2, hal_bt_escrever("abc", 3));
+    hal_bt_sim_limitar_escrita(SIZE_MAX);
 
     TEST_ASSERT_EQUAL_INT(-1, hal_bt_ler_byte());
     hal_bt_sim_injetar("ok");

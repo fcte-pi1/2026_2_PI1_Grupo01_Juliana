@@ -11,7 +11,10 @@ export default defineConfig({
   server: {
     // Sem mock, /api vai para o backend FastAPI local (docker compose).
     proxy: {
-      '/api': 'http://localhost:8000',
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: (caminho) => caminho.replace(/^\/api(?=\/|$)/, ''),
+      },
     },
   },
   test: {

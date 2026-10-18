@@ -25,7 +25,7 @@ O CI (`.github/workflows/frontend.yml`) roda lint, tipos, testes e build em todo
 A variável `VITE_API_MOCK` decide de onde vêm os dados:
 
 - `true` (padrão em `.env.development`): o MSW intercepta as chamadas para `/api` e responde com os cenários de `src/mocks`. Nada de mock entra no build de produção.
-- `false`: as chamadas vão para o FastAPI em `http://localhost:8000` pelo proxy do Vite. Crie um `.env.development.local` com `VITE_API_MOCK=false`.
+- `false`: as chamadas vão para o FastAPI em `http://localhost:8000` pelo proxy do Vite, que remove o prefixo `/api`. Crie um `.env.development.local` com `VITE_API_MOCK=false` e reinicie o Vite. Uma variável já definida no terminal tem prioridade sobre esse arquivo.
 
 ### Cenários do protótipo
 
@@ -34,9 +34,10 @@ Os 12 estados de tela do protótipo podem ser abertos pelo painel flutuante "Moc
 ```
 /?cenario=08-encerrada-como-falha
 /?cenario=09-retomar-tentativa&modal=retomar
+/?cenario=04-concluida&execucao=e-0042
 ```
 
-Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05-execucao-recusada`, `06-sem-comunicacao`, `07-encerrar-execucao`, `08-encerrada-como-falha`, `09-retomar-tentativa`, `10-retomada-tentativa-2`, `11-concluida-apos-retomada`, `12-falha-sem-retomada`. O cenário escolhido fica salvo na aba (sessionStorage), e os botões da tela avançam o cenário como o backend faria (Nova execução → health-check, Encerrar → falha, Retomar → tentativa 2).
+Cenários: `01-inicio`, `02-health-check`, `03-em-execucao`, `04-concluida`, `05-execucao-recusada`, `06-sem-comunicacao`, `07-encerrar-execucao`, `08-encerrada-como-falha`, `09-retomar-tentativa`, `10-retomada-tentativa-2`, `11-concluida-apos-retomada`, `12-falha-sem-retomada`. O painel continua permitindo abrir um estado isolado para inspeção visual. A execução é mantida na sessão da aba: Nova execução → health-check → corrida, com encerramento/retomada pelos botões e resultado acessível no histórico e detalhe. A demonstração 4x4 reproduz o trajeto e as leituras já definidos nos mocks; os outros tamanhos aguardam dados de percurso após o health-check.
 
 ### FRONT-02 — início e nova execução
 
@@ -48,21 +49,25 @@ Nova execução envia `POST /execucoes` com `tipo_labirinto`. Havendo uma em and
 
 `src/api/schema.ts` acompanha o contrato OpenAPI integrado à `dev`, incluindo `EntradaPonte` e `RespostaPonte`. Para atualizar os tipos após mudanças no contrato, execute `npm run gerar-tipos`. Os endpoints normalizam os campos opcionais para a View; dados ausentes de leituras, trajeto ou health-check ficam pendentes. O UUID é usado quando a API não informa um número sequencial; os números do protótipo ficam nos mocks.
 
-A integração completa depende da implementação de `POST /execucoes` e `GET /execucoes/em-andamento`, ainda pendentes no backend da `dev`. Histórico e detalhe já possuem implementação. Os comandos existentes de encerrar/retomar continuam no escopo das respectivas issues.
+O backend integrado da `dev` implementa criação, execução atual, detalhe, histórico, encerramento e retomada. Encerrar recebe o detalhe com HTTP 200; retomar recebe os IDs com HTTP 201 e recarrega o detalhe persistido. A troca de telas acompanha esses dados e os eventos SSE, sem depender do parâmetro `cenario` no modo real.
 
 ### FRONT-03 — tela de tempo real
 
 O `ClienteAPI` assina os eventos nomeados `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso` do contrato. O mesmo `EventSource` faz a reconexão automática e conserva `Last-Event-ID`. Na conexão e após mudanças de estado, o GET de detalhe reidrata a execução; passos repetidos são deduplicados e uma consulta atrasada não apaga amostras recentes. Se o GET falhar, os dados conhecidos ficam visíveis e a ação **Atualizar dados** permite tentar novamente.
 
-Os cinco cartões mostram os tempos da tentativa e da execução, célula, bateria e velocidade sem rolar a tela em 1366×768. Os cronômetros usam as datas do servidor e o relógio corrigido pelo cabeçalho HTTP `Date`; ao término, usam os tempos/datas finais recebidos. O health-check fica em bloco separado com os oito componentes do contrato atual. O alerta começa aos 5 s sem atualização. Medições mantêm a precisão recebida: tensão em V, velocidade em m/s e consumo de bateria em V; nenhum valor ausente vira zero.
+A organização visual acompanha os PNGs do protótipo em `docs/figs/prototipo`: na corrida, cronômetro e três métricas à esquerda e mapa/comunicação à direita; no health-check, verificações e sensores separados; no resultado, mapa completo e métricas laterais. Os dois tempos exigidos pela issue e as três métricas (velocidade, bateria e célula) ficam visíveis durante a corrida sem rolar em 1366×768. Os cronômetros usam as datas do servidor e o relógio corrigido pelo cabeçalho HTTP `Date`; ao término, usam os tempos/datas finais recebidos. O health-check mostra os oito componentes do contrato atual. O alerta começa aos 5 s sem atualização. Conforme a ADR-016 e o OpenAPI, bateria e consumo são exibidos em mV, velocidade instantânea em mm/s e velocidade média em m/s. O health-check mostra bateria em mV e ToF em mm. A formatação preserva a precisão recebida; nenhum valor ausente vira zero.
+
+Ao terminar, a URL conserva `execucao=<id>` e o resultado é restaurado pelo GET de detalhe, mesmo com `/execucoes/em-andamento` retornando 204. O seletor Mock usa essa seleção para abrir os cenários finais. **Voltar ao início** abandona a seleção; **Nova execução** também a remove após carregar o novo registro. A comparação com o melhor tempo aparece no resultado com sucesso; após falha, a tela informa que não houve chegada ao objetivo. As regras atuais das ADRs prevalecem sobre os textos antigos das imagens: retomada na célula da falha e dez minutos por execução lógica, incluindo pausas.
+
+O percentual de carga vem de `bateria_pct` no SSE; o front não calcula a curva da bateria. Consumo percentual (queda em pontos percentuais) e variação contra o melhor tempo vêm do GET e aparecem no encerramento e no detalhe. Campos ausentes permanecem pendentes. O GET não fornece o percentual em cada leitura: após recarregar, ele aguarda o próximo evento de telemetria.
 
 A aprovação do health-check depende dos oito resultados positivos; componentes sem resposta permanecem pendentes, e uma reprovação não marca o percurso como concluído. A célula de uma falha persistida prevalece sobre uma leitura anterior ao restaurar o GET. Os tempos arredondados para décimos fazem a virada do minuto corretamente; a tabela conta desde o início da tentativa, incluindo o health-check.
 
 Eventos identificados de tentativas anteriores atualizam somente o próprio histórico, sem alterar célula, estado ou horário da tentativa atual. Passos atrasados completam o trajeto sem mover a posição quando antecedem o início da tentativa atual ou chegam após o término. Quando o evento não informa `entrou_em`, a ordenação usa apenas o `passo_id`, conforme os dados disponíveis no contrato.
 
-No modo mock, o estado fica na sessão da aba para o GET restaurar IDs, início e leituras após recarregar. As medições dos cenários de bateria seguem os exemplos `Tela02HealthCheck`, `Tela03EmExecucao`, `Tela04Concluida`, `Tela08EncerradaComoFalha` e `Tela11ConcluidaAposRetomada` do OpenAPI, sem simular novas medições.
+No modo mock, o estado fica na sessão da aba para o GET restaurar IDs, início, leituras e tentativas após recarregar. As medições usam os exemplos existentes, adequados a mV/mm/s. O stream atende também a execução inicial `e-0042`. A releitura de um `passo_id` atualiza suas paredes sem duplicar o trajeto, preservando falhas e orientação do FRONT-04.
 
-Validação local: testes de eventos nomeados, alerta de 5 s, valores/unidades, reconexão, deduplicação, relógio do servidor, valores finais e recarregamento. A verificação de até 2 s nos testes mede do recebimento do evento à atualização da interface, usando transporte controlado. A medição completa com o simulador, desde o COMMIT do backend, depende do BACK-07 (#126): a rota `/stream` ainda retorna 501. Também existe uma divergência no backend atual, que persiste `bat_mv`/`vel_mm_s` e os devolve sem converter para V/m/s; esse ajuste é do backend e deve ser resolvido antes da validação real do RNF-B01.
+Os testes locais cobrem eventos nomeados, alerta de 5 s, valores/unidades, reconexão, deduplicação, relógio do servidor, valores finais, recarregamento e o fluxo da demonstração. O SSE da BACK-07 já está integrado. O teste com transporte controlado mede apenas do recebimento do evento à atualização da interface; não comprova o limite de 2 s desde o COMMIT no backend. O roteiro para a validação real está em [VALIDACAO-FRONT03.md](VALIDACAO-FRONT03.md).
 
 ## Rotas
 

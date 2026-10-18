@@ -35,12 +35,20 @@ async def lifespan(app: FastAPI):
     app.state.deduplicador = Deduplicador()
     app.state.relogio_do_robo = RelogioDoRobo()
     app.state.ingestao_telemetria = IngestaoTelemetria(
-        app.state.deduplicador, app.state.relogio_do_robo, app.state.monitor_conexao
+        app.state.deduplicador,
+        app.state.relogio_do_robo,
+        app.state.monitor_conexao,
+        app.state.publicador_sse,
     )
 
     # o POST /telemetria só vê o silêncio quando chega outra linha; esta tarefa cobre a ausência
     def passar() -> None:
-        ciclo(app.state.gerenciador, app.state.monitor_conexao, app.state.ingestao_telemetria.trava)
+        ciclo(
+            app.state.gerenciador,
+            app.state.monitor_conexao,
+            app.state.ingestao_telemetria.trava,
+            publicador=app.state.publicador_sse,
+        )
 
     parar = threading.Event()
     varredura = threading.Thread(

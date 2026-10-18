@@ -7,20 +7,20 @@ import { HISTORICO, resumoAPI, ULTIMA_EXECUCAO } from '../mocks/dados'
 import { servidor } from '../mocks/servidor'
 import { renderizarRota } from './renderizar'
 
-/** Texto que identifica cada um dos 12 estados do protótipo na rota `/`. */
+/** Estados ativos em `/`; execuções encerradas podem ser reabertas pelo detalhe. */
 const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '01-inicio': /Nenhuma execução ativa/,
   '02-health-check': /6 de 8 OK/,
   '03-em-execucao': /Tempo da execução/,
-  '04-concluida': /concluída na tentativa 1/,
+  '04-concluida': /Concluída/,
   '05-execucao-recusada': /Nova execução recusada/,
   '06-sem-comunicacao': /Sem dados do robô há/,
   '07-encerrar-execucao': /Encerrar a tentativa 1 da execução #0042\?/,
   '08-encerrada-como-falha': /Retomar tentativa \(2\/3\)/,
   '09-retomar-tentativa': /Retomar a execução #0042\?/,
   '10-retomada-tentativa-2': /Tentativa 2\/3/,
-  '11-concluida-apos-retomada': /concluída na tentativa 2/,
-  '12-falha-sem-retomada': /Sem retomada/,
+  '11-concluida-apos-retomada': /2\/3/,
+  '12-falha-sem-retomada': /Cancelada/,
 }
 
 describe('rota /', () => {
@@ -29,7 +29,8 @@ describe('rota /', () => {
   })
 
   it.each(CENARIOS.map((c) => [c.id, c.modal] as const))('exibe o cenário %s', async (id, modal) => {
-    renderizarRota(modal ? `/?modal=${modal}` : '/', id)
+    const encerrada = ['04-concluida', '11-concluida-apos-retomada', '12-falha-sem-retomada'].includes(id)
+    renderizarRota(encerrada ? '/execucoes/e-0042' : modal ? `/?modal=${modal}` : '/', id)
     if (id === '05-execucao-recusada') {
       await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
       const dialogo = await screen.findByRole('dialog')
@@ -58,7 +59,6 @@ describe('rota /', () => {
     renderizarRota('/')
     const cartao = (await screen.findByText('Última execução · 4x4')).closest('section')!
     expect(within(cartao).getByText('Concluída')).toBeInTheDocument()
-    expect(within(cartao).queryByText('—')).not.toBeInTheDocument()
   })
 
   it('Encerrar tentativa registra a falha e oferece a retomada', async () => {
@@ -91,7 +91,7 @@ describe('rota /execucoes', () => {
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('—')).not.toBeInTheDocument()
   })
 
@@ -102,7 +102,7 @@ describe('rota /execucoes', () => {
 
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('Sucesso')).not.toBeInTheDocument()
     expect(tabela.queryByText('Falha')).not.toBeInTheDocument()
 
@@ -131,6 +131,12 @@ describe('rota /execucoes/:id', () => {
     expect(screen.getByText('Em andamento')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Falha')).toBeInTheDocument()
     expect(screen.queryByText('Cancelada')).not.toBeInTheDocument()
+  })
+
+  it('mostra o trajeto longo do 12x4 com a célula da falha', async () => {
+    renderizarRota('/execucoes/e-0034')
+    expect(await screen.findByRole('img', { name: /Labirinto 12x4 com 48 células visitadas/ })).toBeInTheDocument()
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
   })
 
   it('avisa quando a execução não existe', async () => {

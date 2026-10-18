@@ -230,6 +230,17 @@ describe('FRONT-02: nova execução', () => {
     expect(requisicoes.filter((r) => r.method === 'POST')).toHaveLength(1)
   })
 
+  it('abandona a seleção do resultado anterior ao criar outra execução', async () => {
+    const { router } = renderizarRota('/?execucao=e-0042', '04-concluida')
+    await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
+    const modal = await screen.findByRole('dialog')
+    await userEvent.click(within(modal).getByRole('button', { name: 'Confirmar nova execução' }))
+    await screen.findByRole('heading', { name: 'Execução ativa #0043' })
+    await waitFor(() => expect(new URLSearchParams(router.state.location.search).has('execucao')).toBe(false))
+    expect(new URLSearchParams(router.state.location.search).has('modal')).toBe(false)
+    expect((await buscarExecucaoAtual()).execucao?.execucao_id).not.toBe('e-0042')
+  })
+
   it('mantém o ID e o labirinto criados ao usar os comandos existentes de encerrar e retomar', async () => {
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: /^8x4/ }))
@@ -243,7 +254,7 @@ describe('FRONT-02: nova execução', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ }))
     const retomar = await screen.findByRole('dialog')
     for (const caixa of within(retomar).getAllByRole('checkbox')) await userEvent.click(caixa)
-    await userEvent.click(within(retomar).getByRole('button', { name: 'Retomar da célula B2' }))
+    await userEvent.click(within(retomar).getByRole('button', { name: 'Retomar da célula A1' }))
     expect(await screen.findByLabelText('Tentativa 2 de 3')).toBeInTheDocument()
     const retomada = (await buscarExecucaoAtual()).execucao!
     expect(retomada.execucao_id).toBe(criada.execucao_id)

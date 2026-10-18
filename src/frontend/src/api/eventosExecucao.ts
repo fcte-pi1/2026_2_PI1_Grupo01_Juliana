@@ -24,6 +24,9 @@ export function lerEvento(tipo: EventoExecucao['tipo'], texto: string): EventoEx
   switch (tipo) {
     case 'telemetria':
       valido = numeros('ordem', 'x', 'y', 'bateria') && dataValida('enviado_em') && numeroOpcional('velocidade')
+        && numeroOpcional('bateria_pct') && (dados.bateria_pct == null || Number(dados.bateria_pct) >= 0 && Number(dados.bateria_pct) <= 100)
+        && (dados.rumo == null || ['N', 'S', 'L', 'O'].includes(String(dados.rumo)))
+        && (dados.eixo_longo == null || ['x', 'y'].includes(String(dados.eixo_longo)))
       break
     case 'passo':
       valido = numeros('passo_id', 'seq', 'x', 'y', 'paredes_mask') && typeof dados.retomada === 'boolean'
@@ -95,19 +98,34 @@ export function aplicarEvento(execucao: Execucao, evento: EventoExecucao, recebi
     if (execucao.status !== 'em_andamento' || tentativa?.status === 'success' || tentativa?.status === 'failed') return execucao
     if (tentativa && Date.parse(evento.enviado_em) < Date.parse(tentativa.iniciada_em)) return execucao
     const ultima = execucao.leituras.at(-1)
+    // O GET pode trazer a mesma amostra sem o percentual disponível apenas no SSE.
+    if (ultima && evento.ordem === ultima.ordem && evento.enviado_em === ultima.enviado_em) {
+      return { ...execucao, eixo_longo: evento.eixo_longo ?? execucao.eixo_longo,
+        leituras: [...execucao.leituras.slice(0, -1), { ...ultima,
+          bateria_pct: evento.bateria_pct ?? ultima.bateria_pct ?? null, rumo: evento.rumo ?? ultima.rumo ?? null }] }
+    }
     if (ultima && (evento.ordem <= ultima.ordem || Date.parse(evento.enviado_em) < Date.parse(ultima.enviado_em))) return execucao
     return atualizada({ ...execucao, ultima_mensagem_em: evento.enviado_em, celula_atual: { x: evento.x, y: evento.y },
+      eixo_longo: evento.eixo_longo ?? execucao.eixo_longo,
       leituras: [...execucao.leituras.slice(-4), { ordem: evento.ordem, x: evento.x, y: evento.y, bateria: evento.bateria,
+        bateria_pct: evento.bateria_pct ?? null, rumo: evento.rumo ?? null,
         velocidade: evento.velocidade ?? null, enviado_em: evento.enviado_em }] })
   }
   if (evento.tipo === 'passo') {
-    if (execucao.trajeto.some((passo) => passo.passo_id === evento.passo_id)) return execucao
+    const existente = execucao.trajeto.find((passo) => passo.passo_id === evento.passo_id)
+    if (existente) {
+      if (existente.paredes_mask === evento.paredes_mask) return execucao
+      // O backend republica o mesmo passo ao reler as paredes da célula.
+      return { ...execucao, trajeto: execucao.trajeto.map((passo) => passo === existente ? { ...passo, paredes_mask: evento.paredes_mask } : passo) }
+    }
     const ultimoId = Math.max(0, ...execucao.trajeto.map((passo) => passo.passo_id ?? 0))
     const completa = { ...execucao, trajeto: unirPassos(execucao.trajeto, [evento]) }
     const tentativa = ultimaTentativa(execucao)
     const encerrada = execucao.status !== 'em_andamento' || tentativa?.status === 'success' || tentativa?.status === 'failed'
     const anterior = evento.entrou_em && tentativa && Date.parse(evento.entrou_em) < Date.parse(tentativa.iniciada_em)
-    return evento.passo_id > ultimoId && !encerrada && !anterior
+    const ultimaLeitura = execucao.leituras.at(-1)
+    const anteriorALeitura = evento.entrou_em && ultimaLeitura && Date.parse(evento.entrou_em) < Date.parse(ultimaLeitura.enviado_em)
+    return evento.passo_id > ultimoId && !encerrada && !anterior && !anteriorALeitura
       ? atualizada({ ...completa, celula_atual: { x: evento.x, y: evento.y } }) : completa
   }
   const tentativa = execucao.tentativas.find((item) => item.tentativa_id === evento.tentativa_id)
@@ -138,7 +156,12 @@ export function combinarRetrato(atual: Execucao, retrato: Execucao): Execucao {
   const amostras = new Map(mesmaTentativa ? atual.leituras.map((leitura) => [leitura.ordem, leitura]) : [])
   for (const leitura of retrato.leituras) {
     const anterior = amostras.get(leitura.ordem)
-    if (!anterior || Date.parse(leitura.enviado_em) >= Date.parse(anterior.enviado_em)) amostras.set(leitura.ordem, leitura)
+    if (!anterior || Date.parse(leitura.enviado_em) >= Date.parse(anterior.enviado_em)) {
+      const mesmaAmostra = anterior?.enviado_em === leitura.enviado_em
+      amostras.set(leitura.ordem, { ...leitura,
+        bateria_pct: leitura.bateria_pct ?? (mesmaAmostra ? anterior?.bateria_pct : null) ?? null,
+        rumo: leitura.rumo ?? (mesmaAmostra ? anterior?.rumo : null) ?? null })
+    }
   }
   const leituras = [...amostras.values()].sort((a, b) => a.ordem - b.ordem).slice(-5)
   const atualMaisRecente = mesmaTentativa && (atual.leituras.at(-1)?.ordem ?? -1) >= (retrato.leituras.at(-1)?.ordem ?? -1)
@@ -149,6 +172,7 @@ export function combinarRetrato(atual: Execucao, retrato: Execucao): Execucao {
     .filter((horario): horario is string => horario !== null)
     .sort((a, b) => Date.parse(b) - Date.parse(a))
   return { ...retrato,
+    eixo_longo: retrato.eixo_longo ?? atual.eixo_longo,
     trajeto: unirPassos(atual.trajeto, retrato.trajeto),
     leituras,
     celula_atual: falha ? { x: falha.celula_x, y: falha.celula_y }

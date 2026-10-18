@@ -1,4 +1,4 @@
-import type { EventoExecucao, Execucao, ExecucaoAtualResposta, TipoLabirinto } from '../api/tipos'
+import type { EncerrarPedido, EventoExecucao, Execucao, ExecucaoAtualResposta, TipoLabirinto } from '../api/tipos'
 import { aplicarEvento } from '../api/eventosExecucao'
 import { buscarCenario, type Cenario } from './cenarios'
 
@@ -6,7 +6,8 @@ import { buscarCenario, type Cenario } from './cenarios'
 // estado direto) e fica guardado na sessão para sobreviver à navegação.
 
 const CHAVE = 'mock:cenario'
-const CHAVE_DADOS = 'mock:execucoes'
+// Não reutiliza sessões dos exemplos antigos, que armazenavam V e m/s.
+const CHAVE_DADOS = 'mock:execucoes:v2'
 
 let atual: string | null = null
 let criada: ExecucaoAtualResposta | null = null
@@ -61,7 +62,7 @@ function salvarCenario(id: string): void {
   }
 }
 
-export function dadosAtuais(agora: number): ExecucaoAtualResposta {
+export function dadosAtuais(agora = Date.now()): ExecucaoAtualResposta {
   const cenario = cenarioAtual()
   if (!criada) {
     inicioCenario ??= agora
@@ -85,39 +86,65 @@ function salvarDados(): void {
 export function registrarEvento(id: string, evento: EventoExecucao): void {
   const atual = buscarExecucaoRegistrada(id)
   if (!atual) return
-  const atualizada = aplicarEvento(atual, evento)
+  let atualizada = aplicarEvento(atual, evento)
+  if (evento.tipo === 'health_check' && evento.componente === 'bateria' && evento.aprovado) {
+    atualizada = { ...atualizada, tentativas: atualizada.tentativas.map((tentativa) =>
+      tentativa.tentativa_id === evento.tentativa_id ? { ...tentativa, bateria_inicial: evento.valor_lido ?? null } : tentativa) }
+  }
+  if (evento.tipo === 'sucesso') {
+    const fim = new Date().toISOString()
+    atualizada = { ...atualizada, encerrada_em: fim, tentativas: atualizada.tentativas.map((tentativa) =>
+      tentativa.tentativa_id === evento.tentativa_id ? { ...tentativa, encerrada_em: fim,
+        bateria_final: atualizada.leituras.at(-1)?.bateria ?? null } : tentativa) }
+  }
+  atualizarExecucao(atualizada)
+}
+
+function atualizarExecucao(atualizada: Execucao): void {
+  const id = atualizada.execucao_id
   registradas.set(id, atualizada)
   if (criada?.execucao?.execucao_id === id) criada = { ...criada, execucao: atualizada }
   salvarDados()
 }
 
 export function buscarExecucaoRegistrada(id: string): Execucao | undefined {
-  cenarioAtual()
+  dadosAtuais(Date.now())
   return registradas.get(id)
 }
 
-/** Mantém a identidade da execução criada ao usar os comandos já existentes. */
-export function avancarCenario(id: string): void {
-  if (!criada?.execucao) {
-    definirCenario(id)
-    return
-  }
-  const anterior = criada.execucao
-  const seguinte = buscarCenario(id).atual(Date.now()).execucao!
-  const atualizada: Execucao = {
-    ...seguinte,
-    execucao_id: anterior.execucao_id,
-    numero: anterior.numero,
-    labirinto: anterior.labirinto,
-    iniciada_em: anterior.iniciada_em,
-    tentativas: seguinte.tentativas.map((tentativa) => ({
-      ...tentativa,
-      tentativa_id: anterior.tentativas.find((t) => t.attempt_index === tentativa.attempt_index)?.tentativa_id ?? crypto.randomUUID(),
-    })),
-  }
-  registradas.set(atualizada.execucao_id, atualizada)
-  criada = { ...criada, execucao: atualizada, recusa: null }
-  salvarCenario(id)
+export function listarExecucoesRegistradas(): Execucao[] {
+  dadosAtuais(Date.now())
+  return [...registradas.values()]
+}
+
+/** O comando altera a tentativa conhecida, preservando trajeto, paredes e medições. */
+export function encerrarTentativaRegistrada(id: string, pedido: EncerrarPedido, agora: number): Execucao {
+  const anterior = buscarExecucaoRegistrada(id)!
+  const tentativa = anterior.tentativas.at(-1)!
+  const celula = anterior.celula_atual ?? anterior.leituras.at(-1) ?? anterior.trajeto.at(-1) ?? { x: 0, y: 0 }
+  registrarEvento(id, { tipo: 'falha', tentativa_id: tentativa.tentativa_id,
+    status_execucao: anterior.tentativas_usadas >= 3 ? 'cancelada' : 'em_andamento',
+    motivo: pedido.motivo, origem: 'encerrado_operador', componente: null,
+    celula_x: celula.x, celula_y: celula.y, observacao: pedido.observacao,
+    momento_falha: new Date(agora).toISOString() })
+  const encerrada = buscarExecucaoRegistrada(id)!
+  atualizarExecucao({ ...encerrada, encerrada_em: encerrada.status === 'cancelada' ? new Date(agora).toISOString() : null,
+    tentativas: encerrada.tentativas.map((item) => item.tentativa_id === tentativa.tentativa_id
+      ? { ...item, bateria_final: anterior.leituras.at(-1)?.bateria ?? null } : item) })
+  return buscarExecucaoRegistrada(id)!
+}
+
+/** Retomar abre só a próxima tentativa: o health-check ainda depende dos eventos. */
+export function retomarTentativaRegistrada(id: string, agora: number): Execucao {
+  const anterior = buscarExecucaoRegistrada(id)!
+  const modelo = buscarCenario('02-health-check').atual(agora).execucao!.tentativas[0]
+  const nova = { ...modelo, tentativa_id: crypto.randomUUID(),
+    attempt_index: anterior.tentativas_usadas + 1, tipo_inicio: 'retomada' as const,
+    iniciada_em: new Date(agora).toISOString(), bateria_inicial: null, health_check: [] }
+  atualizarExecucao({ ...anterior, tentativas_usadas: nova.attempt_index,
+    tentativas: [...anterior.tentativas, nova], leituras: [], ultima_mensagem_em: null })
+  salvarCenario('02-health-check')
+  return buscarExecucaoRegistrada(id)!
 }
 
 /** Simula a criação atômica: cancela a anterior e abre a primeira tentativa. */
@@ -145,7 +172,9 @@ export function registrarNovaExecucao(labirinto: TipoLabirinto, agora: number): 
   }
   if (anterior.execucao) {
     const encerrada = anterior.execucao.status === 'em_andamento'
-      ? { ...anterior.execucao, status: 'cancelada' as const, encerrada_em: inicio }
+      ? { ...anterior.execucao, status: 'cancelada' as const, encerrada_em: inicio,
+        tentativas: anterior.execucao.tentativas.map((tentativa) => ['health-check', 'running'].includes(tentativa.status)
+          ? { ...tentativa, status: 'failed' as const, encerrada_em: inicio } : tentativa) }
       : anterior.execucao
     registradas.set(encerrada.execucao_id, encerrada)
   }

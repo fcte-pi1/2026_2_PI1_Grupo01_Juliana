@@ -6,6 +6,9 @@ export type TipoLabirinto = components['schemas']['Labirinto']
 
 export type StatusExecucao = components['schemas']['StatusExecucao']
 
+/** Lado em que o 8x4 ou o 12x4 se estende, informado pelo backend. */
+export type EixoLongo = components['schemas']['EixoLongo']
+
 export type StatusTentativa = components['schemas']['StatusTentativa']
 
 export type TipoInicio = 'nova' | 'retomada'
@@ -61,8 +64,13 @@ export interface LeituraTelemetria {
   ordem: number
   x: number
   y: number
+  /** Tensão recebida do robô, em mV. */
   bateria: number
+  /** Carga calculada pelo backend; o GET atual não fornece este campo. */
+  bateria_pct?: number | null
+  /** Velocidade instantânea em mm/s; a média da tentativa usa m/s. */
   velocidade: number | null
+  rumo?: components['schemas']['Rumo'] | null
   enviado_em: string
 }
 
@@ -100,6 +108,7 @@ export interface Tentativa {
   bateria_inicial: number | null
   bateria_final: number | null
   consumo_bateria: number | null
+  consumo_bateria_pct?: number | null
   health_check: ItemHealthCheck[]
   falha: Falha | null
 }
@@ -123,10 +132,13 @@ export interface Execucao {
   iniciada_em: string
   encerrada_em: string | null
   tempo_total_s: number | null
+  variacao_melhor_tempo_pct?: number | null
   tentativas: Tentativa[]
   trajeto: PassoTrajeto[]
   leituras: LeituraTelemetria[]
   ultima_mensagem_em: string | null
+  /** Null no 4x4 e enquanto o robô não saiu do canto 4x4 da largada. */
+  eixo_longo: EixoLongo | null
 }
 
 /** Linha do histórico (GET /execucoes). */

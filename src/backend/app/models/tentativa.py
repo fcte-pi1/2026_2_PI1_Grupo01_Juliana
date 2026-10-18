@@ -56,6 +56,7 @@ class Tentativa(Base):
     bateria_inicial: Mapped[Decimal | None] = mapped_column(Numeric)
     bateria_final: Mapped[Decimal | None] = mapped_column(Numeric)
     consumo_bateria: Mapped[Decimal | None] = mapped_column(Numeric)
+    consumo_bateria_pct: Mapped[Decimal | None] = mapped_column(Numeric)
 
     execucao: Mapped[ExecucaoLogica] = relationship(back_populates="tentativas")
     leituras: Mapped[list[LeituraTelemetria]] = relationship(back_populates="tentativa")

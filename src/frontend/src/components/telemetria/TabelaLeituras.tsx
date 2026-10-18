@@ -34,8 +34,8 @@ export function TabelaLeituras({ leituras, largadaEm }: TabelaLeiturasProps) {
                 <td>
                   <strong>{nomeCelula(leitura)}</strong>
                 </td>
-                <td>{formatarMedicao(leitura.bateria)} V</td>
-                <td>{leitura.velocidade === null ? '—' : `${formatarMedicao(leitura.velocidade)} m/s`}</td>
+                <td>{formatarMedicao(leitura.bateria)} mV</td>
+                <td>{leitura.velocidade === null ? '—' : `${formatarMedicao(leitura.velocidade)} mm/s`}</td>
                 <td className="alinhar-direita">
                   +{formatarNumero(Math.max((new Date(leitura.enviado_em).getTime() - largada) / 1000, 0), 1)} s
                 </td>

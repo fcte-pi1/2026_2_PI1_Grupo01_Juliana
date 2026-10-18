@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { api } from '../api/clienteApi'
 import { buscarExecucao, buscarExecucaoAtual } from '../api/endpoints'
 import { aplicarEvento, combinarRetrato } from '../api/eventosExecucao'
@@ -7,7 +8,13 @@ import { useRequisicao } from './useRequisicao'
 
 /** Restaura o estado pelo REST e acompanha os seis eventos nomeados do contrato SSE. */
 export function useExecucaoAtual() {
-  const requisicao = useRequisicao<ExecucaoAtualResposta>(buscarExecucaoAtual, 'atual')
+  const [parametros] = useSearchParams()
+  const selecionada = parametros.get('execucao') || null
+  const buscar = useCallback(async (sinal: AbortSignal): Promise<ExecucaoAtualResposta> => {
+    if (!selecionada) return buscarExecucaoAtual(sinal)
+    return { execucao: await buscarExecucao(selecionada, sinal), ultima: null, recusa: null }
+  }, [selecionada])
+  const requisicao = useRequisicao<ExecucaoAtualResposta>(buscar, selecionada ?? 'atual')
   const { definirDados } = requisicao
   const execucaoId = requisicao.dados?.execucao?.execucao_id
   const dadosRef = useRef(requisicao.dados)
@@ -76,7 +83,7 @@ export function useExecucaoAtual() {
       if (desconhecida) tentativaPendente = evento.tentativa_id
       const consultar = desconhecida || evento.tipo === 'status' || evento.tipo === 'falha' || evento.tipo === 'sucesso'
       if (consultando || tentativaPendente || consultar) guardar(evento, recebidoEm)
-      if (!tentativaPendente || evento.tipo !== 'telemetria') {
+      if (!tentativaPendente || evento.tipo !== 'telemetria' && evento.tipo !== 'passo') {
         definirDados((atual) => atual?.execucao?.execucao_id === execucaoId
           ? { ...atual, execucao: aplicarEvento(atual.execucao, evento, recebidoEm) } : atual)
       }
@@ -91,6 +98,9 @@ export function useExecucaoAtual() {
     }
   }, [execucaoId, definirDados])
 
-  return { ...requisicao, erroSincronizacao: erro && erro.id === execucaoId ? erro.mensagem : null,
+  return { ...requisicao,
+    // Com uma execução conhecida, comandos também usam o GET reconciliado com o SSE.
+    recarregar: execucaoId ? () => sincronizarRef.current() : requisicao.recarregar,
+    erroSincronizacao: erro && erro.id === execucaoId ? erro.mensagem : null,
     sincronizar: () => sincronizarRef.current() }
 }
