@@ -44,6 +44,23 @@ beforeEach(() => {
 afterEach(() => servidor.events.removeListener('request:start', observar))
 
 describe('FRONT-02: nova execução', () => {
+  it('atualiza o desenho ao trocar o labirinto', async () => {
+    renderizarRota('/')
+    const celulas = () => screen.getByRole('img', { name: /Labirinto/ }).querySelectorAll('.labirinto__celula')
+    expect(await screen.findByRole('img', { name: /Labirinto 4x4/ })).toBeInTheDocument()
+    expect(celulas()).toHaveLength(16)
+
+    await userEvent.click(screen.getByRole('radio', { name: /^8x4/ }))
+    expect(screen.getByRole('img', { name: /Labirinto 8x4/ })).toBeInTheDocument()
+    expect(celulas()).toHaveLength(32)
+    expect(screen.getByText('Objetivo H4')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('radio', { name: /^12x4/ }))
+    expect(screen.getByRole('img', { name: /Labirinto 12x4/ })).toBeInTheDocument()
+    expect(celulas()).toHaveLength(48)
+    expect(screen.getByText('Objetivo L4')).toBeInTheDocument()
+  })
+
   it.each<TipoLabirinto>(['4x4', '8x4', '12x4'])('inicia %s na tela ao vivo com Tentativa 1/3', async (labirinto) => {
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: new RegExp(`^${labirinto}`) }))
@@ -230,6 +247,17 @@ describe('FRONT-02: nova execução', () => {
     expect(requisicoes.filter((r) => r.method === 'POST')).toHaveLength(1)
   })
 
+  it('abandona a seleção do resultado anterior ao criar outra execução', async () => {
+    const { router } = renderizarRota('/?execucao=e-0042', '04-concluida')
+    await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
+    const modal = await screen.findByRole('dialog')
+    await userEvent.click(within(modal).getByRole('button', { name: 'Confirmar nova execução' }))
+    await screen.findByRole('heading', { name: 'Execução ativa #0043' })
+    await waitFor(() => expect(new URLSearchParams(router.state.location.search).has('execucao')).toBe(false))
+    expect(new URLSearchParams(router.state.location.search).has('modal')).toBe(false)
+    expect((await buscarExecucaoAtual()).execucao?.execucao_id).not.toBe('e-0042')
+  })
+
   it('mantém o ID e o labirinto criados ao usar os comandos existentes de encerrar e retomar', async () => {
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: /^8x4/ }))
@@ -243,7 +271,7 @@ describe('FRONT-02: nova execução', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ }))
     const retomar = await screen.findByRole('dialog')
     for (const caixa of within(retomar).getAllByRole('checkbox')) await userEvent.click(caixa)
-    await userEvent.click(within(retomar).getByRole('button', { name: 'Retomar da célula B2' }))
+    await userEvent.click(within(retomar).getByRole('button', { name: 'Retomar da célula A1' }))
     expect(await screen.findByLabelText('Tentativa 2 de 3')).toBeInTheDocument()
     const retomada = (await buscarExecucaoAtual()).execucao!
     expect(retomada.execucao_id).toBe(criada.execucao_id)

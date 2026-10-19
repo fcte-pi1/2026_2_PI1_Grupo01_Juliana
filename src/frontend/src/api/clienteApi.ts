@@ -1,4 +1,5 @@
 import type { EventoExecucao } from './tipos'
+import { lerEvento } from './eventosExecucao'
 
 export class ErroApi extends Error {
   readonly status: number
@@ -36,6 +37,7 @@ function lerCorpo(texto: string): unknown {
 /** Ponto único de HTTP e SSE da View (diagrama de classes MVC, 4.4). */
 export class ClienteAPI {
   private readonly baseUrl: string
+  private diferencaRelogioMs = 0
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/$/, '')
@@ -49,14 +51,25 @@ export class ClienteAPI {
     return this.requisitar<T>('POST', caminho, corpo)
   }
 
+  /** Relógio local corrigido pelo cabeçalho Date das respostas do servidor. */
+  agora(): number {
+    return Date.now() + this.diferencaRelogioMs
+  }
+
   /** Assina o stream SSE da execução. Devolve a função que encerra a assinatura. */
-  assinar(execucaoId: string, aoReceber: (evento: EventoExecucao) => void): () => void {
+  assinar(execucaoId: string, aoReceber: (evento: EventoExecucao) => void, aoConectar?: () => void): () => void {
     if (typeof EventSource === 'undefined') return () => {}
 
     const eventos = new EventSource(this.url(`/execucoes/${execucaoId}/stream`))
-    eventos.onmessage = (mensagem: MessageEvent<string>) => {
-      aoReceber(JSON.parse(mensagem.data) as EventoExecucao)
+    const tipos: EventoExecucao['tipo'][] = ['telemetria', 'passo', 'status', 'health_check', 'falha', 'sucesso']
+    for (const tipo of tipos) {
+      eventos.addEventListener(tipo, (mensagem: MessageEvent<string>) => {
+        const evento = lerEvento(tipo, mensagem.data)
+        if (evento) aoReceber(evento)
+      })
     }
+    eventos.onopen = () => aoConectar?.()
+    // O próprio EventSource reconecta e mantém Last-Event-ID; não recriar no erro.
     return () => eventos.close()
   }
 
@@ -67,6 +80,7 @@ export class ClienteAPI {
 
   private async requisitar<T>(metodo: string, caminho: string, corpo?: unknown, sinal?: AbortSignal): Promise<T> {
     let resposta: Response
+    const inicio = Date.now()
     try {
       resposta = await fetch(this.url(caminho), {
         method: metodo,
@@ -80,6 +94,11 @@ export class ClienteAPI {
       throw new ErroSemConexao()
     }
     if (STATUS_SEM_CONEXAO.has(resposta.status)) throw new ErroSemConexao()
+
+    const horarioServidor = Date.parse(resposta.headers.get('Date') ?? '')
+    if (Number.isFinite(horarioServidor)) {
+      this.diferencaRelogioMs = horarioServidor - (inicio + Date.now()) / 2
+    }
 
     const dados = lerCorpo(await resposta.text())
     if (!resposta.ok) throw new ErroApi(resposta.status, dados)

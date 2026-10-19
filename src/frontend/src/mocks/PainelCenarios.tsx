@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { cenarioAtual, definirCenario } from './cenarioAtual'
+import { cenarioAtual, dadosAtuais, definirCenario } from './cenarioAtual'
 import { CENARIOS } from './cenarios'
 import './painelCenarios.css'
 
@@ -13,6 +13,9 @@ export function PainelCenarios() {
     const cenario = CENARIOS.find((c) => c.id === id)
     const busca = new URLSearchParams({ cenario: id })
     if (cenario?.modal) busca.set('modal', cenario.modal)
+    const execucao = dadosAtuais().execucao
+    // A seleção explícita abre o resultado pelo detalhe; /em-andamento continua 204.
+    if (execucao && execucao.status !== 'em_andamento') busca.set('execucao', execucao.execucao_id)
     // Recarrega para buscar os dados do novo cenário e reabrir o stream SSE.
     window.location.assign(`/?${busca}`)
   }

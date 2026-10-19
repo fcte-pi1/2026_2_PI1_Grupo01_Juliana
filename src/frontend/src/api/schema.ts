@@ -88,6 +88,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/execucoes/{execucao_id}/encerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Encerrar a execução lógica por completo
+         * @description A execução passa a `cancelada` e não aceita retomada. Se houver tentativa aberta, ela é registrada como `failed` com motivo e origem `encerrado_operador`, e o backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos` até a confirmação do robô. Se a tentativa já estiver encerrada, só a execução é cancelada. Execução já concluída ou cancelada responde 409 e `detail` é texto.
+         */
+        post: operations["encerrarExecucao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/execucoes/{execucao_id}/retomar": {
         parameters: {
             query?: never;
@@ -117,7 +137,7 @@ export interface paths {
         };
         /**
          * Eventos da execução ao vivo
-         * @description Fluxo de eventos do servidor para o navegador. O campo event repete o tipo do JSON em data. No evento passo, a linha id é o passo_id. Ao reconectar, o navegador envia esse valor em Last-Event-ID e o backend reenvia os passos posteriores. A amostra telemetria não entra nesse replay.
+         * @description Fluxo de eventos do servidor para o navegador. O campo event repete o tipo do JSON em data. No evento passo, a linha id é o passo_id. Ao reconectar, o navegador envia esse valor em Last-Event-ID e o backend reenvia os passos posteriores. A amostra telemetria não entra nesse replay. O reenvio atravessa as três tentativas, porque o trajeto é da execução. Enquanto não há evento novo, o servidor manda um comentário de keep-alive a cada 15 s. O id de um passo pode repetir: quando o robô relê uma célula em que já estava, só a máscara de paredes muda, e o mesmo passo_id é republicado para a tela redesenhar. O servidor fecha o fluxo em dois casos: execução já encerrada, logo depois do reenvio, e fila do cliente estourada. Nos dois, reconectar com Last-Event-ID recompõe o trajeto.
          */
         get: operations["abrirStream"];
         put?: never;
@@ -139,7 +159,7 @@ export interface paths {
         put?: never;
         /**
          * Receber uma linha de telemetria da ponte
-         * @description Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
+         * @description Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
          */
         post: operations["receberTelemetria"];
         delete?: never;
@@ -229,11 +249,14 @@ export interface components {
             tempo_s?: number | null;
             /** @description Metros por segundo. Distância em células vezes 180 mm, dividida pelo tempo. */
             velocidade_media?: number | null;
-            /** @description Tensão em volts no início da tentativa. */
+            /** @description Nivel bat_mv no inicio da tentativa, em mV (contrato v1). */
             bateria_inicial?: number | null;
+            /** @description Ultima leitura bat_mv na tentativa, em mV. */
             bateria_final?: number | null;
-            /** @description Queda de tensão (bateria_inicial − bateria_final), em volts. */
+            /** @description Queda de tensao (bateria_inicial − bateria_final), em mV. */
             consumo_bateria?: number | null;
+            /** @description Queda de carga LiPo 2S em pontos percentuais (curva robo.h). */
+            consumo_bateria_pct?: number | null;
             health_check: components["schemas"]["ItemHealthCheck"][];
             falha?: components["schemas"]["Falha"] | null;
         };
@@ -253,9 +276,9 @@ export interface components {
             ordem: number;
             x: number;
             y: number;
-            /** @description Tensão em volts, convertida de bat_mv. */
+            /** @description Tensão em mV, como o robô envia em bat_mv (ADR-016). Converter para percentual de carga é do backend, pela curva da fonte ativa. */
             bateria: number;
-            /** @description Metros por segundo, convertidos de vel_mm_s. */
+            /** @description vel_mm_s informado pelo robo, em mm/s (contrato v1). */
             velocidade?: number | null;
             rumo?: components["schemas"]["Rumo"] | null;
             /** Format: date-time */
@@ -300,16 +323,22 @@ export interface components {
             tempo_total_s?: number | null;
             /** @description Velocidade média da última tentativa, em metros por segundo. */
             velocidade_media?: number | null;
-            /** @description Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts. */
+            /** @description Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida. */
             consumo_bateria?: number | null;
         };
+        /** @description Conteúdo do campo data de um frame do stream. O campo tipo discrimina qual dos seis eventos é e repete o valor da linha event do frame. */
+        EventoSSE: components["schemas"]["EventoTelemetria"] | components["schemas"]["EventoPasso"] | components["schemas"]["EventoStatus"] | components["schemas"]["EventoHealthCheck"] | components["schemas"]["EventoFalha"] | components["schemas"]["EventoSucesso"];
         EventoTelemetria: {
             /** @enum {string} */
             tipo: "telemetria";
             ordem: number;
             x: number;
             y: number;
+            /** @description Tensão em mV, igual ao bat_mv do contrato serial (ADR-016). */
             bateria: number;
+            /** @description Percentual de carga calculado pelo backend (RF11), pela curva de descarga da fonte ativa. A própria tensão diz qual é a fonte, porque as faixas da LiPo 2S e do pacote de pilhas não se sobrepõem. */
+            bateria_pct?: number | null;
+            /** @description Velocidade em mm/s, igual ao vel_mm_s do contrato serial. */
             velocidade?: number | null;
             rumo?: components["schemas"]["Rumo"] | null;
             eixo_longo?: components["schemas"]["EixoLongo"] | null;
@@ -393,6 +422,10 @@ export interface components {
              */
             comandos: components["schemas"]["Comando"][];
         };
+        ErroLinhaInvalida: components["schemas"]["RespostaPonte"] & {
+            /** @description Motivo da recusa da linha, só para log. */
+            detail: string;
+        };
         Recusa: {
             motivo: components["schemas"]["MotivoRecusa"];
             /** Format: date-time */
@@ -406,7 +439,8 @@ export interface components {
         };
         ErroValidacao: {
             detail: {
-                loc?: string[];
+                /** @description Caminho do erro; o FastAPI usa inteiros para posições (por exemplo, o caractere em que o JSON do corpo quebrou). */
+                loc?: (string | number)[];
                 msg?: string;
                 type?: string;
             }[];
@@ -615,6 +649,30 @@ export interface operations {
             422: components["responses"]["ErroValidacao"];
         };
     };
+    encerrarExecucao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execucao_id: components["parameters"]["ExecucaoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Execução cancelada, com a tentativa aberta encerrada quando havia uma. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecucaoDetalhe"];
+                };
+            };
+            404: components["responses"]["NaoEncontrado"];
+            409: components["responses"]["Conflito"];
+        };
+    };
     retomarTentativa: {
         parameters: {
             query?: never;
@@ -643,7 +701,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description passo_id do último passo já aplicado na tela. */
+                /** @description passo_id do último passo já aplicado na tela. O backend trata valor ausente, vazio, negativo ou não numérico como 0, e aí reenvia o trajeto inteiro. */
                 "Last-Event-ID"?: number;
             };
             path: {
@@ -693,13 +751,13 @@ export interface operations {
                     "application/json": components["schemas"]["RespostaPonte"];
                 };
             };
-            /** @description Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da faixa, célula fora do labirinto). A ponte não deve reenviar 4xx. */
+            /** @description Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na serial como no 200. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`, por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`. A ponte não deve reenviar 4xx. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ErroValidacao"];
+                    "application/json": components["schemas"]["ErroLinhaInvalida"] | components["schemas"]["ErroValidacao"];
                 };
             };
         };

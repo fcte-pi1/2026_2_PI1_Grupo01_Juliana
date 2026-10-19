@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react'
 import type { Celula, PassoTrajeto } from '../../api/tipos'
 import { nomeCelula } from '../../utils/formatacao'
-import { celulasDeRetomada, deduzirEixo, dimensoes, dividirEmTrechos, type EixoLongo, type FalhaNoMapa } from './trajeto'
+import { celulasDeRetomada, deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, type EixoLongo, type FalhaNoMapa } from './trajeto'
 import './labirinto.css'
 
 const PAREDE_N = 1
@@ -20,13 +20,15 @@ interface VisualizacaoLabirintoProps {
   altura: number
   /**
    * Lado em que o labirinto se estende (4.4, "Orientação"), vindo do `eixo_longo` do backend.
-   * O DIP só diz o tamanho, não o lado. Sem ele, a orientação é deduzida do trajeto; até lá, o 8x4 e o 12x4 aparecem só no quadrado 4x4 da largada.
+   * Sem ele, o 8x4 e o 12x4 usam o lado longo na horizontal, no tamanho escolhido, até o trajeto indicar o contrário.
    */
   eixoLongo?: EixoLongo | null
   /** Passos na ordem de visita (RF09). A cada evento `passo`, o trajeto cresce um ponto. */
   trajeto: PassoTrajeto[]
   /** Posição do robô antes do primeiro passo; depois, o marcador segue o último passo. */
   celulaAtual?: Celula | null
+  /** Posição reconciliada pelo REST/SSE, inclusive uma falha após o último passo gravado. */
+  posicaoAtual?: Celula | null
   /** Células de falha de cada tentativa, destacadas em vermelho (RF15). */
   falhas?: FalhaNoMapa[]
   /** Esconde eixos, rótulos e legenda (miniatura). */
@@ -40,13 +42,13 @@ export function VisualizacaoLabirinto({
   eixoLongo,
   trajeto,
   celulaAtual,
+  posicaoAtual,
   falhas = [],
   compacto = false,
 }: VisualizacaoLabirintoProps) {
-  const eixo = eixoLongo ?? deduzirEixo(trajeto, Math.min(largura, altura))
+  const eixo = eixoParaGrade(largura, altura, eixoLongo ?? deduzirEixo(trajeto, Math.min(largura, altura)))
   const { colunas, linhas } = dimensoes(largura, altura, eixo)
-  const aguardandoOrientacao = eixo === null && largura !== altura
-  const objetivo = aguardandoOrientacao ? null : { x: colunas - 1, y: linhas - 1 }
+  const objetivo = { x: colunas - 1, y: linhas - 1 }
 
   const ultimoPasso = useMemo(() => {
     const mapa = new Map<string, PassoTrajeto>()
@@ -70,7 +72,7 @@ export function VisualizacaoLabirinto({
     ...retomadas.map((r) => ({ chave: `r${r.tentativa}`, classe: 'retomada' as const, celula: r, rotulo: 'RETOMADA' })),
   ]
 
-  const robo = trajeto.at(-1) ?? celulaAtual ?? null
+  const robo = posicaoAtual ?? trajeto.at(-1) ?? celulaAtual ?? null
   // cada falha fecha um trecho; sem retomada depois dela, o robô parou ali
   const roboFalhou = trechos.length > 0 && falhas.length >= trechos.length
   const novo = trajeto.length >= 2 && !trajeto.at(-1)!.retomada ? trajeto.slice(-2) : null
@@ -143,9 +145,8 @@ export function VisualizacaoLabirinto({
           <span className="legenda legenda--trajeto">Tentativa 1</span>
           <span className="legenda legenda--retomada">Retomada</span>
           <span className="legenda legenda--largada">Largada A1</span>
-          {objetivo && <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>}
+          <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>
           <span className="legenda legenda--falha">Falha</span>
-          {aguardandoOrientacao && <span className="legenda legenda--aviso">Mostrando 4x4 até o robô revelar a orientação</span>}
         </figcaption>
       )}
     </figure>

@@ -1,14 +1,10 @@
 import { http, HttpResponse, sse } from 'msw'
-import type { EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
-import { avancarCenario, buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, registrarNovaExecucao } from './cenarioAtual'
-import { buscarCenario } from './cenarios'
+import type { EncerrarPedido, EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
+import { buscarExecucaoRegistrada, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
 import { detalheAPI, execucao, falha, HISTORICO, resumoAPI, tentativa, trajeto12x4Longo, trajetoAte } from './dados'
+import { avancarDemonstracao } from './fluxoDemonstracao'
 
 const API = '*/api'
-
-function execucaoDoCenario(): Execucao {
-  return dadosAtuais(Date.now()).execucao ?? buscarCenario('04-concluida').atual(Date.now()).execucao!
-}
 
 function trajetoDoHistorico(labirinto: TipoLabirinto, sucesso: boolean) {
   if (labirinto === '4x4') return trajetoAte(sucesso ? 10 : 6)
@@ -53,21 +49,26 @@ function execucaoDoHistorico(id: string): Execucao | null {
 export const handlers = [
   http.get(`${API}/execucoes/em-andamento`, () => {
     const atual = dadosAtuais(Date.now()).execucao
-    return atual ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
+    return atual?.status === 'em_andamento' ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
   }),
 
   http.get(`${API}/execucoes`, ({ request }) => {
     const labirinto = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
-    return HttpResponse.json((labirinto ? HISTORICO.filter((e) => e.labirinto === labirinto) : HISTORICO).map(resumoAPI))
+    const registradas = listarExecucoesRegistradas().map((item) => ({ ...item, resultado: item.status,
+      velocidade_media: item.tentativas.at(-1)?.velocidade_media ?? null,
+      consumo_bateria: item.tentativas.at(-1)?.consumo_bateria ?? null }))
+    const historico = [...registradas, ...HISTORICO.filter((item) => !registradas.some((registrada) => registrada.execucao_id === item.execucao_id))]
+      .sort((a, b) => Date.parse(b.iniciada_em) - Date.parse(a.iniciada_em))
+    return HttpResponse.json((labirinto ? historico.filter((e) => e.labirinto === labirinto) : historico).map(resumoAPI))
   }),
 
   http.get(`${API}/execucoes/:id`, ({ params }) => {
     const id = String(params.id)
-    const encontrada = buscarExecucaoRegistrada(id) ?? (id === 'e-0042' ? execucaoDoCenario() : execucaoDoHistorico(id))
+    const encontrada = buscarExecucaoRegistrada(id) ?? execucaoDoHistorico(id)
     return encontrada ? HttpResponse.json(detalheAPI(encontrada)) : HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
   }),
 
-  // Comandos: trocam o cenário para o estado seguinte, como o backend faria.
+  // Comandos atualizam a mesma execução persistida, como no contrato REST.
   http.post(`${API}/execucoes`, async ({ request }) => {
     const recusa = dadosAtuais(Date.now()).recusa
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
@@ -81,42 +82,82 @@ export const handlers = [
     }, { status: 201 })
   }),
 
-  http.post(`${API}/execucoes/:id/encerrar-tentativa`, () => {
-    avancarCenario('08-encerrada-como-falha')
-    return HttpResponse.json(execucaoDoCenario())
+  http.post(`${API}/execucoes/:id/encerrar-tentativa`, async ({ params, request }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id)
+    if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
+    if (atual.status !== 'em_andamento' || !['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '')) {
+      return HttpResponse.json({ detail: 'Não há tentativa aberta' }, { status: 409 })
+    }
+    const pedido = await request.json() as EncerrarPedido
+    if (!['collision', 'stuck', 'out_of_track'].includes(pedido.motivo)
+      || (pedido.observacao != null && typeof pedido.observacao !== 'string')) return new HttpResponse(null, { status: 422 })
+    return HttpResponse.json(detalheAPI(encerrarTentativaRegistrada(id, pedido, Date.now())))
   }),
 
-  http.post(`${API}/execucoes/:id/retomar`, () => {
+  http.post(`${API}/execucoes/:id/encerrar`, ({ params }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id)
+    if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada.' }, { status: 404 })
+    if (atual.status !== 'em_andamento') {
+      return HttpResponse.json({ detail: 'A execução não está em andamento.' }, { status: 409 })
+    }
+    return HttpResponse.json(detalheAPI(encerrarExecucaoRegistrada(id, Date.now())))
+  }),
+
+  http.post(`${API}/execucoes/:id/retomar`, ({ params }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id)
+    if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
     const recusa = dadosAtuais(Date.now()).recusa
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
-    avancarCenario('10-retomada-tentativa-2')
-    return HttpResponse.json(execucaoDoCenario())
+    const motivo = ['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '') ? 'tentativa_aberta'
+      : atual.tentativas_usadas >= 3 ? 'limite_3'
+        : atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'failed' ? 'execucao_cancelada' : null
+    if (motivo) return HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })
+    const retomada = retomarTentativaRegistrada(id, Date.now())
+    const tentativa = retomada.tentativas.at(-1)!
+    return HttpResponse.json({ execucao_id: id, tentativa_id: tentativa.tentativa_id,
+      attempt_index: tentativa.attempt_index }, { status: 201 })
   }),
 ]
 
 /** Stream SSE da execução. Só no navegador: o jsdom dos testes não tem EventSource. */
 export function criarHandlerStream() {
-  return sse<{ message: string }>(`${API}/execucoes/:id/stream`, ({ client }) => {
-    if (!cenarioAtual().aoVivo || execucaoDoCenario().leituras.length === 0) return
-    let ordem = 100
+  return sse<Record<EventoExecucao['tipo'], string>>(`${API}/execucoes/:id/stream`, ({ client, params, request }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id)
+    if (!atual) { client.close(); return }
+    const pedidoCursor = Number(request.headers.get('Last-Event-ID') ?? 0)
+    const cursor = Number.isFinite(pedidoCursor) && pedidoCursor >= 0 ? pedidoCursor : 0
+    for (const passo of atual.trajeto) {
+      const passoId = passo.passo_id ?? passo.seq
+      if (passoId > cursor) client.send({ event: 'passo', id: String(passoId), data: JSON.stringify({ tipo: 'passo', ...passo, passo_id: passoId }) })
+    }
+    const tentativa = atual.tentativas.at(-1)
+    if (tentativa) {
+      for (const item of tentativa.health_check) {
+        if (item.aprovado !== null) client.send({ event: 'health_check', data: JSON.stringify({ tipo: 'health_check', tentativa_id: tentativa.tentativa_id, ...item }) })
+      }
+      client.send({ event: 'status', data: JSON.stringify({ tipo: 'status', tentativa_id: tentativa.tentativa_id,
+        attempt_index: tentativa.attempt_index, status_tentativa: tentativa.status, status_execucao: atual.status, tipo_dip: tentativa.tipo_descoberto }) })
+    }
+    if (atual.status !== 'em_andamento') { client.close(); return }
     const intervalo = setInterval(() => {
-      const ultima = execucaoDoCenario().leituras.at(-1)
-      const evento: EventoExecucao = {
-        tipo: 'leitura',
-        leitura: {
-          ordem: ordem++,
-          x: ultima?.x ?? 0,
-          y: ultima?.y ?? 0,
-          bateria: ultima?.bateria ?? 6.1,
-          velocidade: 0.09,
-          enviado_em: new Date().toISOString(),
-        },
+      const atual = buscarExecucaoRegistrada(id)
+      if (!atual || atual.status !== 'em_andamento') {
+        clearInterval(intervalo)
+        client.close()
+        return
       }
       try {
-        client.send({ data: JSON.stringify(evento) })
+        for (const evento of avancarDemonstracao(id, Date.now())) {
+          client.send({ event: evento.tipo, ...('passo_id' in evento ? { id: String(evento.passo_id) } : {}), data: JSON.stringify(evento) })
+        }
       } catch {
         clearInterval(intervalo)
       }
     }, 1000)
+    request.signal.addEventListener('abort', () => clearInterval(intervalo), { once: true })
   })
 }

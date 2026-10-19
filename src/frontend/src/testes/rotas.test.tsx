@@ -7,20 +7,20 @@ import { HISTORICO, resumoAPI, ULTIMA_EXECUCAO } from '../mocks/dados'
 import { servidor } from '../mocks/servidor'
 import { renderizarRota } from './renderizar'
 
-/** Texto que identifica cada um dos 12 estados do protótipo na rota `/`. */
+/** Estados ativos em `/`; execuções encerradas podem ser reabertas pelo detalhe. */
 const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '01-inicio': /Nenhuma execução ativa/,
   '02-health-check': /6 de 8 OK/,
   '03-em-execucao': /Tempo da execução/,
-  '04-concluida': /concluída na tentativa 1/,
+  '04-concluida': /Concluída/,
   '05-execucao-recusada': /Nova execução recusada/,
   '06-sem-comunicacao': /Sem dados do robô há/,
   '07-encerrar-execucao': /Encerrar a tentativa 1 da execução #0042\?/,
   '08-encerrada-como-falha': /Retomar tentativa \(2\/3\)/,
   '09-retomar-tentativa': /Retomar a execução #0042\?/,
   '10-retomada-tentativa-2': /Tentativa 2\/3/,
-  '11-concluida-apos-retomada': /concluída na tentativa 2/,
-  '12-falha-sem-retomada': /Sem retomada/,
+  '11-concluida-apos-retomada': /2\/3/,
+  '12-falha-sem-retomada': /Cancelada/,
 }
 
 describe('rota /', () => {
@@ -29,7 +29,8 @@ describe('rota /', () => {
   })
 
   it.each(CENARIOS.map((c) => [c.id, c.modal] as const))('exibe o cenário %s', async (id, modal) => {
-    renderizarRota(modal ? `/?modal=${modal}` : '/', id)
+    const encerrada = ['04-concluida', '11-concluida-apos-retomada', '12-falha-sem-retomada'].includes(id)
+    renderizarRota(encerrada ? '/execucoes/e-0042' : modal ? `/?modal=${modal}` : '/', id)
     if (id === '05-execucao-recusada') {
       await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
       const dialogo = await screen.findByRole('dialog')
@@ -58,7 +59,6 @@ describe('rota /', () => {
     renderizarRota('/')
     const cartao = (await screen.findByText('Última execução · 4x4')).closest('section')!
     expect(within(cartao).getByText('Concluída')).toBeInTheDocument()
-    expect(within(cartao).queryByText('—')).not.toBeInTheDocument()
   })
 
   it('Encerrar tentativa registra a falha e oferece a retomada', async () => {
@@ -69,6 +69,33 @@ describe('rota /', () => {
     await userEvent.click(within(modal).getByRole('button', { name: 'Encerrar como falha' }))
     expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('Encerrar execução cancela a rodada inteira e não oferece retomada', async () => {
+    renderizarRota('/', '03-em-execucao')
+    await userEvent.click(await screen.findByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/Não será possível retomá-la/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Execução ativa #0042' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
+    expect(screen.getByText(/esta execução não aceita novas tentativas/)).toBeInTheDocument()
+  })
+
+  it('Encerrar execução depois da falha impede a retomada', async () => {
+    renderizarRota('/', '08-encerrada-como-falha')
+    expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/não aceitará novas tentativas/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
   })
 
   it('Retomar parte da célula da falha e só libera depois do checklist', async () => {

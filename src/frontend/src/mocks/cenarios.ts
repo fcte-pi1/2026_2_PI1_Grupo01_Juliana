@@ -28,20 +28,22 @@ function emExecucao(agora: number, ultimaHaS: number) {
 function encerradaComoFalha(agora: number) {
   const trajeto = trajetoAte(6)
   return execucao(agora, {
+    iniciada_em: relativo(agora, -51.4),
     tentativas: [
       tentativa(agora, {
         attempt_index: 1,
         status: 'failed',
+        iniciada_em: relativo(agora, -50.4),
         encerrada_em: relativo(agora, -30),
         tempo_s: 20.4,
         velocidade_media: 0.088,
-        bateria_final: 85.9,
-        consumo_bateria: 2.1,
+        bateria_final: 7590,
+        consumo_bateria: 250,
         falha: falha(agora),
       }),
     ],
     trajeto,
-    leituras: leituras(agora, trajeto, 30),
+    leituras: leituras(agora, trajeto, 30, { bateria: 7590, velocidade: 0 }),
     ultima_mensagem_em: relativo(agora, -30),
   })
 }
@@ -61,7 +63,7 @@ export const CENARIOS: Cenario[] = [
       ...base,
       execucao: execucao(agora, {
         iniciada_em: relativo(agora, -4),
-        tentativas: [tentativa(agora, { attempt_index: 1, status: 'health-check', health_check: healthCheck(6) })],
+        tentativas: [tentativa(agora, { attempt_index: 1, status: 'health-check', iniciada_em: relativo(agora, -4), health_check: healthCheck(6) })],
         trajeto: trajetoAte(0),
       }),
     }),
@@ -81,6 +83,7 @@ export const CENARIOS: Cenario[] = [
         ...base,
         execucao: execucao(agora, {
           status: 'concluida',
+          iniciada_em: relativo(agora, -38.1),
           encerrada_em: relativo(agora, -5),
           tempo_total_s: 33.1,
           tentativas: [
@@ -88,15 +91,16 @@ export const CENARIOS: Cenario[] = [
               attempt_index: 1,
               status: 'success',
               tipo_descoberto: '4x4',
+              iniciada_em: relativo(agora, -30.3),
               encerrada_em: relativo(agora, -5),
               tempo_s: 25.3,
               velocidade_media: 0.078,
-              bateria_final: 85.2,
-              consumo_bateria: 2.8,
+              bateria_final: 7560,
+              consumo_bateria: 280,
             }),
           ],
           trajeto,
-          leituras: leituras(agora, trajeto, 5),
+          leituras: leituras(agora, trajeto, 5, { bateria: 7560, velocidade: 0 }),
           ultima_mensagem_em: relativo(agora, -5),
         }),
       }
@@ -146,7 +150,7 @@ export const CENARIOS: Cenario[] = [
         execucao: {
           ...anterior,
           tentativas_usadas: 2,
-          tentativas: [...anterior.tentativas, tentativa(agora, { attempt_index: 2, status: 'running', bateria_inicial: 85.9 })],
+          tentativas: [...anterior.tentativas, tentativa(agora, { attempt_index: 2, status: 'running', bateria_inicial: 7590 })],
           trajeto,
           leituras: leituras(agora, trajeto, 1),
           ultima_mensagem_em: relativo(agora, -1),
@@ -165,6 +169,7 @@ export const CENARIOS: Cenario[] = [
         execucao: {
           ...anterior,
           status: 'concluida',
+          iniciada_em: relativo(agora, -61.2),
           tentativas_usadas: 2,
           encerrada_em: relativo(agora, -3),
           tempo_total_s: 58.2,
@@ -174,16 +179,17 @@ export const CENARIOS: Cenario[] = [
               attempt_index: 2,
               status: 'success',
               tipo_descoberto: '4x4',
+              iniciada_em: relativo(agora, -14),
               encerrada_em: relativo(agora, -3),
               tempo_s: 11.0,
               velocidade_media: 0.082,
-              bateria_inicial: 85.9,
-              bateria_final: 84.8,
-              consumo_bateria: 1.1,
+              bateria_inicial: 7590,
+              bateria_final: 7480,
+              consumo_bateria: 110,
             }),
           ],
           trajeto,
-          leituras: leituras(agora, trajeto, 3),
+          leituras: leituras(agora, trajeto, 3, { bateria: 7480, velocidade: 0 }),
           ultima_mensagem_em: relativo(agora, -3),
         },
       }

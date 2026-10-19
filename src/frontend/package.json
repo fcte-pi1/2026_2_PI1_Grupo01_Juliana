@@ -10,6 +10,9 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
     "preview": "vite preview",
     "gerar-tipos": "openapi-typescript ../backend/openapi.yaml -o src/api/schema.ts"
   },
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",

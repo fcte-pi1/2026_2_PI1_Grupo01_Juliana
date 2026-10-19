@@ -65,6 +65,134 @@
   color: var(--cor-texto-suave);
 }
 
+/* Organização do protótipo: cronômetro, três métricas e painel lateral. */
+.metricas-tempo-real {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--esp-3);
+}
+
+.metricas-tempo-real .metrica {
+  min-width: 0;
+  padding: var(--esp-4);
+}
+
+.metricas-tempo-real .metrica__valor {
+  font-size: 1.75rem;
+  overflow-wrap: anywhere;
+}
+
+.metricas-tempo-real .metrica__unidade {
+  margin-left: var(--esp-1);
+  font-size: var(--texto-sm);
+}
+
+.metricas-tempo-real .tempo--principal {
+  grid-column: 1 / -1;
+  gap: var(--esp-4);
+  padding: var(--esp-5);
+}
+
+.tempo--principal .tempo__cronometro {
+  font-size: 2.75rem;
+}
+
+.tempo__total .mono {
+  font-size: var(--texto-lg);
+  font-weight: 700;
+}
+
+.metricas-tempo-real--compactas {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metricas-tempo-real--compactas .tempo--principal {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: var(--esp-4);
+}
+
+.metricas-tempo-real--compactas .tempo__cronometro {
+  font-size: 2rem;
+}
+
+.metricas-tempo-real--compactas .tempo__linha,
+.metricas-tempo-real--compactas .tempo__limite > .barra,
+.metricas-tempo-real--compactas .tempo__limite > .texto-suave {
+  display: none;
+}
+
+.painel-tempo-real--encerrada.pagina-duas-colunas {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.painel-tempo-real--encerrada .labirinto__svg {
+  max-height: 360px;
+}
+
+@media (min-height: 900px) {
+  .painel-tempo-real--encerrada .labirinto__svg {
+    max-height: 520px;
+  }
+}
+
+.trajeto-ao-vivo .labirinto {
+  width: 140px;
+  max-width: 100%;
+  margin-bottom: var(--esp-4);
+}
+
+.cartao--retomada {
+  border-color: #ddd0ff;
+}
+
+.tentativas-resumo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tentativas-resumo li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding: var(--esp-2) 0;
+}
+
+.execucao-tempo-real {
+  gap: var(--esp-3);
+  padding-top: var(--esp-4);
+}
+
+.execucao-tempo-real .resumo-execucao,
+.execucao-tempo-real .etapas {
+  padding: var(--esp-3) var(--esp-4);
+}
+
+.painel-tempo-real.pagina-duas-colunas {
+  gap: var(--esp-4);
+}
+
+@media (max-width: 1100px) {
+  .painel-tempo-real--encerrada.pagina-duas-colunas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metricas-tempo-real {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .metricas-tempo-real {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .metricas-tempo-real {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .barra {
   height: 6px;
   border-radius: var(--raio-pilula);
@@ -202,6 +330,79 @@
   color: var(--cor-texto-suave);
 }
 
+.verificacoes-robo {
+  display: grid;
+  gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+
+.health-check--verificando {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.health-check--verificando .health-check__item {
+  padding: var(--esp-4) 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--cor-borda);
+  background: transparent;
+}
+
+.sensores-diagrama {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 220px;
+  margin: var(--esp-4) 0;
+  border-radius: var(--raio-md);
+  background: var(--cor-labirinto-fundo);
+  color: var(--cor-lateral-suave);
+  font-family: var(--fonte-mono);
+  font-size: var(--texto-xs);
+}
+
+.sensores-diagrama__frontal,
+.sensores-diagrama__esquerdo,
+.sensores-diagrama__direito {
+  position: absolute;
+}
+
+.sensores-diagrama__frontal { top: 20px; }
+.sensores-diagrama__esquerdo { left: 10px; }
+.sensores-diagrama__direito { right: 10px; }
+
+.sensores-diagrama__robo {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  width: 70px;
+  height: 100px;
+  padding: 8px;
+  border: 3px solid #15803d;
+  border-radius: 18px;
+  background: #22c55e;
+}
+
+.sensores-diagrama__robo::before,
+.sensores-diagrama__robo::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  width: 8px;
+  height: 35px;
+  border-radius: 3px;
+  background: #94a3b8;
+}
+
+.sensores-diagrama__robo::before { left: -9px; }
+.sensores-diagrama__robo::after { right: -9px; }
+
+.sensores-diagrama__robo i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+
 /* Execução */
 .resumo-execucao {
   display: flex;
@@ -214,6 +415,11 @@
 .resumo-execucao__numero {
   font-size: var(--texto-lg);
   margin-right: var(--esp-2);
+}
+
+.resumo-execucao__tempo {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .etapas {
