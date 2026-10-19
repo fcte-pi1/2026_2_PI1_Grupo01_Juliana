@@ -9,7 +9,7 @@ Os itens antigos viram um health_check por tentativa, com hc_id igual ao
 tentativa_id. Tentativas que ficaram presas em health-check viram failed.
 
 Revision ID: d4e5f6a7b8c9
-Revises: c9d0e1f2a3b4
+Revises: c4d5e6f7a8b9
 Create Date: 2026-10-17 13:00:00.000000
 
 """
@@ -20,7 +20,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "d4e5f6a7b8c9"
-down_revision: str | None = "c9d0e1f2a3b4"
+down_revision: str | None = "c4d5e6f7a8b9"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
