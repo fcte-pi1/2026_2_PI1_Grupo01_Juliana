@@ -338,3 +338,18 @@ def test_encerrar_tentativa_publica_falha_retomavel_apos_commit(client, db_sessi
     assert evento.tipo == "falha"
     assert evento.encerra is False
     assert json.loads(evento.dados)["origem"] == "encerrado_operador"
+
+
+def test_encerrar_execucao_publica_falha_que_fecha_o_stream(client, db_session, monkeypatch):
+    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    espia = EspiaPersistencia(db_session, criado["tentativa_id"])
+    monkeypatch.setattr(client.app.state, "publicador_sse", espia)
+
+    resposta = client.post(f"/execucoes/{criado['execucao_id']}/encerrar")
+
+    assert resposta.status_code == 200
+    [evento] = espia.eventos
+    assert evento.tipo == "falha"
+    assert evento.encerra is True
+    assert json.loads(evento.dados)["status_execucao"] == "cancelada"
+    assert json.loads(evento.dados)["motivo"] == "encerrado_operador"

@@ -18,3 +18,9 @@ class TentativaIndisponivel(Exception):
     """Encerrar ou ação similar sem tentativa aberta na execução."""
 
     pass
+
+
+class ExecucaoIndisponivel(Exception):
+    """A execução não está em andamento."""
+
+    pass
