@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { PassoTrajeto } from '../api/tipos'
-import { deduzirEixo, dimensoes, dividirEmTrechos } from '../components/labirinto/trajeto'
+import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { trajeto12x4Longo } from '../mocks/dados'
 
@@ -86,17 +86,15 @@ describe('VisualizacaoLabirinto', () => {
     expect(screen.getByText('Robô em A3')).toBeInTheDocument()
   })
 
-  it('mostra só o 4x4 até saber a orientação e depois abre o tamanho completo', () => {
+  it('desenha o 12x4 inteiro antes de o robô sair do canto da largada', () => {
     const { container, rerender } = render(
       <VisualizacaoLabirinto largura={12} altura={4} trajeto={passos([[0, 0], [1, 0], [2, 0], [3, 0]])} />,
     )
-    expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(16)
-    expect(screen.queryByText('OBJETIVO')).not.toBeInTheDocument()
-    expect(screen.getByText(/até o robô revelar a orientação/)).toBeInTheDocument()
-
-    rerender(<VisualizacaoLabirinto largura={12} altura={4} trajeto={passos([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]])} />)
     expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(48)
     expect(screen.getByText('Objetivo L4')).toBeInTheDocument()
+
+    rerender(<VisualizacaoLabirinto largura={12} altura={4} trajeto={[]} />)
+    expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(48)
   })
 
   it('usa a posição reconciliada sem descartar o percurso e as falhas do FRONT-04', () => {
@@ -131,7 +129,6 @@ describe('VisualizacaoLabirinto', () => {
 
     expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(32)
     expect(screen.getByText('Objetivo D8')).toBeInTheDocument()
-    expect(screen.queryByText(/até o robô revelar a orientação/)).not.toBeInTheDocument()
   })
 })
 
@@ -146,6 +143,9 @@ describe('funções do trajeto', () => {
     expect(deduzirEixo(passos([[11, 3]]), 4)).toBe('x')
     expect(deduzirEixo(passos([[3, 11]]), 4)).toBe('y')
     expect(deduzirEixo(passos([[3, 3]]), 4)).toBeNull()
+    expect(eixoParaGrade(12, 4, null)).toBe('x')
+    expect(eixoParaGrade(4, 4, null)).toBeNull()
+    expect(eixoParaGrade(8, 4, 'y')).toBe('y')
     expect(dimensoes(12, 4, null)).toEqual({ colunas: 4, linhas: 4 })
     expect(dimensoes(12, 4, 'x')).toEqual({ colunas: 12, linhas: 4 })
     expect(dimensoes(12, 4, 'y')).toEqual({ colunas: 4, linhas: 12 })

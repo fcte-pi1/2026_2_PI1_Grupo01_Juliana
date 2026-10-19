@@ -71,8 +71,8 @@ export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAo
               compacto
             />
             <p className="texto-suave espaco-acima">
-              O trajeto é desenhado célula a célula conforme o robô entra em cada uma. No 8x4 e no 12x4, o mapa mostra só o 4x4 da
-              largada até o robô revelar a orientação; o mapa com rótulos e paredes aparece quando a tentativa terminar.
+              O trajeto é desenhado célula a célula na grade do labirinto escolhido. Se o lado longo estiver na vertical, o mapa
+              acompanha quando o robô sair do canto da largada. Rótulos e paredes aparecem quando a tentativa terminar.
             </p>
           </section>
           <CartaoComunicacao ultimaMensagemEm={execucao.ultima_mensagem_em} />

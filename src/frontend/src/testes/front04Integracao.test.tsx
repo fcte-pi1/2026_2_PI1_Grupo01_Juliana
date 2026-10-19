@@ -30,13 +30,16 @@ describe('FRONT-03 integrado ao labirinto do FRONT-04', () => {
     expect(screen.getByRole('img', { name: new RegExp(`Labirinto ${labirinto}`) }).querySelectorAll('.labirinto__celula')).toHaveLength(celulas)
   })
 
-  it.each(['8x4', '12x4'] as const)('não presume o objetivo do %s antes de conhecer a orientação', async (labirinto) => {
+  it.each([
+    ['8x4', 'H4', 32],
+    ['12x4', 'L4', 48],
+  ] as const)('desenha o %s inteiro antes de o robô informar a orientação', async (labirinto, objetivo, celulas) => {
     const execucao = buscarCenario('03-em-execucao').atual(Date.now()).execucao!
     Object.assign(execucao, { labirinto, eixo_longo: null })
     responder(execucao)
     renderizarRota('/')
-    expect(await screen.findByText('A1 → Objetivo pendente')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: new RegExp(`Labirinto ${labirinto}`) }).querySelectorAll('.labirinto__celula')).toHaveLength(16)
+    expect(await screen.findByText(`A1 → ${objetivo}`)).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: new RegExp(`Labirinto ${labirinto}`) }).querySelectorAll('.labirinto__celula')).toHaveLength(celulas)
   })
 
   it('usa a posição persistida mais recente no cartão, no mapa e no modal de encerramento', async () => {
