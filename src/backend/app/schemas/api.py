@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 Labirinto = Literal["4x4", "8x4", "12x4"]
 TipoLabirinto = Labirinto
 StatusExecucao = Literal["em_andamento", "concluida", "cancelada"]
-StatusTentativa = Literal["health-check", "running", "success", "failed"]
+StatusTentativa = Literal["running", "success", "failed"]
 TipoInicio = Literal["nova", "retomada"]
 TipoDip = Literal["4x4", "8x4", "12x4", "invalido"]
 Componente = Literal[
@@ -32,7 +32,15 @@ MotivoFalha = Literal[
     "encerrado_operador",
 ]
 MotivoEncerramento = Literal["collision", "stuck", "out_of_track"]
-MotivoRecusa = Literal["tentativa_aberta", "limite_3", "execucao_cancelada"]
+MotivoRecusa = Literal[
+    "tentativa_aberta",
+    "limite_3",
+    "execucao_cancelada",
+    "health_check_ausente",
+    "health_check_reprovado",
+    "health_check_expirado",
+    "dip_divergente",
+]
 OrigemFalha = Literal["automatica", "encerrado_operador"]
 Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
@@ -56,6 +64,19 @@ class ItemHealthCheck(BaseModel):
     componente: Componente
     aprovado: bool
     valor_lido: float | None = None
+
+
+class UltimoHealthCheck(BaseModel):
+    aprovado: bool | None = None
+    tipo_dip: TipoDip | None = None
+    iniciado_em: datetime
+    concluido_em: datetime | None = None
+    valido_ate: datetime | None = None
+    itens: list[ItemHealthCheck] = Field(default_factory=list)
+
+
+class SolicitacaoHealthCheck(BaseModel):
+    solicitado_em: datetime
 
 
 class Falha(BaseModel):

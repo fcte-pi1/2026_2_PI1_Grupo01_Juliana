@@ -111,7 +111,22 @@ int contrato_sucesso(char *buf, size_t tam, const contrato_cabecalho_t *cab,
     return escrever(buf, tam, cab, "sucesso", ",\"x\":%u,\"y\":%u", (unsigned)m->x, (unsigned)m->y);
 }
 
+static bool eh_comando(const char *linha, const char *cmd_com_aspas)
+{
+    return strstr(linha, "\"v\":1") != NULL && strstr(linha, cmd_com_aspas) != NULL;
+}
+
 bool contrato_eh_interromper(const char *linha)
 {
-    return strstr(linha, "\"v\":1") != NULL && strstr(linha, "\"cmd\":\"interromper\"") != NULL;
+    return eh_comando(linha, "\"cmd\":\"interromper\"");
+}
+
+bool contrato_eh_largar(const char *linha)
+{
+    return eh_comando(linha, "\"cmd\":\"largar\"");
+}
+
+bool contrato_eh_health_check(const char *linha)
+{
+    return eh_comando(linha, "\"cmd\":\"health_check\"");
 }

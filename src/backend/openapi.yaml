@@ -7,6 +7,7 @@ info:
 
 tags:
   - name: execucoes
+  - name: health-check
   - name: stream
   - name: telemetria
 
@@ -112,9 +113,11 @@ paths:
       tags: [execucoes]
       summary: Registra uma nova execução, contando 1/3 tentativas.
       description: >
-        O operador informa o labirinto. O backend abre a execução lógica,
-        começa o relógio de 10 minutos e cria a tentativa 1.
-        Se já houver execução em andamento, ela é cancelada.
+        O operador informa o labirinto. Exige um health-check aprovado, concluído
+        há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409
+        e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio
+        de 10 minutos e cria a tentativa 1 já em running, com o comando `largar`
+        para o robô. Se já houver execução em andamento, ela é cancelada.
       requestBody:
         required: true
         content:
@@ -134,8 +137,64 @@ paths:
                 execucao_id: 123e4567-e89b-12d3-a456-426614174000
                 tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
                 attempt_index: 1
+        "409":
+          $ref: "#/components/responses/Recusa"
         "422":
           $ref: "#/components/responses/ErroValidacao"
+
+  /health-check/ultimo:
+    get:
+      operationId: buscarUltimoHealthCheck
+      tags: [health-check]
+      summary: Health-check mais recente, pré-requisito da largada
+      description: >
+        A tela mostra os itens e, quando aprovado, até quando ele libera a
+        largada (valido_ate, 7 minutos depois da conclusão).
+      responses:
+        "200":
+          description: Há pelo menos um health-check.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UltimoHealthCheck"
+              example:
+                aprovado: true
+                tipo_dip: "4x4"
+                iniciado_em: "2026-10-07T13:58:00-03:00"
+                concluido_em: "2026-10-07T13:58:02-03:00"
+                valido_ate: "2026-10-07T14:05:02-03:00"
+                itens:
+                  - componente: bateria
+                    aprovado: true
+                    valor_lido: 7840
+                  - componente: tof_frontal
+                    aprovado: true
+                    valor_lido: 180
+        "204":
+          description: O robô ainda não enviou nenhum health-check.
+
+  /health-check/solicitar:
+    post:
+      operationId: solicitarHealthCheck
+      tags: [health-check]
+      summary: Pedir ao robô um novo health-check
+      description: >
+        O operador pede um novo health-check, por exemplo depois de um reprovado,
+        de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao
+        POST /telemetria passa a incluir o comando `health_check` até o robô
+        enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada.
+        O resultado aparece em GET /health-check/ultimo.
+      responses:
+        "202":
+          description: Pedido registrado; o robô recebe o comando na próxima resposta da ponte.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitacaoHealthCheck"
+              example:
+                solicitado_em: "2026-10-07T14:10:00-03:00"
+        "409":
+          $ref: "#/components/responses/Conflito"
 
   /execucoes/em-andamento:
     get:
@@ -154,8 +213,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExecucaoDetalhe"
               examples:
-                tela-02-health-check:
-                  $ref: "#/components/examples/Tela02HealthCheck"
                 tela-03-em-execucao:
                   $ref: "#/components/examples/Tela03EmExecucao"
                 tela-06-sem-comunicacao:
@@ -275,9 +332,10 @@ paths:
       summary: Abrir a tentativa seguinte depois de uma falha
       description: >
         O pedido não tem corpo. Em caso de sucesso a resposta é o retorno
-        da tentativa 2 ou 3. Recusa com 409 e não cria tentativa quando
-        já existe tentativa aberta, quando as três já foram usadas ou
-        quando a execução está cancelada.
+        da tentativa 2 ou 3, já em running, com o comando `largar` para o robô.
+        Recusa com 409 e não cria tentativa quando já existe tentativa aberta,
+        quando as três já foram usadas, quando a execução está cancelada ou
+        quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       responses:
@@ -348,7 +406,7 @@ paths:
                     event: passo
                     data: {"tipo":"passo","passo_id":41,"seq":2,"x":0,"y":1,"paredes_mask":9,"retomada":false,"entrou_em":"2026-10-07T14:03:22-03:00"}
                 status:
-                  summary: Health-check aprovado, tentativa passa a running
+                  summary: Tentativa aberta em running, na largada
                   value: |
                     event: status
                     data: {"tipo":"status","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","attempt_index":1,"status_tentativa":"running","status_execucao":"em_andamento","tipo_dip":"4x4"}
@@ -379,9 +437,13 @@ paths:
         Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial
         e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1
         fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa
-        aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**,
-        a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha`
-        com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
+        aberta) responde 200. O health-check (`hc_item`, `hc_resultado`) é gravado mesmo sem
+        tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou
+        **Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel`
+        em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de
+        interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa. Depois
+        de POST /health-check/solicitar, inclui `health_check` até o primeiro `hc_item` ou
+        `hc_resultado`; a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
@@ -476,16 +538,16 @@ components:
             detail: Execução não encontrada.
     Recusa:
       description: >
-        A retomada foi recusada. Nenhuma tentativa nova é gravada.
+        A abertura da tentativa foi recusada. Nenhuma tentativa nova é gravada.
         O motivo diz se já havia tentativa aberta, se as três já foram
-        usadas ou se a execução está cancelada.
+        usadas, se a execução está cancelada ou o que falta no health-check.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Recusa"
           examples:
             tela-05-tentativa-aberta:
-              summary: Já existe tentativa em health-check ou running.
+              summary: Já existe tentativa em running.
               value:
                 motivo: tentativa_aberta
                 ocorrida_em: "2026-10-07T14:04:02-03:00"
@@ -498,6 +560,11 @@ components:
               summary: A execução já está cancelada ou o tempo acabou.
               value:
                 motivo: execucao_cancelada
+                ocorrida_em: "2026-10-07T14:12:00-03:00"
+            health-check-expirado:
+              summary: O último health-check aprovado foi concluído há mais de 7 minutos.
+              value:
+                motivo: health_check_expirado
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
     Conflito:
       description: >
@@ -517,49 +584,6 @@ components:
             $ref: "#/components/schemas/ErroValidacao"
 
   examples:
-    Tela02HealthCheck:
-      summary: Health-check em andamento
-      value:
-        execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        tipo_labirinto: "4x4"
-        status: em_andamento
-        tentativas_usadas: 1
-        iniciada_em: "2026-10-07T14:00:00-03:00"
-        encerrada_em: null
-        tempo_total_s: null
-        variacao_melhor_tempo_pct: null
-        eixo_longo: null
-        ultima_mensagem_em: "2026-10-07T14:00:04-03:00"
-        tentativas:
-          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
-            attempt_index: 1
-            status: health-check
-            tipo_inicio: nova
-            tipo_dip: null
-            iniciada_em: "2026-10-07T14:00:00-03:00"
-            encerrada_em: null
-            tempo_s: null
-            velocidade_media: null
-            bateria_inicial: null
-            bateria_final: null
-            consumo_bateria: null
-            health_check:
-              - componente: bateria
-                aprovado: true
-                valor_lido: 7.84
-              - componente: tof_frontal
-                aprovado: true
-                valor_lido: 180
-            falha: null
-        trajeto: []
-        leituras:
-          - ordem: 1
-            x: 0
-            y: 0
-            bateria: 7.84
-            velocidade: 0
-            rumo: "N"
-            enviado_em: "2026-10-07T14:00:04-03:00"
     Tela03EmExecucao:
       summary: Tentativa 1 em running
       value:
@@ -997,7 +1021,10 @@ components:
       enum: [em_andamento, concluida, cancelada]
     StatusTentativa:
       type: string
-      enum: [health-check, running, success, failed]
+      description: >
+        A tentativa nasce em running, na largada. O health-check é pré-requisito
+        e não faz parte da tentativa (GET /health-check/ultimo).
+      enum: [running, success, failed]
     TipoInicio:
       type: string
       enum: [nova, retomada]
@@ -1038,7 +1065,18 @@ components:
       enum: [automatica, encerrado_operador]
     MotivoRecusa:
       type: string
-      enum: [tentativa_aberta, limite_3, execucao_cancelada]
+      description: >
+        Os motivos health_check_* e dip_divergente valem para Nova execução e
+        Retomar: falta um health-check, o último foi reprovado, foi concluído há
+        mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+      enum:
+        - tentativa_aberta
+        - limite_3
+        - execucao_cancelada
+        - health_check_ausente
+        - health_check_reprovado
+        - health_check_expirado
+        - dip_divergente
     Rumo:
       type: string
       enum: ["N", "S", "L", "O"]
@@ -1091,6 +1129,46 @@ components:
         valor_lido:
           type: number
           nullable: true
+    UltimoHealthCheck:
+      type: object
+      description: >
+        Health-check mais recente do robô. Em andamento, aprovado e concluido_em
+        vêm nulos e os itens chegam aos poucos. valido_ate só vem quando aprovado:
+        até lá, Nova execução e Retomar são aceitos.
+      required: [iniciado_em, itens]
+      properties:
+        aprovado:
+          type: boolean
+          nullable: true
+        tipo_dip:
+          allOf:
+            - $ref: "#/components/schemas/TipoDip"
+          nullable: true
+        iniciado_em:
+          type: string
+          format: date-time
+        concluido_em:
+          type: string
+          format: date-time
+          nullable: true
+        valido_ate:
+          type: string
+          format: date-time
+          nullable: true
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemHealthCheck"
+    SolicitacaoHealthCheck:
+      type: object
+      description: >
+        Pedido de novo health-check registrado. O resultado é o primeiro
+        health-check com iniciado_em a partir de solicitado_em.
+      required: [solicitado_em]
+      properties:
+        solicitado_em:
+          type: string
+          format: date-time
     Falha:
       type: object
       required: [motivo, origem, celula_x, celula_y, momento_falha]
@@ -1511,7 +1589,11 @@ components:
           enum: [1]
         cmd:
           type: string
-          enum: [interromper]
+          description: >
+            interromper: encerramento manual da tentativa. largar: largada pedida
+            pelo operador em Nova execução ou Retomar. health_check: o operador
+            pediu um novo health-check.
+          enum: [interromper, largar, health_check]
     EntradaPonte:
       type: object
       required: [linha, recebido_em]

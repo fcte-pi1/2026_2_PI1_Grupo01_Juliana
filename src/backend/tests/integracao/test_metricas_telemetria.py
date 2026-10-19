@@ -8,9 +8,10 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from app.models import ExecucaoLogica, Tentativa
-from contrato.telemetria import HcResultado, Sucesso, escrever_linha
+from contrato.telemetria import Sucesso, escrever_linha
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from tests.integracao.apoio_health_check import gravar_health_check
 
 
 def _t0() -> datetime:
@@ -54,25 +55,60 @@ def _alinhar_inicio(client, db_session: Session, execucao_id: str) -> tuple[Tent
     return tentativa, inicio
 
 
-def _hc_aprovado(seq: int = 1) -> str:
-    return escrever_linha(
-        HcResultado(
-            v=1,
-            boot=9,
-            seq=seq,
-            t_ms=100,
-            tipo="hc_resultado",
-            aprovado=True,
-            tipo_dip="4x4",
-            inicio="nova",
-        )
+def _nova_execucao(client, db_session: Session) -> dict:
+    gravar_health_check(db_session, "4x4")
+    return client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+
+
+def _tel(seq: int, estado: str = "running") -> str:
+    return _evento(
+        seq,
+        {
+            "tipo": "tel",
+            "estado": estado,
+            "x": 0,
+            "y": 0,
+            "rumo": "N",
+            "bat_mv": 8400,
+            "vel_mm_s": 0,
+            "eixo_longo": None,
+        },
     )
 
 
-def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
+def test_tempo_conta_da_largada_e_nao_do_health_check(client, db_session: Session):
+    # health-check 5 min antes da largada, dentro dos 7 min de validade
+    gravar_health_check(db_session, "4x4", concluido_em=datetime.now(UTC) - timedelta(minutes=5))
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
-    _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
+
+    _telemetria(
+        client,
+        _evento(1, {"tipo": "passo", "x": 0, "y": 0, "paredes": 5}),
+        inicio + timedelta(seconds=12),
+    )
+
+    db_session.refresh(tentativa)
+    assert tentativa.status == "running"
+    assert tentativa.tempo_s == Decimal("12")
+
+
+def test_largar_vai_nas_respostas_ate_o_robo_correr(client, db_session: Session):
+    criado = _nova_execucao(client, db_session)
+    _, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
+
+    parado = _telemetria(client, _tel(1, estado="health-check"), inicio + timedelta(seconds=1))
+    correndo = _telemetria(client, _tel(2), inicio + timedelta(seconds=2))
+    depois = _telemetria(client, _tel(3), inicio + timedelta(seconds=3))
+
+    assert parado.json() == {"comandos": [{"v": 1, "cmd": "largar"}]}
+    assert correndo.json() == {"comandos": []}
+    assert depois.json() == {"comandos": []}
+
+
+def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
+    criado = _nova_execucao(client, db_session)
+    tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
     db_session.refresh(tentativa)
 
     tel1 = _evento(
@@ -115,9 +151,8 @@ def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
 
 
 def test_consumo_percentual_usa_curva_aa(client, db_session: Session):
-    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    criado = _nova_execucao(client, db_session)
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
-    _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
 
     for seq, bateria, instante in [(2, 6400, 5), (3, 5600, 6)]:
         _telemetria(
@@ -145,9 +180,8 @@ def test_consumo_percentual_usa_curva_aa(client, db_session: Session):
 
 
 def test_velocidade_conta_revisitas_e_desconsidera_largada(client, db_session: Session):
-    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    criado = _nova_execucao(client, db_session)
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
-    _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
     db_session.refresh(tentativa)
     execucao = tentativa.execucao
 
@@ -164,15 +198,9 @@ def test_velocidade_conta_revisitas_e_desconsidera_largada(client, db_session: S
 
 
 def test_tempo_usa_relogio_backend_mesmo_com_ponte_defasada(client, db_session: Session):
-    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    criado = _nova_execucao(client, db_session)
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
     relogio_ponte = inicio - timedelta(hours=2)
-    _telemetria(
-        client,
-        _hc_aprovado(),
-        inicio + timedelta(seconds=1),
-        recebido_em=relogio_ponte,
-    )
     _telemetria(
         client,
         _evento(2, {"tipo": "passo", "x": 0, "y": 0, "paredes": 5}),
@@ -185,9 +213,8 @@ def test_tempo_usa_relogio_backend_mesmo_com_ponte_defasada(client, db_session: 
 
 
 def test_metricas_finais_no_sucesso(client, db_session: Session):
-    criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
+    criado = _nova_execucao(client, db_session)
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
-    _telemetria(client, _hc_aprovado(), inicio + timedelta(seconds=1))
     db_session.refresh(tentativa)
     execucao = db_session.get(ExecucaoLogica, uuid.UUID(criado["execucao_id"]))
 

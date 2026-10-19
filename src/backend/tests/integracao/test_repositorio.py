@@ -59,8 +59,8 @@ def _nova_tentativa(
 def test_salvar_execucao_e_tentativa(db_session):
     repo = Repositorio(db_session)
     execucao = _nova_execucao(db_session)
-    tentativa = _nova_tentativa(db_session, execucao, status="health-check", tempo_s=None)
-    tentativa.status = "running"
+    tentativa = _nova_tentativa(db_session, execucao, status="running", tempo_s=None)
+    tentativa.status = "success"
     repo.salvar(tentativa)
 
     carregada = repo.buscar_execucao(execucao.execucao_id)
@@ -137,7 +137,7 @@ def test_duas_tentativas_abertas_mesma_execucao_falha_no_banco(db_session):
         tentativa_id=uuid.uuid4(),
         execucao_id=execucao.execucao_id,
         attempt_index=2,
-        status="health-check",
+        status="running",
         tipo_inicio="retomada",
         iniciada_em=datetime.now(UTC),
     )
@@ -155,6 +155,6 @@ def test_tentativa_aberta_apos_anterior_finalizada_e_permitida(db_session):
 
     carregada = repo.buscar_execucao(execucao.execucao_id)
     assert carregada is not None
-    abertas = [t for t in carregada.tentativas if t.status in ("health-check", "running")]
+    abertas = [t for t in carregada.tentativas if t.status == "running"]
     assert len(abertas) == 1
     assert abertas[0].tentativa_id == segunda.tentativa_id

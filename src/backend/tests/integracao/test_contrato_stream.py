@@ -5,6 +5,7 @@ import json
 from app.services.fabrica_eventos import (
     FABRICAS,
     OrigemFalha,
+    OrigemHealthCheck,
     OrigemStatus,
     OrigemSucesso,
     OrigemTelemetria,
@@ -53,14 +54,13 @@ def test_os_seis_eventos_do_contrato_tem_payload_valido(fabrica):
     execucao = fabrica.execucao(status="em_andamento", tentativas_usadas=1)
     tentativa = fabrica.tentativa(execucao, status="running")
     passo = fabrica.passos(tentativa, CELULAS)[0]
-    fabrica.health_check(tentativa)
-    item = tentativa.health_check_itens[0]
+    item = fabrica.health_check(tentativa).itens[0]
     falha = fabrica.falha(tentativa)
 
     origens = [
         passo,
         OrigemTelemetria(tel=ler_linha(LINHA_TEL), ordem=42, enviado_em=tentativa.iniciada_em),
-        item,
+        OrigemHealthCheck(item=item, tentativa_id=tentativa.tentativa_id),
         OrigemStatus(tentativa=tentativa, status_execucao="em_andamento"),
         OrigemFalha(falha=falha, status_execucao="cancelada"),
         OrigemSucesso(tentativa=tentativa, x=3, y=3, status_execucao="concluida"),

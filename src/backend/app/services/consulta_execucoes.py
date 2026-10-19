@@ -160,23 +160,30 @@ def _tentativa(tentativa: models.Tentativa, passos: list[models.PassoTrajeto]) -
             if tentativa.consumo_bateria_pct is not None
             else None
         ),
-        health_check=[
-            api.ItemHealthCheck(
-                componente=item.componente,
-                aprovado=item.aprovado,
-                valor_lido=item.valor_lido,
-            )
-            for item in sorted(tentativa.health_check_itens, key=lambda i: i.verificado_em)
-        ],
+        health_check=itens_health_check(tentativa.health_check),
         falha=_falha(tentativa, passos) if tentativa.falha else None,
     )
+
+
+def itens_health_check(health_check: models.HealthCheck | None) -> list[api.ItemHealthCheck]:
+    if health_check is None:
+        return []
+    return [
+        api.ItemHealthCheck(
+            componente=item.componente,
+            aprovado=item.aprovado,
+            valor_lido=item.valor_lido,
+        )
+        for item in sorted(health_check.itens, key=lambda i: i.verificado_em)
+    ]
 
 
 def _falha(tentativa: models.Tentativa, passos: list[models.PassoTrajeto]) -> api.Falha:
     falha = tentativa.falha
     x, y = falha.celula_x, falha.celula_y
     if x is None or y is None:
-        # Sem célula gravada (ex.: health-check reprovado): usa a última célula
+        # Sem célula gravada (ex.: health-check reprovado, de antes de ele sair
+        # da tentativa): usa a última célula
         # da tentativa ou a largada.
         da_tentativa = [p for p in passos if p.tentativa_id == tentativa.tentativa_id]
         ultimo = da_tentativa[-1] if da_tentativa else None

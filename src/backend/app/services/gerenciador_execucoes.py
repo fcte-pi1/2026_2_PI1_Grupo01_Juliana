@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from app.models import ExecucaoLogica, Falha, Tentativa, TentativaRejeitada
+from app.models import ExecucaoLogica, Falha, HealthCheck, Tentativa, TentativaRejeitada
 from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.repositorio import Repositorio
 from app.services.atualizacao_metricas import finalizar_tentativa
@@ -16,6 +16,7 @@ from app.services.excecoes_execucao import (
     ExecucaoIndisponivel,
     ExecucaoNaoEncontrada,
     RecusaTentativa,
+    TentativaEmAndamento,
     TentativaIndisponivel,
 )
 from app.services.fabrica_eventos import (
@@ -26,13 +27,13 @@ from app.services.fabrica_eventos import (
 )
 from app.services.monitor_conexao import MonitorConexao
 from app.services.publicador_sse import EventoSSE
-from contrato.telemetria import Comando, HcResultado, Mensagem, Sucesso
+from contrato.telemetria import Comando, Mensagem, Sucesso
 from contrato.telemetria import Falha as FalhaMsg
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger("app.gerenciador")
 
-ABERTA = ("health-check", "running")
+ABERTA = ("running",)
 TERMINAL_TENTATIVA = ("success", "failed")
 
 
@@ -52,13 +53,32 @@ class ResultadoMonitor:
 class GerenciadorExecucoes:
     limite_tentativas: int = 3
 
-    def __init__(self, tempo_maximo_execucao_s: int) -> None:
+    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 420) -> None:
         self.tempo_maximo_execucao_s = tempo_maximo_execucao_s
+        self.validade_health_check_s = validade_health_check_s
         self._interrupcao_pendente = False
+        self._largada_pendente = False
+        self._health_check_pendente = False
+
+    def solicitar_health_check(self, sessao: Session) -> datetime:
+        """Pede ao robô um novo health-check. Com o robô correndo, o pedido é recusado."""
+        if Repositorio(sessao).buscar_tentativa_aberta() is not None:
+            raise TentativaEmAndamento()
+        self._health_check_pendente = True
+        return datetime.now(UTC)
+
+    def confirmar_health_check(self) -> None:
+        """O robô começou o health-check: o pedido deixa de ir nas respostas."""
+        self._health_check_pendente = False
 
     def nova_execucao(self, sessao: Session, tipo_labirinto: str) -> RetornoTentativa:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
+        motivo, health_check = self._conferir_health_check(repo, tipo_labirinto, agora)
+        if motivo is not None:
+            # sem execução aberta, a recusa não tem onde ser gravada
+            raise RecusaTentativa(motivo, agora)
+
         anterior = repo.buscar_execucao_em_andamento()
         if anterior is not None:
             self._cancelar_execucao(sessao, anterior, agora)
@@ -76,7 +96,12 @@ class GerenciadorExecucoes:
         )
         repo.salvar(execucao)
         tentativa = self._abrir_tentativa(
-            repo, execucao, attempt_index=1, tipo_inicio="nova", agora=agora
+            repo,
+            execucao,
+            health_check,
+            attempt_index=1,
+            tipo_inicio="nova",
+            agora=agora,
         )
         execucao.tentativas_usadas = 1
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, 1)
@@ -101,12 +126,20 @@ class GerenciadorExecucoes:
         if ultima is None or ultima.status != "failed":
             raise self._recusar(sessao, execucao.execucao_id, "execucao_cancelada", agora)
 
+        motivo, health_check = self._conferir_health_check(repo, execucao.labirinto.tipo, agora)
+        if motivo is not None:
+            raise self._recusar(sessao, execucao.execucao_id, motivo, agora)
+
         proximo = execucao.tentativas_usadas + 1
         tentativa = self._abrir_tentativa(
-            repo, execucao, attempt_index=proximo, tipo_inicio="retomada", agora=agora
+            repo,
+            execucao,
+            health_check,
+            attempt_index=proximo,
+            tipo_inicio="retomada",
+            agora=agora,
         )
         execucao.tentativas_usadas = proximo
-        self._interrupcao_pendente = False
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, proximo)
 
     def encerrar_tentativa(
@@ -213,9 +246,7 @@ class GerenciadorExecucoes:
         agora = momento or datetime.now(UTC)
         execucao = tentativa.execucao
 
-        if isinstance(mensagem, HcResultado):
-            return self._aplicar_hc_resultado(sessao, repo, tentativa, execucao, mensagem, agora)
-        elif isinstance(mensagem, FalhaMsg):
+        if isinstance(mensagem, FalhaMsg):
             return self._aplicar_falha_telemetria(
                 sessao, repo, tentativa, execucao, mensagem, agora
             )
@@ -284,41 +315,34 @@ class GerenciadorExecucoes:
         )
 
     def comandos_pendentes(self) -> list[Comando]:
+        comandos = []
         if self._interrupcao_pendente:
-            return [Comando()]
-        return []
+            comandos.append(Comando(cmd="interromper"))
+        if self._largada_pendente:
+            comandos.append(Comando(cmd="largar"))
+        if self._health_check_pendente:
+            comandos.append(Comando(cmd="health_check"))
+        return comandos
 
-    def _aplicar_hc_resultado(
-        self,
-        sessao: Session,
-        repo: Repositorio,
-        tentativa: Tentativa,
-        execucao: ExecucaoLogica,
-        mensagem: HcResultado,
-        agora: datetime,
-    ) -> list[EventoSSE]:
-        if tentativa.status != "health-check":
-            return []
+    def confirmar_largada(self) -> None:
+        """O robô já está correndo: o `largar` deixa de ir nas respostas."""
+        self._largada_pendente = False
 
-        tipo_esperado = execucao.labirinto.tipo
-        dip_ok = mensagem.tipo_dip == tipo_esperado
-        if mensagem.aprovado and dip_ok:
-            tentativa.status = "running"
-            tentativa.tipo_dip = mensagem.tipo_dip
-            return criar_eventos(OrigemStatus(tentativa=tentativa, status_execucao=execucao.status))
-
-        motivo = "health_check_failed"
-        self._registrar_falha(
-            repo,
-            tentativa,
-            motivo=motivo,
-            origem="automatica",
-            x=0,
-            y=0,
-            agora=agora,
-        )
-        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
-        return criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status))
+    def _conferir_health_check(
+        self, repo: Repositorio, tipo_labirinto: str, agora: datetime
+    ) -> tuple[str | None, HealthCheck | None]:
+        """Devolve o motivo da recusa, ou None e o health-check que libera a largada."""
+        health_check = repo.ultimo_health_check_concluido()
+        if health_check is None:
+            return "health_check_ausente", None
+        if not health_check.aprovado:
+            return "health_check_reprovado", None
+        idade = (agora - health_check.concluido_em).total_seconds()
+        if idade > self.validade_health_check_s:
+            return "health_check_expirado", None
+        if health_check.tipo_dip != tipo_labirinto:
+            return "dip_divergente", None
+        return None, health_check
 
     def _aplicar_falha_telemetria(
         self,
@@ -366,6 +390,7 @@ class GerenciadorExecucoes:
         execucao.encerrada_em = agora
         finalizar_tentativa(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = False
+        self._largada_pendente = False
         return criar_eventos(
             OrigemSucesso(
                 tentativa=tentativa,
@@ -389,6 +414,7 @@ class GerenciadorExecucoes:
     ) -> None:
         tentativa.status = "failed"
         tentativa.encerrada_em = agora
+        self._largada_pendente = False
         if tentativa.attempt_index >= self.limite_tentativas:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
@@ -402,6 +428,7 @@ class GerenciadorExecucoes:
         if aberta is not None:
             aberta.status = "failed"
             aberta.encerrada_em = agora
+            self._largada_pendente = False
         execucao.status = "cancelada"
         execucao.encerrada_em = agora
         if aberta is not None:
@@ -411,20 +438,28 @@ class GerenciadorExecucoes:
         self,
         repo: Repositorio,
         execucao: ExecucaoLogica,
+        health_check: HealthCheck,
         *,
         attempt_index: int,
         tipo_inicio: str,
         agora: datetime,
     ) -> Tentativa:
+        """Abre a tentativa já em running: a largada é o clique do operador."""
         tentativa = Tentativa(
             tentativa_id=uuid.uuid4(),
             execucao_id=execucao.execucao_id,
             attempt_index=attempt_index,
-            status="health-check",
+            status="running",
             tipo_inicio=tipo_inicio,
+            tipo_dip=health_check.tipo_dip,
+            hc_id=health_check.hc_id,
             iniciada_em=agora,
         )
         repo.salvar(tentativa)
+        self._interrupcao_pendente = False
+        self._largada_pendente = True
+        # a largada vence um pedido de health-check que o robô ainda não atendeu
+        self._health_check_pendente = False
         return tentativa
 
     def _registrar_falha(

@@ -10,7 +10,11 @@ class TentativaRejeitada(Base):
     __tablename__ = "tentativa_rejeitada"
     __table_args__ = (
         CheckConstraint(
-            "motivo IN ('tentativa_aberta', 'limite_3', 'execucao_cancelada')",
+            "motivo IN ("
+            "'tentativa_aberta', 'limite_3', 'execucao_cancelada', "
+            "'health_check_ausente', 'health_check_reprovado', "
+            "'health_check_expirado', 'dip_divergente'"
+            ")",
             name="ck_tentativa_rejeitada_motivo",
         ),
     )

@@ -18,6 +18,7 @@ from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.publicador_sse import EventoSSE
 from sse_test_utils import count_keep_alives, parse_sse_frames
+from tests.integracao.apoio_health_check import gravar_health_check
 
 EXECUCAO_INEXISTENTE = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
 CELULAS = [(0, 0), (0, 1), (0, 2), (1, 2), (2, 2)]
@@ -322,7 +323,14 @@ def test_link_lost_na_ingestao_publica_falha_retomavel_apos_commit(
     assert json.loads(evento.dados)["motivo"] == "link_lost"
 
 
-def test_encerrar_tentativa_publica_falha_retomavel_apos_commit(client, db_session, monkeypatch):
+@pytest.fixture
+def health_check(db_session):
+    return gravar_health_check(db_session, "4x4")
+
+
+def test_encerrar_tentativa_publica_falha_retomavel_apos_commit(
+    client, db_session, monkeypatch, health_check
+):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     tentativa_id = criado["tentativa_id"]
     espia = EspiaPersistencia(db_session, tentativa_id)
@@ -340,7 +348,9 @@ def test_encerrar_tentativa_publica_falha_retomavel_apos_commit(client, db_sessi
     assert json.loads(evento.dados)["origem"] == "encerrado_operador"
 
 
-def test_encerrar_execucao_publica_falha_que_fecha_o_stream(client, db_session, monkeypatch):
+def test_encerrar_execucao_publica_falha_que_fecha_o_stream(
+    client, db_session, monkeypatch, health_check
+):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     espia = EspiaPersistencia(db_session, criado["tentativa_id"])
     monkeypatch.setattr(client.app.state, "publicador_sse", espia)

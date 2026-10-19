@@ -1,10 +1,11 @@
-from uuid import UUID, uuid4
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import pytest
 from app.main import app
-from app.models import Tentativa
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from tests.contrato_openapi import validar_resposta
+from tests.integracao.apoio_health_check import gravar_health_check
 
 
 @pytest.fixture
@@ -12,11 +13,16 @@ def gerenciador() -> GerenciadorExecucoes:
     return app.state.gerenciador
 
 
+@pytest.fixture
+def health_check(db_session):
+    return gravar_health_check(db_session, "4x4")
+
+
 def test_get_em_andamento_vazio(client):
     assert client.get("/execucoes/em-andamento").status_code == 204
 
 
-def test_post_execucao_cria(client):
+def test_post_execucao_cria(client, health_check):
     response = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
     assert response.status_code == 201
     body = response.json()
@@ -25,19 +31,32 @@ def test_post_execucao_cria(client):
     assert "tentativa_id" in body
 
 
-def test_get_em_andamento_com_execucao(client):
+def test_post_execucao_sem_health_check_409(client):
+    response = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
+    assert response.status_code == 409
+    assert response.json()["motivo"] == "health_check_ausente"
+    validar_resposta(response, "/execucoes", "post")
+    assert client.get("/execucoes/em-andamento").status_code == 204
+
+
+def test_get_em_andamento_com_execucao(client, health_check):
     client.post("/execucoes", json={"tipo_labirinto": "4x4"})
     r = client.get("/execucoes/em-andamento")
     assert r.status_code == 200
     assert r.json()["status"] == "em_andamento"
+    [tentativa] = r.json()["tentativas"]
+    assert tentativa["status"] == "running"
 
 
-def test_encerrar_tentativa_sem_aberta_409(client, db_session, gerenciador):
+def test_encerrar_tentativa_sem_aberta_409(client, health_check):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     execucao_id = criado["execucao_id"]
-    tentativa = db_session.get(Tentativa, UUID(criado["tentativa_id"]))
-    gerenciador.aplicar_evento(db_session, tentativa, _hc_reprovado())
-    db_session.commit()
+    assert (
+        client.post(
+            f"/execucoes/{execucao_id}/encerrar-tentativa", json={"motivo": "collision"}
+        ).status_code
+        == 200
+    )
     response = client.post(
         f"/execucoes/{execucao_id}/encerrar-tentativa",
         json={"motivo": "collision"},
@@ -46,7 +65,7 @@ def test_encerrar_tentativa_sem_aberta_409(client, db_session, gerenciador):
     assert response.json() == {"detail": "Não há tentativa aberta para encerrar."}
 
 
-def test_encerrar_execucao_cancela_tentativa_aberta(client, db_session, gerenciador):
+def test_encerrar_execucao_cancela_tentativa_aberta(client, db_session, gerenciador, health_check):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     resposta = client.post(f"/execucoes/{criado['execucao_id']}/encerrar")
     assert resposta.status_code == 200
@@ -69,7 +88,7 @@ def test_encerrar_execucao_cancela_tentativa_aberta(client, db_session, gerencia
     assert de_novo.json()["detail"] == "A execução não está em andamento."
 
 
-def test_encerrar_execucao_apos_tentativa_fechada(client):
+def test_encerrar_execucao_apos_tentativa_fechada(client, health_check):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     fechada = client.post(
         f"/execucoes/{criado['execucao_id']}/encerrar-tentativa",
@@ -92,7 +111,7 @@ def test_encerrar_execucao_inexistente_404(client):
     assert response.json()["detail"] == "Execução não encontrada."
 
 
-def test_encerrar_corpo_invalido_continua_422(client):
+def test_encerrar_corpo_invalido_continua_422(client, health_check):
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     response = client.post(
         f"/execucoes/{criado['execucao_id']}/encerrar-tentativa",
@@ -102,21 +121,33 @@ def test_encerrar_corpo_invalido_continua_422(client):
     assert isinstance(response.json()["detail"], list)
 
 
-def _hc_reprovado():
-    from contrato.telemetria import HcResultado
-
-    return HcResultado(
-        v=1,
-        boot=1,
-        seq=1,
-        t_ms=1,
-        tipo="hc_resultado",
-        aprovado=False,
-        tipo_dip="4x4",
-        inicio="nova",
-    )
-
-
 def test_retomar_execucao_inexistente_404(client):
     response = client.post(f"/execucoes/{uuid4()}/retomar")
     assert response.status_code == 404
+
+
+def test_ultimo_health_check_vazio(client):
+    assert client.get("/health-check/ultimo").status_code == 204
+
+
+def test_ultimo_health_check_aprovado_tem_validade(client, db_session):
+    concluido_em = datetime.now(UTC).replace(microsecond=0)
+    gravar_health_check(db_session, "8x4", concluido_em=concluido_em)
+
+    resposta = client.get("/health-check/ultimo")
+    validar_resposta(resposta, "/health-check/ultimo")
+    corpo = resposta.json()
+
+    assert corpo["aprovado"] is True
+    assert corpo["tipo_dip"] == "8x4"
+    valido_ate = datetime.fromisoformat(corpo["valido_ate"])
+    assert valido_ate == concluido_em + timedelta(seconds=420)
+
+
+def test_ultimo_health_check_reprovado_sem_validade(client, db_session):
+    gravar_health_check(db_session, "4x4", aprovado=False)
+
+    corpo = client.get("/health-check/ultimo").json()
+
+    assert corpo["aprovado"] is False
+    assert corpo["valido_ate"] is None

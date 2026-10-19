@@ -144,6 +144,16 @@ int main(int argc, char **argv)
     } else {
         printf("ok       comando interromper\n");
     }
+    if (!contrato_eh_largar("{\"v\":1,\"cmd\":\"largar\"}\n") ||
+        contrato_eh_largar("{\"v\":1,\"cmd\":\"interromper\"}\n") ||
+        !contrato_eh_health_check("{\"v\":1,\"cmd\":\"health_check\"}\n") ||
+        contrato_eh_health_check("{\"v\":2,\"cmd\":\"health_check\"}\n") ||
+        contrato_eh_health_check("{\"v\":1,\"cmd\":\"largar\"}\n")) {
+        falhas++;
+        printf("FALHOU: reconhecimento dos comandos largar e health_check\n");
+    } else {
+        printf("ok       comandos largar e health_check\n");
+    }
 
     printf("%s (%d falha(s))\n", falhas ? "FALHOU" : "OK", falhas);
     return falhas ? 1 : 0;

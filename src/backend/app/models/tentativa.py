@@ -25,7 +25,7 @@ class Tentativa(Base):
     __table_args__ = (
         CheckConstraint("attempt_index BETWEEN 1 AND 3", name="ck_tentativa_attempt_index"),
         CheckConstraint(
-            "status IN ('health-check', 'running', 'success', 'failed')",
+            "status IN ('running', 'success', 'failed')",
             name="ck_tentativa_status",
         ),
         CheckConstraint(
@@ -37,7 +37,7 @@ class Tentativa(Base):
             "uq_tentativa_aberta_por_execucao",
             "execucao_id",
             unique=True,
-            postgresql_where=text("status IN ('health-check', 'running')"),
+            postgresql_where=text("status = 'running'"),
         ),
     )
 
@@ -49,6 +49,8 @@ class Tentativa(Base):
     status: Mapped[str] = mapped_column(String, nullable=False)
     tipo_inicio: Mapped[str] = mapped_column(String, nullable=False)
     tipo_dip: Mapped[str | None] = mapped_column(String)
+    # health-check que liberou a largada; a tentativa já nasce em running
+    hc_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("health_check.hc_id"))
     iniciada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     tempo_s: Mapped[Decimal | None] = mapped_column(Numeric)
@@ -61,5 +63,5 @@ class Tentativa(Base):
     execucao: Mapped[ExecucaoLogica] = relationship(back_populates="tentativas")
     leituras: Mapped[list[LeituraTelemetria]] = relationship(back_populates="tentativa")
     passos: Mapped[list[PassoTrajeto]] = relationship(back_populates="tentativa")
-    health_check_itens: Mapped[list[HealthCheckItem]] = relationship(back_populates="tentativa")
+    health_check: Mapped[HealthCheck | None] = relationship(back_populates="tentativas")
     falha: Mapped[Falha | None] = relationship(back_populates="tentativa", uselist=False)

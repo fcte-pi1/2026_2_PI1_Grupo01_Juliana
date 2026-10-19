@@ -9,6 +9,7 @@ flush, mas só é publicado depois dele (ver `IngestaoTelemetria`).
 """
 
 import logging
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
@@ -55,6 +56,18 @@ class OrigemSucesso:
     x: int
     y: int
     status_execucao: api.StatusExecucao
+
+
+@dataclass(frozen=True, slots=True)
+class OrigemHealthCheck:
+    """Item gravado e a tentativa a que o evento se refere.
+
+    A linha não guarda mais a tentativa: o vínculo fica em tentativa.hc_id,
+    e só existe depois da largada.
+    """
+
+    item: models.HealthCheckItem
+    tentativa_id: uuid.UUID
 
 
 class FabricaEvento(ABC):
@@ -126,12 +139,13 @@ class FabricaTelemetria(FabricaEvento):
 class FabricaHealthCheck(FabricaEvento):
     tipo = "health_check"
 
-    def montar(self, origem: models.HealthCheckItem) -> api.EventoHealthCheck:
+    def montar(self, origem: OrigemHealthCheck) -> api.EventoHealthCheck:
+        item = origem.item
         return api.EventoHealthCheck(
             tentativa_id=origem.tentativa_id,
-            componente=origem.componente,
-            aprovado=origem.aprovado,
-            valor_lido=origem.valor_lido,
+            componente=item.componente,
+            aprovado=item.aprovado,
+            valor_lido=item.valor_lido,
         )
 
 
@@ -210,7 +224,7 @@ class RegistroDeFabricas:
 FABRICAS = RegistroDeFabricas()
 FABRICAS.registrar(models.PassoTrajeto, FabricaPasso())
 FABRICAS.registrar(OrigemTelemetria, FabricaTelemetria())
-FABRICAS.registrar(models.HealthCheckItem, FabricaHealthCheck())
+FABRICAS.registrar(OrigemHealthCheck, FabricaHealthCheck())
 FABRICAS.registrar(OrigemStatus, FabricaStatus())
 FABRICAS.registrar(OrigemFalha, FabricaFalha())
 FABRICAS.registrar(OrigemSucesso, FabricaSucesso())

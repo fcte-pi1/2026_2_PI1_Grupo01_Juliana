@@ -10,6 +10,7 @@ from app.models import Falha, HealthCheckItem, PassoTrajeto, Tentativa
 from app.services.fabrica_eventos import (
     FABRICAS,
     OrigemFalha,
+    OrigemHealthCheck,
     OrigemStatus,
     OrigemSucesso,
     OrigemTelemetria,
@@ -104,14 +105,14 @@ def test_telemetria_leva_mv_porcentagem_rumo_e_eixo_longo():
 
 def test_health_check_vem_da_linha_gravada():
     item = HealthCheckItem(
-        tentativa_id=TENTATIVA_ID,
+        hc_id=uuid.uuid4(),
         componente="bateria",
         aprovado=True,
         valor_lido=Decimal("7840"),
         verificado_em=MOMENTO,
     )
 
-    assert _dados(item) == {
+    assert _dados(OrigemHealthCheck(item=item, tentativa_id=TENTATIVA_ID)) == {
         "tipo": "health_check",
         "tentativa_id": str(TENTATIVA_ID),
         "componente": "bateria",

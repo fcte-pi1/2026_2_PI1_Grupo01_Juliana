@@ -34,13 +34,26 @@ def _gerenciador(request: Request) -> GerenciadorExecucoes:
     return request.app.state.gerenciador
 
 
-@router.post("", response_model=RetornoNovaExecucao, status_code=201)
+def _resposta_recusa(recusa: RecusaTentativa) -> JSONResponse:
+    corpo = Recusa(motivo=recusa.motivo, ocorrida_em=recusa.ocorrida_em).model_dump(mode="json")
+    return JSONResponse(status_code=status.HTTP_409_CONFLICT, content=corpo)
+
+
+@router.post(
+    "",
+    response_model=RetornoNovaExecucao,
+    status_code=201,
+    responses={409: {"model": Recusa}},
+)
 def criar_execucao(
     body: NovaExecucaoRequest,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
-) -> RetornoNovaExecucao:
-    retorno = gerenciador.nova_execucao(db, body.tipo_labirinto)
+) -> RetornoNovaExecucao | JSONResponse:
+    try:
+        retorno = gerenciador.nova_execucao(db, body.tipo_labirinto)
+    except RecusaTentativa as recusa:
+        return _resposta_recusa(recusa)
     db.commit()
     return RetornoNovaExecucao(
         execucao_id=retorno.execucao_id,
@@ -175,8 +188,7 @@ def retomar_execucao(
         ) from None
     except RecusaTentativa as recusa:
         db.commit()
-        corpo = Recusa(motivo=recusa.motivo, ocorrida_em=recusa.ocorrida_em).model_dump(mode="json")
-        return JSONResponse(status_code=status.HTTP_409_CONFLICT, content=corpo)
+        return _resposta_recusa(recusa)
     db.commit()
     return RetornoNovaExecucao(
         execucao_id=retorno.execucao_id,
