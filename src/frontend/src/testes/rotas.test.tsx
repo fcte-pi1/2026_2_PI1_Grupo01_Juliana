@@ -91,7 +91,7 @@ describe('rota /execucoes', () => {
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('—')).not.toBeInTheDocument()
   })
 
@@ -102,7 +102,7 @@ describe('rota /execucoes', () => {
 
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('Sucesso')).not.toBeInTheDocument()
     expect(tabela.queryByText('Falha')).not.toBeInTheDocument()
 
@@ -131,6 +131,12 @@ describe('rota /execucoes/:id', () => {
     expect(screen.getByText('Em andamento')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Falha')).toBeInTheDocument()
     expect(screen.queryByText('Cancelada')).not.toBeInTheDocument()
+  })
+
+  it('mostra o trajeto longo do 12x4 com a célula da falha', async () => {
+    renderizarRota('/execucoes/e-0034')
+    expect(await screen.findByRole('img', { name: /Labirinto 12x4 com 48 células visitadas/ })).toBeInTheDocument()
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
   })
 
   it('avisa quando a execução não existe', async () => {

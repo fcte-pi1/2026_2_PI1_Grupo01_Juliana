@@ -11,9 +11,11 @@ from app.models import HealthCheck, HealthCheckItem, LeituraTelemetria, PassoTra
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.atualizacao_metricas import recalcular_parciais
+from app.services.fabrica_eventos import OrigemTelemetria, criar_eventos
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
-from app.services.vigilancia_monitores import gravar_se_cancelou
+from app.services.publicacao_eventos import publicar_apos_commit
+from app.services.publicador_sse import EventoSSE, PublicadorSSE
 from contrato.telemetria import (
     TAMANHO_MAXIMO,
     Deduplicador,
@@ -49,11 +51,13 @@ class IngestaoTelemetria:
         deduplicador: Deduplicador,
         relogio: RelogioDoRobo,
         monitor: MonitorConexao,
+        publicador: PublicadorSSE | None = None,
         relogio_backend: Callable[[], datetime] | None = None,
     ) -> None:
         self.deduplicador = deduplicador
         self.relogio = relogio
         self.monitor = monitor
+        self.publicador = publicador
         self.relogio_backend = relogio_backend or (lambda: datetime.now(UTC))
         # a rota síncrona roda no threadpool: protege o max+1 e o estado em memória
         # a varredura de link/tempo usa a mesma trava
@@ -84,7 +88,13 @@ class IngestaoTelemetria:
 
         agora_backend = self.relogio_backend()
         # antes de marcar esta linha como sinal: o silêncio é o intervalo anterior
-        gravar_se_cancelou(sessao, gerenciador, self.monitor)
+        resultado_monitor = gerenciador.verificar_monitores(sessao, self.monitor)
+        if resultado_monitor:
+            sessao.commit()
+            publicar_apos_commit(
+                self.publicador, resultado_monitor.execucao_id, resultado_monitor.eventos
+            )
+            return
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
 
@@ -108,9 +118,12 @@ class IngestaoTelemetria:
             return
 
         enviado_em = self.relogio.calcular(mensagem, entrada.recebido_em)
+        # lido antes do COMMIT: depois dele o atributo expira e custaria um SELECT
+        execucao_id = str(tentativa.execucao_id) if tentativa is not None else None
+        eventos: list[EventoSSE] = []
         try:
             if isinstance(mensagem, Tel):
-                self._gravar_tel(
+                eventos = self._gravar_tel(
                     sessao,
                     tentativa,
                     mensagem,
@@ -123,9 +136,12 @@ class IngestaoTelemetria:
             elif isinstance(mensagem, HcResultado):
                 self._gravar_hc_resultado(sessao, mensagem, agora_backend)
             elif isinstance(mensagem, Passo):
-                self._gravar_passo(sessao, tentativa, mensagem, enviado_em, agora_backend)
+                eventos = self._gravar_passo(sessao, tentativa, mensagem, enviado_em, agora_backend)
             elif isinstance(mensagem, EVENTOS):
-                gerenciador.aplicar_evento(sessao, tentativa, mensagem, momento=agora_backend)
+                eventos = (
+                    gerenciador.aplicar_evento(sessao, tentativa, mensagem, momento=agora_backend)
+                    or []
+                )
             if isinstance(mensagem, Passo) or (
                 isinstance(mensagem, Tel) and mensagem.estado == "running"
             ):
@@ -139,6 +155,9 @@ class IngestaoTelemetria:
         # a âncora do boot só é fixada por uma mensagem aceita
         self.relogio.fixar(mensagem, entrada.recebido_em)
         self.deduplicador.confirmar(mensagem)
+
+        if execucao_id is not None:
+            publicar_apos_commit(self.publicador, execucao_id, eventos)
 
     def _conferir_limites(self, mensagem: Mensagem, tentativa: Tentativa) -> None:
         """A célula precisa caber no labirinto da execução, em qualquer orientação (D4)."""
@@ -162,7 +181,7 @@ class IngestaoTelemetria:
         enviado_em: datetime,
         recebido_em: datetime,
         agora_backend: datetime,
-    ) -> None:
+    ) -> list[EventoSSE]:
         ordem = TelemetriaRepository(sessao).proxima_ordem_leitura(tentativa.tentativa_id)
         leitura = LeituraTelemetria(
             tentativa_id=tentativa.tentativa_id,
@@ -177,6 +196,8 @@ class IngestaoTelemetria:
             recebido_em=recebido_em,
         )
         Repositorio(sessao).salvar(leitura)
+        # rumo e eixo_longo vêm da mensagem: existem no contrato serial e no evento
+        # SSE, mas não têm coluna em LEITURA_TELEMETRIA
         recalcular_parciais(
             sessao,
             tentativa,
@@ -184,6 +205,7 @@ class IngestaoTelemetria:
             agora_backend,
             bateria_mv_atual=tel.bat_mv,
         )
+        return criar_eventos(OrigemTelemetria(tel=tel, ordem=ordem, enviado_em=enviado_em))
 
     def _health_check_do_boot(self, sessao: Session, boot: int, agora: datetime) -> HealthCheck:
         """O health-check em andamento deste boot, ou um novo."""
@@ -228,7 +250,7 @@ class IngestaoTelemetria:
         passo: Passo,
         enviado_em: datetime,
         agora_backend: datetime,
-    ) -> None:
+    ) -> list[EventoSSE]:
         """Grava o passo (D5, D6) e as paredes da célula (D7), na mesma transação."""
         repositorio = TelemetriaRepository(sessao)
         ultimo = repositorio.ultimo_passo(tentativa.execucao_id)
@@ -237,6 +259,9 @@ class IngestaoTelemetria:
         if not primeiro_da_tentativa and (ultimo.x, ultimo.y) == (passo.x, passo.y):
             # releitura da mesma célula na mesma tentativa: só as paredes mudam
             ultimo.paredes_mask = passo.paredes
+            # republica o mesmo passo_id de propósito: a parede é nova e o
+            # desenho precisa dela
+            eventos = criar_eventos(ultimo)
         else:
             # a retomada começa na célula da falha e ganha o próprio passo
             retomada = tentativa.tipo_inicio == "retomada" and primeiro_da_tentativa
@@ -251,7 +276,9 @@ class IngestaoTelemetria:
                 entrou_em=enviado_em,
             )
             Repositorio(sessao).salvar(registro)
+            eventos = criar_eventos(registro)
         repositorio.gravar_paredes(
             tentativa.execucao_id, passo.x, passo.y, passo.paredes, enviado_em
         )
         recalcular_parciais(sessao, tentativa, tentativa.execucao, agora_backend)
+        return eventos

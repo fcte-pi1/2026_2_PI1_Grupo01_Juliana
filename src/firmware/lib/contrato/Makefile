@@ -1,6 +1,6 @@
 # Teste do contrato de telemetria no PC (não compila para a ESP32).
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
-EXEMPLOS := ../../contrato/exemplos.jsonl
+EXEMPLOS := ../../../contrato/exemplos.jsonl
 
 .PHONY: teste limpar
 

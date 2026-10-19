@@ -3,6 +3,7 @@ import { ErroApi } from '../api/clienteApi'
 import { CartaoFalha } from '../components/execucao/CartaoFalha'
 import { PilulaResultado, PilulaStatusTentativa } from '../components/execucao/PilulaResultado'
 import { Cabecalho } from '../components/layout/Cabecalho'
+import { falhasDasTentativas } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { BlocoHealthCheck } from '../components/telemetria/BlocoHealthCheck'
 import { useExecucao } from '../hooks/useExecucao'
@@ -31,7 +32,6 @@ export function DetalheExecucao() {
 
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
-  const falha = ultima?.falha
 
   return (
     <>
@@ -57,49 +57,48 @@ export function DetalheExecucao() {
           <span className="chip">Tempo total {execucao.tempo_total_s !== null ? formatarTempo(execucao.tempo_total_s) : '—'}</span>
         </section>
 
-        <div className="pagina-duas-colunas">
-          <section className="cartao">
-            <h2 className="cartao__titulo">Trajeto</h2>
-            <VisualizacaoLabirinto
-              largura={largura}
-              altura={altura}
-              trajeto={execucao.trajeto}
-              celulaFalha={falha ? { x: falha.celula_x, y: falha.celula_y } : null}
-            />
-          </section>
+        <section className="cartao">
+          <h2 className="cartao__titulo">Trajeto</h2>
+          <VisualizacaoLabirinto
+            largura={largura}
+            altura={altura}
+            eixoLongo={execucao.eixo_longo}
+            trajeto={execucao.trajeto}
+            falhas={falhasDasTentativas(execucao.tentativas)}
+          />
+        </section>
 
-          <section className="cartao">
-            <h2 className="cartao__titulo">Tentativas em ordem cronológica</h2>
-            <div className="rolagem-horizontal">
-              <table className="tabela tabela--sem-destaque">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Status</th>
-                    <th className="alinhar-direita">Tempo</th>
-                    <th className="alinhar-direita">Veloc.</th>
+        <section className="cartao">
+          <h2 className="cartao__titulo">Tentativas em ordem cronológica</h2>
+          <div className="rolagem-horizontal">
+            <table className="tabela tabela--sem-destaque">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Status</th>
+                  <th className="alinhar-direita">Tempo</th>
+                  <th className="alinhar-direita">Veloc.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {execucao.tentativas.map((t) => (
+                  <tr key={t.tentativa_id}>
+                    <td>
+                      {t.attempt_index}/{LIMITE_TENTATIVAS}
+                    </td>
+                    <td>
+                      <PilulaStatusTentativa status={t.status} />
+                    </td>
+                    <td className="alinhar-direita">{t.tempo_s !== null ? formatarTempo(t.tempo_s) : '—'}</td>
+                    <td className="alinhar-direita">
+                      {t.velocidade_media !== null ? `${formatarNumero(t.velocidade_media, 3)} m/s` : '—'}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {execucao.tentativas.map((t) => (
-                    <tr key={t.tentativa_id}>
-                      <td>
-                        {t.attempt_index}/{LIMITE_TENTATIVAS}
-                      </td>
-                      <td>
-                        <PilulaStatusTentativa status={t.status} />
-                      </td>
-                      <td className="alinhar-direita">{t.tempo_s !== null ? formatarTempo(t.tempo_s) : '—'}</td>
-                      <td className="alinhar-direita">
-                        {t.velocidade_media !== null ? `${formatarNumero(t.velocidade_media, 3)} m/s` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {execucao.tentativas
           .filter((t) => t.falha)

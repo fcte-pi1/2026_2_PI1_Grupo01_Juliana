@@ -19,12 +19,20 @@
 #include "sim_mundo.h"
 #endif
 
-#define TAMANHO_FILA        16
-#define PILHA_TAREFA        4096
-#define NUCLEO_TELEMETRIA   0  /* o núcleo 0 também roda o Bluetooth da ESP32 */
-#define NUCLEO_NAVEGACAO    1
+#define TAMANHO_FILA_EVENTOS 32
+#define PILHA_TAREFA         4096
+#define NUCLEO_TELEMETRIA    0  /* o núcleo 0 também roda o Bluetooth da ESP32 */
+#define NUCLEO_NAVEGACAO     1
 
+QueueHandle_t fila_amostra;
 QueueHandle_t fila_eventos;
+uint32_t app_boot;
+volatile uint32_t app_eventos_descartados;
+#ifdef TELEMETRIA_DEPURACAO
+volatile uint32_t app_nav_periodo_max_ms;
+volatile uint16_t app_tof_mm[TOF_QTD];
+volatile uint8_t app_tof_ok;
+#endif
 
 #ifdef HAL_SIMULADA
 /* Com a HAL simulada, o "Bluetooth" sai pela serial USB (FIRM-07 usa o mesmo caminho). */
@@ -56,6 +64,7 @@ void app_iniciar(void)
     hal_boot_iniciar();
     hal_bateria_iniciar();
     hal_nvs_iniciar();
+    app_boot = telemetria_proximo_boot();
     hal_bt_iniciar("Ratatouille");
 
     if (!hal_tof_iniciar()) {
@@ -63,10 +72,24 @@ void app_iniciar(void)
     }
     sensores_iniciar();
 
-    fila_eventos = xQueueCreate(TAMANHO_FILA, sizeof(evento_leitura_t));
+    fila_amostra = xQueueCreate(1, sizeof(telemetria_amostra_t));
+    fila_eventos = xQueueCreate(TAMANHO_FILA_EVENTOS, sizeof(telemetria_evento_t));
 
     xTaskCreatePinnedToCore(tarefa_telemetria, "telemetria", PILHA_TAREFA, NULL, 1, NULL,
                             NUCLEO_TELEMETRIA);
     xTaskCreatePinnedToCore(tarefa_navegacao, "navegacao", PILHA_TAREFA, NULL, 2, NULL,
                             NUCLEO_NAVEGACAO);
+}
+
+void app_publicar_amostra(const telemetria_amostra_t *amostra)
+{
+    xQueueOverwrite(fila_amostra, amostra);
+}
+
+void app_publicar_evento(const telemetria_evento_t *evento)
+{
+    /* Fila cheia: descarta e conta em vez de esperar, a navegação nunca trava. */
+    if (xQueueSend(fila_eventos, evento, 0) != pdTRUE) {
+        app_eventos_descartados = app_eventos_descartados + 1;
+    }
 }

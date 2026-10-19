@@ -21,6 +21,15 @@ class ExecucaoRepository(Repositorio):
     def buscar_por_id(self, execucao_id: UUID) -> ExecucaoLogica | None:
         return self.buscar_execucao(execucao_id)
 
+    def status_de(self, execucao_id: UUID) -> str | None:
+        """Status da execução, ou None se ela não existe.
+
+        Consulta de uma coluna, para o 404 do stream: o EventSource reabre a
+        conexão sozinho a cada poucos segundos, então esse caminho é quente.
+        """
+        stmt = select(ExecucaoLogica.status).where(ExecucaoLogica.execucao_id == execucao_id)
+        return self._session.scalar(stmt)
+
     def listar_pagina(
         self,
         filtro: FiltroExecucoes | None = None,

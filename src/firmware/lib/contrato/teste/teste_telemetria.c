@@ -1,6 +1,6 @@
 /*
  * Confere que o serializador gera, byte a byte, cada linha de
- * src/contrato/exemplos.jsonl. Roda no PC: make -C src/firmware/contrato teste
+ * src/contrato/exemplos.jsonl. Roda no PC: make -C src/firmware/lib/contrato teste
  */
 #include <stdio.h>
 #include <string.h>

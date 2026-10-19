@@ -1,5 +1,6 @@
 #ifdef HAL_SIMULADA
 
+#include <stdint.h>
 #include <string.h>
 
 #include "hal_bt.h"
@@ -8,6 +9,8 @@
 #define TAMANHO_ENTRADA 128
 
 static hal_bt_sim_saida_t saida;
+static bool link_ligado = true;
+static size_t limite_escrita = SIZE_MAX;
 
 /* Fila circular com os bytes "recebidos" da ponte. */
 static char entrada[TAMANHO_ENTRADA];
@@ -20,12 +23,15 @@ bool hal_bt_iniciar(const char *nome_dispositivo)
     return true;
 }
 
-bool hal_bt_conectado(void) { return saida != NULL; }
+bool hal_bt_conectado(void) { return link_ligado && saida != NULL; }
 
 size_t hal_bt_escrever(const char *dados, size_t tamanho)
 {
-    if (saida == NULL) {
+    if (!hal_bt_conectado()) {
         return 0;
+    }
+    if (tamanho > limite_escrita) {
+        tamanho = limite_escrita;
     }
     saida(dados, tamanho);
     return tamanho;
@@ -43,6 +49,10 @@ int hal_bt_ler_byte(void)
 }
 
 void hal_bt_sim_definir_saida(hal_bt_sim_saida_t nova_saida) { saida = nova_saida; }
+
+void hal_bt_sim_definir_conectado(bool conectado) { link_ligado = conectado; }
+
+void hal_bt_sim_limitar_escrita(size_t maximo) { limite_escrita = maximo; }
 
 void hal_bt_sim_injetar(const char *dados)
 {

@@ -15,8 +15,8 @@ from tests.integracao.apoio_health_check import gravar_health_check
 
 
 def _t0() -> datetime:
-    """Inicio recente para nao estourar RF32 (10 min) no verificar_monitores."""
-    return datetime.now(UTC) - timedelta(seconds=60)
+    """Início recente para o monitor RF32 não encerrar um teste de métricas."""
+    return datetime.now(UTC)
 
 
 def _iso(dt: datetime) -> str:

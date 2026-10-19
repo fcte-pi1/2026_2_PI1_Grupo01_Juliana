@@ -319,7 +319,7 @@ def test_mensagem_valida_atualiza_monitor_de_conexao(client):
 def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     """RF32: gap medido antes de registrar_mensagem na linha que reconecta."""
     agora = datetime.now(UTC)
-    tentativa_aberta.iniciada_em = agora - timedelta(seconds=30)
+    tentativa_aberta.iniciada_em = agora - timedelta(seconds=20)
     db_session.commit()
     monitor = client.app.state.monitor_conexao
     monitor._ultima_mensagem = agora - timedelta(seconds=11)
@@ -330,7 +330,7 @@ def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     execucao = db_session.get(ExecucaoLogica, tentativa_aberta.execucao_id)
     db_session.refresh(tentativa_aberta)
     assert tentativa_aberta.status == "failed"
-    assert execucao.status == "cancelada"
+    assert execucao.status == "em_andamento"
     assert tentativa_aberta.falha is not None
     assert tentativa_aberta.falha.motivo == "link_lost"
 
@@ -612,6 +612,9 @@ def test_evento_vai_ao_gerenciador_antes_do_commit(client, db_session, gerenciad
     assert sessao is db_session
     assert recebida.tentativa_id == tentativa.tentativa_id
     assert mensagem == ler_linha(_evento(1, campos))
+    # Sem cancelamento, verificar_monitores não confirma transação: o POST só
+    # commita o próprio evento, e aplicar_evento continua antes desse commit.
+    # A repetida não chega ao gerenciador nem gera outro commit.
     assert gerenciador_falso.ordem == ["aplicar_evento", "commit"]
 
 

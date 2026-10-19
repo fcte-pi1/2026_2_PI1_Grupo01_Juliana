@@ -41,10 +41,11 @@ class Fabrica:
         *,
         tipo: str = "4x4",
         status: str = "concluida",
-        iniciada_em: datetime = INICIO,
+        iniciada_em: datetime | None = None,
         tentativas_usadas: int = 0,
         tempo_total_s: Decimal | None = None,
     ) -> ExecucaoLogica:
+        iniciada_em = iniciada_em or (datetime.now(UTC) if status == "em_andamento" else INICIO)
         execucao = ExecucaoLogica(
             execucao_id=uuid.uuid4(),
             labirinto_id=self.session.scalar(
