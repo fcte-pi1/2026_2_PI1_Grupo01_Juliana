@@ -146,6 +146,8 @@ describe('mocks conectados: somente demonstração local', () => {
     const limite = await comando('e-0042', 'retomar')
     expect(limite.status).toBe(409)
     expect(await limite.json()).toMatchObject({ motivo: 'limite_3' })
+    const cancelada = await comando('e-0042', 'encerrar')
+    expect(cancelada.status).toBe(409)
     const desconhecida = await comando('ausente', 'encerrar-tentativa', { motivo: 'stuck', observacao: null })
     expect(desconhecida.status).toBe(404)
     expect((await (await fetch(`${API}/execucoes`)).json()).find((item: { execucao_id: string }) => item.execucao_id === 'e-0042').status).toBe('cancelada')

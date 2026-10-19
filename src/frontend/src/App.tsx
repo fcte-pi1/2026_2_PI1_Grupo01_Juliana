@@ -8,7 +8,7 @@ import { NaoEncontrada } from './pages/NaoEncontrada'
 
 /**
  * Rotas da aplicação. Os modais de Encerrar e Retomar tentativa ficam na rota `/`
- * e podem ser abertos direto pela URL (`/?modal=encerrar`, `/?modal=retomar`).
+ * e podem ser abertos direto pela URL (`/?modal=encerrar`, `/?modal=encerrar-execucao`, `/?modal=retomar`).
  */
 export function criarRotas(rodape?: ReactNode): RouteObject[] {
   return [

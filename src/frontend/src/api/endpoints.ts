@@ -96,5 +96,8 @@ export const criarExecucao = (pedido: NovaExecucaoPedido) =>
 export const encerrarTentativa = async (id: string, pedido: EncerrarPedido) =>
   normalizarExecucao(await api.post<DetalheAPI>(`/execucoes/${id}/encerrar-tentativa`, pedido))
 
+export const encerrarExecucao = async (id: string) =>
+  normalizarExecucao(await api.post<DetalheAPI>(`/execucoes/${id}/encerrar`))
+
 export const retomarTentativa = (id: string) =>
   api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`)

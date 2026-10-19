@@ -88,6 +88,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/execucoes/{execucao_id}/encerrar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Encerrar a execução lógica por completo
+         * @description A execução passa a `cancelada` e não aceita retomada. Se houver tentativa aberta, ela é registrada como `failed` com motivo e origem `encerrado_operador`, e o backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos` até a confirmação do robô. Se a tentativa já estiver encerrada, só a execução é cancelada. Execução já concluída ou cancelada responde 409 e `detail` é texto.
+         */
+        post: operations["encerrarExecucao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/execucoes/{execucao_id}/retomar": {
         parameters: {
             query?: never;
@@ -627,6 +647,30 @@ export interface operations {
             404: components["responses"]["NaoEncontrado"];
             409: components["responses"]["Conflito"];
             422: components["responses"]["ErroValidacao"];
+        };
+    };
+    encerrarExecucao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execucao_id: components["parameters"]["ExecucaoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Execução cancelada, com a tentativa aberta encerrada quando havia uma. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExecucaoDetalhe"];
+                };
+            };
+            404: components["responses"]["NaoEncontrado"];
+            409: components["responses"]["Conflito"];
         };
     };
     retomarTentativa: {

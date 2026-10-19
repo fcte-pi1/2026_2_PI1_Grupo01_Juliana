@@ -71,6 +71,33 @@ describe('rota /', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('Encerrar execução cancela a rodada inteira e não oferece retomada', async () => {
+    renderizarRota('/', '03-em-execucao')
+    await userEvent.click(await screen.findByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/Não será possível retomá-la/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Execução ativa #0042' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
+    expect(screen.getByText(/esta execução não aceita novas tentativas/)).toBeInTheDocument()
+  })
+
+  it('Encerrar execução depois da falha impede a retomada', async () => {
+    renderizarRota('/', '08-encerrada-como-falha')
+    expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/não aceitará novas tentativas/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
+  })
+
   it('Retomar parte da célula da falha e só libera depois do checklist', async () => {
     renderizarRota('/?modal=retomar', '08-encerrada-como-falha')
     const modal = await screen.findByRole('dialog')

@@ -134,6 +134,31 @@ export function encerrarTentativaRegistrada(id: string, pedido: EncerrarPedido, 
   return buscarExecucaoRegistrada(id)!
 }
 
+/** Cancela a execução. Uma tentativa aberta vira falha do operador e não há retomada. */
+export function encerrarExecucaoRegistrada(id: string, agora: number): Execucao {
+  const anterior = buscarExecucaoRegistrada(id)!
+  const tentativa = [...anterior.tentativas].sort((a, b) => b.attempt_index - a.attempt_index)[0]
+  const aberta = tentativa?.status === 'health-check' || tentativa?.status === 'running'
+  if (aberta) {
+    const celula = anterior.celula_atual ?? anterior.leituras.at(-1) ?? anterior.trajeto.at(-1) ?? { x: 0, y: 0 }
+    registrarEvento(id, {
+      tipo: 'falha',
+      tentativa_id: tentativa.tentativa_id,
+      status_execucao: 'cancelada',
+      motivo: 'encerrado_operador',
+      origem: 'encerrado_operador',
+      componente: null,
+      celula_x: celula.x,
+      celula_y: celula.y,
+      observacao: null,
+      momento_falha: new Date(agora).toISOString(),
+    })
+  }
+  const atual = buscarExecucaoRegistrada(id)!
+  atualizarExecucao({ ...atual, status: 'cancelada', encerrada_em: new Date(agora).toISOString() })
+  return buscarExecucaoRegistrada(id)!
+}
+
 /** Retomar abre só a próxima tentativa: o health-check ainda depende dos eventos. */
 export function retomarTentativaRegistrada(id: string, agora: number): Execucao {
   const anterior = buscarExecucaoRegistrada(id)!

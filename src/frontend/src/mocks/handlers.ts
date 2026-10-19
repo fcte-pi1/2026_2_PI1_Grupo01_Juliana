@@ -1,6 +1,6 @@
 import { http, HttpResponse, sse } from 'msw'
 import type { EncerrarPedido, EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
-import { buscarExecucaoRegistrada, dadosAtuais, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
+import { buscarExecucaoRegistrada, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
 import { detalheAPI, execucao, falha, HISTORICO, resumoAPI, tentativa, trajeto12x4Longo, trajetoAte } from './dados'
 import { avancarDemonstracao } from './fluxoDemonstracao'
 
@@ -93,6 +93,16 @@ export const handlers = [
     if (!['collision', 'stuck', 'out_of_track'].includes(pedido.motivo)
       || (pedido.observacao != null && typeof pedido.observacao !== 'string')) return new HttpResponse(null, { status: 422 })
     return HttpResponse.json(detalheAPI(encerrarTentativaRegistrada(id, pedido, Date.now())))
+  }),
+
+  http.post(`${API}/execucoes/:id/encerrar`, ({ params }) => {
+    const id = String(params.id)
+    const atual = buscarExecucaoRegistrada(id)
+    if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada.' }, { status: 404 })
+    if (atual.status !== 'em_andamento') {
+      return HttpResponse.json({ detail: 'A execução não está em andamento.' }, { status: 409 })
+    }
+    return HttpResponse.json(detalheAPI(encerrarExecucaoRegistrada(id, Date.now())))
   }),
 
   http.post(`${API}/execucoes/:id/retomar`, ({ params }) => {

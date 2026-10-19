@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ErroApi } from '../../api/clienteApi'
-import { buscarExecucao, criarExecucao, encerrarTentativa, retomarTentativa } from '../../api/endpoints'
+import { buscarExecucao, criarExecucao, encerrarExecucao, encerrarTentativa, retomarTentativa } from '../../api/endpoints'
 import type { EncerrarPedido, Execucao, Labirinto, Recusa, RetornoNovaExecucao, StatusExecucao, TipoLabirinto } from '../../api/tipos'
 import { CartaoUltimaExecucao } from '../../components/execucao/CartaoUltimaExecucao'
 import { ComoFunciona } from '../../components/execucao/ComoFunciona'
@@ -10,13 +10,14 @@ import { FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/Fo
 import { PilulaStatusTentativa } from '../../components/execucao/PilulaResultado'
 import { ResumoExecucao } from '../../components/execucao/ResumoExecucao'
 import { Cabecalho } from '../../components/layout/Cabecalho'
-import { deduzirEixo, dimensoes as dimensoesDoMapa } from '../../components/labirinto/trajeto'
+import { deduzirEixo, dimensoes as dimensoesDoMapa, eixoParaGrade } from '../../components/labirinto/trajeto'
 import { UltimaAtualizacao } from '../../components/telemetria/UltimaAtualizacao'
 import { AvisoRecusa } from '../../components/tentativas/AvisoRecusa'
 import { BotaoRetomar } from '../../components/tentativas/BotaoRetomar'
 import { ContadorTentativas } from '../../components/tentativas/ContadorTentativas'
 import { Modal } from '../../components/tentativas/Modal'
 import { ModalEncerrar } from '../../components/tentativas/ModalEncerrar'
+import { ModalEncerrarExecucao } from '../../components/tentativas/ModalEncerrarExecucao'
 import { ModalRetomar } from '../../components/tentativas/ModalRetomar'
 import { useAgora } from '../../hooks/useAgora'
 import { useExecucaoAtual } from '../../hooks/useExecucaoAtual'
@@ -26,7 +27,7 @@ import { derivarEstadoInicio, segundosSemDados, tentativaAtual, type EstadoInici
 import { PainelAoVivo } from './PainelAoVivo'
 import { PainelEncerrada } from './PainelEncerrada'
 
-type TipoModal = 'nova' | 'encerrar' | 'retomar' | null
+type TipoModal = 'nova' | 'encerrar' | 'retomar' | 'encerrar-execucao' | null
 
 function detalheTexto(corpo: unknown): string | null {
   if (!corpo || typeof corpo !== 'object' || !('detail' in corpo)) return null
@@ -240,10 +241,25 @@ export function Inicio() {
     </Modal>
   )
   const tentativa = tentativaAtual(execucao)
+  const botaoEncerrarExecucao = execucao.status === 'em_andamento' && (
+    <button type="button" className="botao botao--perigo" disabled={enviando} onClick={() => abrirModal('encerrar-execucao')}>
+      Encerrar execução
+    </button>
+  )
+  const modalEncerrarExecucao = modal === 'encerrar-execucao' && execucao.status === 'em_andamento' && (
+    <ModalEncerrarExecucao
+      numeroExecucao={numero}
+      attemptIndex={tentativa?.attempt_index ?? null}
+      tentativaAberta={!tentativa || tentativa.status === 'health-check' || tentativa.status === 'running'}
+      enviando={enviando}
+      aoCancelar={() => abrirModal(null)}
+      aoConfirmar={() => enviar(() => encerrarExecucao(execucao.execucao_id))}
+    />
+  )
   if (!tentativa) {
     return (
       <>
-        <Cabecalho trilha="Início" titulo={`${titulo} ${numero}`} acoes={novaExecucao} />
+        <Cabecalho trilha="Início" titulo={`${titulo} ${numero}`} acoes={<>{novaExecucao}{botaoEncerrarExecucao}</>} />
         {modal !== 'nova' && faixaErro}
         {faixaSincronizacao}
         <div className="conteudo">
@@ -251,14 +267,18 @@ export function Inicio() {
           <p className="estado-vazio">Aguardando os dados da tentativa enviados pelo backend.</p>
         </div>
         {modalNovaExecucao}
+        {modalEncerrarExecucao}
       </>
     )
   }
   const labirinto = dimensoes(execucao.labirinto, labirintos.dados ?? [])
-  const eixo = execucao.eixo_longo ?? deduzirEixo(execucao.trajeto, Math.min(labirinto.largura, labirinto.altura))
+  const eixo = eixoParaGrade(
+    labirinto.largura,
+    labirinto.altura,
+    execucao.eixo_longo ?? deduzirEixo(execucao.trajeto, Math.min(labirinto.largura, labirinto.altura)),
+  )
   const grade = dimensoesDoMapa(labirinto.largura, labirinto.altura, eixo)
-  const objetivo = labirinto.largura !== labirinto.altura && eixo === null
-    ? 'Objetivo pendente' : nomeCelula({ x: grade.colunas - 1, y: grade.linhas - 1 })
+  const objetivo = nomeCelula({ x: grade.colunas - 1, y: grade.linhas - 1 })
   const aberta = execucao.status === 'em_andamento' && (tentativa.status === 'health-check' || tentativa.status === 'running')
   const { falha } = tentativa
   // Após uma falha com retomada disponível, só a tentativa terminou; a execução segue ativa.
@@ -281,10 +301,13 @@ export function Inicio() {
                 Encerrar tentativa
               </button>
             ) : (
+              <Link to={`/execucoes/${execucao.execucao_id}`} className="botao">
+                Ver detalhes
+              </Link>
+            )}
+            {botaoEncerrarExecucao}
+            {!aberta && (
               <>
-                <Link to={`/execucoes/${execucao.execucao_id}`} className="botao">
-                  Ver detalhes
-                </Link>
                 {execucao.status !== 'em_andamento' && <Link to="/" className="botao" onClick={() => atual.recarregar()}>Voltar ao início</Link>}
                 {estado === 'falha-retomavel' ? (
                   <BotaoRetomar proxima={tentativa.attempt_index + 1} aoClicar={() => abrirModal('retomar')} />
@@ -324,6 +347,7 @@ export function Inicio() {
       </div>
 
       {modalNovaExecucao}
+      {modalEncerrarExecucao}
       {modal === 'encerrar' && aberta && (
         <ModalEncerrar
           numeroExecucao={numero}
