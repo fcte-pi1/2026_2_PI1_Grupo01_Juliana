@@ -52,9 +52,33 @@ Os cenários individuais continuam disponíveis pelo painel Mock para inspeção
 
 - Integração do código da BACK-07/BACK-04: incluída da `dev`, sem implementação própria no backend.
 - FRONT-04 [#205](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/205), já mesclado na `dev`: incluído na integração local, preservando paredes, falhas, retomadas e o resultado `cancelada` nos mocks. Resumo e mapa acompanham o eixo informado; a posição reconciliada prevalece sobre passos antigos, inclusive após uma falha e recarregamento.
-- Verificação automatizada: 146 testes passaram, incluindo os cenários de integração FRONT-03/FRONT-04, unidades, eventos repetidos e restauração pelo GET.
-- API/PostgreSQL locais indisponíveis: a tentativa de executar o simulador terminou em conexão recusada no `/back-health`, antes de criar dados.
-- RNF-B02 com backend real e restauração durante corrida real: **pendentes de execução com API e banco ativos**.
+- Verificação automatizada: 147 testes passaram, incluindo os cenários de integração FRONT-03/FRONT-04, unidades, eventos repetidos e restauração pelo GET.
+
+### Roteiro com backend real (19/10/2026)
+
+Ambiente: API e PostgreSQL pelo `docker-compose.yml` do backend (código da `dev` em `e1e616e`, migração `c4d5e6f7a8b9`), Vite com `VITE_API_MOCK=false` e o simulador oficial com `--saida http`.
+
+1. Fluxo de sucesso: health-check → em execução → concluída na mesma execução, com os eventos `telemetria`, `health_check`, `status`, `passo` e `sucesso` chegando pelo stream. **Ok.**
+2. Valores e unidades: card e tabela mostraram o mesmo valor do SSE (ex.: `bateria: 7897`, `velocidade: 225` → `7897 mV` e `225 mm/s`; `bateria_pct: 65.0` → `65 %`). **Ok.**
+3. Recarregar durante a corrida (execução `d83b40aa`, tentativa 1 em `running` aos 40 s): mesmo ID e tentativa, health-check, trajeto A1→A3, leituras e cronômetros restaurados, e o SSE seguiu atualizando (A3 → A4). **Ok.**
+4. Fim da corrida: dados finais, consumo em mV e p.p., variação e `execucao=<id>` na URL; recarregar mantém o resultado e o detalhe do histórico bate com a tela. **Ok.**
+5. Falha (execução `5fb9398f`): `falha-componente.json` registrou `falha_componente` em A4 (motor direito), com Retomar 3/3 liberado; a tentativa 3 foi aberta na mesma execução e terminou em sucesso. **Ok.**
+
+O link_lost dispara 10 s após abrir a tentativa sem mensagens. Com o simulador iniciado manualmente depois de clicar **Nova execução**, esse prazo estoura com facilidade e as mensagens seguintes são descartadas (`nenhuma tentativa aberta`). Isso aconteceu duas vezes nesta validação; nas corridas válidas o simulador foi iniciado logo após abrir a tentativa.
+
+### Latência RNF-B02
+
+Execução `307bdd67`, 27 leituras: diferença entre a chegada do evento `telemetria` no navegador (`Date.now()` no listener do `EventSource`) e o `recebido_em` gravado em `leitura_telemetria` para a mesma `ordem`, na mesma máquina. Resultado entre −66 ms e +134 ms, mediana de cerca de 46 ms. Valores negativos indicam que o `recebido_em` vem do relógio do robô mapeado pelo backend, e não do instante do COMMIT; mesmo assim, a margem fica uma ordem de grandeza abaixo dos 2 s. **Ok.**
+
+### Ajuste feito na validação
+
+- Depois de uma falha com retomada disponível, a trilha mostrava "execução encerrada" ao lado do título "Execução ativa". Agora mostra "tentativa encerrada" e reserva "execução encerrada" para concluída ou cancelada.
+
+### Pontos observados fora do FRONT-03
+
+- A velocidade média chega do backend com toda a precisão do float (ex.: `0.10924727615182539 m/s`) e a tela a exibe sem arredondar, como o teste de unidades exige. Vale decidir se o backend arredonda ou se o front passa a formatar esse campo derivado.
+- A variação contra o melhor tempo usa o tempo da tentativa (7,2 s contra 27,8 s → −74,1 %), enquanto o "Melhor tempo" do seletor de labirinto mostra o tempo total da execução (01:34,7). Os dois critérios precisam ser o mesmo.
+- Com nenhuma execução na tela, o início não percebe uma execução criada fora dela (pela API ou outra aba) até recarregar.
 
 ## Continuidade no FRONT-05
 

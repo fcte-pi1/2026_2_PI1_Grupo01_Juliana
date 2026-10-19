@@ -196,6 +196,14 @@ describe('FRONT-03: acompanhamento SSE', () => {
     if (resultado === 'reprovado') expect(componente).toHaveClass('health-check__item--falha')
   })
 
+  it('chama de tentativa encerrada a falha que ainda permite retomar', async () => {
+    dados = buscarCenario('08-encerrada-como-falha').atual(Date.now()).execucao!
+    renderizarRota('/')
+    await screen.findByRole('heading', { name: 'Execução ativa #0042' })
+    expect(screen.getByText('Início · tentativa encerrada')).toBeInTheDocument()
+    expect(screen.queryByText('Início · execução encerrada')).not.toBeInTheDocument()
+  })
+
   it('descarta JSON inválido e tipos divergentes e conserva a conexão durante o retry nativo', () => {
     const receber = vi.fn()
     const abrir = vi.fn()

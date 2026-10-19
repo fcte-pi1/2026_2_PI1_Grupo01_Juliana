@@ -261,13 +261,15 @@ export function Inicio() {
     ? 'Objetivo pendente' : nomeCelula({ x: grade.colunas - 1, y: grade.linhas - 1 })
   const aberta = execucao.status === 'em_andamento' && (tentativa.status === 'health-check' || tentativa.status === 'running')
   const { falha } = tentativa
+  // Após uma falha com retomada disponível, só a tentativa terminou; a execução segue ativa.
+  const trilha = aberta ? 'execução ativa' : execucao.status === 'em_andamento' ? 'tentativa encerrada' : 'execução encerrada'
   const celulaFalha = falha ? { x: falha.celula_x, y: falha.celula_y } : null
   const celulaAtual = execucao.celula_atual ?? execucao.leituras.at(-1) ?? execucao.trajeto.at(-1)
 
   return (
     <>
       <Cabecalho
-        trilha={`Início · ${aberta ? 'execução ativa' : 'execução encerrada'}`}
+        trilha={`Início · ${trilha}`}
         titulo={`${titulo} ${numero}`}
         acoes={
           <>
