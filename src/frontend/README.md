@@ -16,9 +16,13 @@ npm run dev        # http://localhost:5173
 | `npm run lint`      | ESLint, sem tolerar avisos                    |
 | `npm run typecheck` | checagem de tipos (`tsc -b`)                  |
 | `npm test`          | testes com Vitest (`npm run test:watch` para modo contínuo) |
+| `npm run test:e2e`  | testes E2E no Chromium com Playwright         |
 | `npm run build`     | build de produção em `dist/`                  |
 
-O CI (`.github/workflows/frontend.yml`) roda lint, tipos, testes e build em todo PR que mexe em `src/frontend`.
+Na primeira execução dos testes E2E, instale o navegador com
+`npm run test:e2e:install`.
+
+O CI (`.github/workflows/frontend.yml`) roda lint, tipos, testes unitários, testes E2E e build em todo PR que mexe em `src/frontend`.
 
 ## Mocks e backend real
 
