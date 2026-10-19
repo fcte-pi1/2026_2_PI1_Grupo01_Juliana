@@ -30,7 +30,7 @@ export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDeta
   return {
     ...restante,
     tipo_labirinto: labirinto,
-    trajeto: dados.trajeto.map((passo) => ({ ...passo, passo_id: passo.seq })),
+    trajeto: dados.trajeto.map((passo) => ({ ...passo, passo_id: passo.passo_id ?? passo.seq })),
     tentativas: dados.tentativas.map((tentativa) => {
       const { tipo_descoberto, ...restanteTentativa } = tentativa
       return {
@@ -44,8 +44,8 @@ export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDeta
 }
 
 // Dados de exemplo do labirinto 4x4 do protótipo (execução #0042, largada em A1,
-// objetivo em D4). As datas são relativas ao carregamento da página, para que
-// "atualizado há X s" faça sentido.
+// objetivo em D4). Tensão em mV, velocidade instantânea em mm/s e médias em m/s
+// (ADR-016). As datas são relativas ao início do cenário, preservado na sessão.
 
 export const LABIRINTOS: Labirinto[] = [
   { tipo: '4x4', largura: 4, altura: 4, melhor_tempo_s: 27.9, melhor_execucao_numero: 36 },
@@ -123,7 +123,7 @@ export function healthCheck(aprovados: number): ItemHealthCheck[] {
   return componentes.map((componente, i) => ({
     componente,
     aprovado: i < aprovados ? true : null,
-    valor_lido: componente === 'bateria' && i < aprovados ? 6.16 : null,
+    valor_lido: componente === 'bateria' && i < aprovados ? 7840 : null,
   }))
 }
 
@@ -131,13 +131,14 @@ export function relativo(agora: number, segundos: number): string {
   return new Date(agora + segundos * 1000).toISOString()
 }
 
-export function leituras(agora: number, trajeto: PassoTrajeto[], ultimaHaS: number): LeituraTelemetria[] {
+/** Medições já definidas em Tela03EmExecucao do contrato OpenAPI. */
+export function leituras(agora: number, trajeto: PassoTrajeto[], ultimaHaS: number, final?: Pick<LeituraTelemetria, 'bateria' | 'velocidade'>): LeituraTelemetria[] {
   return trajeto.slice(-5).map((p, i, lista) => ({
     ordem: p.seq,
     x: p.x,
     y: p.y,
-    bateria: 6.16 - p.seq * 0.005,
-    velocidade: 0.09,
+    bateria: i === lista.length - 1 && final ? final.bateria : 7810,
+    velocidade: i === lista.length - 1 && final ? final.velocidade : 210,
     enviado_em: relativo(agora, -ultimaHaS - (lista.length - 1 - i) * 1.5),
   }))
 }
@@ -151,7 +152,7 @@ export function tentativa(agora: number, parcial: Partial<Tentativa> & Pick<Tent
     encerrada_em: null,
     tempo_s: null,
     velocidade_media: null,
-    bateria_inicial: 88,
+    bateria_inicial: 7840,
     bateria_final: null,
     consumo_bateria: null,
     health_check: healthCheck(8),
@@ -202,7 +203,8 @@ export const ULTIMA_EXECUCAO: ResumoExecucao = {
   iniciada_em: '2026-09-24T21:12:47Z',
   tempo_total_s: 31.4,
   velocidade_media: 0.08,
-  consumo_bateria: 3.2,
+  // O protótipo não documenta a unidade desses consumos históricos.
+  consumo_bateria: null,
 }
 
 export const HISTORICO: ResumoExecucao[] = [
@@ -217,7 +219,7 @@ export const HISTORICO: ResumoExecucao[] = [
     iniciada_em: '2026-09-24T20:40:02Z',
     tempo_total_s: 412.7,
     velocidade_media: 0.05,
-    consumo_bateria: 9.8,
+    consumo_bateria: null,
   },
   {
     execucao_id: 'e-0036',
@@ -229,7 +231,7 @@ export const HISTORICO: ResumoExecucao[] = [
     iniciada_em: '2026-09-23T19:05:10Z',
     tempo_total_s: 27.9,
     velocidade_media: 0.09,
-    consumo_bateria: 2.6,
+    consumo_bateria: null,
   },
   {
     execucao_id: 'e-0034',
@@ -241,7 +243,7 @@ export const HISTORICO: ResumoExecucao[] = [
     iniciada_em: '2026-09-22T20:02:31Z',
     tempo_total_s: 600,
     velocidade_media: 0.04,
-    consumo_bateria: 11.2,
+    consumo_bateria: null,
   },
   {
     execucao_id: 'e-0032',
@@ -253,6 +255,6 @@ export const HISTORICO: ResumoExecucao[] = [
     iniciada_em: '2026-09-22T18:20:44Z',
     tempo_total_s: 108.6,
     velocidade_media: 0.07,
-    consumo_bateria: 6.1,
+    consumo_bateria: null,
   },
 ]

@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import type { ResumoExecucao } from '../../api/tipos'
-import { formatarDataHora, formatarNumero, formatarNumeroExecucao, formatarTempo, LIMITE_TENTATIVAS } from '../../utils/formatacao'
+import { formatarDataHora, formatarMedicao, formatarNumeroExecucao, formatarTempo, LIMITE_TENTATIVAS } from '../../utils/formatacao'
 import { PilulaResultado } from '../execucao/PilulaResultado'
 
 interface TabelaExecucoesProps {
@@ -40,7 +40,7 @@ export function TabelaExecucoes({ execucoes }: TabelaExecucoesProps) {
                 {e.tentativas_usadas}/{LIMITE_TENTATIVAS}
               </td>
               <td className="alinhar-direita">{e.tempo_total_s !== null ? formatarTempo(e.tempo_total_s) : '—'}</td>
-              <td className="alinhar-direita">{e.velocidade_media !== null ? `${formatarNumero(e.velocidade_media, 3)} m/s` : '—'}</td>
+              <td className="alinhar-direita">{e.velocidade_media !== null ? `${formatarMedicao(e.velocidade_media)} m/s` : '—'}</td>
             </tr>
           ))}
         </tbody>

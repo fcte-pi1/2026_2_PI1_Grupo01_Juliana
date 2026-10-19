@@ -188,6 +188,17 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 
 ---
 
+### Validar firmware → frontend
+
+Com a API no ar, o script envia linhas do contrato serial e confere labirinto, orientação do mapa, encerramento da execução e o comando `interromper`. Depois roda os testes do frontend do desenho e do botão:
+
+```bash
+cd src/backend
+python -m scripts.validar_firmware_frontend
+python -m scripts.validar_firmware_frontend --sem-frontend
+```
+---
+
 ## Stream SSE (BACK-07)
 
 `GET /execucoes/{execucao_id}/stream` devolve `text/event-stream` com os eventos da execução. A linha `event:` repete o campo `tipo` do JSON em `data:`, e os seis tipos estão no `openapi.yaml`: `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso`.

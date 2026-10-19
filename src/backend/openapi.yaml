@@ -299,6 +299,32 @@ paths:
         "422":
           $ref: "#/components/responses/ErroValidacao"
 
+  /execucoes/{execucao_id}/encerrar:
+    post:
+      operationId: encerrarExecucao
+      tags: [execucoes]
+      summary: Encerrar a execução lógica por completo
+      description: >
+        A execução passa a `cancelada` e não aceita retomada. Se houver tentativa
+        aberta, ela é registrada como `failed` com motivo e origem `encerrado_operador`,
+        e o backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos`
+        até a confirmação do robô. Se a tentativa já estiver encerrada, só a
+        execução é cancelada. Execução já concluída ou cancelada responde 409
+        e `detail` é texto.
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+      responses:
+        "200":
+          description: Execução cancelada, com a tentativa aberta encerrada quando havia uma.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoDetalhe"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+
   /execucoes/{execucao_id}/retomar:
     post:
       operationId: retomarTentativa

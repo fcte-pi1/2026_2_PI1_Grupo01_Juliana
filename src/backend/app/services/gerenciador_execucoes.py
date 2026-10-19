@@ -11,7 +11,9 @@ from app.models import ExecucaoLogica, Falha, HealthCheck, Tentativa, TentativaR
 from app.repositories.execucoes import ExecucaoRepository
 from app.repositories.repositorio import Repositorio
 from app.services.atualizacao_metricas import finalizar_tentativa
+from app.services.calculo_metricas import tempo_decorrido_s
 from app.services.excecoes_execucao import (
+    ExecucaoIndisponivel,
     ExecucaoNaoEncontrada,
     RecusaTentativa,
     TentativaEmAndamento,
@@ -174,6 +176,51 @@ class GerenciadorExecucoes:
         self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
         self._interrupcao_pendente = True
         return criar_eventos(OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status))
+
+    def encerrar_execucao(self, sessao: Session, execucao_id: uuid.UUID) -> list[EventoSSE]:
+        """Cancela a execução lógica. Uma tentativa aberta também é encerrada."""
+        repo = Repositorio(sessao)
+        agora = datetime.now(UTC)
+        execucao = repo.bloquear_execucao(execucao_id)
+        if execucao is None:
+            raise ExecucaoNaoEncontrada
+        if execucao.status != "em_andamento":
+            raise ExecucaoIndisponivel
+
+        tentativa = repo.buscar_tentativa_aberta_da_execucao(execucao_id)
+        if tentativa is not None:
+            celula = self._ultima_celula(repo, tentativa)
+            self._registrar_falha(
+                repo,
+                tentativa,
+                motivo="encerrado_operador",
+                origem="encerrado_operador",
+                x=celula[0],
+                y=celula[1],
+                agora=agora,
+            )
+            self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
+            execucao.status = "cancelada"
+            execucao.encerrada_em = agora
+            finalizar_tentativa(sessao, tentativa, execucao, agora)
+            self._interrupcao_pendente = True
+            return criar_eventos(
+                OrigemFalha(falha=tentativa.falha, status_execucao=execucao.status)
+            )
+
+        execucao.status = "cancelada"
+        execucao.encerrada_em = agora
+        ultima = max(execucao.tentativas, key=lambda item: item.attempt_index, default=None)
+        if ultima is None:
+            execucao.tempo_total_s = tempo_decorrido_s(execucao.iniciada_em, agora)
+            return []
+        finalizar_tentativa(sessao, ultima, execucao, agora)
+        return [
+            EventoSSE(tipo=evento.tipo, dados=evento.dados, id=evento.id, encerra=True)
+            for evento in criar_eventos(
+                OrigemStatus(tentativa=ultima, status_execucao=execucao.status)
+            )
+        ]
 
     def aplicar_evento(
         self,

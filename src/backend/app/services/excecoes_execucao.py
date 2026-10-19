@@ -24,3 +24,9 @@ class TentativaEmAndamento(Exception):
     """Pedido que exige o robô parado, feito com uma tentativa em running."""
 
     pass
+
+
+class ExecucaoIndisponivel(Exception):
+    """A execução não está em andamento."""
+
+    pass

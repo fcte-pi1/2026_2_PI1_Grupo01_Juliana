@@ -33,8 +33,17 @@ export function deduzirEixo(trajeto: PassoTrajeto[], ladoCurto: number): EixoLon
 }
 
 /**
- * Colunas e linhas da grade, com o lado longo no eixo informado. Sem eixo, mostra só o
- * quadrado do lado curto: o tamanho completo espera a orientação ser conhecida.
+ * Eixo usado no desenho. O tipo escolhido (8x4, 12x4) já tem tamanho: sem orientação
+ * confirmada, o lado longo fica na horizontal. O eixo `y` só entra quando o robô o informa.
+ */
+export function eixoParaGrade(largura: number, altura: number, eixo: EixoLongo | null): EixoLongo | null {
+  if (eixo) return eixo
+  return largura === altura ? null : 'x'
+}
+
+/**
+ * Colunas e linhas da grade. Sem eixo, o labirinto é o quadrado do lado curto.
+ * Com eixo, o lado longo fica na horizontal (`x`) ou na vertical (`y`).
  */
 export function dimensoes(largura: number, altura: number, eixo: EixoLongo | null): { colunas: number; linhas: number } {
   const longo = Math.max(largura, altura)

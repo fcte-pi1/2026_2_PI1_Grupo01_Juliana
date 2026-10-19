@@ -11,7 +11,7 @@ export const LIMITE_EXECUCAO_S = 600
 
 export const LIMITE_TENTATIVAS = 3
 
-/** Sem mensagem por mais que isso, a tela mostra "Sem comunicação". */
+/** A partir deste intervalo sem mensagem, a tela mostra "Sem comunicação". */
 export const ALERTA_SEM_DADOS_S = 5
 
 /** Nome da célula como no protótipo: coluna em letra e linha a partir de 1 (A1 = largada). */
@@ -23,10 +23,16 @@ export function formatarNumero(valor: number, casas: number): string {
   return valor.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas })
 }
 
+/** Preserva a precisão recebida, alterando apenas o separador decimal. */
+export function formatarMedicao(valor: number): string {
+  return String(valor).replace('.', ',')
+}
+
 /** 20,4 s → "00:20,4" */
 export function formatarTempo(segundos: number): string {
-  const minutos = Math.floor(segundos / 60)
-  const resto = segundos - minutos * 60
+  const decimos = Math.round(segundos * 10)
+  const minutos = Math.floor(decimos / 600)
+  const resto = (decimos % 600) / 10
   return `${String(minutos).padStart(2, '0')}:${formatarNumero(resto, 1).padStart(4, '0')}`
 }
 

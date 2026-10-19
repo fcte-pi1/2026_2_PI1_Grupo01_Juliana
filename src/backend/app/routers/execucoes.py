@@ -13,6 +13,7 @@ from app.schemas.api import (
 )
 from app.services import consulta_execucoes
 from app.services.excecoes_execucao import (
+    ExecucaoIndisponivel,
     ExecucaoNaoEncontrada,
     RecusaTentativa,
     TentativaIndisponivel,
@@ -127,6 +128,39 @@ def encerrar_tentativa(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Não há tentativa aberta para encerrar.",
+        ) from None
+    db.commit()
+    publicar_apos_commit(request.app.state.publicador_sse, execucao_id, eventos)
+    detalhe = consulta_execucoes.buscar_detalhe(ExecucaoRepository(db), execucao_id)
+    assert detalhe is not None
+    return detalhe
+
+
+@router.post(
+    "/{execucao_id}/encerrar",
+    response_model=ExecucaoDetalhe,
+    responses={
+        409: {
+            "description": "A execução não está em andamento.",
+        }
+    },
+)
+def encerrar_execucao(
+    execucao_id: UUID,
+    request: Request,
+    db: Session = Depends(get_db),
+    gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
+) -> ExecucaoDetalhe:
+    try:
+        eventos = gerenciador.encerrar_execucao(db, execucao_id)
+    except ExecucaoNaoEncontrada:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."
+        ) from None
+    except ExecucaoIndisponivel:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A execução não está em andamento.",
         ) from None
     db.commit()
     publicar_apos_commit(request.app.state.publicador_sse, execucao_id, eventos)

@@ -61,7 +61,14 @@ export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSel
       <span className="rotulo">Labirinto</span>
       <SeletorLabirinto labirintos={labirintos} selecionado={selecionado} aoSelecionar={aoSelecionar} desabilitado={desabilitado} />
 
-      {atual && <VisualizacaoLabirinto largura={atual.largura} altura={atual.altura} trajeto={[]} />}
+      {atual && (
+        <VisualizacaoLabirinto
+          largura={atual.largura}
+          altura={atual.altura}
+          eixoLongo={atual.largura === atual.altura ? null : 'x'}
+          trajeto={[]}
+        />
+      )}
 
       <p className="aviso aviso--info">
         Nova execução, no topo da tela, abre uma execução com a Tentativa 1/3 em health-check. Depois é só ligar o
