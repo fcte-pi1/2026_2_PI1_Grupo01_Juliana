@@ -94,7 +94,7 @@ class Fabrica:
         self.session.flush()
         return tentativa
 
-    def health_check(self, tentativa: Tentativa, *, reprovado: str | None = None) -> None:
+    def health_check(self, tentativa: Tentativa, *, reprovado: str | None = None) -> HealthCheck:
         """Health-check com os 8 itens, concluído logo antes da largada da tentativa."""
         inicio = tentativa.iniciada_em - timedelta(seconds=1)
         health_check = HealthCheck(
@@ -115,10 +115,12 @@ class Fabrica:
                     aprovado=componente != reprovado,
                     valor_lido=Decimal("8.2") if componente == "bateria" else None,
                     verificado_em=inicio + timedelta(milliseconds=10 * i),
+                    health_check=health_check,
                 )
             )
-        tentativa.hc_id = health_check.hc_id
+        tentativa.health_check = health_check
         self.session.flush()
+        return health_check
 
     def falha(
         self,
