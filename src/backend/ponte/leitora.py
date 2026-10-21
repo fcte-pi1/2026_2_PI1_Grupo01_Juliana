@@ -60,7 +60,7 @@ class Leitora:
         while not parar.is_set():
             try:
                 porta = self._abrir(self._nome)
-            except ERROS_DA_PORTA as erro:
+            except Exception as erro:
                 self._caiu(erro, parar)
                 continue
             with self._trava:
@@ -69,23 +69,25 @@ class Leitora:
             self._espera.zerar()
             try:
                 self._ler(porta, parar)
-            except ERROS_DA_PORTA as erro:
+            except Exception as erro:
                 self._caiu(erro, parar)
         self._fechar()
 
-    def escrever(self, linha: str) -> None:
-        """Escreve a linha na porta aberta; sem porta, registra o comando perdido."""
+    def escrever(self, linha: str) -> bool:
+        """Escreve a linha na porta aberta e diz se escreveu; senão, registra o comando perdido."""
         comando = linha.rstrip("\n")
         with self._trava:
             if self._porta is None:
                 self._auditoria.registrar("CONEXAO", f"sem porta, comando perdido {comando}")
-                return
+                return False
             try:
                 self._porta.write(linha.encode("utf-8"))
             except ERROS_DA_PORTA as erro:
                 self._auditoria.registrar(
                     "CONEXAO", f"erro na escrita {erro}, comando perdido {comando}"
                 )
+                return False
+            return True
 
     def _ler(self, porta: Porta, parar: threading.Event) -> None:
         pedacos = b""

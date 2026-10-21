@@ -173,7 +173,7 @@ def test_escrever_na_porta_aberta(tmp_path):
 
     class PortaQueEscreve(PortaFalsa):
         def readline(self):
-            leitora.escrever('{"v":1,"cmd":"interromper"}\n')
+            escrito.append(leitora.escrever('{"v":1,"cmd":"interromper"}\n'))
             escrito.append(self.escrito)
             parar.set()
             return b""
@@ -183,12 +183,33 @@ def test_escrever_na_porta_aberta(tmp_path):
 
     leitora.rodar(parar)
 
-    assert escrito == [b'{"v":1,"cmd":"interromper"}\n']
+    assert escrito == [True, b'{"v":1,"cmd":"interromper"}\n']
 
 
 def test_escrever_sem_porta_registra_comando_perdido(tmp_path):
     leitora, _, auditoria, _ = montar(tmp_path, [])
 
-    leitora.escrever('{"v":1,"cmd":"interromper"}\n')
+    assert leitora.escrever('{"v":1,"cmd":"interromper"}\n') is False
 
     assert log(auditoria) == ['CONEXAO sem porta, comando perdido {"v":1,"cmd":"interromper"}']
+
+
+def test_erro_inesperado_na_leitura_reabre_a_porta(tmp_path):
+    parar = threading.Event()
+    primeira = PortaFalsa([b"lixo\n", RuntimeError("inesperado")])
+    segunda = PortaFalsa([b"lixo\n", b"b\n"], parar)
+    leitora, fila, auditoria, esperas = montar(
+        tmp_path, [ValueError("porta estranha"), primeira, segunda]
+    )
+
+    leitora.rodar(parar)
+
+    assert esperas == [0.5, 0.5]
+    assert [linha for linha, _ in linhas_da_fila(fila)] == ["b"]
+    assert log(auditoria) == [
+        "CONEXAO caiu porta estranha",
+        "CONEXAO aberta /dev/falsa",
+        "CONEXAO caiu inesperado",
+        "CONEXAO aberta /dev/falsa",
+        "RX b",
+    ]

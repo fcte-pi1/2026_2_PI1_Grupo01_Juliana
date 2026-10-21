@@ -73,7 +73,7 @@ Cada descarte vai para o log como `FILA`. A linha nunca é alterada.
 
 ## Log de auditoria
 
-Um arquivo por execução: `PONTE_LOG_DIR/ponte-AAAAMMDD-HHMMSS.log`, com a hora local de início. A pasta `logs/` é ignorada pelo git. Cada linha tem a hora ISO com fuso e milissegundos, o tipo e o conteúdo cru:
+Um arquivo por execução: `PONTE_LOG_DIR/ponte-AAAAMMDD-HHMMSS.log`, com a hora local de início. Qualquer pasta `logs/ponte/` é ignorada pelo git. Cada linha tem a hora ISO com fuso e milissegundos, o tipo e o conteúdo cru:
 
 ```text
 2026-10-21T09:05:07.123-03:00 CONEXAO aberta /dev/rfcomm0
@@ -87,8 +87,8 @@ Um arquivo por execução: `PONTE_LOG_DIR/ponte-AAAAMMDD-HHMMSS.log`, com a hora
 | --- | --- |
 | `RX` | Linha lida da serial. |
 | `TX` | Comando escrito na serial. |
-| `API` | Resposta da API (`<status> comandos=<n>`), falha (`falhou ...`) ou comando recusado (`comando recusado ...`). |
-| `CONEXAO` | Porta aberta, porta caída, comando perdido sem porta ou erro na escrita, e o encerramento com o número de linhas descartadas da fila. |
+| `API` | Resposta da API (`<status> comandos=<n>`), falha (`falhou ...`), comando recusado (`comando recusado ...`) ou erro inesperado na enviadora (`erro inesperado ...`), que espera e tenta de novo. |
+| `CONEXAO` | Porta aberta, porta caída (inclusive por erro inesperado na leitora, que reabre a porta), comando perdido sem porta ou erro na escrita, e o encerramento com o número de linhas descartadas da fila. |
 | `FILA` | Linha descartada com a fila cheia (`descartada <classe> <linha>`). |
 
 ## Ensaio de 10 min com o simulador

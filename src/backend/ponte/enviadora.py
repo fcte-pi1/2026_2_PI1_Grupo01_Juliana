@@ -29,7 +29,7 @@ class Enviadora:
         cliente: httpx.Client,
         fila: Fila,
         auditoria: Auditoria,
-        escrever: Callable[[str], None],
+        escrever: Callable[[str], bool],
         dormir: Callable[[float], None] = time.sleep,
     ) -> None:
         self._cliente = cliente
@@ -42,7 +42,12 @@ class Enviadora:
     def rodar(self, parar: threading.Event) -> None:
         """Envia os itens da fila até `parar` ser sinalizado."""
         while not parar.is_set():
-            self.enviar_primeiro(timeout=0.2, parar=parar)
+            try:
+                self.enviar_primeiro(timeout=0.2, parar=parar)
+            except Exception as erro:
+                self._auditoria.registrar("API", f"erro inesperado {type(erro).__name__} {erro}")
+                if not parar.is_set():
+                    self._dormir(self._espera.proxima())
 
     def enviar_primeiro(self, timeout: float, parar: threading.Event | None = None) -> None:
         """Uma tentativa com o item mais antigo; na falha, dorme a próxima espera."""
@@ -87,8 +92,8 @@ class Enviadora:
             self._auditoria.registrar("API", f"comando recusado {recusado}")
             return
         texto = comando.model_dump_json()
-        self._escrever(texto + "\n")
-        self._auditoria.registrar("TX", texto)
+        if self._escrever(texto + "\n"):
+            self._auditoria.registrar("TX", texto)
 
 
 def _ler_comandos(resposta: httpx.Response) -> list[Any]:

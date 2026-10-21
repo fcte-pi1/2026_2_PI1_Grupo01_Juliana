@@ -380,4 +380,4 @@ src/firmware/**/build/
 .simulador/
 
 # Ponte serial (log de auditoria)
-logs/
+**/logs/ponte/

@@ -1,4 +1,5 @@
 import json
+import threading
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -36,7 +37,12 @@ def montar(tmp_path, respostas, linhas=("a",)):
     auditoria = Auditoria(tmp_path, relogio=lambda: INICIO)
     escritas = []
     esperas = []
-    enviadora = Enviadora(cliente, fila, auditoria, escritas.append, dormir=esperas.append)
+
+    def escrever(linha):
+        escritas.append(linha)
+        return True
+
+    enviadora = Enviadora(cliente, fila, auditoria, escrever, dormir=esperas.append)
     return enviadora, fila, auditoria, pedidos, escritas, esperas
 
 
@@ -194,3 +200,33 @@ def test_item_descartado_durante_o_reenvio_nao_remove_outro(tmp_path):
     enviadora.enviar_primeiro(timeout=0)
     assert enviadas == ["a"]
     assert fila.primeiro(timeout=0) == ("b", INICIO)
+
+
+def test_tx_so_e_registrado_quando_a_escrita_acontece(tmp_path):
+    enviadora, fila, auditoria, _, _, _ = montar(tmp_path, [(200, {"comandos": [INTERROMPER]})])
+    enviadora._escrever = lambda _linha: False
+    esvaziar(enviadora, fila)
+    assert registros(auditoria) == ["API 200 comandos=1"]
+
+
+def test_erro_inesperado_e_registrado_e_a_enviadora_continua(tmp_path):
+    parar = threading.Event()
+    enviadora, fila, auditoria, pedidos, _, esperas = montar(
+        tmp_path, [httpx.DecodingError("corpo corrompido"), (200, {"comandos": []})]
+    )
+    remover = fila.remover_primeiro
+
+    def remover_e_parar():
+        remover()
+        parar.set()
+
+    fila.remover_primeiro = remover_e_parar
+    enviadora.rodar(parar)
+
+    assert len(pedidos) == 2
+    assert len(fila) == 0
+    assert esperas == [0.5]
+    assert registros(auditoria) == [
+        "API erro inesperado DecodingError corpo corrompido",
+        "API 200 comandos=0",
+    ]
