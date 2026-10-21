@@ -110,9 +110,9 @@ Roteiro manual para conferir a ponte de ponta a ponta sem o robô (Linux, macOS 
    ```
 
 4. Na web, clique em **Nova execução** e acompanhe a corrida.
-5. Derrube a API por cerca de 5 s e suba de novo. No log, confira que nenhuma linha se perdeu: toda linha `RX` tem uma linha `API <status> comandos=<n>` correspondente, sem `FILA descartada`.
-6. Clique em **Encerrar** na web. No log, confira que o `TX {"v":1,"cmd":"interromper"}` aparece em até 1 s depois do clique, e que o simulador encerra a corrida.
-7. Confira que todo `TX` do log é um comando do contrato (`interromper`, `largar` ou `health_check`).
-8. Encerre a ponte e o simulador com Ctrl+C.
+5. Clique em **Encerrar** na web. No log, confira que o `TX {"v":1,"cmd":"interromper"}` aparece em até 1 s depois do clique, e que o simulador encerra a corrida.
+6. Confira que todo `TX` do log é um comando do contrato (`interromper`, `largar` ou `health_check`).
+7. Encerre a ponte e o simulador com Ctrl+C.
+8. Para a queda da API, rode de novo o simulador (passo 2) e a ponte (passo 3), **sem** clicar em **Nova execução**. Derrube a API por cerca de 5 s e suba de novo. No log, confira que nenhuma linha se perdeu: toda linha `RX` tem uma linha `API <status> comandos=<n>` correspondente, sem `FILA descartada`. Sem tentativa aberta, o backend responde 200 e descarta as linhas só no log dele, o que basta para conferir a ponte. Não derrube a API com uma tentativa aberta: reiniciar a API no meio dela a encerra com `link_lost` (issue #229).
 
 Para um ensaio mais curto, troque o roteiro por `roteiros/sucesso-4x4.json`.
