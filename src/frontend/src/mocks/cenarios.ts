@@ -1,5 +1,5 @@
 import type { ExecucaoAtualResposta } from '../api/tipos'
-import { execucao, falha, healthCheck, leituras, relativo, tentativa, trajetoAte, trajetoComRetomada, ULTIMA_EXECUCAO } from './dados'
+import { execucao, falha, leituras, relativo, tentativa, trajetoAte, trajetoComRetomada, ULTIMA_EXECUCAO } from './dados'
 
 export type ModalCenario = 'encerrar' | 'retomar'
 
@@ -59,14 +59,7 @@ export const CENARIOS: Cenario[] = [
     id: '02-health-check',
     titulo: 'Health-check em andamento',
     aoVivo: true,
-    atual: (agora) => ({
-      ...base,
-      execucao: execucao(agora, {
-        iniciada_em: relativo(agora, -4),
-        tentativas: [tentativa(agora, { attempt_index: 1, status: 'health-check', iniciada_em: relativo(agora, -4), health_check: healthCheck(6) })],
-        trajeto: trajetoAte(0),
-      }),
-    }),
+    atual: () => ({ ...base, execucao: null }),
   },
   {
     id: '03-em-execucao',

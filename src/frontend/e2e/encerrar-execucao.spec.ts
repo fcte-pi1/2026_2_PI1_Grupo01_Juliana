@@ -20,7 +20,7 @@ test.describe('Encerrar execução', () => {
         pedidos.push(pedido.url())
       }
     })
-    await abrirCenario(page, '02-health-check')
+    await abrirCenario(page, '03-em-execucao')
 
     await page.getByRole('button', { name: 'Encerrar execução' }).click()
     const modal = page.getByRole('dialog', { name: 'Encerrar a execução #0042 por completo?' })
@@ -42,7 +42,7 @@ test.describe('Encerrar execução', () => {
         pedidos.push(pedido.url())
       }
     })
-    await abrirCenario(page, '02-health-check')
+    await abrirCenario(page, '03-em-execucao')
 
     await page.getByRole('button', { name: 'Encerrar execução' }).click()
     const modal = page.getByRole('dialog', { name: 'Encerrar a execução #0042 por completo?' })

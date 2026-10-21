@@ -7,6 +7,7 @@ import { BlocoHealthCheck } from '../../components/telemetria/BlocoHealthCheck'
 import { MetricasTempoReal } from '../../components/telemetria/MetricasTempoReal'
 import { TabelaLeituras } from '../../components/telemetria/TabelaLeituras'
 import { formatarMedicao, formatarNumero, formatarTempo, LIMITE_TENTATIVAS, LADO_CELULA_M, nomeCelula } from '../../utils/formatacao'
+import { podeRetomar } from '../../utils/tentativas'
 
 interface PainelEncerradaProps {
   execucao: Execucao
@@ -14,12 +15,13 @@ interface PainelEncerradaProps {
   labirinto: Labirinto
   agora: number
   aoRetomar?: () => void
+  enviando?: boolean
 }
 
 /** Tentativa encerrada (sucesso ou falha): trajeto completo e métricas finais (RF01, RF09, RF15). */
-export function PainelEncerrada({ execucao, tentativa, labirinto, agora, aoRetomar }: PainelEncerradaProps) {
+export function PainelEncerrada({ execucao, tentativa, labirinto, agora, aoRetomar, enviando = false }: PainelEncerradaProps) {
   const { falha } = tentativa
-  const podeRetomar = tentativa.status === 'failed' && execucao.status === 'em_andamento' && execucao.tentativas_usadas < LIMITE_TENTATIVAS
+  const retomavel = podeRetomar(execucao)
 
   return (
     <div className="painel-tempo-real painel-tempo-real--encerrada pagina-duas-colunas">
@@ -66,8 +68,8 @@ export function PainelEncerrada({ execucao, tentativa, labirinto, agora, aoRetom
           {falha && <CartaoFalha falha={falha} attemptIndex={tentativa.attempt_index} />}
           {execucao.status !== 'concluida' && <p className="texto-suave">Sem comparação de tempo: o robô não chegou ao objetivo.</p>}
           {(falha || execucao.tentativas.length > 1) && (
-            <section className={`cartao${podeRetomar ? ' cartao--retomada' : ''}`}>
-              <h2 className="cartao__titulo">{podeRetomar ? 'Retomar tentativa' : execucao.status === 'cancelada' ? 'Sem retomada disponível' : 'Tentativas desta execução'}</h2>
+            <section className={`cartao${retomavel ? ' cartao--retomada' : ''}`}>
+              <h2 className="cartao__titulo">{retomavel ? 'Retomar tentativa' : execucao.status === 'cancelada' ? 'Sem retomada disponível' : 'Tentativas desta execução'}</h2>
               <ul className="tentativas-resumo">
                 {execucao.tentativas.map((item) => (
                   <li key={item.tentativa_id}>
@@ -76,9 +78,9 @@ export function PainelEncerrada({ execucao, tentativa, labirinto, agora, aoRetom
                   </li>
                 ))}
               </ul>
-              {podeRetomar && falha && <>
+              {retomavel && falha && <>
                 <p className="texto-suave espaco-acima">A tentativa {tentativa.attempt_index + 1}/{LIMITE_TENTATIVAS} começa na célula da falha {nomeCelula({ x: falha.celula_x, y: falha.celula_y })}. O trajeto já gravado é mantido.</p>
-                {aoRetomar && <button type="button" className="botao botao--retomada espaco-acima" onClick={aoRetomar}>Retomar da célula {nomeCelula({ x: falha.celula_x, y: falha.celula_y })} →</button>}
+                {aoRetomar && <button type="button" className="botao botao--retomada espaco-acima" disabled={enviando} onClick={aoRetomar}>Retomar da célula {nomeCelula({ x: falha.celula_x, y: falha.celula_y })} →</button>}
               </>}
               {execucao.status === 'cancelada' && <p className="texto-suave espaco-acima">Crie uma nova execução para partir de A1.</p>}
             </section>

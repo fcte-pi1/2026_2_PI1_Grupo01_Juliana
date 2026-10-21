@@ -156,7 +156,7 @@ describe('FRONT-03: acompanhamento SSE', () => {
   })
 
   it('aplica health_check e status nomeados e mantém os resultados visíveis em running', async () => {
-    dados = buscarCenario('02-health-check').atual(Date.now()).execucao!
+    dados = buscarCenario('03-em-execucao').atual(Date.now()).execucao!
     dados.tentativas[0].health_check = []
     renderizarRota('/')
     const fonte = await conectar()

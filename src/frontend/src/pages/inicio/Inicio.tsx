@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ErroApi } from '../../api/clienteApi'
 import { buscarExecucao, criarExecucao, encerrarExecucao, encerrarTentativa, retomarTentativa } from '../../api/endpoints'
+import { combinarRetrato } from '../../api/eventosExecucao'
 import type { EncerrarPedido, Execucao, Labirinto, Recusa, RetornoNovaExecucao, StatusExecucao, TipoLabirinto } from '../../api/tipos'
 import { CartaoUltimaExecucao } from '../../components/execucao/CartaoUltimaExecucao'
 import { ComoFunciona } from '../../components/execucao/ComoFunciona'
@@ -12,8 +13,9 @@ import { ResumoExecucao } from '../../components/execucao/ResumoExecucao'
 import { Cabecalho } from '../../components/layout/Cabecalho'
 import { deduzirEixo, dimensoes as dimensoesDoMapa, eixoParaGrade } from '../../components/labirinto/trajeto'
 import { UltimaAtualizacao } from '../../components/telemetria/UltimaAtualizacao'
+import { VerificacaoHealthCheck } from '../../components/telemetria/VerificacaoHealthCheck'
 import { AvisoRecusa } from '../../components/tentativas/AvisoRecusa'
-import { BotaoRetomar } from '../../components/tentativas/BotaoRetomar'
+import { ControleTentativas } from '../../components/tentativas/ControleTentativas'
 import { ContadorTentativas } from '../../components/tentativas/ContadorTentativas'
 import { Modal } from '../../components/tentativas/Modal'
 import { ModalEncerrar } from '../../components/tentativas/ModalEncerrar'
@@ -22,7 +24,9 @@ import { ModalRetomar } from '../../components/tentativas/ModalRetomar'
 import { useAgora } from '../../hooks/useAgora'
 import { useExecucaoAtual } from '../../hooks/useExecucaoAtual'
 import { useLabirintos } from '../../hooks/useLabirintos'
-import { formatarNumeroExecucao, formatarTempo, nomeCelula } from '../../utils/formatacao'
+import { useHealthCheck } from '../../hooks/useHealthCheck'
+import { tentativaAberta } from '../../utils/tentativas'
+import { formatarNumeroExecucao, formatarTempo, nomeCelula, ROTULO_RECUSA } from '../../utils/formatacao'
 import { derivarEstadoInicio, segundosSemDados, tentativaAtual, type EstadoInicio } from './estadoInicio'
 import { PainelAoVivo } from './PainelAoVivo'
 import { PainelEncerrada } from './PainelEncerrada'
@@ -39,8 +43,8 @@ function lerRecusa(corpo: unknown): Recusa | null {
   if (!corpo || typeof corpo !== 'object' || !('motivo' in corpo) || !('ocorrida_em' in corpo)) return null
   const { motivo, ocorrida_em } = corpo
   if (typeof ocorrida_em !== 'string') return null
-  if (motivo !== 'tentativa_aberta' && motivo !== 'limite_3' && motivo !== 'execucao_cancelada') return null
-  return { motivo, ocorrida_em }
+  if (typeof motivo !== 'string' || !Object.hasOwn(ROTULO_RECUSA, motivo)) return null
+  return { motivo: motivo as Recusa['motivo'], ocorrida_em }
 }
 
 const TITULO: Record<StatusExecucao, string> = {
@@ -66,6 +70,7 @@ export function Inicio() {
   const envioEmAndamento = useRef(false)
   const [erroAcao, setErroAcao] = useState<string | null>(null)
   const [criacaoPendente, setCriacaoPendente] = useState<RetornoNovaExecucao | null>(null)
+  const [retomadaPendente, setRetomadaPendente] = useState<RetornoNovaExecucao | null>(null)
   const [tentativaCriada, setTentativaCriada] = useState<RetornoNovaExecucao | null>(null)
   const encerradaId = atual.dados?.execucao && atual.dados.execucao.status !== 'em_andamento'
     ? atual.dados.execucao.execucao_id : null
@@ -86,7 +91,14 @@ export function Inicio() {
       { replace: true },
     )
 
-  async function enviar(acao: () => Promise<unknown>, recarregar = true) {
+  const recebida = atual.dados?.execucao
+  const temTentativaAberta = !!recebida && tentativaAberta(recebida) !== null
+  const tipoVerificado = modal === 'nova' || !recebida ? selecionado : recebida.labirinto
+  const healthCheck = useHealthCheck(tipoVerificado, !temTentativaAberta || modal === 'nova')
+  const verificacao = <VerificacaoHealthCheck verificacao={healthCheck} tipo={tipoVerificado}
+    bloqueado={enviando || temTentativaAberta} tentativaAberta={temTentativaAberta} />
+
+  async function enviar(acao: () => Promise<unknown>, novaExecucao = false) {
     if (envioEmAndamento.current) return
     envioEmAndamento.current = true
     setEnviando(true)
@@ -97,10 +109,9 @@ export function Inicio() {
       setParametros((p) => {
         p.delete('modal')
         // A criação já carregou o detalhe novo; abandona a seleção do resultado anterior.
-        if (!recarregar) p.delete('execucao')
+        if (novaExecucao) p.delete('execucao')
         return p
       }, { replace: true })
-      if (recarregar) atual.recarregar()
     } catch (e) {
       const recusa = e instanceof ErroApi && e.status === 409 ? lerRecusa(e.corpo) : null
       if (recusa) {
@@ -125,6 +136,35 @@ export function Inicio() {
     atual.definirDados((dados) => dados ? { ...dados, recusa: null } : dados)
   }
 
+  function atualizarExecucao(retrato: Execucao) {
+    atual.definirDados((dados) => dados?.execucao?.execucao_id === retrato.execucao_id
+      ? { ...dados, execucao: combinarRetrato(dados.execucao, retrato), recusa: null } : dados)
+  }
+
+  async function registrarEncerramento(id: string, pedido: EncerrarPedido) {
+    // O HTTP 200 já contém o estado persistido, mesmo se o SSE estiver reconectando.
+    atualizarExecucao(await encerrarTentativa(id, pedido))
+  }
+
+  async function registrarRetomada(id: string) {
+    let registrada = retomadaPendente
+    if (!registrada) {
+      registrada = await retomarTentativa(id)
+      setRetomadaPendente(registrada)
+    }
+    let retrato: Execucao
+    try {
+      retrato = await buscarExecucao(registrada.execucao_id)
+      if (!retrato.tentativas.some((tentativa) => tentativa.tentativa_id === registrada.tentativa_id)) {
+        throw new Error('A tentativa registrada ainda não está disponível na consulta.')
+      }
+    } catch {
+      throw new Error('A tentativa foi aberta, mas não foi possível carregar seus dados. Use “Carregar dados da tentativa” para tentar novamente.')
+    }
+    atualizarExecucao(retrato)
+    setRetomadaPendente(null)
+  }
+
   async function iniciarNovaExecucao() {
     let criada = criacaoPendente
     if (!criada) {
@@ -142,18 +182,20 @@ export function Inicio() {
     setCriacaoPendente(null)
   }
 
-  if (criacaoPendente) {
+  const registroPendente = retomadaPendente ?? criacaoPendente
+  if (registroPendente) {
     return (
       <>
-        <Cabecalho trilha="Início" titulo="Nova execução registrada" acoes={
-          <button type="button" className="botao botao--primario" disabled={enviando} onClick={() => enviar(iniciarNovaExecucao, false)}>
-            Carregar dados da execução
+        <Cabecalho trilha="Início" titulo={retomadaPendente ? 'Retomada registrada' : 'Nova execução registrada'} acoes={
+          <button type="button" className="botao botao--primario" disabled={enviando}
+            onClick={() => retomadaPendente ? enviar(() => registrarRetomada(retomadaPendente.execucao_id)) : enviar(iniciarNovaExecucao, true)}>
+            {retomadaPendente ? 'Carregar dados da tentativa' : 'Carregar dados da execução'}
           </button>
         } />
         {erroAcao && <div className="faixa faixa--perigo" role="alert">{erroAcao}</div>}
         <div className="conteudo">
-          <ContadorTentativas atual={criacaoPendente.attempt_index} />
-          <p className="estado-vazio">Aguardando os dados da execução {criacaoPendente.execucao_id}.</p>
+          <ContadorTentativas atual={registroPendente.attempt_index} />
+          <p className="estado-vazio">Aguardando os dados da execução {registroPendente.execucao_id}.</p>
         </div>
       </>
     )
@@ -188,8 +230,8 @@ export function Inicio() {
     <button
       type="button"
       className="botao botao--primario"
-      disabled={enviando}
-      onClick={() => execucao ? abrirModal('nova') : enviar(iniciarNovaExecucao, false)}
+      disabled={enviando || (!execucao && !healthCheck.apto)}
+      onClick={() => execucao ? abrirModal('nova') : enviar(iniciarNovaExecucao, true)}
     >
       + Nova execução
     </button>
@@ -208,6 +250,7 @@ export function Inicio() {
             proximoNumero={proximo_numero}
             aoSelecionar={setSelecionado}
             desabilitado={enviando}
+            verificacao={verificacao}
           />
           <div className="coluna">
             <ComoFunciona />
@@ -226,7 +269,7 @@ export function Inicio() {
       rodape={
         <>
           <button type="button" className="botao" disabled={enviando} onClick={() => abrirModal(null)}>Cancelar</button>
-          <button type="button" className="botao botao--primario" disabled={enviando} onClick={() => enviar(iniciarNovaExecucao, false)}>
+          <button type="button" className="botao botao--primario" disabled={enviando || !healthCheck.apto} onClick={() => enviar(iniciarNovaExecucao, true)}>
             {enviando ? 'Iniciando…' : 'Confirmar nova execução'}
           </button>
         </>
@@ -236,6 +279,7 @@ export function Inicio() {
         ? <p>A execução <strong>{numero}</strong> está em andamento. Ao confirmar, ela será <strong>cancelada</strong> e uma nova execução começará na <strong>Tentativa 1/3</strong>. Se o robô ainda estiver andando, pare-o pelo botão BOOT.</p>
         : <p>Escolha o labirinto. A nova execução começará na <strong>Tentativa 1/3</strong>.</p>}
       <SeletorLabirinto labirintos={labirintos.dados ?? []} selecionado={selecionado} aoSelecionar={setSelecionado} desabilitado={enviando} />
+      {verificacao}
       {recusaLocal && <AvisoRecusa motivo={recusaLocal.motivo} titulo="Nova execução recusada" aoFechar={fecharRecusa} />}
       {faixaErro}
     </Modal>
@@ -250,10 +294,10 @@ export function Inicio() {
     <ModalEncerrarExecucao
       numeroExecucao={numero}
       attemptIndex={tentativa?.attempt_index ?? null}
-      tentativaAberta={!tentativa || tentativa.status === 'health-check' || tentativa.status === 'running'}
+      tentativaAberta={tentativa?.status === 'running'}
       enviando={enviando}
       aoCancelar={() => abrirModal(null)}
-      aoConfirmar={() => enviar(() => encerrarExecucao(execucao.execucao_id))}
+      aoConfirmar={() => enviar(async () => atualizarExecucao(await encerrarExecucao(execucao.execucao_id)))}
     />
   )
   if (!tentativa) {
@@ -279,7 +323,7 @@ export function Inicio() {
   )
   const grade = dimensoesDoMapa(labirinto.largura, labirinto.altura, eixo)
   const objetivo = nomeCelula({ x: grade.colunas - 1, y: grade.linhas - 1 })
-  const aberta = execucao.status === 'em_andamento' && (tentativa.status === 'health-check' || tentativa.status === 'running')
+  const aberta = execucao.status === 'em_andamento' && tentativa.status === 'running'
   const { falha } = tentativa
   // Após uma falha com retomada disponível, só a tentativa terminou; a execução segue ativa.
   const trilha = aberta ? 'execução ativa' : execucao.status === 'em_andamento' ? 'tentativa encerrada' : 'execução encerrada'
@@ -296,11 +340,7 @@ export function Inicio() {
             {aberta && <UltimaAtualizacao segundos={segundosSemDados(execucao, agora)} />}
             <PilulaStatusTentativa status={tentativa.status} />
             {novaExecucao}
-            {aberta ? (
-              <button type="button" className="botao botao--perigo-contorno" onClick={() => abrirModal('encerrar')}>
-                Encerrar tentativa
-              </button>
-            ) : (
+            {!aberta && (
               <Link to={`/execucoes/${execucao.execucao_id}`} className="botao">
                 Ver detalhes
               </Link>
@@ -309,11 +349,10 @@ export function Inicio() {
             {!aberta && (
               <>
                 {execucao.status !== 'em_andamento' && <Link to="/" className="botao" onClick={() => atual.recarregar()}>Voltar ao início</Link>}
-                {estado === 'falha-retomavel' ? (
-                  <BotaoRetomar proxima={tentativa.attempt_index + 1} aoClicar={() => abrirModal('retomar')} />
-                ) : null}
               </>
             )}
+            <ControleTentativas execucao={execucao} enviando={enviando}
+              aoEncerrar={() => abrirModal('encerrar')} aoRetomar={() => abrirModal('retomar')} />
           </>
         }
       />
@@ -330,7 +369,6 @@ export function Inicio() {
           criadaEm={execucao.iniciada_em}
           largada={tentativa.tipo_inicio === 'retomada' ? 'Retomada' : 'A1'}
           objetivo={objetivo}
-          tempoHealthCheck={tentativa.status === 'health-check' ? formatarTempo(Math.max((agora - Date.parse(tentativa.iniciada_em)) / 1000, 0)) : undefined}
         />
         {recusa && modal !== 'nova' && <AvisoRecusa motivo={recusa.motivo} titulo={recusaLocal ? 'Pedido recusado' : undefined} aoFechar={fecharRecusa} />}
         {aberta && <EtapasExecucao
@@ -342,7 +380,7 @@ export function Inicio() {
         {aberta ? (
           <PainelAoVivo execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} />
         ) : (
-          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} aoRetomar={() => abrirModal('retomar')} />
+          <PainelEncerrada execucao={execucao} tentativa={tentativa} labirinto={labirinto} agora={agora} enviando={enviando} aoRetomar={() => abrirModal('retomar')} />
         )}
       </div>
 
@@ -356,7 +394,7 @@ export function Inicio() {
           tempo={formatarTempo(Math.max((agora - new Date(execucao.iniciada_em).getTime()) / 1000, 0))}
           enviando={enviando}
           aoCancelar={() => abrirModal(null)}
-          aoConfirmar={(pedido: EncerrarPedido) => enviar(() => encerrarTentativa(execucao.execucao_id, pedido))}
+          aoConfirmar={(pedido: EncerrarPedido) => enviar(() => registrarEncerramento(execucao.execucao_id, pedido))}
         />
       )}
       {modal === 'retomar' && estado === 'falha-retomavel' && celulaFalha && (
@@ -365,8 +403,10 @@ export function Inicio() {
           proxima={tentativa.attempt_index + 1}
           celulaFalha={nomeCelula(celulaFalha)}
           enviando={enviando}
+          liberado={healthCheck.apto}
+          verificacao={verificacao}
           aoCancelar={() => abrirModal(null)}
-          aoConfirmar={() => enviar(() => retomarTentativa(execucao.execucao_id))}
+          aoConfirmar={() => enviar(() => registrarRetomada(execucao.execucao_id))}
         />
       )}
     </>

@@ -65,13 +65,31 @@ Ao terminar, a URL conserva `execucao=<id>` e o resultado é restaurado pelo GET
 
 O percentual de carga vem de `bateria_pct` no SSE; o front não calcula a curva da bateria. Consumo percentual (queda em pontos percentuais) e variação contra o melhor tempo vêm do GET e aparecem no encerramento e no detalhe. Campos ausentes permanecem pendentes. O GET não fornece o percentual em cada leitura: após recarregar, ele aguarda o próximo evento de telemetria.
 
-A aprovação do health-check depende dos oito resultados positivos; componentes sem resposta permanecem pendentes, e uma reprovação não marca o percurso como concluído. A célula de uma falha persistida prevalece sobre uma leitura anterior ao restaurar o GET. Os tempos arredondados para décimos fazem a virada do minuto corretamente; a tabela conta desde o início da tentativa, incluindo o health-check.
+A aprovação do health-check vem do backend; componentes sem resposta permanecem pendentes, e uma reprovação não marca o percurso como concluído. A célula de uma falha persistida prevalece sobre uma leitura anterior ao restaurar o GET. Os tempos arredondados para décimos fazem a virada do minuto corretamente; a tabela conta desde a largada, sem incluir o health-check anterior à tentativa.
 
 Eventos identificados de tentativas anteriores atualizam somente o próprio histórico, sem alterar célula, estado ou horário da tentativa atual. Passos atrasados completam o trajeto sem mover a posição quando antecedem o início da tentativa atual ou chegam após o término. Quando o evento não informa `entrou_em`, a ordenação usa apenas o `passo_id`, conforme os dados disponíveis no contrato.
 
 No modo mock, o estado fica na sessão da aba para o GET restaurar IDs, início, leituras e tentativas após recarregar. As medições usam os exemplos existentes, adequados a mV/mm/s. O stream atende também a execução inicial `e-0042`. A releitura de um `passo_id` atualiza suas paredes sem duplicar o trajeto, preservando falhas e orientação do FRONT-04.
 
 Os testes locais cobrem eventos nomeados, alerta de 5 s, valores/unidades, reconexão, deduplicação, relógio do servidor, valores finais, recarregamento e o fluxo da demonstração. O SSE da BACK-07 já está integrado. O teste com transporte controlado mede apenas do recebimento do evento à atualização da interface; não comprova o limite de 2 s desde o COMMIT no backend. O roteiro para a validação real está em [VALIDACAO-FRONT03.md](VALIDACAO-FRONT03.md).
+
+### FRONT-05 — controle de tentativas (#122)
+
+O `ControleTentativas` oferece **Encerrar tentativa** quando há tentativa aberta e **Retomar tentativa (2/3 ou 3/3)** após a última tentativa falhar, sem outra aberta. Execução cancelada/concluída ou três tentativas usadas ocultam a retomada. O indicador **Tentativa n/3** continua no resumo existente.
+
+O modal Encerrar começa sem motivo selecionado: o operador precisa escolher `collision`, `stuck` ou `out_of_track`. A observação opcional aceita até 100 caracteres, inclusive ao colar. A confirmação de retomada mantém o checklist e a célula da falha do protótipo. Durante o pedido, ficam bloqueados os botões de ação, os campos e o fechamento do modal. O bloqueio de envio existente na página impede POST duplicado; uma recusa preserva o preenchimento e permite tentar novamente.
+
+Os comandos usam os endpoints existentes, sem mudanças no backend: `POST /execucoes/{id}/encerrar-tentativa` e `POST /execucoes/{id}/retomar`. Os testes em `src/testes/front05.test.tsx` cobrem visibilidade, motivo obrigatório, limite da observação, checklist, pedidos pendentes, clique duplo e recusa. Para executar somente essa suíte: `npm run test -- src/testes/front05.test.tsx`.
+
+Encerrar aplica o detalhe persistido retornado pelo HTTP 200, sem depender de outro GET ou de um evento SSE para trocar a tela. Retomar lê os IDs do HTTP 201 e consulta o detalhe dessa execução antes de liberar os controles. Se a tentativa foi aberta e o GET falhar, **Carregar dados da tentativa** repete somente a consulta; não abre outra tentativa. Uma resposta antiga não reabre uma tentativa encerrada nem substitui a tentativa recém-aberta.
+
+Conforme o contrato atual e a revisão da BACK-04 (#209), o health-check é anterior a qualquer tentativa, inclusive à retomada. A preparação consulta `GET /health-check/ultimo` a cada segundo e oferece `POST /health-check/solicitar`. Só libera a confirmação quando a aprovação veio do backend, `valido_ate` está vigente e `tipo_dip` corresponde ao labirinto. A seleção na tela não muda o DIP. Uma solicitação HTTP 202 aguarda um resultado com `iniciado_em` a partir de `solicitado_em`; a aprovação antiga não libera a largada. Não se abre nem se consome tentativa durante a verificação. O HTTP 201 já abre a tentativa em `running` e pede a largada ao robô.
+
+As recusas `health_check_ausente`, `health_check_reprovado`, `health_check_expirado` e `dip_divergente` preservam o formulário e a contagem recebida. O backend continua responsável por validar os comandos. Os tipos de `src/api/schema.ts` foram regenerados do OpenAPI do projeto, sem manter o estado antigo `health-check` dentro da tentativa. Os testes de `healthCheckFluxo.test.tsx` cobrem pré-requisitos ausentes, pendentes, reprovados, expirados, DIP divergente, comunicação indisponível e espera do novo resultado. No modo de demonstração, o cenário 02 representa uma verificação antes da execução; o mock usa os oito exemplos existentes e conserva o resultado na sessão.
+
+Base atualizada por avanço direto com `origin/dev` (`ac59541`), incluindo o FRONT-03 já mesclado. As alterações locais anteriores foram preservadas e reconciliadas com o botão de encerramento completo da execução e os ajustes de mapa que entraram nessa base. As alterações próprias do FRONT-05 estão restritas a `src/frontend`.
+
+Validação local: 201 testes de unidade/componente/integração e 6 E2E, além de lint, tipos e build. Os E2E usam os mocks existentes e conferem health-check anterior à largada, motivo obrigatório, limite da observação, um único POST ao encerrar, checklist e preservação da execução, mapa e falha após retomar e recarregar. Para repetir no PowerShell: `$env:VITE_API_MOCK = 'true'; npm.cmd run test:e2e`. A API local está indisponível; os testes com MSW não substituem uma execução com o backend real nem comprovam a latência desde a persistência.
 
 ## Rotas
 

@@ -28,7 +28,7 @@ export function CartaoFalha({ falha, attemptIndex }: CartaoFalhaProps) {
           <dd className="mono">{formatarHora(falha.momento_falha)}</dd>
         </div>
       </dl>
-      <p className="texto-suave">
+      <p className="texto-suave" style={{ overflowWrap: 'anywhere' }}>
         {falha.origem === 'encerrado_operador' ? 'Encerrada pelo operador.' : 'Detectada automaticamente.'}
         {falha.componente && ` Componente: ${ROTULO_COMPONENTE[falha.componente]}.`}
         {falha.observacao && ` Observação: ${falha.observacao}`}

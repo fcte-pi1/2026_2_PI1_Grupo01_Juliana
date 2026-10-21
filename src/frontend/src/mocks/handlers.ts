@@ -1,6 +1,7 @@
 import { http, HttpResponse, sse } from 'msw'
 import type { EncerrarPedido, EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
-import { buscarExecucaoRegistrada, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
+import { buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
+import { recusaHealthCheckMock, solicitarHealthCheckMock, ultimoHealthCheckMock } from './healthCheckAtual'
 import { detalheAPI, execucao, falha, HISTORICO, resumoAPI, tentativa, trajeto12x4Longo, trajetoAte } from './dados'
 import { avancarDemonstracao } from './fluxoDemonstracao'
 
@@ -47,6 +48,13 @@ function execucaoDoHistorico(id: string): Execucao | null {
 }
 
 export const handlers = [
+  http.get(`${API}/health-check/ultimo`, () => HttpResponse.json(ultimoHealthCheckMock(Date.now(), cenarioAtual().id))),
+  http.post(`${API}/health-check/solicitar`, () => {
+    if (dadosAtuais().execucao?.tentativas.some((tentativa) => tentativa.status === 'running')) {
+      return HttpResponse.json({ detail: 'Há uma tentativa em execução; encerre-a antes de pedir um novo health-check.' }, { status: 409 })
+    }
+    return HttpResponse.json(solicitarHealthCheckMock(Date.now(), cenarioAtual().id), { status: 202 })
+  }),
   http.get(`${API}/execucoes/em-andamento`, () => {
     const atual = dadosAtuais(Date.now()).execucao
     return atual?.status === 'em_andamento' ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
@@ -74,6 +82,8 @@ export const handlers = [
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
     const pedido = await request.json() as NovaExecucaoPedido
     if (!['4x4', '8x4', '12x4'].includes(pedido.tipo_labirinto)) return new HttpResponse(null, { status: 422 })
+    const motivo = recusaHealthCheckMock(pedido.tipo_labirinto, Date.now(), cenarioAtual().id)
+    if (motivo) return HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })
     const nova = registrarNovaExecucao(pedido.tipo_labirinto, Date.now())
     return HttpResponse.json({
       execucao_id: nova.execucao_id,
@@ -86,12 +96,12 @@ export const handlers = [
     const id = String(params.id)
     const atual = buscarExecucaoRegistrada(id)
     if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
-    if (atual.status !== 'em_andamento' || !['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '')) {
+    if (atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'running') {
       return HttpResponse.json({ detail: 'Não há tentativa aberta' }, { status: 409 })
     }
     const pedido = await request.json() as EncerrarPedido
     if (!['collision', 'stuck', 'out_of_track'].includes(pedido.motivo)
-      || (pedido.observacao != null && typeof pedido.observacao !== 'string')) return new HttpResponse(null, { status: 422 })
+      || (pedido.observacao != null && (typeof pedido.observacao !== 'string' || pedido.observacao.length > 100))) return new HttpResponse(null, { status: 422 })
     return HttpResponse.json(detalheAPI(encerrarTentativaRegistrada(id, pedido, Date.now())))
   }),
 
@@ -111,9 +121,10 @@ export const handlers = [
     if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
     const recusa = dadosAtuais(Date.now()).recusa
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
-    const motivo = ['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '') ? 'tentativa_aberta'
+    const motivo = atual.tentativas.at(-1)?.status === 'running' ? 'tentativa_aberta'
       : atual.tentativas_usadas >= 3 ? 'limite_3'
-        : atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'failed' ? 'execucao_cancelada' : null
+        : atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'failed' ? 'execucao_cancelada'
+          : recusaHealthCheckMock(atual.labirinto, Date.now(), cenarioAtual().id)
     if (motivo) return HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })
     const retomada = retomarTentativaRegistrada(id, Date.now())
     const tentativa = retomada.tentativas.at(-1)!
