@@ -28,6 +28,25 @@
 #define VELOCIDADE_MAX_MM_S         850.0f  /* [EST] máxima efetiva do N20 de 600 RPM com a roda de 34 mm */
 #define VELOCIDADE_CRUZEIRO_MM_S    400.0f  /* [EST] velocidade de operação adotada */
 
+/*
+ * Primitivas de movimento (FIRM-05, #135).
+ * PROVISÓRIO: valores ajustados no mundo simulado. O PID por roda do FIRM-04 (#130)
+ * substitui o controle de posição, e o resto é ajustado na pista no FIRM-10 (#141).
+ */
+#define MOV_PERIODO_MS              5       /* 200 Hz, o mesmo laço do PID do FIRM-04 */
+#define MOV_ACELERACAO_MM_S2        2000.0f /* rampa: chega a 400 mm/s em 0,2 s e 40 mm */
+#define MOV_VELOCIDADE_GIRO_MM_S    250.0f  /* velocidade de cada roda no giro */
+#define MOV_ATRASO_MOTOR_S          0.05f   /* constante de tempo da roda; medir na bancada (FIRM-04) */
+#define MOV_KP_POSICAO              1.5f    /* potência por pulso de erro de cada roda */
+#define MOV_TOLERANCIA_PULSOS       2       /* erro aceito no fim, por roda (~0,25 mm) */
+#define MOV_ASSENTAR_MS             50      /* tempo dentro da tolerância para concluir */
+#define MOV_TEMPO_LIMITE_MS         3000    /* sem concluir nesse tempo, o movimento falha */
+/* Correções pelos ToF: prontas no código e desligadas (ganho 0) até o FIRM-10. */
+#define MOV_KP_CENTRO               0.0f    /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo */
+#define MOV_LADO_CENTRADO_MM        77      /* lateral com parede e o robô centrado (ver a detecção de parede) */
+#define MOV_GANHO_FRONTAL           0.0f    /* 0 a 1: quanto o fim do avanço segue a parede da frente */
+#define MOV_FRENTE_ALVO_MM          44      /* frontal com o robô centrado e parede à frente */
+
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
 #define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
 
