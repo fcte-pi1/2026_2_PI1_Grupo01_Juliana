@@ -25,9 +25,11 @@ contrato_rumo_t telemetria_rumo_do_nav(nav_direcao_t direcao);
 
 /*
  * Máscara absoluta (soma de CONTRATO_PAREDE_*) das paredes vistas virado para
- * direcao. A parede de trás não é lida e fica fora da máscara.
+ * direcao. Com o lado NAV_LADO_ESQUERDA o x positivo fica à esquerda do robô,
+ * então as laterais trocam; o lado indefinido vale como direita. A parede de
+ * trás não é lida e fica fora da máscara.
  */
-uint8_t telemetria_paredes_do_nav(nav_direcao_t direcao, nav_leitura_t leitura);
+uint8_t telemetria_paredes_do_nav(nav_direcao_t direcao, nav_lado_t lado, nav_leitura_t leitura);
 
 #ifdef __cplusplus
 }

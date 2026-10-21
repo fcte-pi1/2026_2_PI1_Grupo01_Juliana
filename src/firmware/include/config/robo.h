@@ -18,6 +18,8 @@
 #define CELULA_MM                   180
 #define PAREDE_ESPESSURA_MM         12
 #define LABIRINTO_MAX_CELULAS       12   /* maior lado possível (12x4) */
+/* PROVISÓRIO: fixo até o firmware ler o DIP switch. Usar onde nav.h já foi incluído. */
+#define ROBO_TIPO_LABIRINTO         NAV_TIPO_4X4
 
 /* Rodas e tração */
 #define RODA_DIAMETRO_MM            34.0f   /* [EST] roda 34 x 6,5 mm */

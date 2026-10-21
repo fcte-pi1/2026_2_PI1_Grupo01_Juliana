@@ -19,14 +19,18 @@
 #include "sim_roteiro.h"
 
 #define TAMANHO_ARQUIVO 8192
+#define AMOSTRAS_FRENTE_PADRAO 3
+#define AMOSTRAS_FRENTE_MAX 9
 
 typedef struct {
     int ruido_pct;
     unsigned long semente;
     unsigned long boot;
     unsigned long limite;
+    unsigned long amostras_frente;
     const char *pasta_telemetria;
     int exigir_sucesso;
+    int exigir_termino;
 } opcoes_t;
 
 static void uso(FILE *saida)
@@ -36,11 +40,13 @@ static void uso(FILE *saida)
             "\n"
             "  --ruido PCT        chance (0 a 100) de cada leitura de parede vir trocada (padrao 0)\n"
             "  --semente N        semente do sorteio do ruido (padrao 1)\n"
-            "  --limite N         passos antes de desistir (padrao %d)\n"
+            "  --limite N         passos antes de desistir, contando os bloqueios (padrao %d)\n"
+            "  --amostras-frente N leituras da frente antes de andar, 0 desliga a conferencia (padrao %d, maximo %d)\n"
             "  --telemetria PASTA grava PASTA/<labirinto>.jsonl no formato do contrato v1 (ARQ-01)\n"
             "  --boot N           campo \"boot\" do roteiro de telemetria (padrao 1)\n"
-            "  --exigir-sucesso   sai com codigo 1 se algum labirinto nao terminar em sucesso\n",
-            SIM_LIMITE_PASSOS_PADRAO);
+            "  --exigir-sucesso   sai com codigo 1 se algum labirinto nao terminar em sucesso\n"
+            "  --exigir-termino   sai com codigo 1 se algum labirinto terminar em limite ou sucesso_falso\n",
+            SIM_LIMITE_PASSOS_PADRAO, AMOSTRAS_FRENTE_PADRAO, AMOSTRAS_FRENTE_MAX);
 }
 
 static int ler_numero(const char *texto, unsigned long maximo, unsigned long *valor)
@@ -81,7 +87,11 @@ static void nome_do_labirinto(const char *caminho, char *nome, size_t tamanho)
 
 static void escrever_no_arquivo(void *ctx, const char *linha) { fputs(linha, (FILE *)ctx); }
 
-/* Devolve 0 = sucesso, 1 = a navegação falhou, 2 = labirinto ou arquivo com problema. */
+/*
+ * Devolve 0 = sucesso, 1 = a navegação falhou (sem_caminho ou colisao),
+ * 3 = a navegação não terminou ou declarou sucesso falso (limite ou
+ * sucesso_falso), 2 = labirinto ou arquivo com problema.
+ */
 static int simular(const char *caminho, const opcoes_t *op)
 {
     static char texto[TAMANHO_ARQUIVO];
@@ -108,6 +118,7 @@ static int simular(const char *caminho, const opcoes_t *op)
     config.ruido_pct = (uint8_t)op->ruido_pct;
     config.semente = (uint32_t)op->semente;
     config.limite_passos = (uint16_t)op->limite;
+    config.amostras_frente = (uint8_t)op->amostras_frente;
 
     FILE *telemetria = NULL;
     sim_roteiro_t roteiro;
@@ -132,15 +143,21 @@ static int simular(const char *caminho, const opcoes_t *op)
         fclose(telemetria);
     }
 
-    printf("%-24s %-9s %-13s celulas=%-4u distintas=%-3u giros90=%-4u giros180=%-3u leituras_erradas=%u\n",
+    printf("%-24s %-9s %-13s celulas=%-4u distintas=%-3u giros90=%-4u giros180=%-3u leituras_erradas=%-3u bloqueios=%u\n",
            nome, sim_tipo_nome(rel.tipo), sim_resultado_nome(rel.resultado), rel.celulas, rel.distintas,
-           rel.giros_90, rel.giros_180, rel.leituras_erradas);
-    return rel.resultado == SIM_RESULTADO_SUCESSO ? 0 : 1;
+           rel.giros_90, rel.giros_180, rel.leituras_erradas, rel.bloqueios);
+    if (rel.resultado == SIM_RESULTADO_SUCESSO) {
+        return 0;
+    }
+    if (rel.resultado == SIM_RESULTADO_LIMITE || rel.resultado == SIM_RESULTADO_SUCESSO_FALSO) {
+        return 3;
+    }
+    return 1;
 }
 
 int main(int argc, char **argv)
 {
-    opcoes_t op = {0, 1, 1, 0, NULL, 0};
+    opcoes_t op = {0, 1, 1, 0, AMOSTRAS_FRENTE_PADRAO, NULL, 0, 0};
     int primeiro = 1;
 
     for (; primeiro < argc && strncmp(argv[primeiro], "--", 2) == 0; primeiro++) {
@@ -150,6 +167,10 @@ int main(int argc, char **argv)
 
         if (strcmp(opcao, "--exigir-sucesso") == 0) {
             op.exigir_sucesso = 1;
+            continue;
+        }
+        if (strcmp(opcao, "--exigir-termino") == 0) {
+            op.exigir_termino = 1;
             continue;
         }
         if (strcmp(opcao, "--ajuda") == 0 || strcmp(opcao, "--help") == 0) {
@@ -167,6 +188,8 @@ int main(int argc, char **argv)
             op.semente = n;
         } else if (strcmp(opcao, "--limite") == 0 && ler_numero(valor, UINT16_MAX, &n)) {
             op.limite = n;
+        } else if (strcmp(opcao, "--amostras-frente") == 0 && ler_numero(valor, AMOSTRAS_FRENTE_MAX, &n)) {
+            op.amostras_frente = n;
         } else if (strcmp(opcao, "--boot") == 0 && ler_numero(valor, UINT32_MAX, &n)) {
             op.boot = n;
         } else if (strcmp(opcao, "--telemetria") == 0) {
@@ -187,18 +210,22 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    int total = 0, sucessos = 0, invalidos = 0;
+    int total = 0, sucessos = 0, invalidos = 0, sem_termino = 0;
     for (int i = primeiro; i < argc; i++) {
         int r = simular(argv[i], &op);
         total++;
         sucessos += r == 0;
         invalidos += r == 2;
+        sem_termino += r == 3;
     }
     printf("total: %d labirintos, %d sucesso, %d falha, %d invalido\n", total, sucessos,
            total - sucessos - invalidos, invalidos);
 
     if (invalidos > 0) {
         return 2;
+    }
+    if (op.exigir_termino && sem_termino > 0) {
+        return 1;
     }
     return op.exigir_sucesso && sucessos < total ? 1 : 0;
 }
