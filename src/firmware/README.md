@@ -88,7 +88,8 @@ src/firmware/
 ├── include/config/       pinos.h e robo.h (valores e fontes do ARQ-09)
 ├── lib/
 │   ├── hal/              contratos do hardware (hal_tof.h, hal_motor.h, ...)
-│   │   └── sim/          implementação simulada de cada contrato
+│   │   ├── sim/          implementação simulada de cada contrato
+│   │   └── esp32/        drivers reais (bateria, motores e encoders); compilados sem HAL_SIMULADA
 │   ├── simulacao/        mundo simulado: labirinto em texto + física do robô
 │   ├── simulador/        corrida célula a célula e roteiro de telemetria (FIRM-02)
 │   ├── contrato/         serializador do contrato v1 (ARQ-01) e seu teste byte a byte
@@ -111,7 +112,7 @@ As camadas só dependem das de baixo: `app` usa `navegacao`, `controle` e `senso
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais entram ao lado no FIRM-10 (#141) e trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (por enquanto bateria, motores e encoders); os outros e o ambiente que compila eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
