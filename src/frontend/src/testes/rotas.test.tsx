@@ -172,6 +172,25 @@ describe('rota /execucoes/:id', () => {
     expect(within(screen.getByRole('table')).getByText('Sucesso')).toBeInTheDocument()
   })
 
+  it('mostra o trajeto de cada tentativa em separado', async () => {
+    renderizarRota('/execucoes/e-0042', '11-concluida-apos-retomada')
+    await screen.findByRole('heading', { name: 'Execução #0042' })
+    const trechos = () => Array.from(document.querySelectorAll('polyline.labirinto__trajeto'),
+      (linha) => linha.classList.contains('labirinto__trajeto--retomada') ? 'retomada' : 'tentativa 1')
+    const grupo = within(screen.getByRole('group', { name: 'Trajeto por tentativa' }))
+    expect(grupo.getAllByRole('button').map((b) => b.textContent)).toEqual(['Todas', 'T1', 'T2'])
+    expect(trechos()).toEqual(['tentativa 1', 'retomada'])
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T1' }))
+    expect(trechos()).toEqual(['tentativa 1'])
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T2' }))
+    expect(trechos()).toEqual(['retomada'])
+    expect(screen.queryByText('FALHA T1')).not.toBeInTheDocument()
+    expect(screen.queryByText('Tentativa 1', { selector: '.legenda' })).not.toBeInTheDocument()
+  })
+
   it('mantém a execução em andamento quando a última tentativa falhou', async () => {
     renderizarRota('/execucoes/e-0042', '08-encerrada-como-falha')
     expect(await screen.findByRole('heading', { name: 'Execução #0042' })).toBeInTheDocument()

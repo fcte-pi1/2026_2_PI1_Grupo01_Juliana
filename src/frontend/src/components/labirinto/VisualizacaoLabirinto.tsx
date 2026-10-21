@@ -33,6 +33,8 @@ interface VisualizacaoLabirintoProps {
   falhas?: FalhaNoMapa[]
   /** Esconde eixos, rótulos e legenda (miniatura). */
   compacto?: boolean
+  /** Trajeto de uma única retomada (detalhe por tentativa): desenha tudo como retomada. */
+  soRetomada?: boolean
 }
 
 /** Labirinto em SVG com trajeto, retomadas e falha. A1 fica embaixo à esquerda. Usado ao vivo e no detalhe. */
@@ -45,6 +47,7 @@ export function VisualizacaoLabirinto({
   posicaoAtual,
   falhas = [],
   compacto = false,
+  soRetomada = false,
 }: VisualizacaoLabirintoProps) {
   const eixo = eixoParaGrade(largura, altura, eixoLongo ?? deduzirEixo(trajeto, Math.min(largura, altura)))
   const { colunas, linhas } = dimensoes(largura, altura, eixo)
@@ -107,14 +110,14 @@ export function VisualizacaoLabirinto({
         {trechos.map((trecho, i) => (
           <polyline
             key={i}
-            className={`labirinto__trajeto ${i > 0 ? 'labirinto__trajeto--retomada' : ''}`}
+            className={`labirinto__trajeto ${i > 0 || soRetomada ? 'labirinto__trajeto--retomada' : ''}`}
             points={trecho.map((p) => `${centro(p).cx},${centro(p).cy}`).join(' ')}
           />
         ))}
         {novo && (
           <line
             key={novo[1].seq}
-            className={`labirinto__trajeto labirinto__trajeto--novo ${trechos.length > 1 ? 'labirinto__trajeto--retomada' : ''}`}
+            className={`labirinto__trajeto labirinto__trajeto--novo ${trechos.length > 1 || soRetomada ? 'labirinto__trajeto--retomada' : ''}`}
             x1={centro(novo[0]).cx}
             y1={centro(novo[0]).cy}
             x2={centro(novo[1]).cx}
@@ -142,7 +145,7 @@ export function VisualizacaoLabirinto({
       </svg>
       {!compacto && (
         <figcaption className="labirinto__legenda">
-          <span className="legenda legenda--trajeto">Tentativa 1</span>
+          {!soRetomada && <span className="legenda legenda--trajeto">Tentativa 1</span>}
           <span className="legenda legenda--retomada">Retomada</span>
           <span className="legenda legenda--largada">Largada A1</span>
           <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>

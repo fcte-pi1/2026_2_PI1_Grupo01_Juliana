@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { PassoTrajeto } from '../api/tipos'
-import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade } from '../components/labirinto/trajeto'
+import type { PassoTrajeto, Tentativa } from '../api/tipos'
+import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, passosDaTentativa } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { trajeto12x4Longo } from '../mocks/dados'
 
@@ -137,6 +137,21 @@ describe('funções do trajeto', () => {
     const trechos = dividirEmTrechos(passos([[0, 0], [0, 1], [0, 1], [1, 1], [1, 1]], 2))
     expect(trechos.map((t) => t.length)).toEqual([2, 3])
     expect(dividirEmTrechos([])).toEqual([])
+  })
+
+  it('separa os passos por tentativa pela hora, mesmo quando uma tentativa não andou', () => {
+    const hora = (s: number) => new Date(Date.UTC(2026, 9, 20, 22, 0, s)).toISOString()
+    // A tentativa 1 caiu por link_lost antes do primeiro passo; as retomadas repartem de A1.
+    const tentativas = [1, 2, 3].map((i) => ({ attempt_index: i, iniciada_em: hora(i * 10) })) as Tentativa[]
+    const trajeto = [[0, 0, 21], [0, 1, 22], [0, 0, 31], [0, 1, 32], [1, 1, 33]].map(([x, y, s], i) => ({
+      seq: i + 1, x, y, paredes_mask: 0, retomada: i === 0 || i === 2, entrou_em: hora(s),
+    }))
+    expect(passosDaTentativa(trajeto, tentativas, 1)).toEqual([])
+    expect(passosDaTentativa(trajeto, tentativas, 2).map((p) => p.seq)).toEqual([1, 2])
+    expect(passosDaTentativa(trajeto, tentativas, 3).map((p) => p.seq)).toEqual([3, 4, 5])
+    // Sem entrou_em, vale a ordem dos trechos.
+    const semHora = passos([[0, 0], [0, 1], [0, 0], [1, 0]], 2)
+    expect(passosDaTentativa(semHora, tentativas, 2).map((p) => p.seq)).toEqual([3, 4])
   })
 
   it('deduz o eixo longo e as dimensões da grade', () => {

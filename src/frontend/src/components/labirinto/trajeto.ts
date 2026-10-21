@@ -23,6 +23,23 @@ export function dividirEmTrechos(trajeto: PassoTrajeto[]): PassoTrajeto[][] {
 }
 
 /**
+ * Passos de uma tentativa. Toda retomada reparte de A1 e costuma repetir as células da
+ * anterior, então o detalhe mostra cada tentativa em separado. O passo pertence à última
+ * tentativa iniciada antes dele; sem `entrou_em`, vale a ordem dos trechos.
+ */
+export function passosDaTentativa(trajeto: PassoTrajeto[], tentativas: Tentativa[], attemptIndex: number): PassoTrajeto[] {
+  if (trajeto.every((p) => p.entrou_em)) {
+    const inicios = tentativas.map((t) => ({ indice: t.attempt_index, inicio: Date.parse(t.iniciada_em) }))
+      .sort((a, b) => a.inicio - b.inicio)
+    return trajeto.filter((p) => {
+      const entrada = Date.parse(p.entrou_em!)
+      return inicios.filter((t) => t.inicio <= entrada).at(-1)?.indice === attemptIndex
+    })
+  }
+  return dividirEmTrechos(trajeto)[attemptIndex - 1] ?? []
+}
+
+/**
  * Num 8x4 ou 12x4, o robô só passa de y = 3 se o lado longo estiver em y, e só passa
  * de x = 3 se estiver em x (4.4, "Orientação"). Enquanto não passou de nenhum, devolve null.
  */
