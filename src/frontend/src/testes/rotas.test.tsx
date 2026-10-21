@@ -122,6 +122,26 @@ describe('rota /execucoes', () => {
     expect(tabela.queryByText('—')).not.toBeInTheDocument()
   })
 
+  it('percorre as páginas do backend e lista todas as execuções em ordem decrescente', async () => {
+    const base = resumoAPI(HISTORICO[0])
+    const todas = Array.from({ length: 230 }, (_, i) => ({ ...base, execucao_id: `e-${i}`, numero: 230 - i,
+      iniciada_em: new Date(Date.UTC(2026, 9, 1) - i * 60_000).toISOString() }))
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      const busca = new URL(request.url).searchParams
+      pedidos.push(`${busca.get('limite')}/${busca.get('offset')}`)
+      const offset = Number(busca.get('offset'))
+      return HttpResponse.json(todas.slice(offset, offset + Number(busca.get('limite'))))
+    }))
+    renderizarRota('/execucoes')
+    expect(await screen.findByRole('link', { name: '#0001' })).toBeInTheDocument()
+    expect(pedidos).toEqual(['100/0', '100/100', '100/200'])
+    const links = within(screen.getByRole('table')).getAllByRole('link')
+    expect(links).toHaveLength(230)
+    expect(links[0]).toHaveTextContent('#0230')
+    expect(links.at(-1)).toHaveTextContent('#0001')
+  })
+
   it('lista as execuções e filtra por labirinto', async () => {
     renderizarRota('/execucoes')
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()

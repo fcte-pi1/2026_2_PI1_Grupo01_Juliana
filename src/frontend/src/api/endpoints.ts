@@ -51,8 +51,18 @@ function normalizarExecucao(dados: DetalheAPI): Execucao {
   }
 }
 
+/** Maior página aceita por GET /execucoes. */
+export const LIMITE_PAGINA = 100
+
 export const listarExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
-  const dados = await api.get<ResumoAPI[]>(labirinto ? `/execucoes?tipo_labirinto=${labirinto}` : '/execucoes', sinal)
+  // O backend pagina o histórico; percorre as páginas para listar todas as execuções (RF03).
+  const dados: ResumoAPI[] = []
+  for (let offset = 0; ; offset += LIMITE_PAGINA) {
+    const filtro = labirinto ? `tipo_labirinto=${labirinto}&` : ''
+    const pagina = await api.get<ResumoAPI[]>(`/execucoes?${filtro}limite=${LIMITE_PAGINA}&offset=${offset}`, sinal)
+    dados.push(...pagina)
+    if (pagina.length < LIMITE_PAGINA) break
+  }
   return dados.map((resumo) => ({
     ...resumo,
     labirinto: resumo.tipo_labirinto,
