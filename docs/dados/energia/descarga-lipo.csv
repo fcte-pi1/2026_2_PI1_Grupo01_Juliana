@@ -1,0 +1,7 @@
+# Teste 2.1 (7.2 - Testes de energia): descarga da LiPo com os motores girando.
+# Uma linha por minuto. Tensões em V, corrente em A, com vírgula ou ponto.
+# As colunas v_depois_diodo_V, v_divisor_V, v_5V_V e v_3v3_V só precisam ser preenchidas
+# a cada 10 min (0, 10, 20, 30...); nos outros minutos, deixe vazias.
+# Linhas que começam com # são ignoradas. Apague o exemplo abaixo e escreva por baixo do cabeçalho.
+# exemplo: 0;8,32;0,41;7,97;2,49;5,02;3,30;início, motores a 71%
+tempo_min;v_bateria_V;corrente_A;v_depois_diodo_V;v_divisor_V;v_5V_V;v_3v3_V;observacao

@@ -229,3 +229,7 @@ button:focus-visible {
   *::before,
   *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* Testes de energia (7.2): gráficos e avisos montados a partir dos CSV */
+.energia-grafico { position: relative; height: 18rem; margin: 1rem 0; }
+.energia-aviso { color: var(--md-default-fg-color--light); font-style: italic; }
