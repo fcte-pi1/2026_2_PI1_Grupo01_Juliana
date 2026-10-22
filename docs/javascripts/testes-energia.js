@@ -131,16 +131,34 @@ async function montarDescarga(alvo) {
   const capacidade = numero(d.capacidade)
   const correntePrevista = numero(d.correntePrevista)
   const minimo = numero(d.minimoMin)
+  const tensaoMotores = numero(d.tensaoMotores)
 
+  /*
+   * Com a fonte de bancada, os motores ficam num canal à parte (corrente_motores_A).
+   * A corrente que sairia da bateria soma o canal do circuito com a dos motores
+   * convertida pela potência: Im x Vmotores / Vbateria, como faria o PWM da ponte H.
+   */
   const linhas = (await lerCsv(d.csv))
-    .map((l) => ({ ...l, t: numero(l.tempo_min), v: numero(l.v_bateria_V), i: numero(l.corrente_A) }))
+    .map((l) => {
+      const v = numero(l.v_bateria_V)
+      const circuito = numero(l.corrente_A)
+      const motores = numero(l.corrente_motores_A)
+      const i = motores !== null && tensaoMotores !== null && v
+        ? (circuito ?? 0) + motores * tensaoMotores / v
+        : circuito
+      return { ...l, t: numero(l.tempo_min), v, i, motores }
+    })
     .filter((l) => l.t !== null && l.v !== null)
     .sort((a, b) => a.t - b.t)
+  const emulada = linhas.some((l) => l.motores !== null)
   if (linhas.length < 2) {
     aviso(alvo, "Aguardando os dados do teste: preencha o arquivo " + d.csv.replace(/^(\.\.\/)+/, "docs/") + ".")
     return
   }
   alvo.replaceChildren()
+  if (emulada) {
+    aviso(alvo, `Descarga emulada com fonte de bancada: a tensão segue a curva típica da LiPo, e a corrente da bateria é a do circuito mais a dos motores × ${formatar(tensaoMotores, 1)} V ÷ tensão da bateria.`)
+  }
 
   grafico(alvo, "Tensão da bateria", linhas.map((l) => ({ x: l.t, y: l.v })), "V", 2, [
     ...(alerta !== null ? [{ valor: alerta, rotulo: `alerta ${formatar(alerta, 1)} V` }] : []),
@@ -200,8 +218,8 @@ async function montarDescarga(alvo) {
 
   const detalhes = document.createElement("details")
   detalhes.innerHTML = "<summary>Leituras registradas</summary>"
-  detalhes.append(tabela(["Tempo (min)", "Bateria (V)", "Corrente (A)", "Depois do diodo (V)", "Divisor (V)", "5 V", "3,3 V", "Observação"],
-    linhas.map((l) => [formatar(l.t, 0), formatar(l.v, 2), formatar(l.i, 3), formatar(numero(l.v_depois_diodo_V), 2),
+  detalhes.append(tabela(["Tempo (min)", "Bateria (V)", "Corrente total (A)", "Motores (A)", "Depois do diodo (V)", "Divisor (V)", "5 V", "3,3 V", "Observação"],
+    linhas.map((l) => [formatar(l.t, 0), formatar(l.v, 2), formatar(l.i, 3), formatar(l.motores, 3), formatar(numero(l.v_depois_diodo_V), 2),
       formatar(numero(l.v_divisor_V), 2), formatar(numero(l.v_5V_V), 2), formatar(numero(l.v_3v3_V), 2), l.observacao ?? ""])))
   alvo.append(detalhes)
 }
