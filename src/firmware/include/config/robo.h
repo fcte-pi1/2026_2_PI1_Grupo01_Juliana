@@ -41,6 +41,8 @@
 #define MOV_TOLERANCIA_PULSOS       2       /* erro aceito no fim, por roda (~0,25 mm) */
 #define MOV_ASSENTAR_MS             50      /* tempo dentro da tolerância para concluir */
 #define MOV_TEMPO_LIMITE_MS         3000    /* sem concluir nesse tempo, o movimento falha */
+#define MOV_TRAVADO_MS              200     /* roda sem contar pulsos com potência alta: o movimento falha */
+#define MOV_TRAVADO_POTENCIA        600     /* potência a partir da qual a roda parada conta como travada */
 /* Correções pelos ToF: prontas no código e desligadas (ganho 0) até o FIRM-10. */
 #define MOV_KP_CENTRO               0.0f    /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo */
 #define MOV_LADO_CENTRADO_MM        77      /* lateral com parede e o robô centrado (ver a detecção de parede) */
@@ -49,6 +51,10 @@
 
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
 #define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
+
+/* Derivadas: o controle, o mundo simulado e os testes usam as mesmas. */
+#define PI_F                        3.14159265f
+#define MM_POR_PULSO                (PI_F * RODA_DIAMETRO_MM / ENCODER_PULSOS_POR_VOLTA)
 
 /*
  * Motores — [ENE] 4.2 v1.3, Tabelas 7 e 8.

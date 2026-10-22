@@ -19,7 +19,8 @@
  * da frente já estão no laço, com ganho 0 até o FIRM-10 (#141). Para não
  * depender da lib sensores, quem chama repassa a leitura com mov_informar_tof().
  *
- * Falta o FIRM-04 (#130): PID de velocidade por roda e detecção de travamento.
+ * Roda travada (parede, roda presa) faz o movimento falhar em MOV_TRAVADO_MS.
+ * Falta o FIRM-04 (#130): PID de velocidade por roda.
  */
 
 #include <stdbool.h>
@@ -33,7 +34,7 @@ typedef enum {
     MOV_LIVRE,     /* nenhum movimento pedido ainda, ou mov_parar() */
     MOV_EM_CURSO,
     MOV_CONCLUIDO, /* chegou nos pulsos calculados */
-    MOV_FALHOU     /* não chegou em MOV_TEMPO_LIMITE_MS (parede, roda presa) */
+    MOV_FALHOU     /* roda travada, ou não chegou em MOV_TEMPO_LIMITE_MS */
 } mov_estado_t;
 
 /* Paredes e distâncias filtradas (sensores_paredes e sensores_distancia_mm); 0 mm = sem leitura. */
@@ -58,7 +59,7 @@ bool mov_avancar_celula(void);
  */
 bool mov_girar(int graus);
 
-/* Cancela o movimento e corta a potência dos dois motores. */
+/* Cancela o movimento, corta a potência e põe a ponte H em standby. */
 void mov_parar(void);
 
 /* Um ciclo do controle, a cada MOV_PERIODO_MS. Devolve o estado depois do ciclo. */
@@ -66,7 +67,11 @@ mov_estado_t mov_atualizar(void);
 
 mov_estado_t mov_estado(void);
 
-/* Última leitura dos ToF, a cada sensores_ler(). Cada movimento novo descarta a anterior. */
+/*
+ * Última leitura dos ToF, a cada sensores_ler(). Cada movimento novo descarta a anterior.
+ * A cópia não é protegida: chamar na mesma tarefa do mov_atualizar(), ou o FIRM-09
+ * passa a leitura por uma fila.
+ */
 void mov_informar_tof(const mov_tof_t *tof);
 
 /* Pulsos que cada roda precisa contar para andar mm (avanço) ou girar graus (roda direita; a esquerda é o oposto). */

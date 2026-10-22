@@ -16,13 +16,9 @@
 #include "movimento.h"
 #include "sim_mundo.h"
 
-#define PI_F 3.14159265f
-
 #define PULSOS_180_MM  1416
 #define PULSOS_90_GRAUS 571
 #define PULSOS_180_GRAUS 1143
-
-#define MM_POR_PULSO (PI_F * RODA_DIAMETRO_MM / ENCODER_PULSOS_POR_VOLTA)
 
 /* 2x2 sem paredes internas: o robô anda e gira sem encostar em nada. */
 static const char LABIRINTO_2X2[] =
@@ -259,7 +255,9 @@ static void test_parede_na_frente_faz_o_avanco_falhar(void)
 
     TEST_ASSERT_TRUE(mov_avancar_celula());
     TEST_ASSERT_EQUAL(MOV_FALHOU, rodar(&duracao));
-    TEST_ASSERT_EQUAL_UINT32(MOV_TEMPO_LIMITE_MS, duracao);
+    /* A roda travada para o movimento bem antes do tempo limite e desliga a ponte H. */
+    TEST_ASSERT_TRUE(duracao < MOV_TEMPO_LIMITE_MS / 2);
+    TEST_ASSERT_FALSE(sim_motores_habilitados());
     TEST_ASSERT_TRUE(sim_pose().colidiu);
     TEST_ASSERT_TRUE(hal_encoder_ler(MOTOR_ESQ) < PULSOS_180_MM);
 }

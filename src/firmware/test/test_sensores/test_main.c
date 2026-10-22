@@ -20,8 +20,6 @@
 #include "tof_enderecos.h"
 #include "tof_filtro.h"
 
-#define PI_F 3.14159265f
-
 /*
  * (0, 0) tem parede à esquerda (borda) e à direita, e a frente aberta até a
  * borda norte de (0, 1). (2, 0) não tem parede de nenhum lado nem na frente.

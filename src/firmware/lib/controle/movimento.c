@@ -7,8 +7,6 @@
 #include "hal_encoder.h"
 #include "hal_motor.h"
 
-#define PI_F         3.14159265f
-#define MM_POR_PULSO (PI_F * RODA_DIAMETRO_MM / ENCODER_PULSOS_POR_VOLTA)
 #define DT_S         (MOV_PERIODO_MS / 1000.0f)
 
 typedef enum { TIPO_AVANCO, TIPO_GIRO } tipo_t;
@@ -32,6 +30,8 @@ static struct {
     float desvio;              /* pulsos que a roda direita vai à frente da esquerda */
     uint32_t decorrido_ms;
     uint32_t assentado_ms;
+    int32_t ultimo[MOTOR_QTD];      /* última leitura do encoder, para ver a roda travada */
+    uint32_t parado_ms[MOTOR_QTD];  /* tempo da roda sem contar pulsos com potência alta */
     mov_tof_t tof;
 } mov;
 
@@ -47,20 +47,43 @@ int32_t mov_pulsos_giro(int graus)
     return (int32_t)lroundf(arco_mm / MM_POR_PULSO);
 }
 
+static float limitar(float potencia)
+{
+    return fmaxf(-MOTOR_POTENCIA_MAX, fminf(MOTOR_POTENCIA_MAX, potencia));
+}
+
 static void definir_potencia(float esquerda, float direita)
 {
-    if (esquerda > MOTOR_POTENCIA_MAX) {
-        esquerda = MOTOR_POTENCIA_MAX;
-    } else if (esquerda < -MOTOR_POTENCIA_MAX) {
-        esquerda = -MOTOR_POTENCIA_MAX;
+    hal_motor_definir(MOTOR_ESQ, (int16_t)lroundf(limitar(esquerda)));
+    hal_motor_definir(MOTOR_DIR, (int16_t)lroundf(limitar(direita)));
+}
+
+/* Corta a potência e põe a ponte H em standby até o próximo movimento. */
+static void desligar(mov_estado_t estado)
+{
+    definir_potencia(0.0f, 0.0f);
+    hal_motor_habilitar(false);
+    mov.estado = estado;
+}
+
+/* Conta o tempo de cada roda parada com potência alta; true se alguma travou. */
+static bool roda_travada(float esquerda, float direita)
+{
+    float potencia[MOTOR_QTD];
+    potencia[MOTOR_ESQ] = limitar(esquerda);
+    potencia[MOTOR_DIR] = limitar(direita);
+    bool travou = false;
+    for (int i = 0; i < MOTOR_QTD; i++) {
+        int32_t leitura = hal_encoder_ler(i);
+        if (leitura != mov.ultimo[i] || fabsf(potencia[i]) < MOV_TRAVADO_POTENCIA) {
+            mov.ultimo[i] = leitura;
+            mov.parado_ms[i] = 0;
+        } else {
+            mov.parado_ms[i] += MOV_PERIODO_MS;
+        }
+        travou = travou || mov.parado_ms[i] >= MOV_TRAVADO_MS;
     }
-    if (direita > MOTOR_POTENCIA_MAX) {
-        direita = MOTOR_POTENCIA_MAX;
-    } else if (direita < -MOTOR_POTENCIA_MAX) {
-        direita = -MOTOR_POTENCIA_MAX;
-    }
-    hal_motor_definir(MOTOR_ESQ, (int16_t)lroundf(esquerda));
-    hal_motor_definir(MOTOR_DIR, (int16_t)lroundf(direita));
+    return travou;
 }
 
 static void iniciar(tipo_t tipo, int32_t pulsos, float velocidade_max)
@@ -68,7 +91,7 @@ static void iniciar(tipo_t tipo, int32_t pulsos, float velocidade_max)
     mov.tipo = tipo;
     mov.inicio[MOTOR_ESQ] = hal_encoder_ler(MOTOR_ESQ);
     mov.inicio[MOTOR_DIR] = hal_encoder_ler(MOTOR_DIR);
-    mov.total = (float)abs(pulsos);
+    mov.total = (float)labs(pulsos);
     mov.referencia = 0.0f;
     mov.velocidade = 0.0f;
     mov.aceleracao = 0.0f;
@@ -76,6 +99,10 @@ static void iniciar(tipo_t tipo, int32_t pulsos, float velocidade_max)
     mov.desvio = 0.0f;
     mov.decorrido_ms = 0;
     mov.assentado_ms = 0;
+    for (int i = 0; i < MOTOR_QTD; i++) {
+        mov.ultimo[i] = mov.inicio[i];
+        mov.parado_ms[i] = 0;
+    }
     mov.tof = (mov_tof_t){0};
     mov.estado = MOV_EM_CURSO;
     hal_motor_habilitar(true);
@@ -112,9 +139,7 @@ bool mov_girar(int graus)
 
 void mov_parar(void)
 {
-    hal_motor_definir(MOTOR_ESQ, 0);
-    hal_motor_definir(MOTOR_DIR, 0);
-    mov.estado = MOV_LIVRE;
+    desligar(MOV_LIVRE);
 }
 
 mov_estado_t mov_estado(void)
@@ -124,7 +149,9 @@ mov_estado_t mov_estado(void)
 
 void mov_informar_tof(const mov_tof_t *tof)
 {
-    mov.tof = *tof;
+    if (tof != NULL) {
+        mov.tof = *tof;
+    }
 }
 
 /*
@@ -236,8 +263,13 @@ mov_estado_t mov_atualizar(void)
      */
     float alimentacao = (mov.velocidade + MOV_ATRASO_MOTOR_S * mov.aceleracao) /
                         VELOCIDADE_MAX_MM_S * MOTOR_POTENCIA_MAX;
-    definir_potencia(sinal_esq * (alimentacao + MOV_KP_POSICAO * erro_esq),
-                     sinal_dir * (alimentacao + MOV_KP_POSICAO * erro_dir));
+    float potencia_esq = sinal_esq * (alimentacao + MOV_KP_POSICAO * erro_esq);
+    float potencia_dir = sinal_dir * (alimentacao + MOV_KP_POSICAO * erro_dir);
+    definir_potencia(potencia_esq, potencia_dir);
+    if (roda_travada(potencia_esq, potencia_dir)) {
+        desligar(MOV_FALHOU);
+        return mov.estado;
+    }
 
     mov.decorrido_ms += MOV_PERIODO_MS;
     bool no_alvo = mov.referencia >= total && fabsf(erro_esq) <= MOV_TOLERANCIA_PULSOS &&
@@ -245,11 +277,9 @@ mov_estado_t mov_atualizar(void)
     mov.assentado_ms = no_alvo ? mov.assentado_ms + MOV_PERIODO_MS : 0;
 
     if (mov.assentado_ms >= MOV_ASSENTAR_MS) {
-        definir_potencia(0.0f, 0.0f);
-        mov.estado = MOV_CONCLUIDO;
+        desligar(MOV_CONCLUIDO);
     } else if (mov.decorrido_ms >= MOV_TEMPO_LIMITE_MS) {
-        definir_potencia(0.0f, 0.0f);
-        mov.estado = MOV_FALHOU;
+        desligar(MOV_FALHOU);
     }
     return mov.estado;
 }
