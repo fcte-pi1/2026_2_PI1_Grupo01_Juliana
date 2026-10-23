@@ -96,6 +96,7 @@ src/firmware/
 │   ├── telemetria_nav/   conversão do rumo e das paredes da navegação para o contrato
 │   ├── sensores/         ToF: mediana, paredes com histerese, autoteste e sequência XSHUT (FIRM-03)
 │   ├── energia/          estado da bateria
+│   ├── memoria/          mapa e estado na NVS com versão e CRC, para retomar depois de um reset (FIRM-08)
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01), C puro
 ├── src/
