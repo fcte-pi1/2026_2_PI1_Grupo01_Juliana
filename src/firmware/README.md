@@ -66,9 +66,10 @@ O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em
 - **Taxa média da tel:** perto de 5 Hz com o robô andando e de 1 Hz parado.
 - **Duração:** tempo coberto pelas linhas, medido pelo `t_ms` de cada `boot`.
 - **Buracos de seq:** cada `seq` esperado que não veio, com o número recebido no lugar.
+- **Descartadas antes da primeira mensagem:** linhas que chegaram ao abrir a porta, antes da primeira mensagem do contrato: o log de boot da ESP32, quando ela reinicia, ou restos de linhas antigas repetidos pelo conversor USB-serial. Elas não contam como inválidas.
 - **Linhas inválidas:** número da linha e o motivo.
 
-O script sai com 0 (`Resultado: OK`) só se não houver buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
+O script sai com 0 (`Resultado: OK`) só se chegou alguma mensagem do contrato e não houve buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
 
 ### Medir o desempenho da navegação na placa
 

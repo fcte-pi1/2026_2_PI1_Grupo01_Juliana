@@ -3,8 +3,10 @@
 Lê as linhas da porta serial (ou de um arquivo, para testes), ignora as de
 depuração (começam com `#`) e confere, em cada uma das outras, o tamanho, o
 JSON, a versão, o tipo e a sequência do `seq` dentro do mesmo `boot`. No fim
-imprime um resumo e sai com 0 só se não houver buraco de `seq` nem linha
-inválida.
+imprime um resumo e sai com 0 só se chegou alguma mensagem e não houve buraco
+de `seq` nem linha inválida. O que chega antes da primeira mensagem (log de
+boot da ESP32, restos repetidos pelo conversor USB-serial) é descartado e só
+contado.
 
 Uso:
     python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600
@@ -27,6 +29,27 @@ BAUD_PADRAO = 115200
 DURACAO_PADRAO_S = 600.0
 
 
+def validar(texto: bytes, tamanho: int) -> tuple[dict | None, str | None]:
+    """Devolve a mensagem do contrato, ou o motivo de a linha ser inválida."""
+    if tamanho > TAMANHO_MAXIMO:
+        return None, f"{tamanho} bytes (máximo {TAMANHO_MAXIMO})"
+    try:
+        msg = json.loads(texto)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None, "JSON inválido"
+    if not isinstance(msg, dict):
+        return None, "não é um objeto JSON"
+    if msg.get("v") != VERSAO:
+        return None, f"v = {msg.get('v')!r}"
+    tipo = msg.get("tipo")
+    if tipo not in TIPOS:
+        return None, f"tipo desconhecido {tipo!r}"
+    boot, seq, t_ms = msg.get("boot"), msg.get("seq"), msg.get("t_ms")
+    if not all(isinstance(c, int) and not isinstance(c, bool) for c in (boot, seq, t_ms)):
+        return None, "boot, seq ou t_ms não é inteiro"
+    return msg, None
+
+
 @dataclass
 class Verificacao:
     """Estado acumulado da conferência, linha a linha."""
@@ -37,6 +60,9 @@ class Verificacao:
     ultimo_seq: dict[int, int] = field(default_factory=dict)
     t_ms: dict[int, tuple[int, int]] = field(default_factory=dict)  # boot: (primeiro, último)
     tel_por_boot: Counter = field(default_factory=Counter)
+    # Ao abrir a porta chegam o log de boot da ESP32 ou restos repetidos pelo
+    # conversor USB-serial: o que vem antes da primeira mensagem não conta.
+    descartadas_abertura: int = 0
 
     def conferir(self, numero: int, linha: bytes) -> None:
         """Confere uma linha crua (com ou sem o \\n do fim)."""
@@ -46,29 +72,15 @@ class Verificacao:
         texto = linha.rstrip(b"\r\n")
         if not texto:
             return
-        if tamanho > TAMANHO_MAXIMO:
-            self.invalidas.append((numero, f"{tamanho} bytes (máximo {TAMANHO_MAXIMO})"))
-            return
-        try:
-            msg = json.loads(texto)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            self.invalidas.append((numero, "JSON inválido"))
-            return
-        if not isinstance(msg, dict):
-            self.invalidas.append((numero, "não é um objeto JSON"))
-            return
-        if msg.get("v") != VERSAO:
-            self.invalidas.append((numero, f"v = {msg.get('v')!r}"))
-            return
-        tipo = msg.get("tipo")
-        if tipo not in TIPOS:
-            self.invalidas.append((numero, f"tipo desconhecido {tipo!r}"))
-            return
-        boot, seq, t_ms = msg.get("boot"), msg.get("seq"), msg.get("t_ms")
-        if not all(isinstance(c, int) and not isinstance(c, bool) for c in (boot, seq, t_ms)):
-            self.invalidas.append((numero, "boot, seq ou t_ms não é inteiro"))
+        msg, motivo = validar(texto, tamanho)
+        if motivo is not None:
+            if self.por_tipo:
+                self.invalidas.append((numero, motivo))
+            else:
+                self.descartadas_abertura += 1
             return
 
+        tipo, boot, seq, t_ms = msg["tipo"], msg["boot"], msg["seq"], msg["t_ms"]
         self.por_tipo[tipo] += 1
         if tipo == "tel":
             self.tel_por_boot[boot] += 1
@@ -91,8 +103,8 @@ class Verificacao:
         return sum(self.tel_por_boot.values()) / duracao
 
     def ok(self) -> bool:
-        """Verdadeiro se não houve buraco de seq nem linha inválida."""
-        return not self.buracos and not self.invalidas
+        """Verdadeiro se chegou alguma mensagem e não houve buraco de seq nem linha inválida."""
+        return bool(self.por_tipo) and not self.buracos and not self.invalidas
 
     def resumo(self) -> str:
         """Texto do resumo impresso no fim."""
@@ -106,9 +118,12 @@ class Verificacao:
         linhas.append(f"Buracos de seq: {len(self.buracos)}")
         for boot, esperado, recebido in self.buracos:
             linhas.append(f"  boot {boot}: esperado seq {esperado}, recebido seq {recebido}")
+        linhas.append(f"Descartadas antes da primeira mensagem: {self.descartadas_abertura}")
         linhas.append(f"Linhas inválidas: {len(self.invalidas)}")
         for numero, motivo in self.invalidas:
             linhas.append(f"  linha {numero}: {motivo}")
+        if not self.por_tipo:
+            linhas.append("Nenhuma mensagem do contrato recebida")
         linhas.append("Resultado: OK" if self.ok() else "Resultado: FALHOU")
         return "\n".join(linhas)
 
