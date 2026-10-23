@@ -4,7 +4,7 @@ import { ErroApi } from '../api/clienteApi'
 import { CartaoFalha } from '../components/execucao/CartaoFalha'
 import { PilulaResultado, PilulaStatusTentativa } from '../components/execucao/PilulaResultado'
 import { Cabecalho } from '../components/layout/Cabecalho'
-import { falhasDasTentativas, passosDaTentativa } from '../components/labirinto/trajeto'
+import { falhasDasTentativas, inicioDaTentativa, passosDaTentativa } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { BlocoHealthCheck } from '../components/telemetria/BlocoHealthCheck'
 import { CartaoMetrica } from '../components/telemetria/CartaoMetrica'
@@ -36,6 +36,8 @@ export function DetalheExecucao() {
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
   const selecionada = execucao.tentativas.find((t) => t.attempt_index === tentativaMapa) ?? null
+  // o filtro só recorta o trajeto; falhas, métricas e tentativas continuam todas na tela
+  const passosSelecionada = selecionada ? passosDaTentativa(execucao.trajeto, execucao.tentativas, selecionada.attempt_index) : []
 
   return (
     <>
@@ -93,10 +95,12 @@ export function DetalheExecucao() {
               largura={largura}
               altura={altura}
               eixoLongo={execucao.eixo_longo}
-              trajeto={passosDaTentativa(execucao.trajeto, execucao.tentativas, selecionada.attempt_index)}
+              trajeto={passosSelecionada}
               posicaoAtual={selecionada.falha ? { x: selecionada.falha.celula_x, y: selecionada.falha.celula_y } : null}
-              falhas={falhasDasTentativas([selecionada])}
+              falhas={falhasDasTentativas(execucao.tentativas)}
               soRetomada={selecionada.attempt_index > 1}
+              inicioRetomada={selecionada.attempt_index > 1 ? inicioDaTentativa(passosSelecionada, execucao.tentativas, selecionada.attempt_index) : null}
+              roboFalhou={selecionada.falha !== null}
             />
           ) : (
             <VisualizacaoLabirinto
@@ -106,6 +110,7 @@ export function DetalheExecucao() {
               trajeto={execucao.trajeto}
               posicaoAtual={execucao.celula_atual}
               falhas={falhasDasTentativas(execucao.tentativas)}
+              roboFalhou={Boolean(execucao.tentativas.at(-1)?.falha)}
             />
           )}
         </section>

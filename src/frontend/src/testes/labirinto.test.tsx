@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { PassoTrajeto, Tentativa } from '../api/tipos'
-import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, passosDaTentativa } from '../components/labirinto/trajeto'
+import type { Falha, PassoTrajeto, Tentativa } from '../api/tipos'
+import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, inicioDaTentativa, passosDaTentativa } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { trajeto12x4Longo } from '../mocks/dados'
 
@@ -112,6 +112,26 @@ describe('VisualizacaoLabirinto', () => {
     expect(pontos(container.querySelector('polyline.labirinto__trajeto')!)).toHaveLength(2)
   })
 
+  it('marca a falha de uma tentativa que caiu antes do primeiro passo', () => {
+    const { container } = render(
+      <VisualizacaoLabirinto largura={4} altura={4} trajeto={[]} posicaoAtual={{ x: 0, y: 0 }}
+        falhas={[{ x: 0, y: 0, tentativa: 1 }]} roboFalhou />,
+    )
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+    expect(screen.getByText('Robô em A1 · falhou')).toBeInTheDocument()
+    expect(container.querySelector('.labirinto__robo--falha')).not.toBeNull()
+  })
+
+  it('mostra onde a retomada começou só quando recebe inicioRetomada', () => {
+    const { rerender } = render(<VisualizacaoLabirinto largura={4} altura={4} trajeto={passos([[1, 1], [1, 2]], 0)} />)
+    expect(screen.getByText('Retomada', { selector: '.legenda' })).toBeInTheDocument()
+    expect(screen.queryByText('RETOMADA')).not.toBeInTheDocument()
+
+    rerender(<VisualizacaoLabirinto largura={4} altura={4} trajeto={passos([[1, 1], [1, 2]], 0)} soRetomada inicioRetomada={{ x: 1, y: 1 }} />)
+    expect(screen.getByText('Retomada em B2', { selector: '.legenda' })).toBeInTheDocument()
+    expect(screen.getByText('RETOMADA')).toBeInTheDocument()
+  })
+
   it('põe o lado longo em y quando o robô passa de y = 3', () => {
     const { container } = render(
       <VisualizacaoLabirinto largura={8} altura={4} trajeto={passos([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]])} />,
@@ -141,9 +161,9 @@ describe('funções do trajeto', () => {
 
   it('separa os passos por tentativa pela hora, mesmo quando uma tentativa não andou', () => {
     const hora = (s: number) => new Date(Date.UTC(2026, 9, 20, 22, 0, s)).toISOString()
-    // A tentativa 1 caiu por link_lost antes do primeiro passo; as retomadas repartem de A1.
+    // A tentativa 1 caiu por link_lost antes do primeiro passo; cada retomada reparte da falha anterior.
     const tentativas = [1, 2, 3].map((i) => ({ attempt_index: i, iniciada_em: hora(i * 10) })) as Tentativa[]
-    const trajeto = [[0, 0, 21], [0, 1, 22], [0, 0, 31], [0, 1, 32], [1, 1, 33]].map(([x, y, s], i) => ({
+    const trajeto = [[0, 0, 21], [0, 1, 22], [0, 1, 31], [1, 1, 32], [2, 1, 33]].map(([x, y, s], i) => ({
       seq: i + 1, x, y, paredes_mask: 0, retomada: i === 0 || i === 2, entrou_em: hora(s),
     }))
     expect(passosDaTentativa(trajeto, tentativas, 1)).toEqual([])
@@ -152,6 +172,19 @@ describe('funções do trajeto', () => {
     // Sem entrou_em, vale a ordem dos trechos.
     const semHora = passos([[0, 0], [0, 1], [0, 0], [1, 0]], 2)
     expect(passosDaTentativa(semHora, tentativas, 2).map((p) => p.seq)).toEqual([3, 4])
+  })
+
+  it('acha a célula de onde cada tentativa partiu', () => {
+    const falha = (x: number, y: number) => ({ celula_x: x, celula_y: y }) as Falha
+    const tentativas = [
+      { attempt_index: 1, falha: falha(0, 1) },
+      { attempt_index: 2, falha: null },
+    ] as Tentativa[]
+    expect(inicioDaTentativa([], tentativas, 1)).toEqual({ x: 0, y: 0 })
+    expect(inicioDaTentativa(passos([[2, 2]]), tentativas, 2)).toEqual({ x: 0, y: 1 })
+    // sem falha registrada na anterior, vale o primeiro passo
+    expect(inicioDaTentativa(passos([[2, 2]]), tentativas, 3)).toEqual({ x: 2, y: 2 })
+    expect(inicioDaTentativa([], tentativas, 3)).toBeNull()
   })
 
   it('deduz o eixo longo e as dimensões da grade', () => {

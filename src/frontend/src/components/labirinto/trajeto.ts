@@ -23,8 +23,8 @@ export function dividirEmTrechos(trajeto: PassoTrajeto[]): PassoTrajeto[][] {
 }
 
 /**
- * Passos de uma tentativa. Toda retomada reparte de A1 e costuma repetir as células da
- * anterior, então o detalhe mostra cada tentativa em separado. O passo pertence à última
+ * Passos de uma tentativa, para o detalhe mostrar cada uma em separado. A retomada reparte
+ * da célula onde a anterior falhou (US31, ADR-012), não de A1. O passo pertence à última
  * tentativa iniciada antes dele; sem `entrou_em`, vale a ordem dos trechos.
  */
 export function passosDaTentativa(trajeto: PassoTrajeto[], tentativas: Tentativa[], attemptIndex: number): PassoTrajeto[] {
@@ -37,6 +37,17 @@ export function passosDaTentativa(trajeto: PassoTrajeto[], tentativas: Tentativa
     })
   }
   return dividirEmTrechos(trajeto)[attemptIndex - 1] ?? []
+}
+
+/**
+ * Célula de onde a tentativa partiu: A1 na primeira; na retomada, a falha da anterior
+ * (US31, ADR-012) ou, sem ela registrada, o primeiro passo da tentativa.
+ */
+export function inicioDaTentativa(passos: PassoTrajeto[], tentativas: Tentativa[], attemptIndex: number): Celula | null {
+  if (attemptIndex === 1) return { x: 0, y: 0 }
+  const falha = tentativas.find((t) => t.attempt_index === attemptIndex - 1)?.falha
+  if (falha) return { x: falha.celula_x, y: falha.celula_y }
+  return passos[0] ? { x: passos[0].x, y: passos[0].y } : null
 }
 
 /**

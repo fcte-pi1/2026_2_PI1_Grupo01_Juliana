@@ -52,6 +52,18 @@ describe('rota /', () => {
     expect(within(cartao).queryByText('Sucesso')).not.toBeInTheDocument()
   })
 
+  it('carrega a última execução com um pedido só, sem percorrer o histórico', async () => {
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      pedidos.push(new URL(request.url).search)
+      return HttpResponse.json([resumoAPI(ULTIMA_EXECUCAO)])
+    }))
+    renderizarRota('/')
+    expect(await screen.findByText('Última execução · 4x4')).toBeInTheDocument()
+    expect(pedidos.length).toBeGreaterThan(0)
+    expect(pedidos.every((busca) => !busca.includes('offset'))).toBe(true)
+  })
+
   it.each([null, undefined])('usa o status da última execução quando resultado é %s', async (resultado) => {
     servidor.use(http.get('*/api/execucoes', () => HttpResponse.json([
       { ...resumoAPI(ULTIMA_EXECUCAO), resultado },
@@ -187,8 +199,11 @@ describe('rota /execucoes/:id', () => {
 
     await userEvent.click(grupo.getByRole('button', { name: 'T2' }))
     expect(trechos()).toEqual(['retomada'])
-    expect(screen.queryByText('FALHA T1')).not.toBeInTheDocument()
+    // o filtro recorta só o trajeto: a falha da T1 continua, e a T2 parte dela
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+    expect(screen.getByText(/^Retomada em [A-Z]\d+$/, { selector: '.legenda' })).toBeInTheDocument()
     expect(screen.queryByText('Tentativa 1', { selector: '.legenda' })).not.toBeInTheDocument()
+    expect(screen.getByText('Tentativas em ordem cronológica')).toBeInTheDocument()
   })
 
   it('mantém a execução em andamento quando a última tentativa falhou', async () => {
