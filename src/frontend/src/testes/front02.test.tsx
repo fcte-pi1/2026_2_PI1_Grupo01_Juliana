@@ -251,7 +251,7 @@ describe('FRONT-02: nova execução', () => {
     expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(screen.getByText('Labirinto 12x4')).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect((await buscarExecucao('e-0042')).status).toBe('cancelada')
     const atual = (await buscarExecucaoAtual()).execucao!
     expect(atual.execucao_id).not.toBe('e-0042')
