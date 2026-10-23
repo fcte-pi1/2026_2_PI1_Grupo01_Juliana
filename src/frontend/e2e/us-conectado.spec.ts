@@ -20,6 +20,8 @@ import { expect, test, type Page } from '@playwright/test'
  *   falha-componente.json do simulador de telemetria, depois da largada.
  * - US31: a retomada continua na mesma execução, na célula da última leitura do
  *   firmware, e o trecho seguinte do jsonl entra na tentativa nova com o prefixo intacto.
+ * - Health-check: um pedido sem resultado do robô em 30 s libera nova solicitação
+ *   e não abre tentativa. A aprovação anterior não atende ao pedido novo.
  */
 
 const executar = promisify(execFile)
@@ -288,6 +290,29 @@ test('US30: falha de componente permite retomar a mesma execução', async ({ pa
   } finally {
     batimento.parar()
   }
+})
+
+test('health-check: 30 s sem o robô libera nova solicitação e não abre tentativa', async ({ page }) => {
+  await page.goto('/')
+  const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
+  const iniciar = page.getByRole('button', { name: /Nova execução/ })
+  await expect(solicitar).toBeEnabled()
+  await solicitar.click()
+  await expect(page.getByText('Aguardando o health-check do robô. Nenhuma tentativa foi aberta.')).toBeVisible()
+  await expect(iniciar).toBeDisabled()
+  await expect(page.getByLabel('Tentativa 1 de 3')).toHaveCount(0)
+
+  await expect(page.getByRole('alert')).toContainText('não concluiu o health-check em 30 s', { timeout: 40_000 })
+  await expect(page.getByText('A verificação não foi concluída. Solicite um novo health-check.')).toBeVisible()
+  await expect(solicitar).toBeEnabled()
+  await expect(iniciar).toBeDisabled()
+  expect((await fetch(`${API}/execucoes/em-andamento`)).status).toBe(204)
+
+  await solicitar.click()
+  await expect(page.getByText('Aguardando o health-check do robô. Nenhuma tentativa foi aberta.')).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(solicitar).toBeDisabled()
+  await expect(iniciar).toBeDisabled()
 })
 
 async function prepararLargada(page: Page, boot: number) {
