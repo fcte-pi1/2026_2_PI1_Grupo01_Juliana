@@ -65,6 +65,37 @@ static void test_nunca_liga_as_duas_entradas(void)
     }
 }
 
+static void test_lipo_cheia_limita_a_6_v_no_motor(void)
+{
+    /* 8,4 V - diodo = 8,05 V na ponte: 6 / 8,05 = 74,5 % */
+    uint16_t ponte = BATERIA_CHEIA_MV - BATERIA_QUEDA_DIODO_MV;
+    conferir(ponte_h_saida(MOTOR_POTENCIA_MAX, false, ponte), 762, true, false);
+    conferir(ponte_h_saida(-MOTOR_POTENCIA_MAX, false, ponte), 762, false, true);
+}
+
+static void test_escala_proporcional_a_tensao(void)
+{
+    conferir(ponte_h_saida(MOTOR_POTENCIA_MAX, false, 12000), 512, true, false);
+    conferir(ponte_h_saida(500, false, 12000), 256, true, false);
+    conferir(ponte_h_saida(1, false, 12000), 1, true, false);
+}
+
+static void test_abaixo_de_6_v_fica_em_100_por_cento(void)
+{
+    /* pilhas AA */
+    conferir(ponte_h_saida(MOTOR_POTENCIA_MAX, false, 5000), PONTE_H_DUTY_MAX, true, false);
+    conferir(ponte_h_saida(500, false, 5000), 512, true, false);
+    conferir(ponte_h_saida(MOTOR_POTENCIA_MAX, false, 0), PONTE_H_DUTY_MAX, true, false);
+}
+
+static void test_duty_nunca_passa_de_6_v(void)
+{
+    for (uint32_t mv = 6000; mv <= 9000; mv += 250) {
+        ponte_h_saida_t s = ponte_h_saida(MOTOR_POTENCIA_MAX, false, (uint16_t)mv);
+        TEST_ASSERT_TRUE(s.duty * mv <= (uint32_t)PONTE_H_DUTY_MAX * MOTOR_TENSAO_NOMINAL_MV + mv / 2);
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -75,5 +106,9 @@ int main(void)
     RUN_TEST(test_fora_da_faixa_satura);
     RUN_TEST(test_invertido_troca_so_o_sentido);
     RUN_TEST(test_nunca_liga_as_duas_entradas);
+    RUN_TEST(test_lipo_cheia_limita_a_6_v_no_motor);
+    RUN_TEST(test_escala_proporcional_a_tensao);
+    RUN_TEST(test_abaixo_de_6_v_fica_em_100_por_cento);
+    RUN_TEST(test_duty_nunca_passa_de_6_v);
     return UNITY_END();
 }
