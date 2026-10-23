@@ -17,6 +17,7 @@
 #include "eventos.h"
 #include "hal_bateria.h"
 #include "hal_led.h"
+#include "hal_motor.h"
 #include "hal_tempo.h"
 #include "hal_tof.h"
 #include "nav.h"
@@ -95,6 +96,9 @@ void tarefa_navegacao(void *parametro)
 
             /* O alerta (LED + buzzer) e a falha low_battery usam bateria_nivel() quando a máquina de estados entrar. */
             bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());
+            if (bateria_pronta(&bateria)) {
+                hal_motor_definir_tensao(bateria_ponte_mv(&bateria));
+            }
 
             /*
              * A navegação decide por célula; até o FIRM-05 (#135) não há
