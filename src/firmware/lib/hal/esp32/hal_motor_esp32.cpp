@@ -11,6 +11,7 @@
 #include <Arduino.h>
 
 #include "config/pinos.h"
+#include "config/robo.h"
 #include "hal_motor.h"
 #include "ponte_h.h"
 
@@ -31,6 +32,8 @@ static const motor_pinos_t MOTORES[MOTOR_QTD] = {
 };
 
 static bool iniciado;
+/* Pior caso (LiPo cheia) até a primeira leitura da bateria. */
+static uint16_t ponte_mv = BATERIA_CHEIA_MV - BATERIA_QUEDA_DIODO_MV;
 
 /* -1 = pino ainda sem GPIO (PINO_MOT_D_IN2) */
 static void saida(int8_t pino, bool nivel)
@@ -45,7 +48,7 @@ static void saida(int8_t pino, bool nivel)
 static void aplicar(motor_id_t motor, int16_t potencia)
 {
     const motor_pinos_t *m = &MOTORES[motor];
-    ponte_h_saida_t s = ponte_h_saida(potencia, m->invertido);
+    ponte_h_saida_t s = ponte_h_saida(potencia, m->invertido, ponte_mv);
     if (m->in1 >= 0) {
         digitalWrite(m->in1, s.in1 ? HIGH : LOW);
     }
@@ -61,7 +64,7 @@ void hal_motor_iniciar(void)
 
     for (int i = 0; i < MOTOR_QTD; i++) {
         const motor_pinos_t *m = &MOTORES[i];
-        ponte_h_saida_t parado = ponte_h_saida(0, m->invertido);
+        ponte_h_saida_t parado = ponte_h_saida(0, m->invertido, ponte_mv);
         saida(m->in1, parado.in1);
         saida(m->in2, parado.in2);
         ledcSetup(m->canal, PONTE_H_FREQUENCIA_HZ, PONTE_H_RESOLUCAO_BITS);

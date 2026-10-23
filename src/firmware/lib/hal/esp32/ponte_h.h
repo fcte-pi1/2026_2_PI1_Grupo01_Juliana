@@ -29,8 +29,12 @@ typedef struct {
     bool in2;
 } ponte_h_saida_t;
 
-/* Satura fora de ±1000. invertido troca o sentido (motor espelhado ou fios trocados). */
-ponte_h_saida_t ponte_h_saida(int16_t potencia, bool invertido);
+/*
+ * ±1000 dá MOTOR_TENSAO_NOMINAL_MV no motor: o duty é escalado por
+ * 6000 / ponte_mv e fica em 100 % quando a ponte tem 6 V ou menos.
+ * Satura fora de ±1000. invertido troca o sentido (motor espelhado ou fios trocados).
+ */
+ponte_h_saida_t ponte_h_saida(int16_t potencia, bool invertido, uint16_t ponte_mv);
 
 #ifdef __cplusplus
 }
