@@ -20,6 +20,7 @@
 #include "hal_tempo.h"
 #include "hal_tof.h"
 #include "nav.h"
+#include "retomada.h"
 #include "sensores.h"
 #include "telemetria_nav.h"
 
@@ -45,7 +46,17 @@ void tarefa_navegacao(void *parametro)
     (void)parametro;
     /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
     static nav_estado_t nav;
-    nav_iniciar(&nav, ROBO_TIPO_LABIRINTO);
+    retomada_sessao_t sessao;
+    /* Boot: retoma a célula gravada. Sem registro válido, parte do mapa vazio. */
+    if (retomada_carregar(&nav, ROBO_TIPO_LABIRINTO)) {
+        retomada_sessao_iniciar(&sessao);
+        sessao.x = nav.x;
+        sessao.y = nav.y;
+        sessao.gravou = true;
+    } else {
+        retomada_sessao_iniciar(&sessao);
+        retomada_na_celula(&sessao, &nav);
+    }
     bateria_t bateria;
     bateria_iniciar(&bateria);
 
@@ -115,6 +126,10 @@ void tarefa_navegacao(void *parametro)
              * eventos seguem, mas o evento repete a última ação. */
             if (!terminou) {
                 acao = nav_passo(&nav, leitura);
+                /* Célula nova: grava mapa, pose, orientação e tipos. Cabe em 20 ms. */
+                if (nav.x != x || nav.y != y) {
+                    retomada_na_celula(&sessao, &nav);
+                }
                 terminou = acao == NAV_ACAO_SUCESSO || acao == NAV_ACAO_SEM_PASSO;
             }
 

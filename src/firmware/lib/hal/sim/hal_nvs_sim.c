@@ -12,7 +12,7 @@
 
 #define MAX_REGISTROS   8
 #define MAX_CHAVE       16
-#define MAX_TAMANHO     512
+#define MAX_TAMANHO     2048 /* cabe o registro do mapa (FIRM-08) */
 
 typedef struct {
     bool usado;
@@ -79,5 +79,14 @@ bool hal_nvs_apagar(const char *chave)
 }
 
 void hal_nvs_sim_apagar_tudo(void) { memset(registros, 0, sizeof(registros)); }
+
+void hal_nvs_sim_corromper(const char *chave, size_t offset)
+{
+    registro_t *r = buscar(chave);
+    if (r == NULL || offset >= r->tamanho) {
+        return;
+    }
+    r->dados[offset] ^= 0xFFu;
+}
 
 #endif /* HAL_SIMULADA */

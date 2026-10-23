@@ -46,6 +46,9 @@ void hal_led_sim_definir_espelho(hal_led_sim_espelho_t espelho);
 /* Simula a gravação de um firmware novo: apaga tudo da NVS. */
 void hal_nvs_sim_apagar_tudo(void);
 
+/* Inverte um byte já gravado, para o teste de CRC. */
+void hal_nvs_sim_corromper(const char *chave, size_t offset);
+
 #ifdef __cplusplus
 }
 #endif
