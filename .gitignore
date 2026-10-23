@@ -378,3 +378,6 @@ src/firmware/**/build/
 
 # Simulador (estado local: boot persistido)
 .simulador/
+
+# Ponte serial (log de auditoria)
+**/logs/ponte/
