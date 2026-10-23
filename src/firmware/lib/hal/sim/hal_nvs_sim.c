@@ -12,7 +12,7 @@
 
 #define MAX_REGISTROS   8
 #define MAX_CHAVE       16
-#define MAX_TAMANHO     512
+#define MAX_TAMANHO     2048 /* o registro do mapa (FIRM-08) tem ~1,2 KB */
 
 typedef struct {
     bool usado;
@@ -79,5 +79,15 @@ bool hal_nvs_apagar(const char *chave)
 }
 
 void hal_nvs_sim_apagar_tudo(void) { memset(registros, 0, sizeof(registros)); }
+
+size_t hal_nvs_sim_ler_bruto(const char *chave, void *dados, size_t capacidade)
+{
+    registro_t *r = buscar(chave);
+    if (r == NULL || r->tamanho > capacidade) {
+        return 0;
+    }
+    memcpy(dados, r->dados, r->tamanho);
+    return r->tamanho;
+}
 
 #endif /* HAL_SIMULADA */
