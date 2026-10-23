@@ -24,8 +24,17 @@ void hal_motor_iniciar(void);
 /* Liga/desliga a ponte H (STBY). Desligada, os motores não giram. */
 void hal_motor_habilitar(bool habilitar);
 
-/* Potência de -1000 (ré máxima) a +1000 (frente máxima); 0 para. */
+/*
+ * Potência de -1000 (ré máxima) a +1000 (frente máxima); 0 para.
+ * 1000 é MOTOR_TENSAO_NOMINAL_MV no motor, ou 100 % se a bateria não der isso.
+ */
 void hal_motor_definir(motor_id_t motor, int16_t potencia);
+
+/*
+ * Tensão na ponte H em mV (bateria_ponte_mv), usada no limite de PWM.
+ * Até a primeira chamada vale a LiPo cheia. 0 é ignorado.
+ */
+void hal_motor_definir_tensao(uint16_t ponte_mv);
 
 #ifdef __cplusplus
 }

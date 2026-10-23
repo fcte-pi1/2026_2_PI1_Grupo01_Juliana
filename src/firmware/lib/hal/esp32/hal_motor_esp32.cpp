@@ -88,4 +88,12 @@ void hal_motor_definir(motor_id_t motor, int16_t potencia)
     }
 }
 
+/* Entra no próximo hal_motor_definir (a malha chama a 200 Hz). */
+void hal_motor_definir_tensao(uint16_t mv)
+{
+    if (mv > 0) {
+        ponte_mv = mv;
+    }
+}
+
 #endif
