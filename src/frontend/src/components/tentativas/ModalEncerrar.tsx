@@ -52,7 +52,7 @@ export function ModalEncerrar({ numeroExecucao, attemptIndex, ultimaCelula, temp
         <legend>Motivo da falha (obrigatório)</legend>
         {MOTIVOS.map((m) => (
           <label key={m} className={`opcao ${motivo === m ? 'opcao--marcada' : ''}`}>
-            <input type="radio" name="motivo" value={m} checked={motivo === m} required onChange={() => setMotivo(m)} />
+            <input type="radio" name="motivo" value={m} checked={motivo === m} onChange={() => setMotivo(m)} />
             <span>{ROTULO_MOTIVO_FALHA[m]}</span>
             <span className="mono texto-suave">{m}</span>
           </label>

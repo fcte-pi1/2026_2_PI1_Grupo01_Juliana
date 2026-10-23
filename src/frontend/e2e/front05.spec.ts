@@ -1,5 +1,35 @@
 import { expect, test } from '@playwright/test'
 
+test('Health-check sem resultado libera nova solicitação após 30 s', async ({ page }, testInfo) => {
+  await page.clock.install()
+  await page.addInitScript(() => {
+    const buscar = window.fetch.bind(window)
+    window.fetch = (entrada, opcoes) => {
+      const url = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url
+      // Simula somente a ausência de resultado do robô; os comandos continuam no MSW.
+      if (new URL(url, window.location.origin).pathname === '/api/health-check/ultimo') {
+        return Promise.resolve(new Response(null, { status: 204 }))
+      }
+      return buscar(entrada, opcoes)
+    }
+  })
+  await page.goto('/?cenario=01-inicio')
+  const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
+  await solicitar.click()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(solicitar).toBeDisabled()
+  await page.clock.fastForward(31_000)
+  await expect(page.getByRole('alert')).toContainText('não concluiu o health-check em 30 s')
+  await expect(solicitar).toBeEnabled()
+  await expect(page.getByRole('button', { name: /Nova execução/ })).toBeDisabled()
+  await expect(page.getByLabel('Tentativa 1 de 3')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath('front05-health-check-tempo-esgotado.png'), fullPage: true })
+  await solicitar.click()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(solicitar).toBeDisabled()
+})
+
 test('Health-check vem antes da tentativa e continua após recarregar', async ({ page }, testInfo) => {
   await page.goto('/?cenario=01-inicio')
   const iniciar = page.getByRole('button', { name: /Nova execução/ })

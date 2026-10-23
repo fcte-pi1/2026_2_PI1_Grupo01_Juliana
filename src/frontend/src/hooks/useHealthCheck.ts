@@ -2,16 +2,37 @@ import { useEffect, useRef, useState } from 'react'
 import { api, ErroApi } from '../api/clienteApi'
 import { buscarUltimoHealthCheck, solicitarHealthCheck } from '../api/endpoints'
 import type { TipoLabirinto, UltimoHealthCheck } from '../api/tipos'
+import { useAgora } from './useAgora'
+
+const INTERVALO_AGUARDANDO_MS = 1_000
+const INTERVALO_REPOUSO_MS = 10_000
+const LIMITE_ESPERA_MS = 30_000
+
+interface Pedido {
+  solicitadoEm: string
+  limiteLocal: number
+}
+
+function situacao(dados: UltimoHealthCheck | null, pedido: Pedido | null, agora: number) {
+  // Uma aprovação anterior não atende ao pedido, mesmo depois de esgotar a espera.
+  const resultado = pedido && (!dados || Date.parse(dados.iniciado_em) < Date.parse(pedido.solicitadoEm)) ? null : dados
+  const pendente = (!!pedido && !resultado) || (!!resultado && resultado.aprovado == null)
+  const tempoEsgotado = pendente && (pedido
+    ? Date.now() >= pedido.limiteLocal
+    : agora >= Date.parse(resultado!.iniciado_em) + LIMITE_ESPERA_MS)
+  return { resultado, pendente, tempoEsgotado }
+}
 
 /** UC20: consulta o pré-requisito do robô, sem abrir uma tentativa ou aprovar itens localmente. */
 export function useHealthCheck(tipo: TipoLabirinto, habilitado: boolean) {
   const [dados, setDados] = useState<UltimoHealthCheck | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
+  const [erroConsulta, setErroConsulta] = useState<string | null>(null)
+  const [erroSolicitacao, setErroSolicitacao] = useState<string | null>(null)
   const configuracao = `${tipo}:${habilitado}`
   const [consultada, setConsultada] = useState<string | null>(null)
   const [solicitando, setSolicitando] = useState(false)
-  const [aguardando, setAguardando] = useState<string | null>(null)
-  const [agora, setAgora] = useState(api.agora())
+  const [pedido, setPedido] = useState<Pedido | null>(null)
+  const agora = useAgora()
   const envio = useRef(false)
 
   useEffect(() => {
@@ -19,50 +40,55 @@ export function useHealthCheck(tipo: TipoLabirinto, habilitado: boolean) {
     let proxima: ReturnType<typeof setTimeout>
     if (!habilitado) return () => controle.abort()
     async function consultar() {
+      let intervalo = INTERVALO_REPOUSO_MS
       try {
         const resultado = await buscarUltimoHealthCheck(controle.signal)
         if (controle.signal.aborted) return
         setDados(resultado)
-        setErro(null)
-        setAgora(api.agora())
-        setAguardando((pedido) => pedido && resultado && Date.parse(resultado.iniciado_em) >= Date.parse(pedido) ? null : pedido)
+        setErroConsulta(null)
+        const atual = situacao(resultado, pedido, api.agora())
+        if (atual.pendente && !atual.tempoEsgotado) intervalo = INTERVALO_AGUARDANDO_MS
+        if (pedido && atual.resultado?.aprovado != null) {
+          setPedido((anterior) => anterior === pedido ? null : anterior)
+        }
       } catch {
-        if (!controle.signal.aborted) setErro('Não foi possível consultar o health-check. Aguardando comunicação com o servidor.')
+        if (!controle.signal.aborted) setErroConsulta('Não foi possível consultar o health-check. Aguardando comunicação com o servidor.')
       } finally {
         if (!controle.signal.aborted) {
           setConsultada(configuracao)
-          proxima = setTimeout(() => { void consultar() }, 1_000)
+          proxima = setTimeout(() => { void consultar() }, intervalo)
         }
       }
     }
     void consultar()
     return () => { controle.abort(); clearTimeout(proxima) }
-  }, [habilitado, configuracao])
+  }, [habilitado, configuracao, pedido])
 
   async function solicitar() {
     if (envio.current || !habilitado) return
     envio.current = true
     setSolicitando(true)
+    setErroSolicitacao(null)
     try {
-      const pedido = await solicitarHealthCheck()
+      const resposta = await solicitarHealthCheck()
       // A solicitação é global ao robô; trocar o labirinto não invalida seu retorno.
-      setAguardando(pedido.solicitado_em)
-      setErro(null)
+      setPedido({ solicitadoEm: resposta.solicitado_em, limiteLocal: Date.now() + LIMITE_ESPERA_MS })
     } catch (e) {
       const detalhe = e instanceof ErroApi && e.corpo && typeof e.corpo === 'object' && 'detail' in e.corpo ? e.corpo.detail : null
-      setErro(typeof detalhe === 'string' ? detalhe : 'Não foi possível solicitar o health-check. Tente novamente.')
+      setErroSolicitacao(typeof detalhe === 'string' ? detalhe : 'Não foi possível solicitar o health-check. Tente novamente.')
     } finally {
       envio.current = false
       setSolicitando(false)
     }
   }
 
-  const verificando = !!aguardando || (!!dados && dados.aprovado == null)
+  const { resultado, pendente, tempoEsgotado } = situacao(dados, pedido, agora)
+  const verificando = pendente && !tempoEsgotado
+  const erro = erroSolicitacao ?? (tempoEsgotado
+    ? 'O robô não concluiu o health-check em 30 s. Solicite novamente.' : erroConsulta)
   const carregando = consultada !== configuracao
-  const valido = dados?.valido_ate != null && Date.parse(dados.valido_ate) >= agora
+  const valido = resultado?.valido_ate != null && Date.parse(resultado.valido_ate) >= agora
   const apto = habilitado && !carregando && !erro && !solicitando && !verificando
-    && dados?.aprovado === true && valido && dados.tipo_dip === tipo
-  // Não apresenta a aprovação anterior como se fosse o resultado do pedido novo.
-  const resultadoAtual = aguardando && (!dados || Date.parse(dados.iniciado_em) < Date.parse(aguardando)) ? null : dados
-  return { dados: resultadoAtual, erro, carregando, solicitando, verificando, valido, apto, solicitar }
+    && resultado?.aprovado === true && valido && resultado.tipo_dip === tipo
+  return { dados: resultado, erro, carregando, solicitando, verificando, tempoEsgotado, valido, apto, solicitar }
 }

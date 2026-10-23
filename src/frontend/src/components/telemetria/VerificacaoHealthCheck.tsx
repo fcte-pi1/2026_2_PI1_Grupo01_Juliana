@@ -12,12 +12,13 @@ interface Props {
 
 export function VerificacaoHealthCheck({ verificacao: hc, tipo, bloqueado = false, tentativaAberta = false }: Props) {
   const mensagem = hc.carregando ? 'Consultando o health-check…'
-    : hc.verificando ? 'Aguardando o health-check do robô. Nenhuma tentativa foi aberta.'
-      : !hc.dados ? 'Realize o health-check antes de iniciar ou retomar.'
-        : hc.dados.aprovado === false ? 'Health-check reprovado. Corrija a falha e solicite outra verificação.'
-          : !hc.valido ? 'Health-check sem validade vigente. Solicite uma nova verificação.'
-            : hc.dados.tipo_dip !== tipo ? `O robô informou ${hc.dados.tipo_dip ?? 'tipo pendente'}; o labirinto selecionado é ${tipo}.`
-              : 'Health-check aprovado e válido para abrir a tentativa.'
+    : hc.tempoEsgotado ? 'A verificação não foi concluída. Solicite um novo health-check.'
+      : hc.verificando ? 'Aguardando o health-check do robô. Nenhuma tentativa foi aberta.'
+        : !hc.dados ? 'Realize o health-check antes de iniciar ou retomar.'
+          : hc.dados.aprovado === false ? 'Health-check reprovado. Corrija a falha e solicite outra verificação.'
+            : !hc.valido ? 'Health-check sem validade vigente. Solicite uma nova verificação.'
+              : hc.dados.tipo_dip !== tipo ? `O robô informou ${hc.dados.tipo_dip ?? 'tipo pendente'}; o labirinto selecionado é ${tipo}.`
+                : 'Health-check aprovado e válido para abrir a tentativa.'
   return (
     <section className="cartao" aria-label="Verificação antes da tentativa">
       <h2 className="cartao__titulo">Health-check antes da largada</h2>
