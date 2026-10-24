@@ -177,8 +177,8 @@ uv run python -m simulador roteiros/malformadas.json --sem-espera > malformadas.
 ### `colisao-retomada.json`
 
 A tentativa 1 (`inicio` nova) bate em (1, 3) com `falha` `collision`. Depois de 5 s, a
-tentativa 2 (boot seguinte, `inicio` retomada) sai de novo de (0, 0) e chega ao centro com
-`sucesso`.
+tentativa 2 (boot seguinte, `inicio` retomada) recomeça na célula da falha (1, 3), a
+posição gravada na NVS, e chega ao centro com `sucesso`.
 
 ```sh
 uv run python -m simulador roteiros/colisao-retomada.json --saida http --url http://localhost:8000
