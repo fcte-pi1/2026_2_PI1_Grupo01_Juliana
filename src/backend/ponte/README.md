@@ -1,5 +1,13 @@
 # Ponte serial Bluetooth (BACK-08)
 
-Processo separado da API: lê a porta serial pareada com a ESP32 (SPP), envia cada linha crua para `POST /telemetria` (`EntradaPonte`) e escreve na serial os JSON de `comandos` da resposta (`RespostaPonte`, também presentes no 422 de linha inválida), sem interpretar o conteúdo.
+Processo separado da API. Lê linhas da serial pareada com a ESP32 (ou de um arquivo) e envia cada uma, crua, para `POST /telemetria`. Os `comandos` da resposta — também os de um 422 — voltam para a serial, um JSON por linha. Linhas em branco e as que começam com `#` ficam de fora.
 
-Implementação prevista na tarefa BACK-08.
+```bash
+cd src/backend
+python -m ponte --url http://127.0.0.1:8000 --porta /dev/ttyUSB0
+python -m ponte --url http://127.0.0.1:8000 --arquivo captura.jsonl
+```
+
+`--porta` precisa do `pyserial`. Sem origem, lê o stdin.
+
+`scripts/simular_ponte_telemetria.py` não é esta ponte: ele inventa um trajeto e publica na API quando o firmware não está ligado.
