@@ -88,6 +88,46 @@ def test_taxa_da_tel_pelo_t_ms(tmp_path, capsys):
     assert "Taxa média da tel: 5.10 Hz" in saida
 
 
+BOOT_DA_ESP32 = [
+    "\r\n",
+    "rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)\r\n",
+    "load:0x3fff0030,len:1184\r\n",
+    "entry 0x400805e4\r\n",
+]
+
+
+def test_lixo_antes_da_primeira_mensagem_e_descartado(tmp_path, capsys):
+    repetido = ['xo_longo":null}\n'] * 3
+    pedaco = '{"v":1,"boot":1,"seq":30,"t_ms":{"v":1,\n'
+    linhas = BOOT_DA_ESP32 + repetido + [pedaco, mensagem(0), mensagem(1)]
+    codigo, saida = rodar(tmp_path, linhas, capsys)
+    assert codigo == 0
+    assert "Descartadas antes da primeira mensagem: 7" in saida
+    assert "Linhas inválidas: 0" in saida
+    assert "tel: 2" in saida
+
+
+def test_lixo_depois_da_primeira_mensagem_continua_invalido(tmp_path, capsys):
+    codigo, saida = rodar(tmp_path, [mensagem(0), 'xo_longo":null}\n', mensagem(1)], capsys)
+    assert codigo == 1
+    assert "linha 2: JSON inválido" in saida
+
+
+def test_depuracao_antes_da_primeira_mensagem_nao_conta_como_descartada(tmp_path, capsys):
+    linhas = ["# Ratatouille: firmware com HAL SIMULADA\n", mensagem(0)]
+    codigo, saida = rodar(tmp_path, linhas, capsys)
+    assert codigo == 0
+    assert "Descartadas antes da primeira mensagem: 0" in saida
+
+
+@pytest.mark.parametrize("linhas", [[], BOOT_DA_ESP32, ["# so depuracao\n"]])
+def test_captura_sem_mensagem_do_contrato_sai_1(tmp_path, capsys, linhas):
+    codigo, saida = rodar(tmp_path, linhas, capsys)
+    assert codigo == 1
+    assert "Nenhuma mensagem do contrato recebida" in saida
+    assert "Resultado: FALHOU" in saida
+
+
 def test_modo_arquivo_nao_importa_pyserial(tmp_path, capsys, monkeypatch):
     monkeypatch.setitem(sys.modules, "serial", None)  # import serial falharia
     codigo, _ = rodar(tmp_path, [mensagem(0)], capsys)
