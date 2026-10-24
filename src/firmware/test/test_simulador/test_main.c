@@ -5,6 +5,7 @@
  * fica em test/test_navegacao_labirintos.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <unity.h>
 
