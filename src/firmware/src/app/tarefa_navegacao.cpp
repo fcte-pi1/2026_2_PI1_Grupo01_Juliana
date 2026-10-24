@@ -7,6 +7,9 @@
  * seguinte. O laço por tempo vira um laço por célula no FIRM-09 (#138),
  * quando houver movimento (FIRM-05). O laço já mostra o caminho completo:
  * sensores -> navegação -> filas -> telemetria.
+ *
+ * No boot, carrega o mapa da NVS (FIRM-08). Depois de cada decisão, grava se
+ * a célula mudou ou se a corrida acabou nessa célula.
  */
 
 #include <Arduino.h>
@@ -19,6 +22,7 @@
 #include "hal_led.h"
 #include "hal_tempo.h"
 #include "hal_tof.h"
+#include "memoria.h"
 #include "nav.h"
 #include "sensores.h"
 #include "telemetria_nav.h"
@@ -45,13 +49,17 @@ void tarefa_navegacao(void *parametro)
     (void)parametro;
     /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
     static nav_estado_t nav;
-    nav_iniciar(&nav, ROBO_TIPO_LABIRINTO);
+    contrato_estado_t estado = CONTRATO_ESTADO_HEALTH_CHECK;
+    mem_carregar(&nav, &estado, ROBO_TIPO_LABIRINTO);
     bateria_t bateria;
     bateria_iniciar(&bateria);
 
     /* Célula do último passo publicado; a largada não gera passo. */
     int8_t ultimo_x = nav.x;
     int8_t ultimo_y = nav.y;
+    /* Célula já gravada na NVS; começa na que o boot carregou. */
+    int8_t gravada_x = nav.x;
+    int8_t gravada_y = nav.y;
 
     TickType_t proximo = xTaskGetTickCount();
     bool led = false;
@@ -59,8 +67,8 @@ void tarefa_navegacao(void *parametro)
 #ifdef TELEMETRIA_DEPURACAO
     uint32_t volta_anterior = hal_tempo_ms();
 #endif
-    bool terminou = false;
-    nav_acao_t acao = NAV_ACAO_SEM_PASSO;
+    bool terminou = nav.terminou;
+    nav_acao_t acao = terminou ? nav.acao_terminal : NAV_ACAO_SEM_PASSO;
 
     for (;;) {
 #ifdef TELEMETRIA_DEPURACAO
@@ -111,12 +119,8 @@ void tarefa_navegacao(void *parametro)
             int8_t y = nav.y;
             nav_direcao_t direcao = nav.direcao;
 
-            /* Depois de SUCESSO ou SEM_PASSO a corrida acabou: os sensores e os
-             * eventos seguem, mas o evento repete a última ação. */
-            if (!terminou) {
-                acao = nav_passo(&nav, leitura);
-                terminou = acao == NAV_ACAO_SUCESSO || acao == NAV_ACAO_SEM_PASSO;
-            }
+            /* Decide e grava a NVS. Depois do fim, repete a última ação. */
+            acao = mem_aplicar_leitura(&nav, &estado, &gravada_x, &gravada_y, &terminou, leitura);
 
             /* Se a célula mudou desde a última decisão, vai um passo, já com o lado que o nav_passo fixou. */
             if (x != ultimo_x || y != ultimo_y) {
@@ -125,9 +129,9 @@ void tarefa_navegacao(void *parametro)
                 ultimo_y = y;
             }
 
-            /* Campos que ainda não existem (FIRM-01 e máquina de estados): valores fixos. */
+            /* Eixo longo e velocidade ainda não saem da máquina de estados. */
             telemetria_amostra_t amostra = {};
-            amostra.tel.estado = CONTRATO_ESTADO_HEALTH_CHECK;
+            amostra.tel.estado = estado;
             amostra.tel.x = (uint8_t)nav.x;
             amostra.tel.y = (uint8_t)nav.y;
             amostra.tel.rumo = telemetria_rumo_do_nav(nav.direcao);

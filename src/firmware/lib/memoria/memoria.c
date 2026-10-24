@@ -98,6 +98,39 @@ bool mem_gravar(const nav_estado_t *nav, contrato_estado_t estado)
     return hal_nvs_gravar(MEM_CHAVE_MAPA, &mapa, sizeof(mapa)) && tipos_ok;
 }
 
+bool mem_gravar_celula(const nav_estado_t *nav, contrato_estado_t estado, int8_t *celula_x,
+                       int8_t *celula_y, bool forcar)
+{
+    if (!forcar && nav->x == *celula_x && nav->y == *celula_y) {
+        return true;
+    }
+    if (!mem_gravar(nav, estado)) {
+        return false;
+    }
+    *celula_x = nav->x;
+    *celula_y = nav->y;
+    return true;
+}
+
+nav_acao_t mem_aplicar_leitura(nav_estado_t *nav, contrato_estado_t *estado, int8_t *celula_x,
+                               int8_t *celula_y, bool *terminou, nav_leitura_t leitura)
+{
+    nav_acao_t acao = *terminou ? nav->acao_terminal : NAV_ACAO_SEM_PASSO;
+    bool acabou_agora = false;
+    if (!*terminou) {
+        acao = nav_passo(nav, leitura);
+        acabou_agora = acao == NAV_ACAO_SUCESSO || acao == NAV_ACAO_SEM_PASSO;
+        if (acao == NAV_ACAO_SUCESSO) {
+            *estado = CONTRATO_ESTADO_SUCCESS;
+        } else if (acao == NAV_ACAO_SEM_PASSO) {
+            *estado = CONTRATO_ESTADO_FAILED;
+        }
+        *terminou = acabou_agora;
+    }
+    (void)mem_gravar_celula(nav, *estado, celula_x, celula_y, acabou_agora);
+    return acao;
+}
+
 static bool ler_tipos(registro_tipos_t *r, nav_tipo_t tipo_dip)
 {
     return hal_nvs_ler(MEM_CHAVE_TIPOS, r, sizeof(*r)) && r->versao == MEM_VERSAO &&

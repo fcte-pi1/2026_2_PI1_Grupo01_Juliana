@@ -36,6 +36,22 @@ typedef enum {
 bool mem_gravar(const nav_estado_t *nav, contrato_estado_t estado);
 
 /*
+ * Grava se a célula mudou desde a última gravada, ou se forcar (fim da
+ * corrida na mesma célula). Sem mudança, não escreve e devolve true.
+ * Em sucesso, *celula_x e *celula_y passam a ser a célula gravada.
+ */
+bool mem_gravar_celula(const nav_estado_t *nav, contrato_estado_t estado, int8_t *celula_x,
+                       int8_t *celula_y, bool forcar);
+
+/*
+ * Um passo da tarefa de navegação: registra a leitura, e grava a NVS se a
+ * célula mudou ou se a corrida acabou. Devolve a ação. Com a corrida já
+ * terminada, não altera o estado e devolve a ação terminal.
+ */
+nav_acao_t mem_aplicar_leitura(nav_estado_t *nav, contrato_estado_t *estado, int8_t *celula_x,
+                               int8_t *celula_y, bool *terminou, nav_leitura_t leitura);
+
+/*
  * Carrega o que for válido para o tipo do DIP. CRC errado, versão diferente ou
  * outro tipo contam como ausentes. Sem mapa válido, *nav sai com o mapa vazio e
  * *estado como CONTRATO_ESTADO_HEALTH_CHECK.
