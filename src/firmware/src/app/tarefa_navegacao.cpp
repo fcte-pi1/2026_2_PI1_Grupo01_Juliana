@@ -157,6 +157,11 @@ void tarefa_navegacao(void *parametro)
     /* Célula do último passo publicado; a largada não gera passo. */
     int8_t ultimo_x = nav.x;
     int8_t ultimo_y = nav.y;
+    if (inicio == MEM_RETOMADA) {
+        /* A retomada começa na célula da falha e ganha o próprio passo: o backend o marca como retomada. */
+        ultimo_x = -1;
+        ultimo_y = -1;
+    }
     /* Célula já gravada na NVS; começa na que o boot carregou. */
     int8_t gravada_x = nav.x;
     int8_t gravada_y = nav.y;
@@ -216,14 +221,6 @@ void tarefa_navegacao(void *parametro)
 
             bool ja_acabou = terminou;
             acao = mem_aplicar_leitura(&nav, &estado, &gravada_x, &gravada_y, &terminou, leitura);
-            if (!ja_acabou && terminou) {
-                if (acao == NAV_ACAO_SUCESSO) {
-                    publicar_sucesso(nav.x, nav.y);
-                } else {
-                    /* O contrato não tem "sem caminho": a corrida parou sem saída. */
-                    publicar_falha(CONTRATO_MOTIVO_STUCK, nav.x, nav.y, CONTRATO_COMPONENTE_NENHUM);
-                }
-            }
 
 #ifdef HAL_SIMULADA
             if (nav.x != x || nav.y != y || nav.direcao != direcao) {
@@ -231,9 +228,33 @@ void tarefa_navegacao(void *parametro)
             }
 #endif
 
-            /* Se a célula mudou desde a última decisão, vai um passo, já com o lado que o passo fixou. */
-            if (x != ultimo_x || y != ultimo_y) {
-                publicar_passo(x, y, telemetria_paredes_do_nav(direcao, nav.lado, leitura));
+            /* O passo da célula lida vem antes de sucesso ou falha, com o lado que o passo fixou. */
+            telemetria_decisao_t decisao = {};
+            decisao.mudou_celula = x != ultimo_x || y != ultimo_y;
+            decisao.x = x;
+            decisao.y = y;
+            decisao.paredes = telemetria_paredes_do_nav(direcao, nav.lado, leitura);
+            decisao.terminou_agora = !ja_acabou && terminou;
+            decisao.acao = acao;
+            decisao.nav_x = nav.x;
+            decisao.nav_y = nav.y;
+            telemetria_decisao_evento_t saida[TELEMETRIA_DECISAO_EVENTOS_MAX];
+            int qtd = telemetria_eventos_da_decisao(&decisao, saida);
+            for (int i = 0; i < qtd; i++) {
+                switch (saida[i].tipo) {
+                case TELEMETRIA_DECISAO_PASSO:
+                    publicar_passo((int8_t)saida[i].x, (int8_t)saida[i].y, saida[i].paredes);
+                    break;
+                case TELEMETRIA_DECISAO_SUCESSO:
+                    publicar_sucesso((int8_t)saida[i].x, (int8_t)saida[i].y);
+                    break;
+                case TELEMETRIA_DECISAO_SEM_SAIDA:
+                    publicar_falha(CONTRATO_MOTIVO_STUCK, (int8_t)saida[i].x, (int8_t)saida[i].y,
+                                   CONTRATO_COMPONENTE_NENHUM);
+                    break;
+                }
+            }
+            if (decisao.mudou_celula) {
                 ultimo_x = x;
                 ultimo_y = y;
             }
