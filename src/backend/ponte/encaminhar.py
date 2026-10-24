@@ -4,14 +4,25 @@ A linha entra crua, como saiu da serial. A resposta de POST /telemetria traz
 `comandos`; cada um volta como um JSON por linha. Um 422 também pode trazer
 comandos, e a ponte os escreve do mesmo jeito. Linha em branco ou começada
 com "#" (depuração do firmware) não é enviada.
+
+Se o POST não chega (rede) ou a API responde 5xx, a linha fica numa fila em
+memória e sai de novo, na mesma ordem, quando a API volta. A fila guarda no
+máximo 100 linhas; acima disso, a mais antiga é descartada. O instante
+`recebido_em` é o da leitura, e se mantém no reenvio.
 """
 
 from __future__ import annotations
 
 import json
+import logging
+from collections import deque
 from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime
 from typing import Protocol, TextIO
+
+FILA_MAXIMA = 100
+
+log = logging.getLogger(__name__)
 
 
 class RespostaHttp(Protocol):
@@ -67,15 +78,43 @@ def executar(
     cliente: ClienteHttp,
     *,
     agora: datetime | None = None,
+    fila_maxima: int = FILA_MAXIMA,
+    pendentes: deque[tuple[str, datetime]] | None = None,
 ) -> int:
-    """Encaminha as linhas de origem e escreve os comandos em destino. Devolve quantas enviou."""
+    """Encaminha as linhas de origem e escreve os comandos em destino.
+
+    Devolve quantas a API aceitou (status abaixo de 500). As que ficaram na
+    fila continuam em `pendentes`, para o processo reenviar na próxima linha.
+    """
+    fila = pendentes if pendentes is not None else deque()
     enviadas = 0
+
+    def esvaziar() -> None:
+        nonlocal enviadas
+        while fila:
+            linha, recebido_em = fila[0]
+            try:
+                status, comandos = encaminhar(cliente, linha, recebido_em)
+            except AssertionError:
+                raise
+            except Exception as erro:
+                log.warning("a API não respondeu (%s); %d linhas na fila", erro, len(fila))
+                return
+            if status >= 500:
+                log.warning("a API respondeu %d; %d linhas na fila", status, len(fila))
+                return
+            fila.popleft()
+            enviadas += 1
+            for comando in comandos:
+                destino.write(json.dumps(comando, separators=(",", ":")) + "\n")
+
     for bruta in origem:
         linha = normalizar(bruta)
         if linha is None:
             continue
-        _status, comandos = encaminhar(cliente, linha, agora or datetime.now(UTC))
-        for comando in comandos:
-            destino.write(json.dumps(comando, separators=(",", ":")) + "\n")
-        enviadas += 1
+        if len(fila) >= fila_maxima:
+            fila.popleft()
+            log.warning("fila cheia (%d linhas): descartada a mais antiga", fila_maxima)
+        fila.append((linha, agora or datetime.now(UTC)))
+        esvaziar()
     return enviadas

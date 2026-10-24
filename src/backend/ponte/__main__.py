@@ -14,7 +14,6 @@ import sys
 from collections.abc import Iterator
 
 import httpx
-
 from ponte.encaminhar import executar
 
 
@@ -43,7 +42,8 @@ def main(argv: list[str] | None = None) -> int:
 
     with httpx.Client(base_url=args.url, timeout=5.0) as cliente:
         if args.porta:
-            return 0 if executar(_linhas_da_serial(args.porta, args.baud), sys.stdout, cliente) >= 0 else 1
+            executar(_linhas_da_serial(args.porta, args.baud), sys.stdout, cliente)
+            return 0
         if args.arquivo:
             with open(args.arquivo, encoding="utf-8") as origem:
                 executar(origem, sys.stdout, cliente)
