@@ -576,8 +576,11 @@ interface ResumoApi {
   numero?: number
 }
 
-interface DetalheApi extends ExecucaoApi {
+interface DetalheApi {
+  execucao_id: string
   numero?: number
+  status: string
+  tipo_labirinto: string
   variacao_melhor_tempo_pct: number | null
   tentativas: {
     attempt_index: number
