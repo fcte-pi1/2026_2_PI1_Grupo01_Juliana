@@ -99,6 +99,12 @@ class IngestaoTelemetria:
         self.monitor.registrar_mensagem()
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
+        if tentativa is not None and self._robo_reiniciou(mensagem, tentativa):
+            reinicio = gerenciador.encerrar_por_reinicio(sessao, tentativa, agora_backend)
+            sessao.commit()
+            if reinicio is not None:
+                publicar_apos_commit(self.publicador, reinicio.execucao_id, reinicio.eventos)
+            tentativa = None
         if tentativa is not None:
             self._conferir_limites(mensagem, tentativa)
         # a interrupção pela web pode chegar depois de a tentativa fechar
@@ -158,6 +164,14 @@ class IngestaoTelemetria:
 
         if execucao_id is not None:
             publicar_apos_commit(self.publicador, execucao_id, eventos)
+
+    @staticmethod
+    def _robo_reiniciou(mensagem: Mensagem, tentativa: Tentativa) -> bool:
+        """Um health-check de boot maior que o da tentativa aberta: o robô reiniciou."""
+        if not isinstance(mensagem, HEALTH_CHECK) or tentativa.health_check is None:
+            return False
+        boot_da_tentativa = tentativa.health_check.boot
+        return boot_da_tentativa is not None and mensagem.boot > boot_da_tentativa
 
     def _conferir_limites(self, mensagem: Mensagem, tentativa: Tentativa) -> None:
         """A célula precisa caber no labirinto da execução, em qualquer orientação (D4)."""

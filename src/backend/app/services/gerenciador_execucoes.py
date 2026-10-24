@@ -405,6 +405,32 @@ class GerenciadorExecucoes:
             return
         self._interrupcao_pendente = False
 
+    def encerrar_por_reinicio(
+        self, sessao: Session, tentativa: Tentativa, agora: datetime
+    ) -> ResultadoMonitor | None:
+        """O robô reiniciou com a tentativa aberta: ela falha como link_lost na última célula.
+
+        O reinício é mais rápido que o limite do monitor de link; sem isto, o
+        health-check do novo boot chegaria com a tentativa ainda em running.
+        """
+        execucao = tentativa.execucao
+        if execucao.status != "em_andamento":
+            return None
+        celula = self._ultima_celula(Repositorio(sessao), tentativa)
+        self._registrar_falha(
+            Repositorio(sessao),
+            tentativa,
+            motivo="link_lost",
+            origem="automatica",
+            x=celula[0],
+            y=celula[1],
+            observacao="reinício do robô",
+            agora=agora,
+        )
+        self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
+        self._interrupcao_pendente = False
+        return self._resultado_monitor(tentativa, execucao)
+
     def _fechar_tentativa_falha(
         self,
         sessao: Session,
