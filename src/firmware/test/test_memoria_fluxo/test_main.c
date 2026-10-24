@@ -38,9 +38,11 @@ static mem_inicio_t boot(nav_estado_t *nav, contrato_estado_t *estado, int8_t *x
 {
     sim_mundo_iniciar(LABIRINTO_DEMO);
     (void)hal_tof_iniciar();
-    sensores_iniciar();
     (void)hal_nvs_iniciar();
     mem_inicio_t inicio = mem_carregar(nav, estado, ROBO_TIPO_LABIRINTO);
+    /* A tarefa coloca o robô na célula carregada antes da primeira leitura. */
+    sim_mundo_na_celula(nav->x, nav->y, (int)nav->direcao);
+    sensores_iniciar();
     *x = nav->x;
     *y = nav->y;
     *fim = nav->terminou;
@@ -83,10 +85,21 @@ static void test_reset_no_meio_do_labirinto_demo_volta_na_mesma_celula(void)
     TEST_ASSERT_EQUAL_INT(MEM_NOVA, boot(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou));
     TEST_ASSERT_EQUAL_INT(CONTRATO_ESTADO_HEALTH_CHECK, estado_vivo);
 
-    for (int i = 0; i < PASSOS_ANTES; i++) {
-        decidir(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou, ler_celula());
+    nav_leitura_t primeira = ler_celula();
+    decidir(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou, primeira);
+    sim_mundo_na_celula(ao_vivo.x, ao_vivo.y, (int)ao_vivo.direcao);
+    bool leitura_mudou = false;
+    for (int i = 1; i < PASSOS_ANTES; i++) {
+        nav_leitura_t leitura = ler_celula();
+        if (leitura.frente != primeira.frente || leitura.esquerda != primeira.esquerda ||
+            leitura.direita != primeira.direita) {
+            leitura_mudou = true;
+        }
+        decidir(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou, leitura);
+        sim_mundo_na_celula(ao_vivo.x, ao_vivo.y, (int)ao_vivo.direcao);
     }
     TEST_ASSERT_TRUE_MESSAGE(ao_vivo.x != 0 || ao_vivo.y != 0, "a corrida nao saiu da largada");
+    TEST_ASSERT_TRUE_MESSAGE(leitura_mudou, "os ToF repetiram a leitura da largada");
 
     nav_estado_t copia = ao_vivo;
     contrato_estado_t estado_copia = estado_vivo;
@@ -112,6 +125,7 @@ static void test_reset_no_meio_do_labirinto_demo_volta_na_mesma_celula(void)
         nav_acao_t acao_copia = acao;
         decidir(&retomada, &estado_retomada, &gravada_x, &gravada_y, &terminou, leitura);
         TEST_ASSERT_EQUAL_INT(acao_copia, acao);
+        sim_mundo_na_celula(retomada.x, retomada.y, (int)retomada.direcao);
     }
     TEST_ASSERT_EQUAL_INT(estado_copia, estado_retomada);
     TEST_ASSERT_EQUAL_MEMORY(&copia, &retomada, sizeof(copia));
@@ -122,6 +136,7 @@ static void test_crc_estragado_no_fluxo_volta_ao_mapa_vazio(void)
     boot(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou);
     for (int i = 0; i < PASSOS_ANTES; i++) {
         decidir(&ao_vivo, &estado_vivo, &gravada_x, &gravada_y, &terminou, ler_celula());
+        sim_mundo_na_celula(ao_vivo.x, ao_vivo.y, (int)ao_vivo.direcao);
     }
     estragar_mapa();
 
