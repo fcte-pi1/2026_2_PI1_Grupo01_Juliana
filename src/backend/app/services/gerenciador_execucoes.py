@@ -280,7 +280,6 @@ class GerenciadorExecucoes:
                 agora=agora,
             )
             self._fechar_tentativa_falha(sessao, tentativa, execucao, agora)
-            self._interrupcao_pendente = False
             return self._resultado_monitor(tentativa, execucao)
 
         decorrido = (agora - execucao.iniciada_em).total_seconds()
@@ -299,7 +298,6 @@ class GerenciadorExecucoes:
             execucao.status = "cancelada"
             execucao.encerrada_em = agora
             finalizar_tentativa(sessao, tentativa, execucao, agora)
-            self._interrupcao_pendente = False
             return self._resultado_monitor(tentativa, execucao)
         return None
 
@@ -444,7 +442,6 @@ class GerenciadorExecucoes:
         tipo_inicio: str,
         agora: datetime,
     ) -> Tentativa:
-        """Abre a tentativa já em running: a largada é o clique do operador."""
         tentativa = Tentativa(
             tentativa_id=uuid.uuid4(),
             execucao_id=execucao.execucao_id,
