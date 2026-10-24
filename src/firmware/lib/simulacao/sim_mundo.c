@@ -34,6 +34,7 @@ static struct {
     int16_t potencia[2];
     float velocidade_mm_s[2];
     float pulsos[2];
+    bool encoder_travado[2];
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
     bool tof_ausente[SIM_TOF_QTD];
     uint16_t tof_ruido_mm;
@@ -127,8 +128,11 @@ static void passo_1ms(void)
         m.pose.x_mm = novo_x;
         m.pose.y_mm = novo_y;
         m.pose.theta_rad += giro;
-        m.pulsos[0] += deslocamento[0] / MM_POR_PULSO;
-        m.pulsos[1] += deslocamento[1] / MM_POR_PULSO;
+        for (int i = 0; i < 2; i++) {
+            if (!m.encoder_travado[i]) {
+                m.pulsos[i] += deslocamento[i] / MM_POR_PULSO;
+            }
+        }
     }
 
     float uso_motores = (fabsf((float)m.potencia[0]) + fabsf((float)m.potencia[1])) / 2000.0f;
@@ -224,6 +228,13 @@ void sim_led_definir(bool aceso) { m.led = aceso; }
 void sim_buzzer_definir(bool ligado) { m.buzzer = ligado; }
 
 void sim_definir_tof_ausente(int tof, bool ausente) { m.tof_ausente[tof] = ausente; }
+
+void sim_travar_encoder(int motor, bool travado)
+{
+    if (motor >= 0 && motor < 2) {
+        m.encoder_travado[motor] = travado;
+    }
+}
 void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente)
 {
     m.tof_ruido_mm = amplitude_mm;
