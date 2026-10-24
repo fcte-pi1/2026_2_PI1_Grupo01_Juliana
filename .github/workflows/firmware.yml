@@ -50,18 +50,48 @@ jobs:
         run: pip install pytest && pytest -q tools
 
       # Uma linha por labirinto no log e no resumo da execução. Falha se algum
-      # labirinto for inválido; com o FIRM-01, acrescentar --exigir-sucesso.
+      # labirinto for inválido ou não terminar em sucesso.
       - name: Simulador de navegação (FIRM-02)
         run: |
           set -o pipefail
           make -C simulador-navegacao build/simulador
-          ./simulador-navegacao/build/simulador --telemetria simulador-navegacao/build/telemetria simulador-navegacao/labirintos/*.txt | tee simulador-navegacao/build/relatorio.txt
+          ./simulador-navegacao/build/simulador --exigir-sucesso --telemetria simulador-navegacao/build/telemetria simulador-navegacao/labirintos/*.txt | tee simulador-navegacao/build/relatorio.txt
           {
             echo '### Simulador de navegação'
             echo '```text'
             cat simulador-navegacao/build/relatorio.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Com leituras erradas e a conferência da frente de 3 amostras (padrão
+      # do simulador), as metas da D18 nas sementes 1 a 50: todas em sucesso
+      # com 1%, pelo menos 95% com 5%, e nenhuma corrida em limite ou
+      # sucesso_falso. As duas taxas vão para o resumo.
+      - name: Simulador de navegação com ruído
+        run: |
+          echo '### Simulador de navegação com ruído' >> "$GITHUB_STEP_SUMMARY"
+          falhou=0
+          for meta in "1 100" "5 95"; do
+            set -- $meta
+            ruido=$1
+            minimo=$2
+            sucessos=0
+            total=0
+            for semente in $(seq 1 50); do
+              ./simulador-navegacao/build/simulador --ruido "$ruido" --semente "$semente" --exigir-termino simulador-navegacao/labirintos/*.txt > simulador-navegacao/build/ruido.txt || { cat simulador-navegacao/build/ruido.txt; exit 1; }
+              sucessos=$((sucessos + $(grep -c ' sucesso ' simulador-navegacao/build/ruido.txt || true)))
+              total=$((total + $(ls simulador-navegacao/labirintos/*.txt | wc -l)))
+            done
+            taxa=$(awk "BEGIN { printf \"%.2f\", 100 * $sucessos / $total }")
+            echo "Com $ruido% de ruído, sementes 1 a 50: $sucessos de $total corridas em sucesso ($taxa%), meta $minimo%"
+            echo "- $ruido% de ruído, sementes 1 a 50: $sucessos de $total em sucesso ($taxa%), meta $minimo%" >> "$GITHUB_STEP_SUMMARY"
+            if [ $((sucessos * 100)) -lt $((minimo * total)) ]; then
+              echo "Abaixo da meta com $ruido% de ruído"
+              falhou=1
+            fi
+          done
+          echo 'Nenhuma corrida em limite ou sucesso_falso.' >> "$GITHUB_STEP_SUMMARY"
+          exit $falhou
 
       - name: Guardar roteiros de telemetria
         if: always()

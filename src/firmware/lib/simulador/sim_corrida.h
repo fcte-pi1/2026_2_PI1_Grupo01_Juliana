@@ -8,6 +8,10 @@
  *
  *     ler as paredes da célula -> nav_passo() -> girar e andar uma célula
  *
+ * Com amostras_frente ligado, o robô confere a frente depois de girar, como o
+ * FIRM-05 vai fazer: se a maioria das amostras disser parede, ele não anda e
+ * chama a nav_bloqueado() (D15), que escolhe outro movimento.
+ *
  * Não há física aqui (isso é o sim_mundo): o robô sempre anda exatamente uma
  * célula e os sensores só erram quando o ruído está ligado. O objetivo é
  * testar a decisão, não o controle dos motores.
@@ -58,7 +62,13 @@ typedef struct {
 /* Quem decide o movimento. O padrão é a navegação (nav_passo); os testes trocam por um dublê. */
 typedef nav_acao_t (*sim_decisor_t)(void *ctx, nav_leitura_t leitura);
 
-/* Chamado uma vez por célula, depois da decisão. Serve para gerar a telemetria. */
+/*
+ * Conferência da frente: chamado com o robô já virado, quando a frente deu
+ * parede. Devolve a nova ação, relativa ao rumo atual. O padrão é nav_bloqueado.
+ */
+typedef nav_acao_t (*sim_bloqueio_t)(void *ctx);
+
+/* Chamado uma vez por célula, depois da decisão e das conferências. Serve para gerar a telemetria. */
 typedef void (*sim_observador_t)(void *ctx, const sim_celula_t *celula);
 
 typedef struct {
@@ -67,6 +77,9 @@ typedef struct {
     uint16_t limite_passos;    /* 0 = SIM_LIMITE_PASSOS_PADRAO */
     sim_decisor_t decisor;     /* NULL = nav_passo */
     void *decisor_ctx;
+    uint8_t amostras_frente;   /* leituras da frente antes de andar; 0 = sem conferência */
+    sim_bloqueio_t bloqueio;   /* NULL = nav_bloqueado com o decisor padrão, sem conferência com outro */
+    void *bloqueio_ctx;
     sim_observador_t observador; /* opcional */
     void *observador_ctx;
 } sim_config_t;
@@ -78,7 +91,8 @@ typedef struct {
     uint16_t distintas;        /* células diferentes visitadas, contando a largada */
     uint16_t giros_90;
     uint16_t giros_180;
-    uint16_t leituras_erradas; /* leituras trocadas pelo ruído */
+    uint16_t leituras_erradas; /* leituras trocadas pelo ruído, contando as da conferência */
+    uint16_t bloqueios;        /* conferências que deram parede à frente */
     uint8_t x;                 /* célula onde a corrida terminou, referencial do robô */
     uint8_t y;
 } sim_relatorio_t;

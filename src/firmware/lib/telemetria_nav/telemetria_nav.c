@@ -22,8 +22,13 @@ contrato_rumo_t telemetria_rumo_do_nav(nav_direcao_t direcao)
     }
 }
 
-uint8_t telemetria_paredes_do_nav(nav_direcao_t direcao, nav_leitura_t leitura)
+uint8_t telemetria_paredes_do_nav(nav_direcao_t direcao, nav_lado_t lado, nav_leitura_t leitura)
 {
+    if (lado == NAV_LADO_ESQUERDA) {
+        bool direita = leitura.direita;
+        leitura.direita = leitura.esquerda;
+        leitura.esquerda = direita;
+    }
     /* Girar à direita soma 1 na ordem N, L, S, O; à esquerda, soma 3. */
     uint8_t paredes = 0;
     if (leitura.frente) {

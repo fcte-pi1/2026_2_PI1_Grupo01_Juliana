@@ -25,9 +25,15 @@ class Interrupcao:
         self._pedidos = 0
 
     def ao_receber(self, linha: str) -> None:
-        """Callback das saídas: aceita só `{"v":1,"cmd":"interromper"}`, ignora o resto."""
+        """Callback das saídas: conta só `{"v":1,"cmd":"interromper"}`, ignora o resto.
+
+        `largar` e `health_check` são válidos no contrato, mas não interrompem a corrida.
+        """
         if not _comando_valido(linha):
             log.warning("comando ignorado (fora do contrato v%d): %s", VERSAO, linha)
+            return
+        if json.loads(linha)["cmd"] != "interromper":
+            log.info("comando recebido e ignorado: %s", linha)
             return
         log.info("comando recebido: %s", linha)
         with self._trava:

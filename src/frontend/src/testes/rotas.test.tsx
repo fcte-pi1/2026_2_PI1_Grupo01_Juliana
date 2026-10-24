@@ -39,10 +39,11 @@ describe('rota /', () => {
     expect((await screen.findAllByText(MARCA_DO_CENARIO[id])).length).toBeGreaterThan(0)
   })
 
-  it('Nova execução abre o health-check', async () => {
+  it('Nova execução abre a tentativa já em execução após o health-check', async () => {
     renderizarRota('/', '01-inicio')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
     expect(await screen.findByRole('heading', { name: 'Health-check' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Encerrar tentativa' })).toBeEnabled()
   })
 
   it('mostra o estado da última execução sem usar o resultado da tentativa', async () => {

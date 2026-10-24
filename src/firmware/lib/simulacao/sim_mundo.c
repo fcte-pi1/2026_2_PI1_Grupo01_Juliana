@@ -5,11 +5,9 @@
 
 #include "config/robo.h"
 
-#define PI_F 3.14159265f
 #define GRAUS_PARA_RAD(g) ((g) * PI_F / 180.0f)
 
 #define CONSTANTE_TEMPO_MOTOR_S  0.05f  /* atraso da roda para atingir a velocidade pedida */
-#define MM_POR_PULSO             (PI_F * RODA_DIAMETRO_MM / ENCODER_PULSOS_POR_VOLTA)
 #define MEIA_PAREDE_MM           (PAREDE_ESPESSURA_MM / 2.0f)
 #define PONTOS_CONTORNO          16     /* pontos do contorno do robô testados na colisão */
 

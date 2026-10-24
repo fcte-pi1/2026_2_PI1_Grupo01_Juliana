@@ -3,7 +3,7 @@ import { api } from './clienteApi'
 import type { components } from './schema'
 import type {
   ComponenteHealthCheck, EncerrarPedido, Execucao, ExecucaoAtualResposta,
-  Labirinto, NovaExecucaoPedido, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto,
+  Labirinto, NovaExecucaoPedido, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto, UltimoHealthCheck,
 } from './tipos'
 
 type DetalheAPI = components['schemas']['ExecucaoDetalhe'] & { numero?: number }
@@ -119,3 +119,9 @@ export const encerrarExecucao = async (id: string) =>
 
 export const retomarTentativa = (id: string) =>
   api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`)
+
+export const buscarUltimoHealthCheck = (sinal?: AbortSignal) =>
+  api.get<UltimoHealthCheck | null>('/health-check/ultimo', sinal)
+
+export const solicitarHealthCheck = () =>
+  api.post<components['schemas']['SolicitacaoHealthCheck']>('/health-check/solicitar')
