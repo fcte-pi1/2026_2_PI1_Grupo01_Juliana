@@ -3,8 +3,9 @@
     python -m ponte --url http://127.0.0.1:8000 --arquivo captura.jsonl
     python -m ponte --url http://127.0.0.1:8000 --porta /dev/ttyUSB0
 
-A porta serial precisa do pyserial (`pip install pyserial`). Sem --porta e sem
---arquivo, lê o stdin.
+A porta serial precisa do pyserial (`pip install pyserial`). Com --porta, os
+comandos voltam nessa mesma porta. Sem --porta e sem --arquivo, lê o stdin e
+escreve os comandos no stdout.
 """
 
 from __future__ import annotations
@@ -14,19 +15,22 @@ import sys
 from collections.abc import Iterator
 
 import httpx
-from ponte.encaminhar import executar
+from ponte.encaminhar import SaidaSerial, executar
 
 
-def _linhas_da_serial(porta: str, baud: int) -> Iterator[str]:
+def _abrir_serial(porta: str, baud: int):
     try:
         import serial
     except ImportError as erro:
         raise SystemExit("para --porta, instale pyserial") from erro
-    with serial.Serial(porta, baud, timeout=1) as conexao:
-        while True:
-            bruta = conexao.readline()
-            if bruta:
-                yield bruta.decode("utf-8", errors="replace")
+    return serial.Serial(porta, baud, timeout=1)
+
+
+def _linhas_da_serial(conexao) -> Iterator[str]:
+    while True:
+        bruta = conexao.readline()
+        if bruta:
+            yield bruta.decode("utf-8", errors="replace")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -42,7 +46,11 @@ def main(argv: list[str] | None = None) -> int:
 
     with httpx.Client(base_url=args.url, timeout=5.0) as cliente:
         if args.porta:
-            executar(_linhas_da_serial(args.porta, args.baud), sys.stdout, cliente)
+            conexao = _abrir_serial(args.porta, args.baud)
+            try:
+                executar(_linhas_da_serial(conexao), SaidaSerial(conexao), cliente)
+            finally:
+                conexao.close()
             return 0
         if args.arquivo:
             with open(args.arquivo, encoding="utf-8") as origem:

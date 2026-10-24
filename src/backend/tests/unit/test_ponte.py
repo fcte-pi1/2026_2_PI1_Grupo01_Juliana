@@ -5,7 +5,7 @@ from collections import deque
 from datetime import UTC, datetime
 from io import StringIO
 
-from ponte.encaminhar import FILA_MAXIMA, encaminhar, executar, normalizar
+from ponte.encaminhar import FILA_MAXIMA, SaidaSerial, encaminhar, executar, normalizar
 
 MOMENTO = datetime(2026, 10, 24, 14, 0, tzinfo=UTC)
 LINHA = (
@@ -143,3 +143,24 @@ def test_fila_cheia_descarta_a_mais_antiga():
 
 def test_fila_maxima_padrao_e_100():
     assert FILA_MAXIMA == 100
+
+
+class _Porta:
+    def __init__(self) -> None:
+        self.enviados = b""
+
+    def write(self, dados: bytes) -> int:
+        self.enviados += dados
+        return len(dados)
+
+    def flush(self) -> None:
+        return None
+
+
+def test_comando_volta_na_mesma_serial():
+    porta = _Porta()
+    cliente = Cliente(comandos=[{"v": 1, "cmd": "interromper"}])
+
+    executar([LINHA], SaidaSerial(porta), cliente, agora=MOMENTO)
+
+    assert porta.enviados == b'{"v":1,"cmd":"interromper"}\n'

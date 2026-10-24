@@ -72,6 +72,25 @@ def encaminhar(
     return resposta.status_code, comandos_da(resposta)
 
 
+class EscritaSerial(Protocol):
+    def write(self, dados: bytes) -> int: ...
+
+    def flush(self) -> None: ...
+
+
+class SaidaSerial:
+    """Escreve cada comando na mesma serial de onde a linha foi lida."""
+
+    def __init__(self, conexao: EscritaSerial) -> None:
+        self._conexao = conexao
+
+    def write(self, texto: str) -> int:
+        dados = texto.encode("utf-8")
+        escrito = self._conexao.write(dados)
+        self._conexao.flush()
+        return escrito
+
+
 def executar(
     origem: Iterable[str],
     destino: TextIO,
