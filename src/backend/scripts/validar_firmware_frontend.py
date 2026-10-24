@@ -142,8 +142,8 @@ def _tentativa(detalhe: dict) -> dict:
 
 def _cenario_labirinto_e_encerrar(fluxo: Fluxo) -> None:
     """12x4: o firmware revela o eixo e o operador encerra a execução inteira."""
-    fluxo.criar("12x4")
     fluxo.health_check("12x4")
+    fluxo.criar("12x4")
     fluxo.passo(0, 0)
     no_canto = fluxo.detalhe()
     _exigir(no_canto["tipo_labirinto"] == "12x4", "o detalhe não guardou o labirinto 12x4")
@@ -213,8 +213,8 @@ def _cenario_labirinto_e_encerrar(fluxo: Fluxo) -> None:
 
 def _cenario_depois_da_tentativa(fluxo: Fluxo) -> None:
     """8x4: encerrar a tentativa mantém a execução; encerrar a execução bloqueia a retomada."""
-    fluxo.criar("8x4")
     fluxo.health_check("8x4")
+    fluxo.criar("8x4")
     fluxo.passo(1, 1)
     tentativa = fluxo.cliente.post(
         f"/execucoes/{fluxo.execucao_id}/encerrar-tentativa",
@@ -252,8 +252,8 @@ def _cenario_depois_da_tentativa(fluxo: Fluxo) -> None:
 
 def _cenario_concluida(fluxo: Fluxo) -> None:
     """4x4: o sucesso do firmware conclui a execução e o encerramento manual é recusado."""
-    fluxo.criar("4x4")
     fluxo.health_check("4x4")
+    fluxo.criar("4x4")
     fluxo._enviar({"tipo": "sucesso", "x": 3, "y": 3})
     detalhe = fluxo.detalhe()
     _exigir(detalhe["tipo_labirinto"] == "4x4", "o sucesso não permaneceu no 4x4")
