@@ -152,6 +152,18 @@ def test_comando_valido_e_registrado(monkeypatch, caplog):
     assert INTERROMPER in caplog.text
 
 
+@pytest.mark.parametrize("linha", ['{"v":1,"cmd":"largar"}', '{"v":1,"cmd":"health_check"}'])
+def test_largar_e_health_check_nao_interrompem(linha, monkeypatch, caplog):
+    monkeypatch.setattr(logging.getLogger("simulador"), "propagate", True)
+    caplog.set_level(logging.INFO, logger="simulador")
+    interrupcao = Interrupcao()
+    interrupcao.ao_receber(linha)
+    assert interrupcao.novos() == 0
+    assert f"comando recebido e ignorado: {linha}" in caplog.text
+    interrupcao.ao_receber(INTERROMPER)
+    assert interrupcao.novos() == 1
+
+
 def _conferir_interrupcao(linhas: list[str]) -> None:
     mensagens = [ler_linha(linha) for linha in linhas]
     falhas = [m for m in mensagens if isinstance(m, Falha)]

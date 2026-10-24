@@ -77,16 +77,16 @@ describe('mocks conectados: somente demonstração local', () => {
     }
   })
 
-  it('conecta criação, health-check, corrida e sucesso e encontra o mesmo registro no histórico e detalhe', async () => {
+  it('abre após o health-check, conecta corrida e sucesso e encontra o mesmo registro no histórico e detalhe', async () => {
     const inicio = Date.now()
     const resposta = await fetch(`${API}/execucoes`, { method: 'POST',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo_labirinto: '4x4' }) })
     expect(resposta.status).toBe(201)
     const criada = await resposta.json()
-    expect(buscarExecucaoRegistrada(criada.execucao_id)!.tentativas[0].health_check).toEqual([])
-    const eventos = avancar(criada.execucao_id, 22, inicio)
-    expect(eventos.filter((evento) => evento.tipo === 'health_check')).toHaveLength(8)
-    expect(eventos.find((evento) => evento.tipo === 'status')).toMatchObject({ status_tentativa: 'running' })
+    expect(buscarExecucaoRegistrada(criada.execucao_id)!.tentativas[0].health_check).toHaveLength(8)
+    expect(buscarExecucaoRegistrada(criada.execucao_id)!.tentativas[0].status).toBe('running')
+    const eventos = avancar(criada.execucao_id, 12, inicio)
+    expect(eventos.filter((evento) => evento.tipo === 'health_check')).toHaveLength(0)
     expect(eventos.at(-1)).toMatchObject({ tipo: 'sucesso', x: 3, y: 3 })
     const detalhe = await (await fetch(`${API}/execucoes/${criada.execucao_id}`)).json()
     expect(detalhe).toMatchObject({ execucao_id: criada.execucao_id, status: 'concluida',
@@ -114,7 +114,8 @@ describe('mocks conectados: somente demonstração local', () => {
     const retomada = buscarExecucaoRegistrada(antes.execucao_id)!
     expect(retomada.tentativas[0].tentativa_id).toBe(antes.tentativas[0].tentativa_id)
     expect(retomada.tentativas[0].falha).toEqual(encerrada.tentativas[0].falha)
-    expect(retomada.tentativas[1]).toMatchObject({ status: 'health-check', health_check: [], bateria_inicial: null })
+    expect(retomada.tentativas[1]).toMatchObject({ status: 'running', bateria_inicial: 7840 })
+    expect(retomada.tentativas[1].health_check).toHaveLength(8)
     expect(retomada.trajeto).toEqual(antes.trajeto)
     avancar(antes.execucao_id, 22)
     const concluida = buscarExecucaoRegistrada(antes.execucao_id)!

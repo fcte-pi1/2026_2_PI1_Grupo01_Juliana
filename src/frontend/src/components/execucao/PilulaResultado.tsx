@@ -13,7 +13,6 @@ export function PilulaResultado({ resultado }: PilulaResultadoProps) {
 }
 
 const STATUS_TENTATIVA: Record<StatusTentativa, { texto: string; classe: string }> = {
-  'health-check': { texto: 'Health-check', classe: 'pilula--alerta' },
   running: { texto: 'Em execução', classe: 'pilula--primaria' },
   success: { texto: 'Sucesso', classe: 'pilula--sucesso' },
   failed: { texto: 'Falha', classe: 'pilula--perigo' },

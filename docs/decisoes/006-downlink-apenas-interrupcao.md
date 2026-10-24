@@ -1,6 +1,6 @@
 # ADR-006 — Downlink: apenas interrupção manual
 
-**Status:** Aceito  
+**Status:** Substituída pela [ADR-017](017-downlink-tres-comandos.md)  
 **Data:** 2026-09-30
 
 ## Contexto

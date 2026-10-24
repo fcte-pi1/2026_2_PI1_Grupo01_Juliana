@@ -1,0 +1,119 @@
+import { expect, test } from '@playwright/test'
+
+test('Health-check sem resultado libera nova solicitação após 30 s', async ({ page }, testInfo) => {
+  await page.clock.install()
+  await page.addInitScript(() => {
+    const buscar = window.fetch.bind(window)
+    window.fetch = (entrada, opcoes) => {
+      const url = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada.url
+      // Simula somente a ausência de resultado do robô; os comandos continuam no MSW.
+      if (new URL(url, window.location.origin).pathname === '/api/health-check/ultimo') {
+        return Promise.resolve(new Response(null, { status: 204 }))
+      }
+      return buscar(entrada, opcoes)
+    }
+    class FonteSilenciosa extends EventTarget {
+      static CONNECTING = 0
+      static OPEN = 1
+      static CLOSED = 2
+      readyState = 1
+      url: string
+      withCredentials = false
+      onopen: ((evento: Event) => void) | null = null
+      onmessage: ((evento: MessageEvent) => void) | null = null
+      onerror: ((evento: Event) => void) | null = null
+      constructor(url: string) {
+        super()
+        this.url = url
+      }
+      close() { this.readyState = 2 }
+    }
+    window.EventSource = FonteSilenciosa as unknown as typeof EventSource
+  })
+  await page.goto('/?cenario=01-inicio')
+  const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
+  await solicitar.click()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(solicitar).toBeDisabled()
+  await page.clock.fastForward(31_000)
+  await expect(page.getByRole('alert')).toContainText('não concluiu o health-check em 30 s')
+  await expect(solicitar).toBeEnabled()
+  await expect(page.getByRole('button', { name: /Nova execução/ })).toBeDisabled()
+  await expect(page.getByLabel('Tentativa 1 de 3')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath('front05-health-check-tempo-esgotado.png'), fullPage: true })
+  await solicitar.click()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(solicitar).toBeDisabled()
+})
+
+test('Health-check vem antes da tentativa e continua após recarregar', async ({ page }, testInfo) => {
+  await page.goto('/?cenario=01-inicio')
+  const iniciar = page.getByRole('button', { name: /Nova execução/ })
+  await expect(iniciar).toBeEnabled()
+  await page.getByRole('button', { name: 'Solicitar health-check', exact: true }).click()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(iniciar).toBeDisabled()
+  await expect(page.getByLabel('Tentativa 1 de 3')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath('front05-health-check-antes-da-largada.png'), fullPage: true })
+  await page.reload()
+  await expect(page.getByText(/Aguardando o health-check do robô/)).toBeVisible()
+  await expect(iniciar).toBeDisabled()
+  await expect(iniciar).toBeEnabled({ timeout: 12_000 })
+  await iniciar.click()
+  await expect(page.getByLabel('Tentativa 1 de 3')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Encerrar tentativa', exact: true })).toBeVisible()
+  await expect(page.getByText('8 de 8 OK', { exact: true })).toBeVisible()
+})
+
+test('Encerrar exige motivo e limita a observação antes de registrar a falha', async ({ page }, testInfo) => {
+  const pedidos: unknown[] = []
+  page.on('request', (pedido) => {
+    if (pedido.method() === 'POST' && pedido.url().endsWith('/execucoes/e-0042/encerrar-tentativa')) {
+      pedidos.push(pedido.postDataJSON())
+    }
+  })
+  await page.goto('/?cenario=03-em-execucao')
+  await page.getByRole('button', { name: 'Encerrar tentativa', exact: true }).click()
+  const modal = page.getByRole('dialog')
+  const confirmar = modal.getByRole('button', { name: 'Encerrar como falha' })
+  await expect(confirmar).toBeDisabled()
+  await expect(modal.locator('input[type=radio]:checked')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath('front05-encerrar-sem-motivo.png') })
+
+  const observacao = modal.getByRole('textbox')
+  await observacao.fill('a'.repeat(100) + 'b')
+  await expect(observacao).toHaveValue('a'.repeat(100))
+  await expect(confirmar).toBeDisabled()
+  await modal.getByRole('radio', { name: /collision/ }).check()
+  await confirmar.dblclick()
+  await expect(page.getByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeVisible()
+  expect(pedidos).toEqual([{ motivo: 'collision', observacao: 'a'.repeat(100) }])
+  await expect(page.getByText(/Observação: a{100}/)).toBeVisible()
+})
+
+test('Retomar preserva execução, mapa e falha após recarregar', async ({ page }, testInfo) => {
+  await page.goto('/?cenario=08-encerrada-como-falha')
+  const botaoRetomar = page.getByRole('button', { name: /Retomar tentativa \(2\/3\)/ })
+  await expect(botaoRetomar).toBeVisible()
+  const anterior = await page.evaluate(() => fetch('/api/execucoes/e-0042').then((resposta) => resposta.json()))
+  await botaoRetomar.click()
+  const modal = page.getByRole('dialog')
+  const confirmar = modal.getByRole('button', { name: 'Retomar da célula B2', exact: true })
+  await expect(confirmar).toBeDisabled()
+  await modal.getByRole('checkbox').nth(0).check()
+  await expect(confirmar).toBeDisabled()
+  await modal.getByRole('checkbox').nth(1).check()
+  await expect(confirmar).toBeEnabled()
+  await page.screenshot({ path: testInfo.outputPath('front05-retomar-checklist.png') })
+  await confirmar.click()
+  await expect(page.getByRole('button', { name: 'Encerrar tentativa', exact: true })).toBeVisible()
+  await page.reload()
+  await expect(page.getByLabel('Tentativa 2 de 3')).toBeVisible()
+  const atual = await page.evaluate(() => fetch('/api/execucoes/e-0042').then((resposta) => resposta.json()))
+  expect(atual.execucao_id).toBe(anterior.execucao_id)
+  expect(atual.tentativas_usadas).toBe(2)
+  expect(atual.tentativas[0].falha).toEqual(anterior.tentativas[0].falha)
+  expect(atual.tentativas[1].tentativa_id).not.toBe(anterior.tentativas[0].tentativa_id)
+  expect(atual.trajeto.slice(0, anterior.trajeto.length)).toEqual(anterior.trajeto)
+})

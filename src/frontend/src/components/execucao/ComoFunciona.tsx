@@ -1,7 +1,7 @@
 const PASSOS = [
-  { titulo: 'Nova execução', texto: 'Você escolhe o labirinto e cria a execução aqui.' },
-  { titulo: 'Health-check', texto: 'Ligue o robô em A1. Ele testa bateria, sensores ToF, motores e encoders e envia o resultado.' },
-  { titulo: 'Em execução', texto: 'A largada é automática. A tela mostra tempo, velocidade, bateria e célula atual.' },
+  { titulo: 'Health-check', texto: 'Escolha o labirinto, posicione o robô em A1 e confira bateria, sensores ToF, motores e encoders. O DIP deve corresponder ao labirinto.' },
+  { titulo: 'Nova execução', texto: 'Com o health-check aprovado e válido, confirme a largada. Só então começa a primeira tentativa.' },
+  { titulo: 'Em execução', texto: 'A tela acompanha tempo, velocidade, bateria, célula e trajeto enviados pelo robô.' },
   { titulo: 'Resultado', texto: 'No fim, o trajeto aparece no mapa. Se falhar, dá para retomar da célula da falha (até 3 tentativas em 10 min).' },
 ]
 

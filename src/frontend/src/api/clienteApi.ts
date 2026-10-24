@@ -1,4 +1,4 @@
-import type { EventoExecucao } from './tipos'
+import type { EventoExecucao, UltimoHealthCheck } from './tipos'
 import { lerEvento } from './eventosExecucao'
 
 export class ErroApi extends Error {
@@ -31,6 +31,16 @@ function lerCorpo(texto: string): unknown {
     return JSON.parse(texto)
   } catch {
     return texto
+  }
+}
+
+function lerHealthCheck(texto: string): UltimoHealthCheck | null {
+  try {
+    const dados = JSON.parse(texto) as UltimoHealthCheck
+    if (!dados || typeof dados.iniciado_em !== 'string' || !Array.isArray(dados.itens)) return null
+    return dados
+  } catch {
+    return null
   }
 }
 
@@ -70,6 +80,17 @@ export class ClienteAPI {
     }
     eventos.onopen = () => aoConectar?.()
     // O próprio EventSource reconecta e mantém Last-Event-ID; não recriar no erro.
+    return () => eventos.close()
+  }
+
+  /** Assina o health-check de antes da execução. O primeiro evento repete o GET. */
+  assinarHealthCheck(aoReceber: (healthCheck: UltimoHealthCheck) => void): () => void {
+    if (typeof EventSource === 'undefined') return () => {}
+    const eventos = new EventSource(this.url('/health-check/stream'))
+    eventos.addEventListener('health_check', (mensagem: MessageEvent<string>) => {
+      const healthCheck = lerHealthCheck(mensagem.data)
+      if (healthCheck) aoReceber(healthCheck)
+    })
     return () => eventos.close()
   }
 

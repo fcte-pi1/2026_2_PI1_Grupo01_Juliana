@@ -3,7 +3,7 @@ import { formatarHora, formatarMedicao, formatarNumero, nomeCelula } from '../..
 
 interface TabelaLeiturasProps {
   leituras: LeituraTelemetria[]
-  /** Data de início da tentativa, incluindo o período de health-check. */
+  /** Data da largada, após o health-check. */
   largadaEm: string
 }
 

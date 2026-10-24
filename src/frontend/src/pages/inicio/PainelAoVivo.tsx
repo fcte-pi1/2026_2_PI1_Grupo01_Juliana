@@ -5,7 +5,6 @@ import { MetricasTempoReal } from '../../components/telemetria/MetricasTempoReal
 import { TabelaLeituras } from '../../components/telemetria/TabelaLeituras'
 import { falhasDasTentativas } from '../../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../../components/labirinto/VisualizacaoLabirinto'
-import { formatarMedicao, nomeCelula, ROTULO_COMPONENTE } from '../../utils/formatacao'
 
 interface PainelAoVivoProps {
   execucao: Execucao
@@ -14,40 +13,10 @@ interface PainelAoVivoProps {
   agora: number
 }
 
-/** Telemetria da tentativa aberta: health-check ou em execução (RF01, RF04). */
+/** Telemetria da tentativa em execução (RF01, RF04). */
 export function PainelAoVivo({ execucao, tentativa, labirinto, agora }: PainelAoVivoProps) {
   const celula = execucao.celula_atual ?? execucao.leituras.at(-1) ?? execucao.trajeto.at(-1)
 
-  if (tentativa.status === 'health-check') {
-    return (
-      <div className="painel-tempo-real pagina-duas-colunas">
-        <div className="coluna">
-          <BlocoHealthCheck itens={tentativa.health_check} verificando />
-          <MetricasTempoReal execucao={execucao} tentativa={tentativa} agora={agora} />
-        </div>
-        <div className="coluna">
-          <section className="cartao">
-            <h2 className="cartao__titulo">Sensores na {tentativa.tipo_inicio === 'retomada' ? 'retomada' : 'largada'}{celula ? ` (${nomeCelula(celula)})` : ''}</h2>
-            <p className="texto-suave">Leituras do health-check enviadas pelo robô.</p>
-            <div className="sensores-diagrama" aria-hidden="true">
-              <span className="sensores-diagrama__frontal">frontal</span>
-              <span className="sensores-diagrama__esquerdo">esquerdo</span>
-              <div className="sensores-diagrama__robo"><i /><i /><i /></div>
-              <span className="sensores-diagrama__direito">direito</span>
-            </div>
-            <dl className="lista-dados">
-              {(['tof_frontal', 'tof_esquerdo', 'tof_direito'] as const).map((componente) => {
-                const item = tentativa.health_check.find((item) => item.componente === componente)
-                return <div key={componente}><dt>{ROTULO_COMPONENTE[componente]}</dt><dd className="mono">{item?.valor_lido == null ? '—' : `${formatarMedicao(item.valor_lido)} mm`}</dd></div>
-              })}
-            </dl>
-            <p className="texto-suave espaco-acima">Os resultados do health-check ficam separados dos dados do percurso.</p>
-          </section>
-          <CartaoComunicacao ultimaMensagemEm={execucao.ultima_mensagem_em} />
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="painel-tempo-real pagina-duas-colunas">
