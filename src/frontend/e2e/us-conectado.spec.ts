@@ -22,6 +22,11 @@ import { expect, test, type Page } from '@playwright/test'
  *   firmware, e o trecho seguinte do jsonl entra na tentativa nova com o prefixo intacto.
  * - Health-check: um pedido sem resultado do robô em 30 s libera nova solicitação
  *   e não abre tentativa. A aprovação anterior não atende ao pedido novo.
+ * - FRONT-06, com a mesma gravação do 4x4: US03 lista da mais recente para a
+ *   mais antiga; US26 e US27 filtram 4x4, 8x4, 12x4 e Todos; US02 mostra as
+ *   três tentativas em ordem, com tempo, velocidade e consumo; US16 mostra a
+ *   variação que o backend calculou; US28 reexibe o trajeto completo depois
+ *   de duas interrupções do operador e do sucesso na terceira.
  */
 
 const executar = promisify(execFile)
@@ -315,6 +320,109 @@ test('health-check: 30 s sem o robô libera nova solicitação e não abre tenta
   await expect(iniciar).toBeDisabled()
 })
 
+test('US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas do 4x4', async ({ page }) => {
+  const fatias = fatiarCorrida(await readFile(path.join(pasta, '4x4-01-dir.jsonl'), 'utf8'))
+  const arquivos = await Promise.all(fatias.trechos.map(async (conteudo, indice) => {
+    const arquivo = path.join(pasta, `us28-t${indice + 1}.jsonl`)
+    await writeFile(arquivo, conteudo)
+    return arquivo
+  }))
+
+  await prepararLargada(page, bootNovo())
+  const id = (await execucaoAtual()).execucao_id
+  const rotulo = await rotuloDaExecucao(id)
+
+  await reproduzir(arquivos[0], bootNovo())
+  await expect(page.getByLabel('Dados da execução em tempo real').getByText(fatias.paradas[0], { exact: true })).toBeVisible()
+  await encerrarComMotivo(page, 'collision')
+  await expect(page.getByText('Colisão com parede')).toBeVisible()
+  await expect(page.getByText('Encerrada pelo operador.')).toBeVisible()
+  await retomar(page, fatias.paradas[0])
+
+  await reproduzir(arquivos[1], bootNovo())
+  await expect(page.getByLabel('Dados da execução em tempo real').getByText(fatias.paradas[1], { exact: true })).toBeVisible()
+  await encerrarComMotivo(page, 'stuck')
+  await expect(page.getByText('Robô travado ou parado')).toBeVisible()
+  await retomar(page, fatias.paradas[1])
+
+  await reproduzir(arquivos[2], bootNovo())
+  await expect.poll(async () => (await detalhe(id)).status).toBe('concluida')
+  const pronto = await detalhe(id)
+  expect(pronto.tipo_labirinto).toBe('4x4')
+  expect(pronto.tentativas.map((tentativa) => tentativa.status)).toEqual(['failed', 'failed', 'success'])
+  expect(pronto.tentativas[0].falha).toMatchObject({
+    motivo: 'collision', origem: 'encerrado_operador', componente: null,
+    celula_x: letra(fatias.paradas[0]), celula_y: numeroCelula(fatias.paradas[0]),
+  })
+  expect(pronto.tentativas[1].falha).toMatchObject({
+    motivo: 'stuck', origem: 'encerrado_operador', componente: null,
+    celula_x: letra(fatias.paradas[1]), celula_y: numeroCelula(fatias.paradas[1]),
+  })
+  expect(pronto.tentativas[2].falha).toBeNull()
+  expect(pronto.trajeto.at(-1)).toMatchObject({ x: letra(fatias.objetivo), y: numeroCelula(fatias.objetivo) })
+
+  await page.goto('/execucoes')
+  await conferirLista(page, null)
+  await expect(page.getByRole('table').getByRole('link').first()).toHaveText(rotulo)
+
+  const filtro = page.getByRole('group', { name: 'Filtrar por labirinto' })
+  await filtro.getByRole('button', { name: '4x4' }).click()
+  await conferirLista(page, '4x4')
+  await expect(page.getByRole('link', { name: rotulo })).toBeVisible()
+  await filtro.getByRole('button', { name: '8x4' }).click()
+  await conferirLista(page, '8x4')
+  await expect(page.getByRole('link', { name: rotulo })).toHaveCount(0)
+  await filtro.getByRole('button', { name: '12x4' }).click()
+  await conferirLista(page, '12x4')
+  await expect(page.getByRole('link', { name: rotulo })).toHaveCount(0)
+  await filtro.getByRole('button', { name: 'Todos' }).click()
+  await conferirLista(page, null)
+
+  await page.goto(`/execucoes/${id}`)
+  await expect(page.getByRole('heading', { name: `Execução ${rotulo}` })).toBeVisible()
+  const variacao = page.locator('section').filter({ has: page.getByText('Variação contra o melhor tempo') })
+  await expect(variacao).toContainText(pronto.variacao_melhor_tempo_pct == null ? '—' : String(pronto.variacao_melhor_tempo_pct).replace('.', ','))
+  const linhas = page.getByRole('row')
+  for (const tentativa of pronto.tentativas) {
+    const linha = linhas.nth(tentativa.attempt_index)
+    await expect(linha).toContainText(`${tentativa.attempt_index}/3`)
+    await expect(linha).toContainText(tentativa.status === 'success' ? 'Sucesso' : 'Falha')
+    await expect(linha).toContainText(formatarTempo(tentativa.tempo_s))
+    await expect(linha).toContainText(formatarMedicao(tentativa.velocidade_media, 'm/s'))
+    await expect(linha).toContainText(formatarMedicao(tentativa.consumo_bateria, 'mV'))
+  }
+  const falha1 = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Registro da falha · tentativa 1' }) })
+  await expect(falha1).toContainText(fatias.paradas[0])
+  await expect(falha1).toContainText('Colisão com parede')
+  await expect(falha1).toContainText('Encerrada pelo operador')
+  await expect(falha1).not.toContainText('Componente:')
+  const falha2 = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Registro da falha · tentativa 2' }) })
+  await expect(falha2).toContainText(fatias.paradas[1])
+  await expect(falha2).toContainText('Robô travado ou parado')
+  await expect(page.getByRole('heading', { name: 'Registro da falha · tentativa 3' })).toHaveCount(0)
+
+  const visitadas = new Set(pronto.trajeto.map((passo) => `${passo.x},${passo.y}`)).size
+  await expect(page.getByRole('img', { name: `Labirinto 4x4 com ${visitadas} células visitadas` })).toBeVisible()
+  await expect.poll(() => page.locator('svg.labirinto__svg title').allTextContents()).toEqual(
+    expect.arrayContaining([expect.stringContaining(`${fatias.objetivo} ·`)]),
+  )
+  await expect(page.getByText('OBJETIVO', { exact: true })).toBeVisible()
+  expect(await page.evaluate(caminhoLivre)).toBe(true)
+
+  const grupo = page.getByRole('group', { name: 'Trajeto por tentativa' })
+  await grupo.getByRole('button', { name: 'T1' }).click()
+  await expect(page.locator('.labirinto__robo title')).toHaveText(`Robô em ${fatias.paradas[0]} · falhou`)
+  await expect(page.getByText('FALHA T2')).toBeVisible()
+  await grupo.getByRole('button', { name: 'T2' }).click()
+  await expect(page.getByText(`Retomada em ${fatias.paradas[0]}`)).toBeVisible()
+  await expect(page.locator('.labirinto__robo title')).toHaveText(`Robô em ${fatias.paradas[1]} · falhou`)
+  await grupo.getByRole('button', { name: 'T3' }).click()
+  await expect(page.getByText(`Retomada em ${fatias.paradas[1]}`)).toBeVisible()
+  await expect(page.locator('.labirinto__robo title')).toHaveText(`Robô em ${fatias.objetivo}`)
+  await expect(page.getByText('OBJETIVO', { exact: true })).toBeVisible()
+  expect(await page.evaluate(caminhoLivre)).toBe(true)
+})
+
 async function prepararLargada(page: Page, boot: number) {
   await page.goto('/')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
@@ -461,4 +569,142 @@ async function cancelarExecucaoAberta() {
   const corpo = await resposta.json() as { execucao_id: string }
   const fim = await fetch(`${API}/execucoes/${corpo.execucao_id}/encerrar`, { method: 'POST' })
   if (!fim.ok && fim.status !== 409) throw new Error(await fim.text())
+}
+
+interface ResumoApi {
+  execucao_id: string
+  numero?: number
+}
+
+interface DetalheApi {
+  execucao_id: string
+  numero?: number
+  status: string
+  tipo_labirinto: string
+  variacao_melhor_tempo_pct: number | null
+  tentativas: {
+    attempt_index: number
+    status: string
+    tempo_s: number | null
+    velocidade_media: number | null
+    consumo_bateria: number | null
+    falha: FalhaApi | null
+  }[]
+  trajeto: { x: number; y: number; retomada: boolean; paredes_mask: number }[]
+}
+
+async function detalhe(id: string) {
+  const resposta = await fetch(`${API}/execucoes/${id}`)
+  if (!resposta.ok) throw new Error(`GET /execucoes/${id} respondeu ${resposta.status}.`)
+  const corpo = await resposta.json() as DetalheApi
+  corpo.tentativas.sort((a, b) => a.attempt_index - b.attempt_index)
+  return corpo
+}
+
+async function rotuloDaExecucao(id: string) {
+  const corpo = await detalhe(id)
+  return corpo.numero === undefined ? corpo.execucao_id : `#${String(corpo.numero).padStart(4, '0')}`
+}
+
+async function listar(tipo: string | null) {
+  const dados: ResumoApi[] = []
+  for (let offset = 0; ; offset += 100) {
+    const filtro = tipo ? `tipo_labirinto=${tipo}&` : ''
+    const resposta = await fetch(`${API}/execucoes?${filtro}limite=100&offset=${offset}`)
+    if (!resposta.ok) throw new Error(`GET /execucoes respondeu ${resposta.status}.`)
+    const pagina = await resposta.json() as ResumoApi[]
+    dados.push(...pagina)
+    if (pagina.length < 100) break
+  }
+  return dados.map((item) => item.numero === undefined ? item.execucao_id : `#${String(item.numero).padStart(4, '0')}`)
+}
+
+async function conferirLista(page: Page, tipo: string | null) {
+  await expect.poll(async () => {
+    const esperada = await listar(tipo)
+    const visivel = await page.getByRole('table').getByRole('link').allTextContents()
+    return visivel.join('\n') === esperada.join('\n')
+  }).toBe(true)
+}
+
+function nomeCelula(x: number, y: number) {
+  return `${String.fromCharCode(65 + x)}${y + 1}`
+}
+
+function letra(celula: string) {
+  return celula.charCodeAt(0) - 65
+}
+
+function numeroCelula(celula: string) {
+  return Number(celula.slice(1)) - 1
+}
+
+function formatarTempo(segundos: number | null) {
+  if (segundos == null) return '—'
+  const decimos = Math.round(segundos * 10)
+  const minutos = Math.floor(decimos / 600)
+  const resto = (decimos % 600) / 10
+  const texto = resto.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).padStart(4, '0')
+  return `${String(minutos).padStart(2, '0')}:${texto}`
+}
+
+function formatarMedicao(valor: number | null, unidade: string) {
+  return valor == null ? '—' : `${String(valor).replace('.', ',')} ${unidade}`
+}
+
+/** Divide a corrida gravada em três trechos, parando nas células em que o operador interrompe. */
+function fatiarCorrida(texto: string) {
+  const msgs = texto.trim().split('\n').filter(Boolean).map((linha) => ({
+    linha,
+    json: JSON.parse(linha) as { tipo: string; x?: number; y?: number },
+  }))
+  const inicio = msgs.findIndex((msg) => msg.json.tipo === 'hc_resultado')
+  const corrida = msgs.slice(inicio + 1)
+  const passos = corrida.map((msg, indice) => msg.json.tipo === 'passo' ? indice : -1).filter((indice) => indice >= 0)
+  if (passos.length < 3) throw new Error(`A gravação tem ${passos.length} passos; as três tentativas precisam de ao menos um cada.`)
+  const limites = [passos[Math.floor(passos.length / 3)], passos[Math.floor((2 * passos.length) / 3)], corrida.length]
+  let de = 0
+  const trechos = limites.map((ate) => {
+    const fatia = `${corrida.slice(de, ate).map((msg) => msg.linha).join('\n')}\n`
+    de = ate
+    return fatia
+  })
+  const paradas = trechos.slice(0, 2).map((fatia) => {
+    const itens = fatia.trim().split('\n').map((linha) => JSON.parse(linha) as { tipo: string; x?: number; y?: number })
+    const tel = [...itens].reverse().find((msg) => msg.tipo === 'tel' && msg.x != null && msg.y != null)
+    if (!tel || tel.x == null || tel.y == null) throw new Error('O trecho não tem a célula em que o operador interrompe.')
+    return nomeCelula(tel.x, tel.y)
+  })
+  const sucesso = [...msgs].reverse().find((msg) => msg.json.tipo === 'sucesso')
+  if (!sucesso || sucesso.json.x == null || sucesso.json.y == null) throw new Error('A gravação não termina em sucesso.')
+  return { trechos, paradas, objetivo: nomeCelula(sucesso.json.x, sucesso.json.y) }
+}
+
+/** Roda no navegador: true quando nenhum segmento do trajeto coincide com uma parede. */
+function caminhoLivre() {
+  const pontos = Array.from(document.querySelectorAll('polyline.labirinto__trajeto'))
+    .flatMap((linha) => (linha.getAttribute('points') ?? '').trim().split(/\s+/).filter(Boolean))
+    .map((par) => par.split(',').map(Number))
+  const paredes = Array.from(document.querySelectorAll('.labirinto__parede line')).map((linha) => ({
+    x1: Number(linha.getAttribute('x1')),
+    y1: Number(linha.getAttribute('y1')),
+    x2: Number(linha.getAttribute('x2')),
+    y2: Number(linha.getAttribute('y2')),
+  }))
+  if (paredes.length === 0) return false
+  return pontos.slice(1).every(([x2, y2], i) => {
+    const [x1, y1] = pontos[i]
+    if (x1 === x2 && y1 === y2) return true
+    const mx = (x1 + x2) / 2
+    const my = (y1 + y2) / 2
+    return !paredes.some((parede) => {
+      if (y1 !== y2 && parede.y1 === parede.y2 && parede.y1 === my) {
+        return mx > Math.min(parede.x1, parede.x2) && mx < Math.max(parede.x1, parede.x2)
+      }
+      if (x1 !== x2 && parede.x1 === parede.x2 && parede.x1 === mx) {
+        return my > Math.min(parede.y1, parede.y2) && my < Math.max(parede.y1, parede.y2)
+      }
+      return false
+    })
+  })
 }

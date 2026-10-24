@@ -51,16 +51,34 @@ function normalizarExecucao(dados: DetalheAPI): Execucao {
   }
 }
 
+/** Maior página aceita por GET /execucoes. */
+export const LIMITE_PAGINA = 100
+
+const paraResumo = (resumo: ResumoAPI): ResumoExecucao => ({
+  ...resumo,
+  labirinto: resumo.tipo_labirinto,
+  resultado: resumo.status,
+  tempo_total_s: resumo.tempo_total_s ?? null,
+  velocidade_media: resumo.velocidade_media ?? null,
+  consumo_bateria: resumo.consumo_bateria ?? null,
+})
+
+/** Primeira página do histórico, num pedido só: o painel ao vivo não espera o histórico inteiro. */
 export const listarExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
   const dados = await api.get<ResumoAPI[]>(labirinto ? `/execucoes?tipo_labirinto=${labirinto}` : '/execucoes', sinal)
-  return dados.map((resumo) => ({
-    ...resumo,
-    labirinto: resumo.tipo_labirinto,
-    resultado: resumo.status,
-    tempo_total_s: resumo.tempo_total_s ?? null,
-    velocidade_media: resumo.velocidade_media ?? null,
-    consumo_bateria: resumo.consumo_bateria ?? null,
-  }))
+  return dados.map(paraResumo)
+}
+
+/** Histórico completo (RF03). O backend pagina, então percorre todas as páginas; só a tela de histórico usa. */
+export const listarTodasExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
+  const dados: ResumoAPI[] = []
+  for (let offset = 0; ; offset += LIMITE_PAGINA) {
+    const filtro = labirinto ? `tipo_labirinto=${labirinto}&` : ''
+    const pagina = await api.get<ResumoAPI[]>(`/execucoes?${filtro}limite=${LIMITE_PAGINA}&offset=${offset}`, sinal)
+    dados.push(...pagina)
+    if (pagina.length < LIMITE_PAGINA) break
+  }
+  return dados.map(paraResumo)
 }
 
 export const buscarExecucaoAtual = async (sinal?: AbortSignal): Promise<ExecucaoAtualResposta> => {

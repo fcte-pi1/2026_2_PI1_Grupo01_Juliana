@@ -53,6 +53,18 @@ describe('rota /', () => {
     expect(within(cartao).queryByText('Sucesso')).not.toBeInTheDocument()
   })
 
+  it('carrega a última execução com um pedido só, sem percorrer o histórico', async () => {
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      pedidos.push(new URL(request.url).search)
+      return HttpResponse.json([resumoAPI(ULTIMA_EXECUCAO)])
+    }))
+    renderizarRota('/')
+    expect(await screen.findByText('Última execução · 4x4')).toBeInTheDocument()
+    expect(pedidos.length).toBeGreaterThan(0)
+    expect(pedidos.every((busca) => !busca.includes('offset'))).toBe(true)
+  })
+
   it.each([null, undefined])('usa o status da última execução quando resultado é %s', async (resultado) => {
     servidor.use(http.get('*/api/execucoes', () => HttpResponse.json([
       { ...resumoAPI(ULTIMA_EXECUCAO), resultado },
@@ -123,6 +135,26 @@ describe('rota /execucoes', () => {
     expect(tabela.queryByText('—')).not.toBeInTheDocument()
   })
 
+  it('percorre as páginas do backend e lista todas as execuções em ordem decrescente', async () => {
+    const base = resumoAPI(HISTORICO[0])
+    const todas = Array.from({ length: 230 }, (_, i) => ({ ...base, execucao_id: `e-${i}`, numero: 230 - i,
+      iniciada_em: new Date(Date.UTC(2026, 9, 1) - i * 60_000).toISOString() }))
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      const busca = new URL(request.url).searchParams
+      pedidos.push(`${busca.get('limite')}/${busca.get('offset')}`)
+      const offset = Number(busca.get('offset'))
+      return HttpResponse.json(todas.slice(offset, offset + Number(busca.get('limite'))))
+    }))
+    renderizarRota('/execucoes')
+    expect(await screen.findByRole('link', { name: '#0001' })).toBeInTheDocument()
+    expect(pedidos).toEqual(['100/0', '100/100', '100/200'])
+    const links = within(screen.getByRole('table')).getAllByRole('link')
+    expect(links).toHaveLength(230)
+    expect(links[0]).toHaveTextContent('#0230')
+    expect(links.at(-1)).toHaveTextContent('#0001')
+  })
+
   it('lista as execuções e filtra por labirinto', async () => {
     renderizarRota('/execucoes')
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()
@@ -151,6 +183,28 @@ describe('rota /execucoes/:id', () => {
     expect(screen.getByText('Tentativas em ordem cronológica')).toBeInTheDocument()
     expect(screen.getByText('Concluída')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Sucesso')).toBeInTheDocument()
+  })
+
+  it('mostra o trajeto de cada tentativa em separado', async () => {
+    renderizarRota('/execucoes/e-0042', '11-concluida-apos-retomada')
+    await screen.findByRole('heading', { name: 'Execução #0042' })
+    const trechos = () => Array.from(document.querySelectorAll('polyline.labirinto__trajeto'),
+      (linha) => linha.classList.contains('labirinto__trajeto--retomada') ? 'retomada' : 'tentativa 1')
+    const grupo = within(screen.getByRole('group', { name: 'Trajeto por tentativa' }))
+    expect(grupo.getAllByRole('button').map((b) => b.textContent)).toEqual(['Todas', 'T1', 'T2'])
+    expect(trechos()).toEqual(['tentativa 1', 'retomada'])
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T1' }))
+    expect(trechos()).toEqual(['tentativa 1'])
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T2' }))
+    expect(trechos()).toEqual(['retomada'])
+    // o filtro recorta só o trajeto: a falha da T1 continua, e a T2 parte dela
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+    expect(screen.getByText(/^Retomada em [A-Z]\d+$/, { selector: '.legenda' })).toBeInTheDocument()
+    expect(screen.queryByText('Tentativa 1', { selector: '.legenda' })).not.toBeInTheDocument()
+    expect(screen.getByText('Tentativas em ordem cronológica')).toBeInTheDocument()
   })
 
   it('mantém a execução em andamento quando a última tentativa falhou', async () => {

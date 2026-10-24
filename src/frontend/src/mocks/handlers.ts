@@ -61,13 +61,18 @@ export const handlers = [
   }),
 
   http.get(`${API}/execucoes`, ({ request }) => {
-    const labirinto = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
+    const busca = new URL(request.url).searchParams
+    const labirinto = busca.get('tipo_labirinto') as TipoLabirinto | null
+    const offset = Number(busca.get('offset') ?? 0)
+    const limite = Number(busca.get('limite') ?? 50)
     const registradas = listarExecucoesRegistradas().map((item) => ({ ...item, resultado: item.status,
       velocidade_media: item.tentativas.at(-1)?.velocidade_media ?? null,
       consumo_bateria: item.tentativas.at(-1)?.consumo_bateria ?? null }))
     const historico = [...registradas, ...HISTORICO.filter((item) => !registradas.some((registrada) => registrada.execucao_id === item.execucao_id))]
       .sort((a, b) => Date.parse(b.iniciada_em) - Date.parse(a.iniciada_em))
-    return HttpResponse.json((labirinto ? historico.filter((e) => e.labirinto === labirinto) : historico).map(resumoAPI))
+    const filtrado = labirinto ? historico.filter((e) => e.labirinto === labirinto) : historico
+    return HttpResponse.json(filtrado.slice(offset, offset + limite).map(resumoAPI),
+      { headers: { 'X-Total-Count': String(filtrado.length) } })
   }),
 
   http.get(`${API}/execucoes/:id`, ({ params }) => {

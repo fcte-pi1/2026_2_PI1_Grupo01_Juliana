@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ErroApi } from '../api/clienteApi'
 import { CartaoFalha } from '../components/execucao/CartaoFalha'
 import { PilulaResultado, PilulaStatusTentativa } from '../components/execucao/PilulaResultado'
 import { Cabecalho } from '../components/layout/Cabecalho'
-import { falhasDasTentativas } from '../components/labirinto/trajeto'
+import { falhasDasTentativas, inicioDaTentativa, passosDaTentativa } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { BlocoHealthCheck } from '../components/telemetria/BlocoHealthCheck'
 import { CartaoMetrica } from '../components/telemetria/CartaoMetrica'
@@ -15,6 +16,7 @@ import { tentativaAtual } from './inicio/estadoInicio'
 export function DetalheExecucao() {
   const { id = '' } = useParams()
   const { dados: execucao, erro } = useExecucao(id)
+  const [tentativaMapa, setTentativaMapa] = useState<number | null>(null)
 
   if (erro) {
     const naoExiste = erro instanceof ErroApi && erro.status === 404
@@ -33,6 +35,9 @@ export function DetalheExecucao() {
 
   const [largura, altura] = execucao.labirinto.split('x').map(Number)
   const ultima = tentativaAtual(execucao)
+  const selecionada = execucao.tentativas.find((t) => t.attempt_index === tentativaMapa) ?? null
+  // o filtro só recorta o trajeto; falhas, métricas e tentativas continuam todas na tela
+  const passosSelecionada = selecionada ? passosDaTentativa(execucao.trajeto, execucao.tentativas, selecionada.attempt_index) : []
 
   return (
     <>
@@ -66,15 +71,48 @@ export function DetalheExecucao() {
         />
 
         <section className="cartao">
-          <h2 className="cartao__titulo">Trajeto</h2>
-          <VisualizacaoLabirinto
-            largura={largura}
-            altura={altura}
-            eixoLongo={execucao.eixo_longo}
-            trajeto={execucao.trajeto}
-            posicaoAtual={execucao.celula_atual}
-            falhas={falhasDasTentativas(execucao.tentativas)}
-          />
+          <div className="cartao__cabecalho">
+            <h2 className="cartao__titulo">Trajeto</h2>
+            {execucao.tentativas.length > 1 && (
+              <div className="filtro" role="group" aria-label="Trajeto por tentativa">
+                {[null, ...execucao.tentativas.map((t) => t.attempt_index)].map((indice) => (
+                  <button
+                    key={indice ?? 'todas'}
+                    type="button"
+                    className={`filtro__opcao ${tentativaMapa === indice ? 'filtro__opcao--ativa' : ''}`}
+                    aria-pressed={tentativaMapa === indice}
+                    onClick={() => setTentativaMapa(indice)}
+                  >
+                    {indice === null ? 'Todas' : `T${indice}`}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {selecionada ? (
+            <VisualizacaoLabirinto
+              key={selecionada.attempt_index}
+              largura={largura}
+              altura={altura}
+              eixoLongo={execucao.eixo_longo}
+              trajeto={passosSelecionada}
+              posicaoAtual={selecionada.falha ? { x: selecionada.falha.celula_x, y: selecionada.falha.celula_y } : null}
+              falhas={falhasDasTentativas(execucao.tentativas)}
+              soRetomada={selecionada.attempt_index > 1}
+              inicioRetomada={selecionada.attempt_index > 1 ? inicioDaTentativa(passosSelecionada, execucao.tentativas, selecionada.attempt_index) : null}
+              roboFalhou={selecionada.falha !== null}
+            />
+          ) : (
+            <VisualizacaoLabirinto
+              largura={largura}
+              altura={altura}
+              eixoLongo={execucao.eixo_longo}
+              trajeto={execucao.trajeto}
+              posicaoAtual={execucao.celula_atual}
+              falhas={falhasDasTentativas(execucao.tentativas)}
+              roboFalhou={Boolean(execucao.tentativas.at(-1)?.falha)}
+            />
+          )}
         </section>
 
         <section className="cartao">
