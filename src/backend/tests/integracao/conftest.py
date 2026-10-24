@@ -149,6 +149,7 @@ class Fabrica:
         *,
         seq_inicial: int = 1,
         paredes_mask: int | None = 5,
+        mascaras: list[int] | None = None,
     ) -> list[PassoTrajeto]:
         passos = [
             PassoTrajeto(
@@ -157,7 +158,7 @@ class Fabrica:
                 seq=seq_inicial + i,
                 x=x,
                 y=y,
-                paredes_mask=paredes_mask,
+                paredes_mask=mascaras[i] if mascaras is not None else paredes_mask,
                 retomada=tentativa.tipo_inicio == "retomada" and i == 0,
                 entrou_em=tentativa.iniciada_em + timedelta(milliseconds=300 * i),
             )
@@ -229,6 +230,67 @@ class Fabrica:
                 self.falha(tentativa, celula=caminho[-1])
         for x, y in celulas:
             self.parede(execucao, x, y, norte=y == 3, sul=y == 0)
+        self.session.expire_all()
+        return execucao
+
+    def execucao_us28_interrupcoes_operador(
+        self, *, iniciada_em: datetime | None = None
+    ) -> ExecucaoLogica:
+        """US28: o operador interrompe as tentativas 1 e 2; a 3.ª segue até o objetivo.
+
+        O trajeto é contínuo no 4x4. Cada retomada recomeça na célula da falha
+        anterior, e os passos caem depois do início da própria tentativa.
+        A parede fica só nos lados fechados: o corredor até D4 permanece aberto.
+        """
+        # Norte 1, sul 2, leste 4, oeste 8.
+        paredes = {
+            (0, 0): 2 | 4 | 8,
+            (0, 1): 4 | 8,
+            (0, 2): 4 | 8,
+            (0, 3): 1 | 8,
+            (1, 3): 1 | 2,
+            (2, 3): 1 | 2,
+            (3, 3): 1 | 2 | 4,
+        }
+        execucao = self.execucao(
+            tipo="4x4",
+            status="concluida",
+            iniciada_em=iniciada_em,
+            tentativas_usadas=3,
+            tempo_total_s=Decimal("20.5"),
+        )
+        trechos = [
+            ("failed", "collision", [(0, 0), (0, 1), (0, 2)], "6.2", "0.12", "8400", "8300"),
+            ("failed", "stuck", [(0, 2), (0, 3), (1, 3)], "4.8", "0.15", "8300", "8200"),
+            ("success", None, [(1, 3), (2, 3), (3, 3)], "9.5", "0.18", "8200", "8000"),
+        ]
+        seq = 1
+        for indice, trecho in enumerate(trechos, start=1):
+            status, motivo, celulas, tempo_s, velocidade, inicial, final = trecho
+            tentativa = self.tentativa(
+                execucao,
+                attempt_index=indice,
+                status=status,
+                tempo_s=Decimal(tempo_s),
+                velocidade_media=Decimal(velocidade),
+                bateria_inicial=Decimal(inicial),
+                bateria_final=Decimal(final),
+            )
+            self.health_check(tentativa)
+            self.passos(
+                tentativa,
+                celulas,
+                seq_inicial=seq,
+                mascaras=[paredes[celula] for celula in celulas],
+            )
+            seq += len(celulas)
+            if status == "failed":
+                self.falha(
+                    tentativa,
+                    motivo=motivo,
+                    origem="encerrado_operador",
+                    celula=celulas[-1],
+                )
         self.session.expire_all()
         return execucao
 
