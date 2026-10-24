@@ -1,7 +1,10 @@
 #ifndef HAL_NVS_H
 #define HAL_NVS_H
 
-/* Memória não volátil (flash/NVS) — FIRM-08 (#137) */
+/*
+ * Memória não volátil — FIRM-08 (#137).
+ * Na ESP32 é a flash (sobrevive ao reset). No teste nativo é RAM.
+ */
 
 #include <stdbool.h>
 #include <stddef.h>

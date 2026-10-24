@@ -1,4 +1,4 @@
-#ifdef HAL_SIMULADA
+#if defined(HAL_SIMULADA) && !defined(ARDUINO)
 
 /*
  * NVS simulada em RAM. Sobrevive a um "reboot" simulado (o firmware chamar
@@ -90,4 +90,4 @@ size_t hal_nvs_sim_ler_bruto(const char *chave, void *dados, size_t capacidade)
     return r->tamanho;
 }
 
-#endif /* HAL_SIMULADA */
+#endif /* HAL_SIMULADA && !ARDUINO */
