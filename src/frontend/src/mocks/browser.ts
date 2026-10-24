@@ -1,4 +1,4 @@
 import { setupWorker } from 'msw/browser'
-import { criarHandlerStream, handlers } from './handlers'
+import { criarHandlerHealthCheck, criarHandlerStream, handlers } from './handlers'
 
-export const worker = setupWorker(...handlers, criarHandlerStream())
+export const worker = setupWorker(...handlers, criarHandlerStream(), criarHandlerHealthCheck())

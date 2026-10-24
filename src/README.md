@@ -44,9 +44,9 @@ Formato sugerido para novas entradas:
 ### 2026-09 — Autonomia do firmware (downlink)
 
 - **Contexto:** TAP e RNF06 limitam o que a web pode enviar ao robô.
-- **Decisão:** Sem comando de **iniciar** ou **parar** genérico; único downlink = **interrupção** no encerramento manual (RF30 / RF39). Partida após health-check aprovado, só pelo firmware.
-- **Consequência:** Backend abre execução/tentativa; transição para `running` vem da telemetria, não de write na serial.
-- **Doc/código:** RF10, RF39, RNF06; canal serial em `backend/` (a implementar).
+- **Decisão:** Sem comando de **iniciar** ou **parar** genérico. O downlink são os três comandos do contrato (RF39): `interromper` no encerramento manual (RF30), `largar` e `health_check`. A largada é dada pelo operador e o robô só parte com o último health-check aprovado.
+- **Consequência:** Backend abre execução/tentativa; transição para `running` continua vindo da telemetria, não de write na serial.
+- **Doc/código:** RF10, RF39, RNF06; ponte serial em `backend/ponte/`.
 
 ### 2026-09 — Falha de componente e tentativas (TAP)
 

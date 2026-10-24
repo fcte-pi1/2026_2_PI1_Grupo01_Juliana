@@ -2,7 +2,7 @@ import { ROTULO_COMPONENTE, ROTULO_MOTIVO_FALHA } from '../utils/formatacao'
 import type { ComponenteHealthCheck, EventoExecucao, Execucao, PassoTrajeto, Tentativa } from './tipos'
 
 const STATUS_EXECUCAO = ['em_andamento', 'concluida', 'cancelada']
-const STATUS_TENTATIVA = ['health-check', 'running', 'success', 'failed']
+const STATUS_TENTATIVA = ['running', 'success', 'failed']
 
 /** Ignora mensagens inválidas sem interromper a conexão nem substituir os últimos dados. */
 export function lerEvento(tipo: EventoExecucao['tipo'], texto: string): EventoExecucao | null {
@@ -65,7 +65,7 @@ function encerrarOuAtualizar(tentativa: Tentativa, evento: Exclude<EventoExecuca
   switch (evento.tipo) {
     case 'status': {
       const finalizada = tentativa.status === 'success' || tentativa.status === 'failed'
-      if (finalizada && (evento.status_tentativa === 'running' || evento.status_tentativa === 'health-check')) return tentativa
+      if (finalizada && evento.status_tentativa === 'running') return tentativa
       return { ...tentativa, status: evento.status_tentativa, tipo_descoberto: evento.tipo_dip === undefined ? tentativa.tipo_descoberto : evento.tipo_dip }
     }
     case 'health_check': {
@@ -152,7 +152,14 @@ export function aplicarEvento(execucao: Execucao, evento: EventoExecucao, recebi
 /** Mantém leituras conhecidas se a consulta ainda não as trouxe, sem misturar tentativas. */
 export function combinarRetrato(atual: Execucao, retrato: Execucao): Execucao {
   if (atual.execucao_id !== retrato.execucao_id) return retrato
-  const mesmaTentativa = ultimaTentativa(atual)?.tentativa_id === ultimaTentativa(retrato)?.tentativa_id
+  const tentativaAtual = ultimaTentativa(atual)
+  const tentativaRecebida = ultimaTentativa(retrato)
+  const mesmaTentativa = tentativaAtual?.tentativa_id === tentativaRecebida?.tentativa_id
+  // Um GET iniciado antes do comando não pode desfazer seu resultado já confirmado.
+  if ((tentativaAtual?.attempt_index ?? 0) > (tentativaRecebida?.attempt_index ?? 0)) return atual
+  if (atual.status !== 'em_andamento' && retrato.status === 'em_andamento') return atual
+  if (mesmaTentativa && (tentativaAtual?.status === 'failed' || tentativaAtual?.status === 'success')
+    && tentativaRecebida?.status === 'running') return atual
   const amostras = new Map(mesmaTentativa ? atual.leituras.map((leitura) => [leitura.ordem, leitura]) : [])
   for (const leitura of retrato.leituras) {
     const anterior = amostras.get(leitura.ordem)

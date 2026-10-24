@@ -4,7 +4,7 @@ import { derivarEstadoInicio, type EstadoInicio } from '../pages/inicio/estadoIn
 
 const ESPERADO: Array<[string, EstadoInicio]> = [
   ['01-inicio', 'sem-execucao'],
-  ['02-health-check', 'health-check'],
+  ['02-health-check', 'sem-execucao'],
   ['03-em-execucao', 'em-execucao'],
   ['04-concluida', 'concluida'],
   ['05-execucao-recusada', 'em-execucao'],

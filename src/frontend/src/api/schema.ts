@@ -19,9 +19,69 @@ export interface paths {
         put?: never;
         /**
          * Registra uma nova execução, contando 1/3 tentativas.
-         * @description O operador informa o labirinto. O backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1. Se já houver execução em andamento, ela é cancelada.
+         * @description O operador informa o labirinto. Exige um health-check aprovado, concluído há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409 e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1 já em running, com o comando `largar` para o robô. Se já houver execução em andamento, ela é cancelada.
          */
         post: operations["novaExecucao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health-check/ultimo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health-check mais recente, pré-requisito da largada
+         * @description A tela mostra os itens e, quando aprovado, até quando ele libera a largada (valido_ate, 7 minutos depois da conclusão).
+         */
+        get: operations["buscarUltimoHealthCheck"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health-check/solicitar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pedir ao robô um novo health-check
+         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
+         */
+        post: operations["solicitarHealthCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health-check/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health-check ao vivo, antes de existir execução
+         * @description Fluxo do health-check do robô, independente de uma execução. O primeiro evento, quando já há um health-check, repete GET /health-check/ultimo. Cada hc_item e hc_resultado seguintes republicam o retrato inteiro. Enquanto não há evento novo, o servidor manda um comentário de keep-alive a cada 1 s. Esse relógio começa com a abertura do GET.
+         */
+        get: operations["abrirStreamHealthCheck"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -119,7 +179,7 @@ export interface paths {
         put?: never;
         /**
          * Abrir a tentativa seguinte depois de uma falha
-         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas ou quando a execução está cancelada.
+         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
          */
         post: operations["retomarTentativa"];
         delete?: never;
@@ -159,7 +219,7 @@ export interface paths {
         put?: never;
         /**
          * Receber uma linha de telemetria da ponte
-         * @description Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa aberta, hc_item fora do health-check) responde 200. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa; a ponte escreve cada item na serial sem traduzir.
+         * @description Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1 fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa aberta) responde 200. O health-check (`hc_item`, `hc_resultado`) é gravado mesmo sem tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou **Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel` em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa. Depois de POST /health-check/solicitar, inclui `health_check` até o primeiro `hc_item` ou `hc_resultado`; a ponte escreve cada item na serial sem traduzir.
          */
         post: operations["receberTelemetria"];
         delete?: never;
@@ -176,8 +236,11 @@ export interface components {
         Labirinto: "4x4" | "8x4" | "12x4";
         /** @enum {string} */
         StatusExecucao: "em_andamento" | "concluida" | "cancelada";
-        /** @enum {string} */
-        StatusTentativa: "health-check" | "running" | "success" | "failed";
+        /**
+         * @description A tentativa nasce em running, na largada. O health-check é pré-requisito e não faz parte da tentativa (GET /health-check/ultimo).
+         * @enum {string}
+         */
+        StatusTentativa: "running" | "success" | "failed";
         /** @enum {string} */
         TipoInicio: "nova" | "retomada";
         /**
@@ -199,8 +262,11 @@ export interface components {
          * @enum {string}
          */
         OrigemFalha: "automatica" | "encerrado_operador";
-        /** @enum {string} */
-        MotivoRecusa: "tentativa_aberta" | "limite_3" | "execucao_cancelada";
+        /**
+         * @description Os motivos health_check_* e dip_divergente valem para Nova execução e Retomar: falta um health-check, o último foi reprovado, foi concluído há mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+         * @enum {string}
+         */
+        MotivoRecusa: "tentativa_aberta" | "limite_3" | "execucao_cancelada" | "health_check_ausente" | "health_check_reprovado" | "health_check_expirado" | "dip_divergente";
         /** @enum {string} */
         Rumo: "N" | "S" | "L" | "O";
         /** @enum {string} */
@@ -224,6 +290,28 @@ export interface components {
             componente: components["schemas"]["Componente"];
             aprovado: boolean;
             valor_lido?: number | null;
+        };
+        /** @description Health-check mais recente do robô. Em andamento, aprovado e concluido_em vêm nulos e os itens chegam aos poucos. valido_ate só vem quando aprovado: até lá, Nova execução e Retomar são aceitos. */
+        UltimoHealthCheck: {
+            aprovado?: boolean | null;
+            tipo_dip?: components["schemas"]["TipoDip"] | null;
+            /** Format: date-time */
+            iniciado_em: string;
+            /** Format: date-time */
+            concluido_em?: string | null;
+            /** Format: date-time */
+            valido_ate?: string | null;
+            itens: components["schemas"]["ItemHealthCheck"][];
+        };
+        /** @description Retrato do health-check na stream GET /health-check/stream. Não é o evento por componente da stream da execução. */
+        EventoHealthCheckAtual: components["schemas"]["UltimoHealthCheck"] & {
+            /** @enum {string} */
+            tipo: "health_check";
+        };
+        /** @description Pedido de novo health-check registrado. O resultado é o primeiro health-check com iniciado_em a partir de solicitado_em. */
+        SolicitacaoHealthCheck: {
+            /** Format: date-time */
+            solicitado_em: string;
         };
         Falha: {
             motivo: components["schemas"]["MotivoFalha"];
@@ -403,8 +491,11 @@ export interface components {
         Comando: {
             /** @enum {integer} */
             v: 1;
-            /** @enum {string} */
-            cmd: "interromper";
+            /**
+             * @description interromper: encerramento manual da tentativa. largar: largada pedida pelo operador em Nova execução ou Retomar. health_check: o operador pediu um novo health-check.
+             * @enum {string}
+             */
+            cmd: "interromper" | "largar" | "health_check";
         };
         EntradaPonte: {
             /** @description Linha lida da serial, sem o \\n, sem alteração. */
@@ -461,7 +552,7 @@ export interface components {
                 "application/json": components["schemas"]["ErroNaoEncontrado"];
             };
         };
-        /** @description A retomada foi recusada. Nenhuma tentativa nova é gravada. O motivo diz se já havia tentativa aberta, se as três já foram usadas ou se a execução está cancelada. */
+        /** @description A abertura da tentativa foi recusada. Nenhuma tentativa nova é gravada. O motivo diz se já havia tentativa aberta, se as três já foram usadas, se a execução está cancelada ou o que falta no health-check. */
         Recusa: {
             headers: {
                 [name: string]: unknown;
@@ -567,7 +658,102 @@ export interface operations {
                     "application/json": components["schemas"]["RetornoNovaExecucao"];
                 };
             };
+            409: components["responses"]["Recusa"];
             422: components["responses"]["ErroValidacao"];
+        };
+    };
+    buscarUltimoHealthCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Há pelo menos um health-check. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "aprovado": true,
+                     *       "tipo_dip": "4x4",
+                     *       "iniciado_em": "2026-10-07T13:58:00-03:00",
+                     *       "concluido_em": "2026-10-07T13:58:02-03:00",
+                     *       "valido_ate": "2026-10-07T14:05:02-03:00",
+                     *       "itens": [
+                     *         {
+                     *           "componente": "bateria",
+                     *           "aprovado": true,
+                     *           "valor_lido": 7840
+                     *         },
+                     *         {
+                     *           "componente": "tof_frontal",
+                     *           "aprovado": true,
+                     *           "valor_lido": 180
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UltimoHealthCheck"];
+                };
+            };
+            /** @description O robô ainda não enviou nenhum health-check. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    solicitarHealthCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido registrado; o robô recebe o comando na próxima resposta da ponte. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "solicitado_em": "2026-10-07T14:10:00-03:00"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SolicitacaoHealthCheck"];
+                };
+            };
+            409: components["responses"]["Conflito"];
+        };
+    };
+    abrirStreamHealthCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo text/event-stream. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
         };
     };
     buscarExecucaoEmAndamento: {

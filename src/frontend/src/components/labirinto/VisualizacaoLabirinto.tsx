@@ -33,6 +33,12 @@ interface VisualizacaoLabirintoProps {
   falhas?: FalhaNoMapa[]
   /** Esconde eixos, rótulos e legenda (miniatura). */
   compacto?: boolean
+  /** Trajeto de uma única retomada (detalhe por tentativa): desenha tudo como retomada. */
+  soRetomada?: boolean
+  /** Onde começou a retomada mostrada sozinha (detalhe por tentativa). Sem ele, nada muda. */
+  inicioRetomada?: Celula | null
+  /** Se o robô terminou em falha, quando quem chama já sabe (detalhe). Sem ele, deduz pelas falhas e trechos. */
+  roboFalhou?: boolean
 }
 
 /** Labirinto em SVG com trajeto, retomadas e falha. A1 fica embaixo à esquerda. Usado ao vivo e no detalhe. */
@@ -45,6 +51,9 @@ export function VisualizacaoLabirinto({
   posicaoAtual,
   falhas = [],
   compacto = false,
+  soRetomada = false,
+  inicioRetomada = null,
+  roboFalhou: falhouInformado,
 }: VisualizacaoLabirintoProps) {
   const eixo = eixoParaGrade(largura, altura, eixoLongo ?? deduzirEixo(trajeto, Math.min(largura, altura)))
   const { colunas, linhas } = dimensoes(largura, altura, eixo)
@@ -70,11 +79,12 @@ export function VisualizacaoLabirinto({
     ...(objetivo ? [{ chave: 'objetivo', classe: 'objetivo' as const, celula: objetivo, rotulo: 'OBJETIVO' }] : []),
     ...falhas.map((f) => ({ chave: `f${f.tentativa}`, classe: 'falha' as const, celula: f, rotulo: `FALHA T${f.tentativa}` })),
     ...retomadas.map((r) => ({ chave: `r${r.tentativa}`, classe: 'retomada' as const, celula: r, rotulo: 'RETOMADA' })),
+    ...(inicioRetomada ? [{ chave: 'inicio', classe: 'retomada' as const, celula: inicioRetomada, rotulo: 'RETOMADA' }] : []),
   ]
 
   const robo = posicaoAtual ?? trajeto.at(-1) ?? celulaAtual ?? null
   // cada falha fecha um trecho; sem retomada depois dela, o robô parou ali
-  const roboFalhou = trechos.length > 0 && falhas.length >= trechos.length
+  const roboFalhou = falhouInformado ?? (trechos.length > 0 && falhas.length >= trechos.length)
   const novo = trajeto.length >= 2 && !trajeto.at(-1)!.retomada ? trajeto.slice(-2) : null
 
   return (
@@ -107,14 +117,14 @@ export function VisualizacaoLabirinto({
         {trechos.map((trecho, i) => (
           <polyline
             key={i}
-            className={`labirinto__trajeto ${i > 0 ? 'labirinto__trajeto--retomada' : ''}`}
+            className={`labirinto__trajeto ${i > 0 || soRetomada ? 'labirinto__trajeto--retomada' : ''}`}
             points={trecho.map((p) => `${centro(p).cx},${centro(p).cy}`).join(' ')}
           />
         ))}
         {novo && (
           <line
             key={novo[1].seq}
-            className={`labirinto__trajeto labirinto__trajeto--novo ${trechos.length > 1 ? 'labirinto__trajeto--retomada' : ''}`}
+            className={`labirinto__trajeto labirinto__trajeto--novo ${trechos.length > 1 || soRetomada ? 'labirinto__trajeto--retomada' : ''}`}
             x1={centro(novo[0]).cx}
             y1={centro(novo[0]).cy}
             x2={centro(novo[1]).cx}
@@ -142,8 +152,8 @@ export function VisualizacaoLabirinto({
       </svg>
       {!compacto && (
         <figcaption className="labirinto__legenda">
-          <span className="legenda legenda--trajeto">Tentativa 1</span>
-          <span className="legenda legenda--retomada">Retomada</span>
+          {!soRetomada && <span className="legenda legenda--trajeto">Tentativa 1</span>}
+          <span className="legenda legenda--retomada">{inicioRetomada ? `Retomada em ${nomeCelula(inicioRetomada)}` : 'Retomada'}</span>
           <span className="legenda legenda--largada">Largada A1</span>
           <span className="legenda legenda--objetivo">Objetivo {nomeCelula(objetivo)}</span>
           <span className="legenda legenda--falha">Falha</span>

@@ -1,13 +1,14 @@
 import type { EncerrarPedido, EventoExecucao, Execucao, ExecucaoAtualResposta, TipoLabirinto } from '../api/tipos'
 import { aplicarEvento } from '../api/eventosExecucao'
 import { buscarCenario, type Cenario } from './cenarios'
+import { limparHealthCheckMock, ultimoHealthCheckMock } from './healthCheckAtual'
 
 // Cenário exibido pelos mocks. Vem de ?cenario= na URL (útil para abrir um
 // estado direto) e fica guardado na sessão para sobreviver à navegação.
 
 const CHAVE = 'mock:cenario'
-// Não reutiliza sessões dos exemplos antigos, que armazenavam V e m/s.
-const CHAVE_DADOS = 'mock:execucoes:v2'
+// Não reutiliza sessões antigas com V/m/s ou health-check dentro da tentativa.
+const CHAVE_DADOS = 'mock:execucoes:v3'
 
 let atual: string | null = null
 let criada: ExecucaoAtualResposta | null = null
@@ -45,6 +46,7 @@ export function cenarioAtual(): Cenario {
 }
 
 export function definirCenario(id: string): void {
+  limparHealthCheckMock()
   criada = null
   registradas.clear()
   inicioCenario = Date.now()
@@ -138,7 +140,7 @@ export function encerrarTentativaRegistrada(id: string, pedido: EncerrarPedido, 
 export function encerrarExecucaoRegistrada(id: string, agora: number): Execucao {
   const anterior = buscarExecucaoRegistrada(id)!
   const tentativa = [...anterior.tentativas].sort((a, b) => b.attempt_index - a.attempt_index)[0]
-  const aberta = tentativa?.status === 'health-check' || tentativa?.status === 'running'
+  const aberta = tentativa?.status === 'running'
   if (aberta) {
     const celula = anterior.celula_atual ?? anterior.leituras.at(-1) ?? anterior.trajeto.at(-1) ?? { x: 0, y: 0 }
     registrarEvento(id, {
@@ -159,23 +161,26 @@ export function encerrarExecucaoRegistrada(id: string, agora: number): Execucao 
   return buscarExecucaoRegistrada(id)!
 }
 
-/** Retomar abre só a próxima tentativa: o health-check ainda depende dos eventos. */
+/** O health-check é anterior à abertura da nova tentativa, como no backend. */
 export function retomarTentativaRegistrada(id: string, agora: number): Execucao {
   const anterior = buscarExecucaoRegistrada(id)!
-  const modelo = buscarCenario('02-health-check').atual(agora).execucao!.tentativas[0]
+  const modelo = buscarCenario('03-em-execucao').atual(agora).execucao!.tentativas[0]
+  const hc = ultimoHealthCheckMock(agora, cenarioAtual().id)
   const nova = { ...modelo, tentativa_id: crypto.randomUUID(),
     attempt_index: anterior.tentativas_usadas + 1, tipo_inicio: 'retomada' as const,
-    iniciada_em: new Date(agora).toISOString(), bateria_inicial: null, health_check: [] }
+    iniciada_em: new Date(agora).toISOString(), bateria_inicial: hc.itens.find((item) => item.componente === 'bateria')?.valor_lido ?? null,
+    health_check: hc.itens.map((item) => ({ ...item, valor_lido: item.valor_lido ?? null })) }
   atualizarExecucao({ ...anterior, tentativas_usadas: nova.attempt_index,
     tentativas: [...anterior.tentativas, nova], leituras: [], ultima_mensagem_em: null })
-  salvarCenario('02-health-check')
+  salvarCenario('03-em-execucao')
   return buscarExecucaoRegistrada(id)!
 }
 
 /** Simula a criação atômica: cancela a anterior e abre a primeira tentativa. */
 export function registrarNovaExecucao(labirinto: TipoLabirinto, agora: number): Execucao {
   const anterior = dadosAtuais(agora)
-  const modelo = buscarCenario('02-health-check').atual(agora).execucao!
+  const modelo = buscarCenario('03-em-execucao').atual(agora).execucao!
+  const hc = ultimoHealthCheckMock(agora, cenarioAtual().id)
   const inicio = new Date(agora).toISOString()
   const numero = Math.max(anterior.proximo_numero ?? 0, (anterior.execucao?.numero ?? 0) + 1)
   const nova: Execucao = {
@@ -189,8 +194,8 @@ export function registrarNovaExecucao(labirinto: TipoLabirinto, agora: number): 
       ...modelo.tentativas[0],
       tentativa_id: crypto.randomUUID(),
       iniciada_em: inicio,
-      bateria_inicial: null,
-      health_check: [],
+      bateria_inicial: hc.itens.find((item) => item.componente === 'bateria')?.valor_lido ?? null,
+      health_check: hc.itens.map((item) => ({ ...item, valor_lido: item.valor_lido ?? null })),
     }],
     trajeto: [],
     leituras: [],
@@ -198,13 +203,13 @@ export function registrarNovaExecucao(labirinto: TipoLabirinto, agora: number): 
   if (anterior.execucao) {
     const encerrada = anterior.execucao.status === 'em_andamento'
       ? { ...anterior.execucao, status: 'cancelada' as const, encerrada_em: inicio,
-        tentativas: anterior.execucao.tentativas.map((tentativa) => ['health-check', 'running'].includes(tentativa.status)
+        tentativas: anterior.execucao.tentativas.map((tentativa) => tentativa.status === 'running'
           ? { ...tentativa, status: 'failed' as const, encerrada_em: inicio } : tentativa) }
       : anterior.execucao
     registradas.set(encerrada.execucao_id, encerrada)
   }
   registradas.set(nova.execucao_id, nova)
   criada = { ...anterior, execucao: nova, recusa: null, proximo_numero: numero + 1 }
-  salvarCenario('02-health-check')
+  salvarCenario('03-em-execucao')
   return nova
 }

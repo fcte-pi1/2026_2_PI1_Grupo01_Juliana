@@ -548,6 +548,7 @@ class GerenciadorFalso:
         self.ordem = ordem
         self.eventos = []
         self.comandos = [Comando()]
+        self.validade_health_check_s = 420
 
     def aplicar_evento(self, sessao, tentativa, mensagem, *, momento=None) -> None:
         self.ordem.append("aplicar_evento")

@@ -17,23 +17,23 @@ interface ModalEncerrarProps {
 
 /** Encerrar tentativa pela web (RF30): registra a falha e envia só a interrupção. */
 export function ModalEncerrar({ numeroExecucao, attemptIndex, ultimaCelula, tempo, enviando, aoCancelar, aoConfirmar }: ModalEncerrarProps) {
-  const [motivo, setMotivo] = useState<MotivoEncerramento>('stuck')
+  const [motivo, setMotivo] = useState<MotivoEncerramento | ''>('')
   const [observacao, setObservacao] = useState('')
 
   return (
     <Modal
       titulo={`Encerrar a tentativa ${attemptIndex} da execução ${numeroExecucao}?`}
-      aoFechar={aoCancelar}
+      aoFechar={() => { if (!enviando) aoCancelar() }}
       rodape={
         <>
-          <button type="button" className="botao" onClick={aoCancelar}>
+          <button type="button" className="botao" disabled={enviando} onClick={aoCancelar}>
             Cancelar
           </button>
           <button
             type="button"
             className="botao botao--perigo"
-            disabled={enviando}
-            onClick={() => aoConfirmar({ motivo, observacao: observacao.trim() || null })}
+            disabled={enviando || !motivo}
+            onClick={() => { if (!enviando && motivo) aoConfirmar({ motivo, observacao: observacao.trim() || null }) }}
           >
             Encerrar como falha
           </button>
@@ -48,8 +48,8 @@ export function ModalEncerrar({ numeroExecucao, attemptIndex, ultimaCelula, temp
         <span className="chip">Última célula {ultimaCelula}</span>
         <span className="chip">Tempo {tempo}</span>
       </div>
-      <fieldset className="opcoes">
-        <legend>Motivo da falha</legend>
+      <fieldset className="opcoes" disabled={enviando}>
+        <legend>Motivo da falha (obrigatório)</legend>
         {MOTIVOS.map((m) => (
           <label key={m} className={`opcao ${motivo === m ? 'opcao--marcada' : ''}`}>
             <input type="radio" name="motivo" value={m} checked={motivo === m} onChange={() => setMotivo(m)} />
@@ -62,10 +62,11 @@ export function ModalEncerrar({ numeroExecucao, attemptIndex, ultimaCelula, temp
         <span>Observação (opcional)</span>
         <textarea
           maxLength={100}
+          disabled={enviando}
           rows={2}
           placeholder="Ex.: roda direita patinou na curva"
           value={observacao}
-          onChange={(e) => setObservacao(e.target.value)}
+          onChange={(e) => setObservacao(e.target.value.slice(0, 100))}
         />
       </label>
     </Modal>
