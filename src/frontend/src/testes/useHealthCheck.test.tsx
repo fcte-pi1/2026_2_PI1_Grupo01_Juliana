@@ -64,6 +64,17 @@ describe('consulta e prazo do health-check independente da tentativa', () => {
     vi.useRealTimers()
   })
 
+  it('inicia o relógio de 1 s junto com o GET', async () => {
+    consultar.mockReturnValue(new Promise(() => {}))
+    await montar()
+    expect(consultar).toHaveBeenCalledTimes(1)
+
+    await avancar(999)
+    expect(consultar).toHaveBeenCalledTimes(1)
+    await avancar(1)
+    expect(consultar).toHaveBeenCalledTimes(2)
+  })
+
   it('consulta imediatamente e usa intervalo de dez segundos quando não há verificação pendente', async () => {
     await montar()
     expect(consultar).toHaveBeenCalledTimes(1)

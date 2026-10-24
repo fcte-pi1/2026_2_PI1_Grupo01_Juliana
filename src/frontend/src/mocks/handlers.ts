@@ -133,6 +133,25 @@ export const handlers = [
   }),
 ]
 
+/** Stream do health-check. O primeiro evento é o GET; o relógio de 1 s republica o retrato. */
+export function criarHandlerHealthCheck() {
+  return sse(`${API}/health-check/stream`, ({ client, request }) => {
+    const enviar = () => {
+      const atual = ultimoHealthCheckMock(Date.now(), cenarioAtual().id)
+      client.send({ event: 'health_check', data: JSON.stringify({ tipo: 'health_check', ...atual }) })
+    }
+    enviar()
+    const relogio = setInterval(() => {
+      try {
+        enviar()
+      } catch {
+        clearInterval(relogio)
+      }
+    }, 1_000)
+    request.signal.addEventListener('abort', () => clearInterval(relogio), { once: true })
+  })
+}
+
 /** Stream SSE da execução. Só no navegador: o jsdom dos testes não tem EventSource. */
 export function criarHandlerStream() {
   return sse<Record<EventoExecucao['tipo'], string>>(`${API}/execucoes/:id/stream`, ({ client, params, request }) => {

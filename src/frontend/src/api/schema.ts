@@ -59,9 +59,29 @@ export interface paths {
         put?: never;
         /**
          * Pedir ao robô um novo health-check
-         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo.
+         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
          */
         post: operations["solicitarHealthCheck"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health-check/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health-check ao vivo, antes de existir execução
+         * @description Fluxo do health-check do robô, independente de uma execução. O primeiro evento, quando já há um health-check, repete GET /health-check/ultimo. Cada hc_item e hc_resultado seguintes republicam o retrato inteiro. Enquanto não há evento novo, o servidor manda um comentário de keep-alive a cada 1 s. Esse relógio começa com a abertura do GET.
+         */
+        get: operations["abrirStreamHealthCheck"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -282,6 +302,11 @@ export interface components {
             /** Format: date-time */
             valido_ate?: string | null;
             itens: components["schemas"]["ItemHealthCheck"][];
+        };
+        /** @description Retrato do health-check na stream GET /health-check/stream. Não é o evento por componente da stream da execução. */
+        EventoHealthCheckAtual: components["schemas"]["UltimoHealthCheck"] & {
+            /** @enum {string} */
+            tipo: "health_check";
         };
         /** @description Pedido de novo health-check registrado. O resultado é o primeiro health-check com iniciado_em a partir de solicitado_em. */
         SolicitacaoHealthCheck: {
@@ -709,6 +734,26 @@ export interface operations {
                 };
             };
             409: components["responses"]["Conflito"];
+        };
+    };
+    abrirStreamHealthCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fluxo text/event-stream. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
         };
     };
     buscarExecucaoEmAndamento: {

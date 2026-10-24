@@ -79,10 +79,14 @@ function cartao(rotulo: string) {
   return within(elemento!.closest('section')!)
 }
 
+function fontesDaExecucao() {
+  return EventSourceControlado.instancias.filter((fonte) => fonte.url.includes('/execucoes/'))
+}
+
 async function conectar() {
   await screen.findByRole('heading', { name: 'Execução ativa #0042' })
-  await waitFor(() => expect(EventSourceControlado.instancias).toHaveLength(1))
-  const fonte = EventSourceControlado.instancias[0]
+  await waitFor(() => expect(fontesDaExecucao()).toHaveLength(1))
+  const fonte = fontesDaExecucao()[0]
   act(() => fonte.abrir())
   await waitFor(() => expect(consultasDetalhe).toBeGreaterThan(0))
   return fonte
@@ -306,7 +310,7 @@ describe('FRONT-03: acompanhamento SSE', () => {
     expect(cartao('Bateria').getByText(/^7810/)).toHaveTextContent('mV')
     const healthCheck = screen.getByRole('heading', { name: 'Health-check' }).closest('section')!
     expect(within(healthCheck).getByText(/7840/)).toHaveTextContent('mV · OK')
-    await waitFor(() => expect(EventSourceControlado.instancias).toHaveLength(2))
+    await waitFor(() => expect(fontesDaExecucao()).toHaveLength(2))
   })
 
   it('reenvio de um passo não duplica o trajeto nem recua a célula atual', () => {
@@ -488,7 +492,7 @@ describe('FRONT-03: acompanhamento SSE', () => {
     await screen.findByLabelText('Tentativa 2 de 3')
     await waitFor(() => expect(cartao('Bateria').getByText(/^7810/)).toHaveTextContent('mV'))
     expect(cartao('Célula atual').getByText('A3')).toBeInTheDocument()
-    expect(EventSourceControlado.instancias).toHaveLength(1)
+    expect(fontesDaExecucao()).toHaveLength(1)
   })
 
   it.each(['telemetria', 'passo'] as const)('recarrega o detalhe após retomar sem perder %s durante um GET lento', async (tipo) => {

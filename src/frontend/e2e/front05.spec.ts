@@ -12,6 +12,23 @@ test('Health-check sem resultado libera nova solicitação após 30 s', async ({
       }
       return buscar(entrada, opcoes)
     }
+    class FonteSilenciosa extends EventTarget {
+      static CONNECTING = 0
+      static OPEN = 1
+      static CLOSED = 2
+      readyState = 1
+      url: string
+      withCredentials = false
+      onopen: ((evento: Event) => void) | null = null
+      onmessage: ((evento: MessageEvent) => void) | null = null
+      onerror: ((evento: Event) => void) | null = null
+      constructor(url: string) {
+        super()
+        this.url = url
+      }
+      close() { this.readyState = 2 }
+    }
+    window.EventSource = FonteSilenciosa as unknown as typeof EventSource
   })
   await page.goto('/?cenario=01-inicio')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })

@@ -13,6 +13,18 @@ interface Pedido {
   limiteLocal: number
 }
 
+function escolher(anterior: UltimoHealthCheck | null, chegando: UltimoHealthCheck | null) {
+  if (chegando == null) return anterior
+  if (anterior == null) return chegando
+  const inicioAnterior = Date.parse(anterior.iniciado_em)
+  const inicioChegando = Date.parse(chegando.iniciado_em)
+  if (inicioChegando > inicioAnterior) return chegando
+  if (inicioChegando < inicioAnterior) return anterior
+  if (anterior.concluido_em && !chegando.concluido_em) return anterior
+  if (chegando.itens.length < anterior.itens.length && !chegando.concluido_em) return anterior
+  return chegando
+}
+
 function situacao(dados: UltimoHealthCheck | null, pedido: Pedido | null, agora: number) {
   // Uma aprovação anterior não atende ao pedido, mesmo depois de esgotar a espera.
   const resultado = pedido && (!dados || Date.parse(dados.iniciado_em) < Date.parse(pedido.solicitadoEm)) ? null : dados
@@ -35,33 +47,61 @@ export function useHealthCheck(tipo: TipoLabirinto, habilitado: boolean) {
   const agora = useAgora()
   const envio = useRef(false)
 
+  const dadosRef = useRef<UltimoHealthCheck | null>(null)
+
   useEffect(() => {
     const controle = new AbortController()
     let proxima: ReturnType<typeof setTimeout>
+    let consultaAtual = 0
     if (!habilitado) return () => controle.abort()
-    async function consultar() {
-      let intervalo = INTERVALO_REPOUSO_MS
-      try {
-        const resultado = await buscarUltimoHealthCheck(controle.signal)
-        if (controle.signal.aborted) return
-        setDados(resultado)
-        setErroConsulta(null)
-        const atual = situacao(resultado, pedido, api.agora())
-        if (atual.pendente && !atual.tempoEsgotado) intervalo = INTERVALO_AGUARDANDO_MS
-        if (pedido && atual.resultado?.aprovado != null) {
-          setPedido((anterior) => anterior === pedido ? null : anterior)
-        }
-      } catch {
-        if (!controle.signal.aborted) setErroConsulta('Não foi possível consultar o health-check. Aguardando comunicação com o servidor.')
-      } finally {
-        if (!controle.signal.aborted) {
-          setConsultada(configuracao)
-          proxima = setTimeout(() => { void consultar() }, intervalo)
-        }
+
+    function aplicar(chegando: UltimoHealthCheck | null) {
+      const escolhido = escolher(dadosRef.current, chegando)
+      dadosRef.current = escolhido
+      setDados(escolhido)
+      setErroConsulta(null)
+      if (pedido && situacao(escolhido, pedido, api.agora()).resultado?.aprovado != null) {
+        setPedido((anterior) => anterior === pedido ? null : anterior)
       }
     }
+
+    async function consultar() {
+      const id = ++consultaAtual
+      const inicio = Date.now()
+      // O GET e o relógio de 1 s começam juntos. Sem pendência, a próxima espera 10 s desde esse GET.
+      const armar = (ms: number) => {
+        if (id !== consultaAtual || controle.signal.aborted) return
+        clearTimeout(proxima)
+        proxima = setTimeout(() => { void consultar() }, ms)
+      }
+      armar(INTERVALO_AGUARDANDO_MS)
+      try {
+        const resultado = await buscarUltimoHealthCheck(controle.signal)
+        if (controle.signal.aborted || id !== consultaAtual) return
+        aplicar(resultado)
+        const atual = situacao(dadosRef.current, pedido, api.agora())
+        if (!(atual.pendente && !atual.tempoEsgotado)) {
+          armar(Math.max(0, INTERVALO_REPOUSO_MS - (Date.now() - inicio)))
+        }
+      } catch {
+        if (!controle.signal.aborted && id === consultaAtual) {
+          setErroConsulta('Não foi possível consultar o health-check. Aguardando comunicação com o servidor.')
+        }
+      } finally {
+        if (!controle.signal.aborted && id === consultaAtual) setConsultada(configuracao)
+      }
+    }
+
+    const encerrarStream = api.assinarHealthCheck((healthCheck) => {
+      if (!controle.signal.aborted) aplicar(healthCheck)
+    })
     void consultar()
-    return () => { controle.abort(); clearTimeout(proxima) }
+    return () => {
+      consultaAtual += 1
+      controle.abort()
+      clearTimeout(proxima)
+      encerrarStream()
+    }
   }, [habilitado, configuracao, pedido])
 
   async function solicitar() {
