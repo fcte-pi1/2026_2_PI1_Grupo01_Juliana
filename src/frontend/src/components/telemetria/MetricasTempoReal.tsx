@@ -15,7 +15,7 @@ export function MetricasTempoReal({ execucao, tentativa, agora, compacta = false
   const ultima = execucao.leituras.at(-1)
   const celula = execucao.celula_atual ?? ultima ?? execucao.trajeto.at(-1)
   const execucaoAberta = execucao.status === 'em_andamento'
-  const tentativaAberta = execucaoAberta && (tentativa?.status === 'health-check' || tentativa?.status === 'running')
+  const tentativaAberta = execucaoAberta && tentativa?.status === 'running'
   const tempoExecucao = tempoDecorrido(execucao.iniciada_em, execucao.encerrada_em, execucao.tempo_total_s, execucaoAberta, agora)
   const tempoTentativa = tentativa
     ? tempoDecorrido(tentativa.iniciada_em, tentativa.encerrada_em, tentativa.tempo_s, tentativaAberta, agora)

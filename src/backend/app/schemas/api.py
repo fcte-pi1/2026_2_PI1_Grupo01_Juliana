@@ -75,6 +75,12 @@ class UltimoHealthCheck(BaseModel):
     itens: list[ItemHealthCheck] = Field(default_factory=list)
 
 
+class EventoHealthCheckAtual(UltimoHealthCheck):
+    """Retrato do health-check na stream própria, antes de existir execução."""
+
+    tipo: Literal["health_check"] = "health_check"
+
+
 class SolicitacaoHealthCheck(BaseModel):
     solicitado_em: datetime
 

@@ -11,7 +11,7 @@ interface EtapasExecucaoProps {
 type Situacao = 'feita' | 'atual' | 'pendente' | 'falha'
 const TOTAL_COMPONENTES = Object.keys(ROTULO_COMPONENTE).length
 
-/** Linha do tempo da tentativa: health-check → em execução → sucesso ou falha. */
+/** Exibe o pré-requisito recebido e as etapas da tentativa, que já nasce em running. */
 export function EtapasExecucao({ status, healthCheckAprovados, healthCheckReprovados, healthCheckTotal }: EtapasExecucaoProps) {
   const healthCheckReprovado = healthCheckReprovados > 0
   const healthCheckAprovado = healthCheckAprovados === TOTAL_COMPONENTES && !healthCheckReprovado
@@ -25,20 +25,12 @@ export function EtapasExecucao({ status, healthCheckAprovados, healthCheckReprov
           : healthCheckTotal === 0
             ? 'aguardando dados do health-check'
             : `aguardando resultados · ${healthCheckAprovados} de ${TOTAL_COMPONENTES} OK`,
-      situacao: healthCheckReprovado ? 'falha' : healthCheckAprovado ? 'feita' : status === 'health-check' ? 'atual' : 'pendente',
+      situacao: healthCheckReprovado ? 'falha' : healthCheckAprovado ? 'feita' : 'pendente',
     },
     {
       titulo: 'Em execução',
-      detalhe: healthCheckReprovado
-        ? 'health-check reprovado'
-        : !healthCheckAprovado
-          ? 'aguardando resultados do health-check'
-          : 'o robô percorre o labirinto sozinho',
-      situacao: healthCheckReprovado || status === 'health-check'
-        ? 'pendente'
-        : status === 'running'
-          ? 'atual'
-          : healthCheckAprovado ? 'feita' : 'pendente',
+      detalhe: status === 'running' ? 'o robô percorre o labirinto sozinho' : 'percurso encerrado',
+      situacao: status === 'running' ? 'atual' : 'feita',
     },
     {
       titulo: status === 'success' ? 'Sucesso' : status === 'failed' ? 'Falha' : 'Sucesso ou falha',

@@ -17,13 +17,13 @@ Abrir `http://localhost:5173/` sem `cenario`. O botão **Mock** deve estar ausen
 
 ## Corrida com o simulador existente
 
-Na interface, selecionar 4x4 e clicar **Nova execução**, abrindo a tentativa antes de enviar a telemetria. Com o ambiente do [simulador oficial](../simulador-telemetria/README.md) já preparado, em outro terminal, em `src/simulador-telemetria`:
+No contrato atual, o health-check precisa ser recebido e aprovado **antes** de clicar **Nova execução** ou confirmar **Retomar**. Selecionar 4x4, posicionar o robô e usar **Solicitar health-check** quando necessário. Conferir `GET /health-check/ultimo`: `aprovado=true`, validade vigente e DIP correspondente. A aprovação libera a confirmação; só o HTTP 201 abre a tentativa, já em `running`. Com o ambiente do [simulador oficial](../simulador-telemetria/README.md) preparado, em outro terminal, em `src/simulador-telemetria`:
 
 ```powershell
 uv run python -m simulador roteiros/sucesso-4x4.json --saida http --url http://localhost:8000 --acelerar 0.25
 ```
 
-O simulador usa os componentes do contrato do próprio backend e envia health-check, telemetria, passos e sucesso ao `POST /telemetria` real. Ele não cria a execução. O fator 0,25 alonga a reprodução para permitir o recarregamento durante a corrida. Conferir:
+O simulador usa os componentes do contrato do próprio backend e envia health-check, telemetria, passos e sucesso ao `POST /telemetria` real. Ele não cria a execução. Iniciar a reprodução antes da largada para registrar o pré-requisito. Esse simulador reproduz o roteiro sem aguardar o novo comando `largar`; confirmar assim que o health-check for aprovado, antes dos passos da corrida. Validar o ciclo completo de comandos exige robô/ponte ou simulador que implemente esses comandos. O fator 0,25 alonga a reprodução para permitir o recarregamento durante a corrida. Conferir:
 
 1. Health-check → em execução → concluída, na mesma execução. No DevTools, `/api/execucoes/{id}/stream` deve responder `text/event-stream`, com os eventos nomeados correspondentes ao fluxo.
 2. Comparar os valores de uma mensagem `telemetria` com o card e a tabela: bateria em mV, velocidade em mm/s e percentual recebido sem arredondar. A velocidade média permanece em m/s. No health-check, bateria em mV e ToF em mm.
@@ -44,7 +44,7 @@ $env:VITE_API_MOCK = 'true'
 npm.cmd run dev
 ```
 
-Começar em `/?cenario=01-inicio`, escolher 4x4 e clicar **Nova execução**. Acompanhar health-check → corrida → conclusão, ou encerrar durante a corrida, preencher o motivo, retomar pelo checklist e acompanhar a tentativa seguinte. Recarregar no meio preserva a execução da aba. Depois de encerrada, o resultado permanece selecionado por `execucao` na URL e pode ser reaberto pelo seletor Mock, histórico ou detalhe; `/execucoes/em-andamento` retorna 204, como no backend.
+Começar em `/?cenario=01-inicio`, escolher 4x4 e conferir o health-check aprovado de demonstração, ou solicitar outro e aguardar seus oito resultados. Clicar **Nova execução** para abrir a corrida. Acompanhar a conclusão, ou encerrar durante a corrida, preencher o motivo, retomar pelo checklist com health-check válido e acompanhar a tentativa seguinte. Recarregar no meio preserva os dados da aba. O cenário 02 mostra o health-check pendente antes de qualquer tentativa. Depois de encerrada, o resultado permanece selecionado por `execucao` na URL e pode ser reaberto pelo seletor Mock, histórico ou detalhe; `/execucoes/em-andamento` retorna 204, como no backend.
 
 Os cenários individuais continuam disponíveis pelo painel Mock para inspeção de estados específicos, como perda de comunicação e limite de tentativas. O cenário estático 12 preserva os dados do protótipo, cujas datas das três tentativas não permitem reconstruir uma cronologia sem sobreposição; ele não deve servir como evidência dos cronômetros. O fluxo iniciado por **Nova execução** mantém suas próprias datas. Essa demonstração reproduz os exemplos existentes e não comprova o funcionamento do backend real.
 
@@ -55,6 +55,8 @@ Os cenários individuais continuam disponíveis pelo painel Mock para inspeção
 - Verificação automatizada: 147 testes passaram, incluindo os cenários de integração FRONT-03/FRONT-04, unidades, eventos repetidos e restauração pelo GET.
 
 ### Roteiro com backend real (19/10/2026)
+
+Registro histórico do contrato usado naquela validação. O fluxo anterior à largada mudou na `dev`; os resultados abaixo não comprovam o FRONT-05 com o health-check independente. Reexecutar o roteiro atualizado acima com a API atual antes do aceite integrado.
 
 Ambiente: API e PostgreSQL pelo `docker-compose.yml` do backend (código da `dev` em `e1e616e`, migração `c4d5e6f7a8b9`), Vite com `VITE_API_MOCK=false` e o simulador oficial com `--saida http`.
 
