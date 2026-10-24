@@ -214,6 +214,33 @@ static void test_apagar_tudo_apaga_os_dois(void)
     TEST_ASSERT_EQUAL_MEMORY(&vazio, &lido, sizeof(vazio));
 }
 
+static void test_gravar_celula_so_quando_muda_ou_forca(void)
+{
+    nav_iniciar(&gravado, NAV_TIPO_4X4);
+    andar(&gravado, 0, 2);
+    int8_t x = gravado.x;
+    int8_t y = gravado.y;
+
+    /* A célula já é a última informada: não há o que gravar. */
+    TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_RUNNING, &x, &y, false));
+    contrato_estado_t estado;
+    TEST_ASSERT_EQUAL_INT(MEM_NOVA, mem_carregar(&lido, &estado, NAV_TIPO_4X4));
+
+    TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_RUNNING, &x, &y, true));
+    TEST_ASSERT_EQUAL_INT(MEM_RETOMADA, mem_carregar(&lido, &estado, NAV_TIPO_4X4));
+    TEST_ASSERT_EQUAL_INT(CONTRATO_ESTADO_RUNNING, estado);
+
+    estragar_byte(MEM_CHAVE_MAPA, 100);
+    TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_RUNNING, &x, &y, false));
+    TEST_ASSERT_EQUAL_INT(MEM_SO_TIPOS, mem_carregar(&lido, &estado, NAV_TIPO_4X4));
+
+    andar(&gravado, 2, 4);
+    TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_FAILED, &x, &y, false));
+    TEST_ASSERT_EQUAL_INT(MEM_RETOMADA, mem_carregar(&lido, &estado, NAV_TIPO_4X4));
+    TEST_ASSERT_EQUAL_INT(CONTRATO_ESTADO_FAILED, estado);
+    TEST_ASSERT_EQUAL_MEMORY(&gravado, &lido, sizeof(gravado));
+}
+
 static void test_gravar_de_novo_fica_com_o_ultimo(void)
 {
     nav_iniciar(&gravado, NAV_TIPO_4X4);
@@ -240,6 +267,7 @@ int main(void)
     RUN_TEST(test_tipo_do_dip_diferente_vira_mapa_vazio);
     RUN_TEST(test_apagar_mapa_preserva_orientacao_e_lado);
     RUN_TEST(test_apagar_tudo_apaga_os_dois);
+    RUN_TEST(test_gravar_celula_so_quando_muda_ou_forca);
     RUN_TEST(test_gravar_de_novo_fica_com_o_ultimo);
     return UNITY_END();
 }
