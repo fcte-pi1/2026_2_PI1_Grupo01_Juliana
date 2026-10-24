@@ -183,7 +183,8 @@ paths:
         de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao
         POST /telemetria passa a incluir o comando `health_check` até o robô
         enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada.
-        O resultado aparece em GET /health-check/ultimo.
+        O resultado aparece em GET /health-check/ultimo e na stream
+        GET /health-check/stream.
       responses:
         "202":
           description: Pedido registrado; o robô recebe o comando na próxima resposta da ponte.
@@ -195,6 +196,31 @@ paths:
                 solicitado_em: "2026-10-07T14:10:00-03:00"
         "409":
           $ref: "#/components/responses/Conflito"
+
+  /health-check/stream:
+    get:
+      operationId: abrirStreamHealthCheck
+      tags: [health-check]
+      summary: Health-check ao vivo, antes de existir execução
+      description: >
+        Fluxo do health-check do robô, independente de uma execução. O primeiro
+        evento, quando já há um health-check, repete GET /health-check/ultimo.
+        Cada hc_item e hc_resultado seguintes republicam o retrato inteiro.
+        Enquanto não há evento novo, o servidor manda um comentário de
+        keep-alive a cada 1 s. Esse relógio começa com a abertura do GET.
+      responses:
+        "200":
+          description: Fluxo text/event-stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                atual:
+                  summary: Retrato enviado na abertura e a cada item ou resultado
+                  value: |
+                    event: health_check
+                    data: {"tipo":"health_check","aprovado":null,"tipo_dip":null,"iniciado_em":"2026-10-07T13:58:00-03:00","concluido_em":null,"valido_ate":null,"itens":[{"componente":"bateria","aprovado":true,"valor_lido":7840}]}
 
   /execucoes/em-andamento:
     get:
@@ -1159,6 +1185,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ItemHealthCheck"
+    EventoHealthCheckAtual:
+      description: >
+        Retrato do health-check na stream GET /health-check/stream.
+        Não é o evento por componente da stream da execução.
+      allOf:
+        - $ref: "#/components/schemas/UltimoHealthCheck"
+        - type: object
+          required: [tipo]
+          properties:
+            tipo:
+              type: string
+              enum: [health_check]
     SolicitacaoHealthCheck:
       type: object
       description: >
