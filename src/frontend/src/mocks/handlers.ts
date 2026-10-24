@@ -135,7 +135,7 @@ export const handlers = [
 
 /** Stream do health-check. O primeiro evento é o GET; o relógio de 1 s republica o retrato. */
 export function criarHandlerHealthCheck() {
-  return sse(`${API}/health-check/stream`, ({ client, request }) => {
+  return sse<{ health_check: string }>(`${API}/health-check/stream`, ({ client, request }) => {
     const enviar = () => {
       const atual = ultimoHealthCheckMock(Date.now(), cenarioAtual().id)
       client.send({ event: 'health_check', data: JSON.stringify({ tipo: 'health_check', ...atual }) })
