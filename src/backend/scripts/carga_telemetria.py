@@ -20,12 +20,26 @@ import httpx
 
 P95_MAXIMO_S = 0.100
 ATRASO_MAXIMO_S = 1.0
+PISO_CRESCIMENTO_S = 0.010
 
 
 def _p95(tempos: list[float]) -> float:
     """Percentil 95 pelo método do posto mais próximo."""
     ordenados = sorted(tempos)
     return ordenados[math.ceil(0.95 * len(ordenados)) - 1]
+
+
+def sem_crescimento(tempos: list[float], janela: int) -> bool:
+    """Compara o p95 das `janela` primeiras latências com o das últimas.
+
+    Aceita o final até o dobro do inicial ou até o inicial mais 10 ms, para não
+    reprovar por ruído quando as latências são de poucos milissegundos.
+    """
+    if len(tempos) < 2 * janela:
+        raise ValueError(f"precisa de ao menos {2 * janela} latências, veio {len(tempos)}")
+    inicial = _p95(tempos[:janela])
+    final = _p95(tempos[-janela:])
+    return final <= max(2 * inicial, inicial + PISO_CRESCIMENTO_S)
 
 
 def mensagem(boot: int, seq: int, t_ms: int) -> str:
