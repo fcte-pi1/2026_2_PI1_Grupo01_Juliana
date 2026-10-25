@@ -164,7 +164,7 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 
 ## Pendências
 
-- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
+- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). O esquemático ainda usa as 5 redes do A4988, mas a TB6612 pede 7 sinais: os dois `IN2` foram para os GPIO livres 15 e 18 (o 18 era o XSHUT do segundo frontal) e precisam de fio na placa. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
 - Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura), as curvas de descarga da bateria (Energia, até os testes da 7.2) e os limiares de parede dos ToF (`PAREDE_*_MM`, tirados da geometria; calibrar na pista no FIRM-10).
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
