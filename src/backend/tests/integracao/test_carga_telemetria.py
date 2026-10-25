@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from app.models import ExecucaoLogica, Labirinto, Tentativa
 from app.repositories import Repositorio
-from scripts.carga_telemetria import P95_MAXIMO_S, _p95, mensagem
+from scripts.carga_telemetria import P95_MAXIMO_S, _p95, mensagem, sem_crescimento
 from sqlalchemy import select
 
 TOTAL = 600
@@ -50,6 +50,6 @@ def test_600_mensagens_sem_espera_ficam_abaixo_de_100_ms_sem_crescer(client, db_
     p95_inicio = _p95(tempos[:JANELA])
     p95_fim = _p95(tempos[-JANELA:])
     assert p95 < P95_MAXIMO_S, f"p95 = {p95 * 1000:.1f} ms"
-    assert p95_fim <= 2 * p95_inicio, (
+    assert sem_crescimento(tempos, JANELA), (
         f"p95 cresceu de {p95_inicio * 1000:.1f} ms para {p95_fim * 1000:.1f} ms"
     )
