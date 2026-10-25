@@ -13,6 +13,7 @@ import threading
 import time
 import uuid
 from datetime import UTC, datetime
+from statistics import median
 from typing import NamedTuple
 
 import pytest
@@ -212,3 +213,100 @@ def test_tel_valida_chega_ao_banco_sem_comando_na_serial(montagem):
     assert ler_do_mestre(montagem.mestre, b"\n", limite=0.3) == b"", "chegou comando na serial"
     gerenciador = app.state.gerenciador
     assert gerenciador.comandos_pendentes() == [], "o gerenciador tem comando pendente"
+
+
+INTERROMPER = b'{"v":1,"cmd":"interromper"}\n'
+REPETICOES = 20
+
+
+class Robo:
+    """Thread no papel do robô: escreve uma `tel` running no mestre a cada `periodo`."""
+
+    def __init__(self, montagem: Montagem, periodo: float) -> None:
+        self.montagem = montagem
+        self.periodo = periodo
+        self.escritas = 0
+        self.ultima = 0.0
+        self._mudou = threading.Condition()
+        self._parar = threading.Event()
+        self._thread = threading.Thread(target=self._rodar, daemon=True)
+
+    def __enter__(self) -> "Robo":
+        self._thread.start()
+        with self._mudou:
+            self._mudou.wait_for(lambda: self.escritas > 0, timeout=2)
+        return self
+
+    def __exit__(self, *_) -> None:
+        self._parar.set()
+        self._thread.join(2)
+
+    def _rodar(self) -> None:
+        proxima = time.monotonic()
+        seq = 0
+        while not self._parar.is_set():
+            seq += 1
+            self.montagem.escrever(_linha(seq))
+            with self._mudou:
+                self.ultima = time.monotonic()
+                self.escritas += 1
+                self._mudou.notify_all()
+            proxima += self.periodo
+            self._parar.wait(max(0.0, proxima - time.monotonic()))
+
+    def esperar_fase(self, fase: float) -> None:
+        """Volta `fase` segundos depois da última `tel` escrita."""
+        with self._mudou:
+            if time.monotonic() >= self.ultima + fase:
+                vistas = self.escritas
+                self._mudou.wait_for(lambda: self.escritas > vistas, timeout=2 * self.periodo)
+            alvo = self.ultima + fase
+        time.sleep(max(0.0, alvo - time.monotonic()))
+
+
+def medir_encerramentos(montagem: Montagem, periodo: float) -> tuple[list[float], list[Aberta]]:
+    """Encerra 20 tentativas novas, a 0%, 5%, ..., 95% do período depois da última `tel`."""
+    gerenciador = app.state.gerenciador
+    medidas = []
+    abertas = []
+    with Robo(montagem, periodo) as robo:
+        for k in range(REPETICOES):
+            aberta = montagem.abrir_tentativa()
+            abertas.append(aberta)
+            robo.esperar_fase(k * 0.05 * periodo)
+            inicio = time.monotonic()
+            resposta = montagem.cliente.post(
+                f"/execucoes/{aberta.execucao_id}/encerrar-tentativa",
+                json={"motivo": "collision"},
+            )
+            assert resposta.status_code == 200, resposta.text
+            lido = ler_do_mestre(montagem.mestre, INTERROMPER, limite=3 * periodo)
+            medidas.append(time.monotonic() - inicio)
+            assert INTERROMPER in lido, f"o interromper não chegou na repetição {k}: {lido!r}"
+            # o robô confirmaria com a falha web; aqui a confirmação limpa a pendência
+            gerenciador._confirmar_interrupcao(None)
+    return medidas, abertas
+
+
+def conferir_failed_encerrado_operador(montagem: Montagem, abertas: list[Aberta]) -> None:
+    with montagem.sessoes() as sessao:
+        for aberta in abertas:
+            tentativa = sessao.get(Tentativa, aberta.tentativa_id)
+            assert tentativa.status == "failed", f"tentativa {aberta.tentativa_id} não falhou"
+            assert tentativa.falha.origem == "encerrado_operador", "a falha não veio do operador"
+
+
+def resumir(rotulo: str, medidas: list[float]) -> str:
+    return (
+        f"{rotulo}: {len(medidas)} encerramentos, mediana {median(medidas) * 1000:.0f} ms, "
+        f"maximo {max(medidas) * 1000:.0f} ms"
+    )
+
+
+def test_encerrar_tentativa_a_5_hz_chega_a_serial_em_menos_de_1_s(montagem):
+    medidas, abertas = medir_encerramentos(montagem, periodo=0.2)
+
+    print("\n" + resumir("5 Hz", medidas))
+    assert len(medidas) == REPETICOES
+    conferir_failed_encerrado_operador(montagem, abertas)
+    assert max(medidas) < 1.0, f"o interromper passou de 1 s: {max(medidas):.3f} s"
