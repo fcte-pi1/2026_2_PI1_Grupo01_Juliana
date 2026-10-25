@@ -428,44 +428,45 @@ static bool eh_objetivo(const nav_estado_t *estado, int x, int y)
 }
 
 /*
- * Flood fill de Harrison [9], como na seção "Algoritmo de navegação" do docs/4.4
- * (D7): objetivos em 0, as demais células em infinito, e varreduras da matriz
- * inteira fazendo valor = 1 + menor valor entre as vizinhas acessíveis, até uma
- * varredura não mudar nada. Parede desconhecida conta como aberta (Adachi).
- * Sem fila e sem pilha, de propósito.
+ * Flood fill de Harrison [9], calculado com fila como em "Faster maze solving"
+ * [12], seção "Algoritmo de navegação" do docs/4.4: objetivos em 0 e na fila;
+ * cada célula retirada dá às vizinhas que a alcançam, ainda em infinito, o seu
+ * valor mais 1. Cada célula entra na fila uma vez, e os valores são os mesmos
+ * das varreduras de [9]. Parede desconhecida conta como aberta (Adachi).
  */
 void nav_recalcular(nav_estado_t *estado)
 {
+    /* Índice x * NAV_MAX_CELULAS + y: as 144 células cabem em uint8_t. */
+    uint8_t fila[NAV_MAX_CELULAS * NAV_MAX_CELULAS];
+    int inicio = 0;
+    int fim = 0;
+
     for (int x = 0; x < NAV_MAX_CELULAS; x++) {
         for (int y = 0; y < NAV_MAX_CELULAS; y++) {
-            estado->mapa[x][y].distancia = eh_objetivo(estado, x, y) ? 0 : NAV_DIST_INFINITA;
+            estado->mapa[x][y].distancia = NAV_DIST_INFINITA;
+            if (eh_objetivo(estado, x, y)) {
+                estado->mapa[x][y].distancia = 0;
+                fila[fim++] = (uint8_t)(x * NAV_MAX_CELULAS + y);
+            }
         }
     }
 
-    bool mudou = true;
-    while (mudou) {
-        mudou = false;
-        for (int x = 0; x < NAV_MAX_CELULAS; x++) {
-            for (int y = 0; y < NAV_MAX_CELULAS; y++) {
-                if (!na_regiao(estado, x, y) || eh_objetivo(estado, x, y)) {
-                    continue;
-                }
-                uint8_t menor = NAV_DIST_INFINITA;
-                for (int d = NAV_NORTE; d <= NAV_OESTE; d++) {
-                    if (!nav_acessivel(estado, x, y, (nav_direcao_t)d)) {
-                        continue;
-                    }
-                    uint8_t vizinha = estado->mapa[x + PASSO_X[d]][y + PASSO_Y[d]].distancia;
-                    if (vizinha < menor) {
-                        menor = vizinha;
-                    }
-                }
-                uint8_t valor = menor == NAV_DIST_INFINITA ? NAV_DIST_INFINITA : (uint8_t)(menor + 1);
-                if (valor != estado->mapa[x][y].distancia) {
-                    estado->mapa[x][y].distancia = valor;
-                    mudou = true;
-                }
+    while (inicio < fim) {
+        int x = fila[inicio] / NAV_MAX_CELULAS;
+        int y = fila[inicio] % NAV_MAX_CELULAS;
+        inicio++;
+        uint8_t valor = (uint8_t)(estado->mapa[x][y].distancia + 1);
+        for (int d = NAV_NORTE; d <= NAV_OESTE; d++) {
+            int vx = x + PASSO_X[d];
+            int vy = y + PASSO_Y[d];
+            if (!na_matriz(vx, vy) || estado->mapa[vx][vy].distancia != NAV_DIST_INFINITA) {
+                continue;
             }
+            if (!nav_acessivel(estado, vx, vy, oposta((nav_direcao_t)d))) {
+                continue;
+            }
+            estado->mapa[vx][vy].distancia = valor;
+            fila[fim++] = (uint8_t)(vx * NAV_MAX_CELULAS + vy);
         }
     }
     estado->mapa_alterado = false;
