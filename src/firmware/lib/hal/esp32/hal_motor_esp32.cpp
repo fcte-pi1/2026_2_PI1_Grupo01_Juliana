@@ -4,8 +4,9 @@
  * Motores na TB6612 (FIRM-04, #130): PWM pelo LEDC e sentido em IN1/IN2.
  * A conta de duty e sentido está em ponte_h.c.
  *
- * STBY vai para baixo antes de tudo. Antes do hal_motor_iniciar quem segura a
- * ponte desligada é o resistor de MOT_EN (ver config/pinos.h).
+ * STBY vai para baixo antes de tudo. Até aqui a ponte fica ligada, com os
+ * pinos de controle ainda soltos, porque o R1 puxa MOT_EN para 3,3 V. Isso só
+ * se resolve com o R1 virando pull-down (ver config/pinos.h).
  */
 
 #include <Arduino.h>
@@ -35,7 +36,7 @@ static bool iniciado;
 /* Pior caso (LiPo cheia) até a primeira leitura da bateria. */
 static uint16_t ponte_mv = BATERIA_CHEIA_MV - BATERIA_QUEDA_DIODO_MV;
 
-/* -1 = pino ainda sem GPIO (PINO_MOT_D_IN2) */
+/* -1 = sem pino atribuído (config/pinos.h) */
 static void saida(int8_t pino, bool nivel)
 {
     if (pino < 0) {
