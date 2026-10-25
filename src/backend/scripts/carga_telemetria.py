@@ -1,6 +1,6 @@
 """Carga de telemetria contra a API no ar (RNF-B11).
 
-Envia `tel` a POST /telemetria no ritmo pedido e imprime p50, p95, máx e o
+Envia `tel` e `passo` a POST /telemetria no ritmo pedido e imprime p50, p95, máx e o
 atraso acumulado. Sai com código 1 se p95 >= 100 ms, se o atraso acumulado
 passar de 1 s ou se alguma resposta não for 200. Precisa de uma tentativa
 aberta no banco (veja o README do backend).
@@ -28,23 +28,23 @@ def _p95(tempos: list[float]) -> float:
     return ordenados[math.ceil(0.95 * len(ordenados)) - 1]
 
 
-def _tel(boot: int, seq: int, t_ms: int) -> str:
-    """Linha `tel` válida em (0, 0), dentro de qualquer labirinto."""
-    mensagem = {
-        "v": 1,
-        "boot": boot,
-        "seq": seq,
-        "t_ms": t_ms,
-        "tipo": "tel",
-        "estado": "running",
-        "x": 0,
-        "y": 0,
-        "rumo": "N",
-        "bat_mv": 7800,
-        "vel_mm_s": 200,
-        "eixo_longo": None,
-    }
-    return json.dumps(mensagem, separators=(",", ":"))
+def mensagem(boot: int, seq: int, t_ms: int) -> str:
+    """`tel` nos seq pares e `passo` nos ímpares, alternando entre (0, 0) e (0, 1)."""
+    base = {"v": 1, "boot": boot, "seq": seq, "t_ms": t_ms}
+    if seq % 2 == 0:
+        campos = {
+            "tipo": "tel",
+            "estado": "running",
+            "x": 0,
+            "y": 0,
+            "rumo": "N",
+            "bat_mv": 7800,
+            "vel_mm_s": 200,
+            "eixo_longo": None,
+        }
+    else:
+        campos = {"tipo": "passo", "x": 0, "y": (seq // 2) % 2, "paredes": 9}
+    return json.dumps({**base, **campos}, separators=(",", ":"))
 
 
 def _ha_tentativa_aberta() -> bool:
@@ -84,7 +84,7 @@ def main() -> int:
             enviado = time.perf_counter()
             atraso = max(atraso, enviado - previsto)
             corpo = {
-                "linha": _tel(boot, seq, round(seq * intervalo * 1000)),
+                "linha": mensagem(boot, seq, round(seq * intervalo * 1000)),
                 "recebido_em": datetime.now(UTC).isoformat(),
             }
             try:
