@@ -1,8 +1,8 @@
 /*
  * Tempo do flood fill no pior caso: 12x4 com a orientação indefinida (região
- * em "L") e paredes em serpentina. O caminho fica o mais longo possível e,
- * como a varredura de Harrison anda em x e y crescentes, cada passo para oeste
- * ou para o sul custa uma varredura a mais.
+ * em "L") e paredes em serpentina. A serpentina dá o maior caminho possível;
+ * com a fila, cada célula é visitada uma vez. O cenário é o pior caso medido
+ * desde a versão com varreduras (#224).
  *
  * Roda no PC (pio test -e native, tempo por clock_gettime) e na placa
  * (pio test -e esp32_sim -f test_desempenho_nav, tempo por micros()). O limite
