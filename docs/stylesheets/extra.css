@@ -236,3 +236,5 @@ button:focus-visible {
 .energia-fotos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.5rem; }
 .energia-fotos p { display: contents; }
 .energia-fotos img { width: 100%; }
+.energia-figura { display: block; margin: 0 auto; }
+.energia-fotos { max-width: 52rem; margin: 0 auto; }
