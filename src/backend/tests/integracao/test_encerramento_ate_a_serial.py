@@ -303,13 +303,19 @@ def resumir(rotulo: str, medidas: list[float]) -> str:
     )
 
 
-def test_encerrar_tentativa_a_5_hz_chega_a_serial_em_menos_de_1_s(montagem):
-    medidas, abertas = medir_encerramentos(montagem, periodo=0.2)
+# a 5 Hz vale o critério de 1 s; a 1 Hz (robô parado) é observação, com limite só de sanidade
+@pytest.mark.parametrize(
+    ("rotulo", "periodo", "limite"),
+    [("5 Hz", 0.2, 1.0), ("1 Hz", 1.0, 2.0)],
+    ids=["5_hz", "1_hz"],
+)
+def test_encerrar_tentativa_chega_a_serial_dentro_do_limite(montagem, rotulo, periodo, limite):
+    medidas, abertas = medir_encerramentos(montagem, periodo)
 
-    print("\n" + resumir("5 Hz", medidas))
+    print("\n" + resumir(rotulo, medidas))
     assert len(medidas) == REPETICOES
     conferir_failed_encerrado_operador(montagem, abertas)
-    assert max(medidas) < 1.0, f"o interromper passou de 1 s: {max(medidas):.3f} s"
+    assert max(medidas) < limite, f"o interromper passou de {limite} s: {max(medidas):.3f} s"
 
 
 def _falha_web(seq: int) -> str:
