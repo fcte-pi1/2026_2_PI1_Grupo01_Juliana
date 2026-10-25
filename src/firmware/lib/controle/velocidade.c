@@ -6,8 +6,6 @@
 #include "hal_tempo.h"
 
 #define PERIODO_MS 5
-#define PI_F 3.14159265f
-#define MM_POR_PULSO (PI_F * RODA_DIAMETRO_MM / (float)ENCODER_PULSOS_POR_VOLTA)
 
 /*
  * O feedforward já acerta o regime do modelo (potência máxima = VELOCIDADE_MAX).

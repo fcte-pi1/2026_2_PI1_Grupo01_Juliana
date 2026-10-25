@@ -14,7 +14,6 @@
 #include "velocidade.h"
 
 #define REF_MM_S 400.0f
-#define PI_F 3.14159265f
 
 /* Corredor de 1x8: a 400 mm/s o robô não alcança a parede do fim no teste. */
 static const char CORREDOR_1X8[] =
