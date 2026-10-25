@@ -1,15 +1,18 @@
 """Carga de telemetria contra a API no ar (RNF-B11).
 
-Envia `tel` e `passo` a POST /telemetria no ritmo pedido e imprime p50, p95, máx e o
-atraso acumulado. Sai com código 1 se p95 >= 100 ms, se o atraso acumulado
-passar de 1 s ou se alguma resposta não for 200. Precisa de uma tentativa
-aberta no banco (veja o README do backend).
+Abre uma tentativa no banco do DATABASE_URL, envia `tel` e `passo` a POST /telemetria
+no ritmo pedido e fecha a tentativa no fim. Imprime p50, p95, máx, o atraso acumulado e
+o p95 das janelas inicial e final. Sai com código 1 se p95 >= 100 ms, se o atraso
+acumulado passar de 1 s, se alguma resposta não for 200, se as latências crescerem ao
+longo da carga ou se já houver tentativa aberta. Com --csv, grava uma linha por mensagem.
 
 Uso, a partir de src/backend:
-    python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
+    python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60 \
+        --csv carga.csv
 """
 
 import argparse
+import csv
 import json
 import math
 import sys
@@ -18,6 +21,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 from sqlalchemy.orm import Session
@@ -215,13 +219,19 @@ def executar_carga(
     )
 
 
-def _ha_tentativa_aberta() -> bool:
-    """Sem tentativa aberta, toda tel é descartada e a carga não mede a gravação."""
-    from app.db import SessionLocal
-    from app.repositories import Repositorio
+def gravar_csv(caminho: Path, registros: list[Registro]) -> None:
+    """Uma linha por mensagem; latência e status vazios em erro de rede."""
+    with open(caminho, "w", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.writer(arquivo)
+        escritor.writerow(["seq", "tipo", "instante_s", "latencia_ms", "status"])
+        for r in registros:
+            latencia = "" if r.latencia_s is None else f"{r.latencia_s * 1000:.3f}"
+            status = "" if r.status is None else r.status
+            escritor.writerow([r.seq, r.tipo, f"{r.instante_s:.3f}", latencia, status])
 
-    with SessionLocal() as sessao:
-        return Repositorio(sessao).buscar_tentativa_aberta() is not None
+
+def _ms(segundos: float | None) -> str:
+    return "-" if segundos is None else f"{segundos * 1000:.1f} ms"
 
 
 def main() -> int:
@@ -229,58 +239,30 @@ def main() -> int:
     parser.add_argument("--url", default="http://localhost:8000", help="URL base da API")
     parser.add_argument("--taxa", type=float, default=10, help="mensagens por segundo")
     parser.add_argument("--duracao", type=float, default=60, help="duração em segundos")
+    parser.add_argument("--csv", type=Path, help="arquivo CSV com uma linha por mensagem")
     args = parser.parse_args()
 
-    if not _ha_tentativa_aberta():
-        print("nenhuma tentativa aberta no DATABASE_URL: crie uma (README)", file=sys.stderr)
+    from app.db import SessionLocal
+
+    try:
+        with httpx.Client(base_url=args.url, timeout=5) as cliente:
+            resultado = executar_carga(cliente, SessionLocal, args.taxa, args.duracao)
+    except TentativaAbertaError:
+        print("há tentativa aberta no DATABASE_URL: encerre-a antes da carga", file=sys.stderr)
         return 1
 
-    total = int(args.taxa * args.duracao)
-    intervalo = 1 / args.taxa
-    boot = int(time.time()) % 2**32
-    tempos: list[float] = []
-    erros = 0
-    atraso = 0.0
-
-    with httpx.Client(base_url=args.url, timeout=5) as cliente:
-        inicio = time.perf_counter()
-        for seq in range(total):
-            previsto = inicio + seq * intervalo
-            espera = previsto - time.perf_counter()
-            if espera > 0:
-                time.sleep(espera)
-            enviado = time.perf_counter()
-            atraso = max(atraso, enviado - previsto)
-            corpo = {
-                "linha": mensagem(boot, seq, round(seq * intervalo * 1000)),
-                "recebido_em": datetime.now(UTC).isoformat(),
-            }
-            try:
-                resposta = cliente.post("/telemetria", json=corpo)
-            except httpx.HTTPError as erro:
-                print(f"seq {seq}: {erro}", file=sys.stderr)
-                erros += 1
-                continue
-            tempos.append(time.perf_counter() - enviado)
-            if resposta.status_code != 200:
-                print(f"seq {seq}: {resposta.status_code} {resposta.text}", file=sys.stderr)
-                erros += 1
-
-    if not tempos:
-        print("nenhuma resposta recebida", file=sys.stderr)
-        return 1
-
-    p50 = sorted(tempos)[len(tempos) // 2]
-    p95 = _p95(tempos)
-    print(f"mensagens: {total} ({erros} com erro)")
-    print(f"p50: {p50 * 1000:.1f} ms")
-    print(f"p95: {p95 * 1000:.1f} ms")
-    print(f"máx: {max(tempos) * 1000:.1f} ms")
-    print(f"atraso acumulado: {atraso * 1000:.1f} ms")
-
-    reprovado = p95 >= P95_MAXIMO_S or atraso > ATRASO_MAXIMO_S or erros > 0
-    print("REPROVADO" if reprovado else "APROVADO")
-    return 1 if reprovado else 0
+    if args.csv is not None:
+        gravar_csv(args.csv, resultado.registros)
+    print(f"execucao_id: {resultado.execucao_id}")
+    print(f"mensagens: {len(resultado.registros)} ({resultado.erros} com erro)")
+    print(f"p50: {_ms(resultado.p50_s)}")
+    print(f"p95: {_ms(resultado.p95_s)}")
+    print(f"máx: {_ms(resultado.max_s)}")
+    print(f"atraso acumulado: {_ms(resultado.atraso_s)}")
+    print(f"p95 da janela inicial: {_ms(resultado.p95_inicial_s)}")
+    print(f"p95 da janela final: {_ms(resultado.p95_final_s)}")
+    print("APROVADO" if resultado.aprovado else "REPROVADO")
+    return 0 if resultado.aprovado else 1
 
 
 if __name__ == "__main__":

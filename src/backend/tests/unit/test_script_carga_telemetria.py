@@ -2,7 +2,7 @@ import json
 
 import pytest
 from contrato.telemetria import TAMANHO_MAXIMO, ler_linha
-from scripts.carga_telemetria import mensagem, sem_crescimento
+from scripts.carga_telemetria import Registro, gravar_csv, mensagem, sem_crescimento
 
 
 def test_seq_par_gera_tel_e_impar_gera_passo():
@@ -37,3 +37,17 @@ def test_sem_crescimento_usa_o_dobro_ou_o_piso_de_10_ms(inicial_ms, final_ms, es
 def test_sem_crescimento_com_lista_curta_levanta_value_error():
     with pytest.raises(ValueError):
         sem_crescimento([0.001] * 19, 10)
+
+
+def test_gravar_csv_escreve_cabecalho_e_uma_linha_por_mensagem(tmp_path):
+    registros = [
+        Registro(0, "tel", 0.0, 0.0031234, 200),
+        Registro(1, "passo", 0.1, None, None),
+    ]
+    caminho = tmp_path / "carga.csv"
+    gravar_csv(caminho, registros)
+    linhas = caminho.read_text(encoding="utf-8").splitlines()
+    assert linhas[0] == "seq,tipo,instante_s,latencia_ms,status"
+    assert len(linhas) == 3
+    assert linhas[1] == "0,tel,0.000,3.123,200"
+    assert linhas[2] == "1,passo,0.100,,"
