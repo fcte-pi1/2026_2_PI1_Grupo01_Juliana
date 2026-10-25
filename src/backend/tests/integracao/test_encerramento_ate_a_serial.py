@@ -310,3 +310,83 @@ def test_encerrar_tentativa_a_5_hz_chega_a_serial_em_menos_de_1_s(montagem):
     assert len(medidas) == REPETICOES
     conferir_failed_encerrado_operador(montagem, abertas)
     assert max(medidas) < 1.0, f"o interromper passou de 1 s: {max(medidas):.3f} s"
+
+
+def _falha_web(seq: int) -> str:
+    """Confirmação da interrupção pelo robô, válida pelo contrato v1."""
+    falha = {
+        "v": 1,
+        "boot": TEL["boot"],
+        "seq": seq,
+        "t_ms": 200 * seq,
+        "tipo": "falha",
+        "motivo": None,
+        "origem": "web",
+        "x": 0,
+        "y": 0,
+        "componente": None,
+    }
+    return json.dumps(falha, separators=(",", ":"))
+
+
+def respostas_da_api(montagem: Montagem) -> list[str]:
+    """Linhas `API <status> comandos=<n>` da auditoria, uma por POST respondido."""
+    texto = montagem.ponte.auditoria.caminho.read_text(encoding="utf-8")
+    return [linha for linha in texto.splitlines() if " API " in linha and "comandos=" in linha]
+
+
+def enviar_e_ler(montagem: Montagem, linha: str, limite=2.0) -> bytes:
+    """Escreve `linha` no mestre, espera a ponte receber a resposta e devolve o que voltou."""
+    antes = len(respostas_da_api(montagem))
+    montagem.escrever(linha)
+    fim = time.monotonic() + limite
+    while len(respostas_da_api(montagem)) <= antes:
+        assert time.monotonic() < fim, f"a API não respondeu à linha {linha}"
+        time.sleep(0.01)
+    if respostas_da_api(montagem)[antes].endswith("comandos=0"):
+        return ler_do_mestre(montagem.mestre, b"\n", limite=0.05)
+    return ler_do_mestre(montagem.mestre, INTERROMPER, limite)
+
+
+def conferir_pendencia_ate_a_falha_web(montagem: Montagem) -> None:
+    """O interromper vai em toda resposta até a falha web e para depois dela."""
+    for seq in (2, 3):
+        lido = enviar_e_ler(montagem, _linha(seq))
+        assert lido == INTERROMPER, f"a tel {seq} não trouxe o interromper: {lido!r}"
+    lido = enviar_e_ler(montagem, _falha_web(4))
+    assert lido == b"", f"a confirmação ainda trouxe comando: {lido!r}"
+    for seq in (5, 6):
+        lido = enviar_e_ler(montagem, _linha(seq))
+        assert lido == b"", f"a tel {seq} trouxe comando depois da confirmação: {lido!r}"
+    auditoria = montagem.ponte.auditoria.caminho.read_text(encoding="utf-8")
+    assert 'TX {"v":1,"cmd":"interromper"}' in auditoria, "a auditoria não registrou o TX"
+
+
+def test_encerrar_tentativa_repete_o_interromper_ate_a_falha_web(montagem):
+    aberta = montagem.abrir_tentativa()
+    assert enviar_e_ler(montagem, _linha(1)) == b"", "chegou comando antes do encerramento"
+
+    resposta = montagem.cliente.post(
+        f"/execucoes/{aberta.execucao_id}/encerrar-tentativa", json={"motivo": "collision"}
+    )
+
+    assert resposta.status_code == 200, resposta.text
+    conferir_pendencia_ate_a_falha_web(montagem)
+    conferir_failed_encerrado_operador(montagem, [aberta])
+    with montagem.sessoes() as sessao:
+        execucao = sessao.get(ExecucaoLogica, aberta.execucao_id)
+        assert execucao.status == "em_andamento", "a execução não ficou aberta para retomada"
+
+
+def test_encerrar_execucao_cancela_e_repete_o_interromper_ate_a_falha_web(montagem):
+    aberta = montagem.abrir_tentativa()
+    assert enviar_e_ler(montagem, _linha(1)) == b"", "chegou comando antes do encerramento"
+
+    resposta = montagem.cliente.post(f"/execucoes/{aberta.execucao_id}/encerrar")
+
+    assert resposta.status_code == 200, resposta.text
+    conferir_pendencia_ate_a_falha_web(montagem)
+    conferir_failed_encerrado_operador(montagem, [aberta])
+    with montagem.sessoes() as sessao:
+        execucao = sessao.get(ExecucaoLogica, aberta.execucao_id)
+        assert execucao.status == "cancelada", "a execução não foi cancelada"
