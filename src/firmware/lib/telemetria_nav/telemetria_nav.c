@@ -42,3 +42,25 @@ uint8_t telemetria_paredes_do_nav(nav_direcao_t direcao, nav_lado_t lado, nav_le
     }
     return paredes;
 }
+
+int telemetria_eventos_da_decisao(const telemetria_decisao_t *d,
+                                  telemetria_decisao_evento_t out[TELEMETRIA_DECISAO_EVENTOS_MAX])
+{
+    int n = 0;
+    if (d->mudou_celula) {
+        out[n].tipo = TELEMETRIA_DECISAO_PASSO;
+        out[n].x = (uint8_t)d->x;
+        out[n].y = (uint8_t)d->y;
+        out[n].paredes = d->paredes;
+        n++;
+    }
+    if (d->terminou_agora) {
+        out[n].tipo = d->acao == NAV_ACAO_SUCESSO ? TELEMETRIA_DECISAO_SUCESSO
+                                                  : TELEMETRIA_DECISAO_SEM_SAIDA;
+        out[n].x = (uint8_t)d->nav_x;
+        out[n].y = (uint8_t)d->nav_y;
+        out[n].paredes = 0;
+        n++;
+    }
+    return n;
+}

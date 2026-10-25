@@ -516,6 +516,52 @@ def test_seq_do_passo_e_por_execucao_e_retomada_so_no_primeiro(client, db_sessio
     assert trajeto[2].paredes_mask == 1
 
 
+def test_health_check_de_boot_maior_encerra_a_tentativa_aberta_como_link_lost(client, db_session):
+    execucao = _nova_execucao(db_session, "4x4")
+    tentativa = _nova_tentativa(db_session, execucao, "running")
+    agora = datetime.now(UTC)
+    hc = HealthCheck(
+        hc_id=uuid.uuid4(),
+        boot=7,
+        aprovado=True,
+        tipo_dip="4x4",
+        iniciado_em=agora,
+        concluido_em=agora,
+    )
+    Repositorio(db_session).salvar(hc)
+    tentativa.hc_id = hc.hc_id
+    db_session.flush()
+    _enviar(client, _passo(1, x=0, y=1))
+    _enviar(client, _passo(2, x=0, y=2))
+    _enviar(client, _linha(seq=3, x=0, y=2))
+
+    # o robô reiniciou (boot 8) antes de o monitor de link vencer
+    _enviar(client, _hc_item(0, boot=8))
+
+    db_session.refresh(tentativa)
+    assert tentativa.status == "failed"
+    assert (tentativa.falha.motivo, tentativa.falha.origem) == ("link_lost", "automatica")
+    assert (tentativa.falha.celula_x, tentativa.falha.celula_y) == (0, 2)
+    # o health-check do novo boot foi gravado e a execução segue aberta para retomar
+    assert db_session.scalar(select(HealthCheck).where(HealthCheck.boot == 8)) is not None
+    assert execucao.status == "em_andamento"
+
+
+def test_health_check_do_mesmo_boot_nao_encerra_a_tentativa(client, db_session):
+    execucao = _nova_execucao(db_session, "4x4")
+    tentativa = _nova_tentativa(db_session, execucao, "running")
+    agora = datetime.now(UTC)
+    hc = HealthCheck(hc_id=uuid.uuid4(), boot=7, aprovado=True, tipo_dip="4x4", iniciado_em=agora)
+    Repositorio(db_session).salvar(hc)
+    tentativa.hc_id = hc.hc_id
+    db_session.flush()
+
+    _enviar(client, _hc_item(0, boot=7))
+
+    db_session.refresh(tentativa)
+    assert tentativa.status == "running"
+
+
 def test_passo_repetido_nao_grava_de_novo(client, tentativa_aberta, db_session):
     _enviar(client, _passo(1, x=0, y=0))
     _enviar(client, _passo(2, x=0, y=1))

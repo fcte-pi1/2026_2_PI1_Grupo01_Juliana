@@ -88,9 +88,14 @@ def test_colisao_e_depois_retomada_com_sucesso(capsys):
     segunda = [m for m in mensagens if m.boot == 1]
     falha = next(m for m in primeira if m.tipo == "falha")
     assert (falha.motivo, falha.origem) == ("collision", "automatica")
+    assert (falha.x, falha.y) == (1, 3)
     assert not any(m.tipo == "sucesso" for m in primeira)
     resultado = next(m for m in segunda if m.tipo == "hc_resultado")
     assert resultado.aprovado and resultado.inicio == "retomada"
+    # A NVS devolve a célula da falha: health-check e o primeiro passo saem de lá.
+    tel_hc = next(m for m in segunda if m.tipo == "tel" and m.estado == "health-check")
+    passo = next(m for m in segunda if m.tipo == "passo")
+    assert (tel_hc.x, tel_hc.y) == (passo.x, passo.y) == (falha.x, falha.y)
     assert any(m.tipo == "sucesso" for m in segunda)
 
 

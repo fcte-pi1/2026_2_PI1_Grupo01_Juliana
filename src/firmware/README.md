@@ -30,6 +30,7 @@ Rodar dentro de `src/firmware`:
 | Comando | O que faz |
 |---|---|
 | `pio test -e native` | Roda os testes no PC, sem placa |
+| `pio test -e native_cov` | Os mesmos testes, gerando os dados de cobertura ([cobertura](#cobertura-dos-testes)) |
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
@@ -66,9 +67,23 @@ O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em
 - **Taxa média da tel:** perto de 5 Hz com o robô andando e de 1 Hz parado.
 - **Duração:** tempo coberto pelas linhas, medido pelo `t_ms` de cada `boot`.
 - **Buracos de seq:** cada `seq` esperado que não veio, com o número recebido no lugar.
+- **Descartadas antes da primeira mensagem:** linhas que chegaram ao abrir a porta, antes da primeira mensagem do contrato: o log de boot da ESP32, quando ela reinicia, ou restos de linhas antigas repetidos pelo conversor USB-serial. Elas não contam como inválidas.
 - **Linhas inválidas:** número da linha e o motivo.
 
-O script sai com 0 (`Resultado: OK`) só se não houver buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
+O script sai com 0 (`Resultado: OK`) só se chegou alguma mensagem do contrato e não houve buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
+
+### Cobertura dos testes
+
+O ambiente `native_cov` roda os testes do `native` compilados com `--coverage`. O relatório sai pelo [gcovr](https://gcovr.com):
+
+```bash
+pip install gcovr
+pio test -e native_cov
+gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --print-summary
+gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --html-details cobertura.html
+```
+
+Os drivers reais (`lib/hal/esp32/hal_*`) ficam de fora porque só compilam na placa. O `src/` (tarefas do FreeRTOS) também, porque não entra no `native`. A meta do 7.4 é de pelo menos 80% das linhas.
 
 ### Medir o desempenho da navegação na placa
 
@@ -96,6 +111,7 @@ src/firmware/
 │   ├── telemetria_nav/   conversão do rumo e das paredes da navegação para o contrato
 │   ├── sensores/         ToF: mediana, paredes com histerese, autoteste e sequência XSHUT (FIRM-03)
 │   ├── energia/          estado da bateria
+│   ├── memoria/          mapa e estado na NVS com versão e CRC, para retomar depois de um reset (FIRM-08)
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01), C puro
 ├── src/

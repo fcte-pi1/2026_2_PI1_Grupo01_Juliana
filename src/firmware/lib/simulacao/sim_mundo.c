@@ -239,6 +239,36 @@ void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
 void sim_definir_bateria_mv(uint16_t mv) { m.bateria_mv = mv; }
 void sim_definir_boot(bool pressionado) { m.boot = pressionado; }
 
+/* 10 mm depois da fronteira: a lateral ainda mede a célula atual, não a vizinha. */
+#define ENTRADA_MM 10.0f
+
+void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
+{
+    float x = (celula_x + 0.5f) * (float)CELULA_MM;
+    float y = (celula_y + 0.5f) * (float)CELULA_MM;
+    float theta = PI_F / 2.0f;
+
+    switch (direcao) {
+    case 1: /* leste: entrou pela borda oeste */
+        x = celula_x * (float)CELULA_MM + ENTRADA_MM;
+        theta = 0.0f;
+        break;
+    case 2: /* sul: entrou pela borda norte */
+        y = (celula_y + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = -PI_F / 2.0f;
+        break;
+    case 3: /* oeste: entrou pela borda leste */
+        x = (celula_x + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = PI_F;
+        break;
+    default: /* norte: entrou pela borda sul */
+        y = celula_y * (float)CELULA_MM + ENTRADA_MM;
+        theta = PI_F / 2.0f;
+        break;
+    }
+    sim_definir_pose(x, y, theta);
+}
+
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)
 {
     m.pose.x_mm = x_mm;
