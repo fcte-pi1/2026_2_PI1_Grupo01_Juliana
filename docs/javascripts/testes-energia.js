@@ -138,7 +138,7 @@ async function montarDescarga(alvo) {
    * A corrente que sairia da bateria soma o canal do circuito com a dos motores
    * convertida pela potência: Im x Vmotores / Vbateria, como faria o PWM da ponte H.
    */
-  const linhas = (await lerCsv(d.csv))
+  const todas = (await lerCsv(d.csv))
     .map((l) => {
       const v = numero(l.v_bateria_V)
       const circuito = numero(l.corrente_A)
@@ -148,9 +148,15 @@ async function montarDescarga(alvo) {
         : circuito
       return { ...l, t: numero(l.tempo_min), v, i, motores }
     })
-    .filter((l) => l.t !== null && l.v !== null)
+    .filter((l) => l.t !== null)
     .sort((a, b) => a.t - b.t)
+  const linhas = todas.filter((l) => l.v !== null)
   const emulada = linhas.some((l) => l.motores !== null)
+  const soMotores = todas.filter((l) => l.motores !== null)
+  if (linhas.length < 2 && soMotores.length >= 2) {
+    montarSoMotores(alvo, soMotores, { capacidade, correntePrevista, minimo, tensaoMotores })
+    return
+  }
   if (linhas.length < 2) {
     aviso(alvo, "Aguardando os dados do teste: preencha o arquivo " + d.csv.replace(/^(\.\.\/)+/, "docs/") + ".")
     return
@@ -221,6 +227,53 @@ async function montarDescarga(alvo) {
   detalhes.append(tabela(["Tempo (min)", "Bateria (V)", "Corrente total (A)", "Motores (A)", "Depois do diodo (V)", "Divisor (V)", "5 V", "3,3 V", "Observação"],
     linhas.map((l) => [formatar(l.t, 0), formatar(l.v, 2), formatar(l.i, 3), formatar(l.motores, 3), formatar(numero(l.v_depois_diodo_V), 2),
       formatar(numero(l.v_divisor_V), 2), formatar(numero(l.v_5V_V), 2), formatar(numero(l.v_3v3_V), 2), l.observacao ?? ""])))
+  alvo.append(detalhes)
+}
+
+/*
+ * Sem a LiPo e sem os reguladores, só a corrente dos motores foi medida, com a fonte
+ * fixa na tensão dos motores. A corrente que sairia da bateria é estimada pela potência
+ * dos motores e do ESP32, com o rendimento de 85% do 4.2, sobre a tensão nominal:
+ * Ibat = (Im x Vm + Ilogica x Vlogica) / (Vnominal x rendimento).
+ */
+function montarSoMotores(alvo, linhas, { capacidade, correntePrevista, minimo, tensaoMotores }) {
+  const d = alvo.dataset
+  const nominal = numero(d.tensaoNominal)
+  const rendimento = numero(d.rendimento)
+  const iLogica = numero(d.correnteLogica) ?? 0
+  const vLogica = numero(d.tensaoLogica) ?? 0
+
+  alvo.replaceChildren()
+  aviso(alvo, `Só os motores foram medidos, com a fonte fixa em ${formatar(tensaoMotores, 2)} V. A tensão da bateria não foi registrada, então a corrente da bateria e a autonomia são estimadas pela potência.`)
+  grafico(alvo, "Corrente dos dois motores", linhas.map((l) => ({ x: l.t, y: l.motores })), "A", 3)
+
+  const primeira = linhas[0]
+  const ultima = linhas.at(-1)
+  /* O cronômetro parte de 0 e a primeira leitura é a do minuto 1. */
+  const duracao = ultima.t
+  const media = linhas.reduce((s, l) => s + l.motores, 0) / linhas.length
+  const variacao = (ultima.motores - primeira.motores) / primeira.motores * 100
+  const bateria = nominal && rendimento ? (media * tensaoMotores + iLogica * vLogica) / (nominal * rendimento) : null
+  const autonomia = capacidade !== null && bateria ? (0.8 * capacidade) / (bateria * 1000) * 60 : null
+  const atende = (ok) => ok === null ? "—" : ok ? "Sim" : "Não"
+
+  const resumo = [
+    ["Duração registrada", `${formatar(duracao, 0)} min`, minimo !== null ? `≥ ${formatar(minimo, 0)} min` : "—", atende(minimo !== null ? duracao >= minimo : null)],
+    ["Corrente no início e no fim", `${formatar(primeira.motores, 3)} → ${formatar(ultima.motores, 3)} A (${variacao > 0 ? "+" : ""}${formatar(variacao, 0)}%)`, "—", "—"],
+    ["Corrente média dos motores", `${formatar(media, 3)} A (${formatar(media / 2 * 1000, 0)} mA por motor)`, "—", "—"],
+    ["Potência média dos motores", `${formatar(media * tensaoMotores, 2)} W`, "—", "—"],
+    ["Corrente estimada na bateria", `${formatar(bateria, 3)} A`, correntePrevista !== null ? `≤ ${formatar(correntePrevista * 1.3, 2)} A (${formatar(correntePrevista, 2)} A + 30%)` : "—",
+      atende(bateria !== null && correntePrevista !== null ? bateria <= correntePrevista * 1.3 : null)],
+    ["Autonomia estimada (80% da carga)", `${formatar(autonomia, 0)} min`, "≥ 30 min (3 tentativas de 10 min)", atende(autonomia !== null ? autonomia >= 30 : null)],
+  ]
+  const titulo = document.createElement("p")
+  titulo.innerHTML = "<strong>Resultados calculados a partir do CSV</strong>"
+  alvo.append(titulo, tabela(["Grandeza", "Medido", "Esperado", "Atende"], resumo))
+
+  const detalhes = document.createElement("details")
+  detalhes.innerHTML = "<summary>Leituras registradas</summary>"
+  detalhes.append(tabela(["Tempo (min)", "Motores (A)", "Observação"],
+    linhas.map((l) => [formatar(l.t, 0), formatar(l.motores, 3), l.observacao ?? ""])))
   alvo.append(detalhes)
 }
 

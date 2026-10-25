@@ -6,3 +6,8 @@
 # corrente_motores_A só com a fonte de bancada (motores num canal à parte, a 6,0 V); com a LiPo, deixe vazia.
 # exemplo: 0;8,32;0,41;;7,97;2,49;5,02;3,30;início, motores a 71%
 tempo_min;v_bateria_V;corrente_A;corrente_motores_A;v_depois_diodo_V;v_divisor_V;v_5V_V;v_3v3_V;observacao
+1;;;0,054;;;;;fonte de bancada a 6,01 V direto nos dois motores, rodas livres
+2;;;0,053;;;;;
+3;;;0,052;;;;;
+4;;;0,052;;;;;
+5;;;0,051;;;;;fim do registro, motores sem aquecer
