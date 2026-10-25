@@ -32,6 +32,7 @@ Rodar dentro de `src/firmware`:
 | `pio test -e native` | Roda os testes no PC, sem placa |
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
+| `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
@@ -114,7 +115,7 @@ As camadas só dependem das de baixo: `app` usa `navegacao`, `controle` e `senso
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (por enquanto bateria, motores e encoders); os outros e o ambiente que compila eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (por enquanto bateria, motores, encoders e NVS) e são compilados no CI pelo programa de bancada `esp32_drivers`; os outros e o firmware completo com eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
