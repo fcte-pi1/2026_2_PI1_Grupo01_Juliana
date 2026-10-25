@@ -78,4 +78,8 @@ export const ROTULO_RECUSA: Record<MotivoRecusa, string> = {
   tentativa_aberta: 'Já existe uma tentativa aberta nesta execução.',
   limite_3: 'As 3 tentativas desta execução já foram usadas.',
   execucao_cancelada: 'A execução foi cancelada e não aceita novas tentativas.',
+  health_check_ausente: 'Não há health-check concluído para abrir a tentativa.',
+  health_check_reprovado: 'O health-check foi reprovado. Realize uma nova verificação após corrigir a falha.',
+  health_check_expirado: 'A validade do health-check expirou. Realize uma nova verificação.',
+  dip_divergente: 'O tipo de labirinto informado pelo robô difere do selecionado para a execução.',
 }

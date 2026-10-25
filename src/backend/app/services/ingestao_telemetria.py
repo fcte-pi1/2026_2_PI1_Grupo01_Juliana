@@ -11,6 +11,7 @@ from app.models import HealthCheck, HealthCheckItem, LeituraTelemetria, PassoTra
 from app.repositories.repositorio import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
 from app.services.atualizacao_metricas import recalcular_parciais
+from app.services.evento_health_check import CANAL_HEALTH_CHECK, evento_health_check
 from app.services.fabrica_eventos import OrigemTelemetria, criar_eventos
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.monitor_conexao import MonitorConexao
@@ -99,6 +100,12 @@ class IngestaoTelemetria:
         self.monitor.registrar_mensagem()
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
+        if tentativa is not None and self._robo_reiniciou(mensagem, tentativa):
+            reinicio = gerenciador.encerrar_por_reinicio(sessao, tentativa, agora_backend)
+            sessao.commit()
+            if reinicio is not None:
+                publicar_apos_commit(self.publicador, reinicio.execucao_id, reinicio.eventos)
+            tentativa = None
         if tentativa is not None:
             self._conferir_limites(mensagem, tentativa)
         # a interrupção pela web pode chegar depois de a tentativa fechar
@@ -121,6 +128,7 @@ class IngestaoTelemetria:
         # lido antes do COMMIT: depois dele o atributo expira e custaria um SELECT
         execucao_id = str(tentativa.execucao_id) if tentativa is not None else None
         eventos: list[EventoSSE] = []
+        eventos_health_check: list[EventoSSE] = []
         try:
             if isinstance(mensagem, Tel):
                 eventos = self._gravar_tel(
@@ -132,9 +140,21 @@ class IngestaoTelemetria:
                     agora_backend,
                 )
             elif isinstance(mensagem, HcItem):
-                self._gravar_hc_item(sessao, mensagem, enviado_em, agora_backend)
+                eventos_health_check = [
+                    self._gravar_hc_item(
+                        sessao,
+                        mensagem,
+                        enviado_em,
+                        agora_backend,
+                        gerenciador.validade_health_check_s,
+                    )
+                ]
             elif isinstance(mensagem, HcResultado):
-                self._gravar_hc_resultado(sessao, mensagem, agora_backend)
+                eventos_health_check = [
+                    self._gravar_hc_resultado(
+                        sessao, mensagem, agora_backend, gerenciador.validade_health_check_s
+                    )
+                ]
             elif isinstance(mensagem, Passo):
                 eventos = self._gravar_passo(sessao, tentativa, mensagem, enviado_em, agora_backend)
             elif isinstance(mensagem, EVENTOS):
@@ -158,6 +178,16 @@ class IngestaoTelemetria:
 
         if execucao_id is not None:
             publicar_apos_commit(self.publicador, execucao_id, eventos)
+        # o health-check chega sem execução: a stream dele não usa execucao_id
+        publicar_apos_commit(self.publicador, CANAL_HEALTH_CHECK, eventos_health_check)
+
+    @staticmethod
+    def _robo_reiniciou(mensagem: Mensagem, tentativa: Tentativa) -> bool:
+        """Um health-check de boot maior que o da tentativa aberta: o robô reiniciou."""
+        if not isinstance(mensagem, HEALTH_CHECK) or tentativa.health_check is None:
+            return False
+        boot_da_tentativa = tentativa.health_check.boot
+        return boot_da_tentativa is not None and mensagem.boot > boot_da_tentativa
 
     def _conferir_limites(self, mensagem: Mensagem, tentativa: Tentativa) -> None:
         """A célula precisa caber no labirinto da execução, em qualquer orientação (D4)."""
@@ -217,21 +247,29 @@ class IngestaoTelemetria:
         return health_check
 
     def _gravar_hc_item(
-        self, sessao: Session, item: HcItem, enviado_em: datetime, agora: datetime
-    ) -> None:
+        self,
+        sessao: Session,
+        item: HcItem,
+        enviado_em: datetime,
+        agora: datetime,
+        validade_s: int,
+    ) -> EventoSSE:
         health_check = self._health_check_do_boot(sessao, item.boot, agora)
-        registro = HealthCheckItem(
-            hc_id=health_check.hc_id,
-            componente=item.componente,
-            aprovado=item.aprovado,
-            valor_lido=item.valor,
-            verificado_em=enviado_em,
+        health_check.itens.append(
+            HealthCheckItem(
+                hc_id=health_check.hc_id,
+                componente=item.componente,
+                aprovado=item.aprovado,
+                valor_lido=item.valor,
+                verificado_em=enviado_em,
+            )
         )
-        Repositorio(sessao).salvar(registro)
+        sessao.flush()
+        return evento_health_check(health_check, validade_s)
 
     def _gravar_hc_resultado(
-        self, sessao: Session, resultado: HcResultado, agora: datetime
-    ) -> None:
+        self, sessao: Session, resultado: HcResultado, agora: datetime, validade_s: int
+    ) -> EventoSSE:
         # concluido_em no relógio do backend: é com ele que a validade é conferida
         health_check = self._health_check_do_boot(sessao, resultado.boot, agora)
         health_check.aprovado = resultado.aprovado
@@ -242,6 +280,8 @@ class IngestaoTelemetria:
             "aprovado" if resultado.aprovado else "reprovado",
             resultado.tipo_dip,
         )
+        sessao.flush()
+        return evento_health_check(health_check, validade_s)
 
     def _gravar_passo(
         self,

@@ -39,7 +39,9 @@ export type MotivoEncerramento = Extract<MotivoFalha, 'collision' | 'stuck' | 'o
 
 export type OrigemFalha = 'automatica' | 'encerrado_operador'
 
-export type MotivoRecusa = 'tentativa_aberta' | 'limite_3' | 'execucao_cancelada'
+export type MotivoRecusa = components['schemas']['MotivoRecusa']
+
+export type UltimoHealthCheck = components['schemas']['UltimoHealthCheck']
 
 export interface Celula {
   x: number

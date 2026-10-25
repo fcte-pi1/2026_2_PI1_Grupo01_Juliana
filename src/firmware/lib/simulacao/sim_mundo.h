@@ -49,6 +49,8 @@ bool sim_boot_pressionado(void);
 void sim_led_definir(bool aceso);
 void sim_buzzer_definir(bool ligado);
 
+void sim_mundo_na_celula(int celula_x, int celula_y, int direcao);
+
 /* Usado pelos testes para provocar situações */
 void sim_definir_tof_ausente(int tof, bool ausente);
 

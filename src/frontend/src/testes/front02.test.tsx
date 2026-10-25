@@ -7,6 +7,7 @@ import type { components } from '../api/schema'
 import type { MotivoRecusa, TipoLabirinto } from '../api/tipos'
 import { buscarCenario } from '../mocks/cenarios'
 import { detalheAPI } from '../mocks/dados'
+import { ultimoHealthCheckMock } from '../mocks/healthCheckAtual'
 import { servidor } from '../mocks/servidor'
 import { ROTULO_RECUSA } from '../utils/formatacao'
 import { renderizarRota } from './renderizar'
@@ -15,6 +16,15 @@ let requisicoes: Request[] = []
 const observar = ({ request }: { request: Request }) => requisicoes.push(request.clone())
 const criacoes = () => requisicoes.filter((r) => r.method === 'POST' && new URL(r.url).pathname === '/api/execucoes')
 const consultasAtuais = () => requisicoes.filter((r) => new URL(r.url).pathname === '/api/execucoes/em-andamento').length
+
+/** O DIP é informado pelo robô, independentemente da seleção feita na tela. */
+function informarDip(tipo: TipoLabirinto) {
+  servidor.use(http.get('*/api/health-check/ultimo', () => {
+    const dados = ultimoHealthCheckMock(Date.now(), '01-inicio')
+    dados.tipo_dip = tipo
+    return HttpResponse.json(dados)
+  }))
+}
 
 function detalheDoContrato(): components['schemas']['ExecucaoDetalhe'] {
   const iniciada_em = new Date().toISOString()
@@ -27,7 +37,7 @@ function detalheDoContrato(): components['schemas']['ExecucaoDetalhe'] {
     tentativas: [{
       tentativa_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
       attempt_index: 1,
-      status: 'health-check',
+      status: 'running',
       tipo_inicio: 'nova',
       iniciada_em,
       health_check: [],
@@ -62,6 +72,7 @@ describe('FRONT-02: nova execução', () => {
   })
 
   it.each<TipoLabirinto>(['4x4', '8x4', '12x4'])('inicia %s na tela ao vivo com Tentativa 1/3', async (labirinto) => {
+    informarDip(labirinto)
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: new RegExp(`^${labirinto}`) }))
     expect(screen.getAllByRole('radio')).toHaveLength(3)
@@ -70,20 +81,21 @@ describe('FRONT-02: nova execução', () => {
     expect(await screen.findByRole('heading', { name: 'Execução ativa #0042' })).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toHaveTextContent('Tentativa 1/3')
     expect(screen.getByText(`Labirinto ${labirinto}`)).toBeInTheDocument()
-    expect(screen.getByText('Aguardando os dados do health-check enviados pelo robô.')).toBeInTheDocument()
+    expect(screen.getByText('8 de 8 OK')).toBeInTheDocument()
     expect(criacoes()).toHaveLength(1)
     expect(await criacoes()[0].json()).toEqual({ tipo_labirinto: labirinto })
     const atual = (await buscarExecucaoAtual()).execucao!
     expect(atual.labirinto).toBe(labirinto)
     expect(atual.tentativas[0].attempt_index).toBe(1)
-    expect(atual.tentativas[0].health_check).toEqual([])
-    expect(atual.tentativas[0].bateria_inicial).toBeNull()
+    expect(atual.tentativas[0].status).toBe('running')
+    expect(atual.tentativas[0].health_check).toHaveLength(8)
+    expect(atual.tentativas[0].bateria_inicial).toBe(7840)
     expect(atual.trajeto).toEqual([])
     expect(atual.leituras).toEqual([])
   })
 
   it('consome o 201 com apenas os IDs e busca o detalhe da execução criada', async () => {
-    const nova = buscarCenario('02-health-check').atual(Date.now()).execucao!
+    const nova = buscarCenario('03-em-execucao').atual(Date.now()).execucao!
     servidor.use(
       http.post('*/api/execucoes', () => HttpResponse.json({
         execucao_id: nova.execucao_id,
@@ -101,6 +113,7 @@ describe('FRONT-02: nova execução', () => {
   })
 
   it('renderiza o formato do OpenAPI sem número sequencial nem métricas opcionais', async () => {
+    informarDip('8x4')
     const nova = detalheDoContrato()
     servidor.use(
       http.post('*/api/execucoes', () => HttpResponse.json({ execucao_id: nova.execucao_id, tentativa_id: nova.tentativas[0].tentativa_id, attempt_index: 1 }, { status: 201 })),
@@ -229,6 +242,7 @@ describe('FRONT-02: nova execução', () => {
   })
 
   it('confirma uma única criação, cancelando a anterior e respeitando o labirinto selecionado', async () => {
+    informarDip('12x4')
     renderizarRota('/', '03-em-execucao')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
     const modal = await screen.findByRole('dialog')
@@ -237,7 +251,7 @@ describe('FRONT-02: nova execução', () => {
     expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(screen.getByText('Labirinto 12x4')).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect((await buscarExecucao('e-0042')).status).toBe('cancelada')
     const atual = (await buscarExecucaoAtual()).execucao!
     expect(atual.execucao_id).not.toBe('e-0042')
@@ -259,6 +273,7 @@ describe('FRONT-02: nova execução', () => {
   })
 
   it('mantém o ID e o labirinto criados ao usar os comandos existentes de encerrar e retomar', async () => {
+    informarDip('8x4')
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: /^8x4/ }))
     await userEvent.click(screen.getByRole('button', { name: /Nova execução/ }))
@@ -284,6 +299,7 @@ describe('FRONT-02: nova execução', () => {
 
   const motivos: MotivoRecusa[] = ['tentativa_aberta', 'limite_3', 'execucao_cancelada']
   it.each(motivos)('mostra o motivo %s do 409 sem sair da tela inicial', async (motivo) => {
+    informarDip('8x4')
     servidor.use(http.post('*/api/execucoes', () => HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })))
     const { router } = renderizarRota('/')
     await userEvent.click(await screen.findByRole('radio', { name: /^8x4/ }))
@@ -299,6 +315,7 @@ describe('FRONT-02: nova execução', () => {
   })
 
   it.each(motivos)('mantém a execução atual e a confirmação abertas quando recebe 409 por %s', async (motivo) => {
+    informarDip('8x4')
     servidor.use(http.post('*/api/execucoes', () => HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })))
     const { router } = renderizarRota('/', '03-em-execucao')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))

@@ -46,6 +46,9 @@ void hal_led_sim_definir_espelho(hal_led_sim_espelho_t espelho);
 /* Simula a gravação de um firmware novo: apaga tudo da NVS. */
 void hal_nvs_sim_apagar_tudo(void);
 
+/* Copia o bloco gravado sem conferir o tamanho e devolve quantos bytes tem (0 se não existe). */
+size_t hal_nvs_sim_ler_bruto(const char *chave, void *dados, size_t capacidade);
+
 #ifdef __cplusplus
 }
 #endif

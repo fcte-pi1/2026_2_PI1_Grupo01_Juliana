@@ -1,6 +1,7 @@
 import { http, HttpResponse, sse } from 'msw'
 import type { EncerrarPedido, EventoExecucao, Execucao, NovaExecucaoPedido, TipoLabirinto } from '../api/tipos'
-import { buscarExecucaoRegistrada, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
+import { buscarExecucaoRegistrada, cenarioAtual, dadosAtuais, encerrarExecucaoRegistrada, encerrarTentativaRegistrada, listarExecucoesRegistradas, registrarNovaExecucao, retomarTentativaRegistrada } from './cenarioAtual'
+import { recusaHealthCheckMock, solicitarHealthCheckMock, ultimoHealthCheckMock } from './healthCheckAtual'
 import { detalheAPI, execucao, falha, HISTORICO, resumoAPI, tentativa, trajeto12x4Longo, trajetoAte } from './dados'
 import { avancarDemonstracao } from './fluxoDemonstracao'
 
@@ -47,19 +48,31 @@ function execucaoDoHistorico(id: string): Execucao | null {
 }
 
 export const handlers = [
+  http.get(`${API}/health-check/ultimo`, () => HttpResponse.json(ultimoHealthCheckMock(Date.now(), cenarioAtual().id))),
+  http.post(`${API}/health-check/solicitar`, () => {
+    if (dadosAtuais().execucao?.tentativas.some((tentativa) => tentativa.status === 'running')) {
+      return HttpResponse.json({ detail: 'Há uma tentativa em execução; encerre-a antes de pedir um novo health-check.' }, { status: 409 })
+    }
+    return HttpResponse.json(solicitarHealthCheckMock(Date.now(), cenarioAtual().id), { status: 202 })
+  }),
   http.get(`${API}/execucoes/em-andamento`, () => {
     const atual = dadosAtuais(Date.now()).execucao
     return atual?.status === 'em_andamento' ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
   }),
 
   http.get(`${API}/execucoes`, ({ request }) => {
-    const labirinto = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
+    const busca = new URL(request.url).searchParams
+    const labirinto = busca.get('tipo_labirinto') as TipoLabirinto | null
+    const offset = Number(busca.get('offset') ?? 0)
+    const limite = Number(busca.get('limite') ?? 50)
     const registradas = listarExecucoesRegistradas().map((item) => ({ ...item, resultado: item.status,
       velocidade_media: item.tentativas.at(-1)?.velocidade_media ?? null,
       consumo_bateria: item.tentativas.at(-1)?.consumo_bateria ?? null }))
     const historico = [...registradas, ...HISTORICO.filter((item) => !registradas.some((registrada) => registrada.execucao_id === item.execucao_id))]
       .sort((a, b) => Date.parse(b.iniciada_em) - Date.parse(a.iniciada_em))
-    return HttpResponse.json((labirinto ? historico.filter((e) => e.labirinto === labirinto) : historico).map(resumoAPI))
+    const filtrado = labirinto ? historico.filter((e) => e.labirinto === labirinto) : historico
+    return HttpResponse.json(filtrado.slice(offset, offset + limite).map(resumoAPI),
+      { headers: { 'X-Total-Count': String(filtrado.length) } })
   }),
 
   http.get(`${API}/execucoes/:id`, ({ params }) => {
@@ -74,6 +87,8 @@ export const handlers = [
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
     const pedido = await request.json() as NovaExecucaoPedido
     if (!['4x4', '8x4', '12x4'].includes(pedido.tipo_labirinto)) return new HttpResponse(null, { status: 422 })
+    const motivo = recusaHealthCheckMock(pedido.tipo_labirinto, Date.now(), cenarioAtual().id)
+    if (motivo) return HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })
     const nova = registrarNovaExecucao(pedido.tipo_labirinto, Date.now())
     return HttpResponse.json({
       execucao_id: nova.execucao_id,
@@ -86,12 +101,12 @@ export const handlers = [
     const id = String(params.id)
     const atual = buscarExecucaoRegistrada(id)
     if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
-    if (atual.status !== 'em_andamento' || !['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '')) {
+    if (atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'running') {
       return HttpResponse.json({ detail: 'Não há tentativa aberta' }, { status: 409 })
     }
     const pedido = await request.json() as EncerrarPedido
     if (!['collision', 'stuck', 'out_of_track'].includes(pedido.motivo)
-      || (pedido.observacao != null && typeof pedido.observacao !== 'string')) return new HttpResponse(null, { status: 422 })
+      || (pedido.observacao != null && (typeof pedido.observacao !== 'string' || pedido.observacao.length > 100))) return new HttpResponse(null, { status: 422 })
     return HttpResponse.json(detalheAPI(encerrarTentativaRegistrada(id, pedido, Date.now())))
   }),
 
@@ -111,9 +126,10 @@ export const handlers = [
     if (!atual) return HttpResponse.json({ detail: 'Execução não encontrada' }, { status: 404 })
     const recusa = dadosAtuais(Date.now()).recusa
     if (recusa) return HttpResponse.json(recusa, { status: 409 })
-    const motivo = ['health-check', 'running'].includes(atual.tentativas.at(-1)?.status ?? '') ? 'tentativa_aberta'
+    const motivo = atual.tentativas.at(-1)?.status === 'running' ? 'tentativa_aberta'
       : atual.tentativas_usadas >= 3 ? 'limite_3'
-        : atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'failed' ? 'execucao_cancelada' : null
+        : atual.status !== 'em_andamento' || atual.tentativas.at(-1)?.status !== 'failed' ? 'execucao_cancelada'
+          : recusaHealthCheckMock(atual.labirinto, Date.now(), cenarioAtual().id)
     if (motivo) return HttpResponse.json({ motivo, ocorrida_em: new Date().toISOString() }, { status: 409 })
     const retomada = retomarTentativaRegistrada(id, Date.now())
     const tentativa = retomada.tentativas.at(-1)!
@@ -121,6 +137,25 @@ export const handlers = [
       attempt_index: tentativa.attempt_index }, { status: 201 })
   }),
 ]
+
+/** Stream do health-check. O primeiro evento é o GET; o relógio de 1 s republica o retrato. */
+export function criarHandlerHealthCheck() {
+  return sse<{ health_check: string }>(`${API}/health-check/stream`, ({ client, request }) => {
+    const enviar = () => {
+      const atual = ultimoHealthCheckMock(Date.now(), cenarioAtual().id)
+      client.send({ event: 'health_check', data: JSON.stringify({ tipo: 'health_check', ...atual }) })
+    }
+    enviar()
+    const relogio = setInterval(() => {
+      try {
+        enviar()
+      } catch {
+        clearInterval(relogio)
+      }
+    }, 1_000)
+    request.signal.addEventListener('abort', () => clearInterval(relogio), { once: true })
+  })
+}
 
 /** Stream SSE da execução. Só no navegador: o jsdom dos testes não tem EventSource. */
 export function criarHandlerStream() {

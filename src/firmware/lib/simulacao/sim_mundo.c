@@ -5,11 +5,9 @@
 
 #include "config/robo.h"
 
-#define PI_F 3.14159265f
 #define GRAUS_PARA_RAD(g) ((g) * PI_F / 180.0f)
 
 #define CONSTANTE_TEMPO_MOTOR_S  0.05f  /* atraso da roda para atingir a velocidade pedida */
-#define MM_POR_PULSO             (PI_F * RODA_DIAMETRO_MM / ENCODER_PULSOS_POR_VOLTA)
 #define MEIA_PAREDE_MM           (PAREDE_ESPESSURA_MM / 2.0f)
 #define PONTOS_CONTORNO          16     /* pontos do contorno do robô testados na colisão */
 
@@ -251,6 +249,36 @@ void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
 
 void sim_definir_bateria_mv(uint16_t mv) { m.bateria_mv = mv; }
 void sim_definir_boot(bool pressionado) { m.boot = pressionado; }
+
+/* 10 mm depois da fronteira: a lateral ainda mede a célula atual, não a vizinha. */
+#define ENTRADA_MM 10.0f
+
+void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
+{
+    float x = (celula_x + 0.5f) * (float)CELULA_MM;
+    float y = (celula_y + 0.5f) * (float)CELULA_MM;
+    float theta = PI_F / 2.0f;
+
+    switch (direcao) {
+    case 1: /* leste: entrou pela borda oeste */
+        x = celula_x * (float)CELULA_MM + ENTRADA_MM;
+        theta = 0.0f;
+        break;
+    case 2: /* sul: entrou pela borda norte */
+        y = (celula_y + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = -PI_F / 2.0f;
+        break;
+    case 3: /* oeste: entrou pela borda leste */
+        x = (celula_x + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = PI_F;
+        break;
+    default: /* norte: entrou pela borda sul */
+        y = celula_y * (float)CELULA_MM + ENTRADA_MM;
+        theta = PI_F / 2.0f;
+        break;
+    }
+    sim_definir_pose(x, y, theta);
+}
 
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)
 {
