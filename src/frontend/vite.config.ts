@@ -23,5 +23,13 @@ export default defineConfig({
     css: false,
     include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
     exclude: ['e2e/**', '**/node_modules/**', '**/.git/**'],
+    // npm run test:cobertura. Fica de fora o que não vai para o build: testes, mocks do MSW e tipos gerados.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/testes/**', 'src/mocks/**', 'src/main.tsx', 'src/api/schema.ts', 'src/**/*.d.ts'],
+      reporter: ['text', 'text-summary', 'html'],
+      thresholds: { lines: 80 },
+    },
   },
 })
