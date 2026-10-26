@@ -230,6 +230,34 @@ button:focus-visible {
   *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
 
+/* Barras laterais recolhíveis: navegação (esquerda) e índice (direita) */
+.rt-sidebar-toggles {
+  align-items: center;
+  display: flex;
+  margin-left: 0.35rem;
+}
+
+.rt-sidebar-toggles .md-header__button {
+  border-radius: 0.4rem;
+}
+
+.rt-sidebar-toggles .md-header__button[aria-expanded="false"] {
+  background: rgb(247 251 252 / 16%);
+  color: var(--rt-orange-light);
+}
+
+@media screen and (max-width: 59.984375em) {
+  .rt-sidebar-toggles { display: none; }
+}
+
+@media screen and (max-width: 76.234375em) {
+  .rt-sidebar-toggles [data-rt-toggle="nav"] { display: none; }
+}
+
+@media print {
+  .rt-sidebar-toggles { display: none; }
+}
+
 /* Testes de energia (7.2): gráficos e avisos montados a partir dos CSV */
 .energia-grafico { position: relative; height: 18rem; margin: 1rem 0; }
 .energia-aviso { color: var(--md-default-fg-color--light); font-style: italic; }
