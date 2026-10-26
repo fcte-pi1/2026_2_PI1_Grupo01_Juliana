@@ -16,9 +16,9 @@ export function MetricasTempoReal({ execucao, tentativa, agora, compacta = false
   const celula = execucao.celula_atual ?? ultima ?? execucao.trajeto.at(-1)
   const execucaoAberta = execucao.status === 'em_andamento'
   const tentativaAberta = execucaoAberta && tentativa?.status === 'running'
-  const tempoExecucao = tempoDecorrido(execucao.iniciada_em, execucao.encerrada_em, execucao.tempo_total_s, execucaoAberta, agora)
+  const tempoExecucao = tempoDecorrido(execucao.iniciada_em, execucao.tempo_total_s, execucaoAberta, agora)
   const tempoTentativa = tentativa
-    ? tempoDecorrido(tentativa.iniciada_em, tentativa.encerrada_em, tentativa.tempo_s, tentativaAberta, agora)
+    ? tempoDecorrido(tentativa.iniciada_em, tentativa.tempo_s, tentativaAberta, agora)
     : null
   const bateria = !tentativaAberta && tentativa?.bateria_final != null
     ? tentativa.bateria_final
@@ -60,7 +60,7 @@ export function MetricasTempoReal({ execucao, tentativa, agora, compacta = false
         valor={bateria == null ? '—' : formatarMedicao(bateria)}
         unidade="mV"
         detalhe={percentual != null ? `${formatarMedicao(percentual)} % de carga` : 'Percentual pendente'}
-        progresso={percentual == null ? undefined : percentual / 100}
+        progresso={percentual ?? undefined}
       />
       <CartaoMetrica
         rotulo="Célula atual"
@@ -72,10 +72,9 @@ export function MetricasTempoReal({ execucao, tentativa, agora, compacta = false
   )
 }
 
-function tempoDecorrido(iniciadaEm: string, encerradaEm: string | null, tempoFinal: number | null, aberta: boolean, agora: number): number | null {
-  if (!aberta && tempoFinal !== null) return tempoFinal
+function tempoDecorrido(iniciadaEm: string, tempoFinal: number | null, aberta: boolean, agora: number): number | null {
+  if (!aberta) return tempoFinal
   const inicio = Date.parse(iniciadaEm)
-  const fim = aberta ? agora : encerradaEm ? Date.parse(encerradaEm) : null
-  if (!Number.isFinite(inicio) || fim === null || !Number.isFinite(fim)) return null
-  return Math.max((fim - inicio) / 1000, 0)
+  if (!Number.isFinite(inicio) || !Number.isFinite(agora)) return null
+  return Math.max((agora - inicio) / 1000, 0)
 }
