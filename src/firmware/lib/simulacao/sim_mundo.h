@@ -53,6 +53,9 @@ void sim_mundo_na_celula(int celula_x, int celula_y, int direcao);
 
 /* Usado pelos testes para provocar situações */
 void sim_definir_tof_ausente(int tof, bool ausente);
+
+/* O encoder deixa de contar. A roda e a pose continuam. */
+void sim_travar_encoder(int motor, bool travado);
 void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);

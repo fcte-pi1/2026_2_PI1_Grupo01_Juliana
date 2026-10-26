@@ -21,6 +21,7 @@
 #include "hal_bateria.h"
 #include "hal_encoder.h"
 #include "hal_led.h"
+#include "hal_motor.h"
 #include "hal_tempo.h"
 #include "hal_tof.h"
 #include "memoria.h"
@@ -207,6 +208,9 @@ void tarefa_navegacao(void *parametro)
             ciclo = 0;
 
             bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());
+            if (bateria_pronta(&bateria)) {
+                hal_motor_definir_tensao(bateria_ponte_mv(&bateria));
+            }
 
             paredes_t paredes = sensores_paredes();
             nav_leitura_t leitura;

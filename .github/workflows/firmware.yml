@@ -103,3 +103,6 @@ jobs:
 
       - name: Compilar para a ESP32
         run: pio run -e esp32_sim
+
+      - name: Compilar os drivers reais
+        run: pio run -e esp32_drivers
