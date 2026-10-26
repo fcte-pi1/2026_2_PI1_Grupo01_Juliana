@@ -4,18 +4,27 @@ Lê o stderr do simulador e o log de auditoria da ponte para conferir a cadeia
 simulador, ponte, API e banco.
 """
 
+import argparse
 import json
+import math
 import re
+import sys
+import time
 import uuid
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from contrato.telemetria import Comando
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
+
+if TYPE_CHECKING:
+    import httpx
 
 PREFIXO_ENVIADA = "simulador: enviada: "
 TIPOS_PONTE = ("RX", "TX", "API", "CONEXAO", "FILA")
@@ -270,3 +279,91 @@ def conferir_banco(sessao: Session, eventos: list[EventoPonte], boot: int) -> Re
         fronteira=fronteira,
         problemas=problemas,
     )
+
+
+INTERVALO_CONSULTA_S = 0.1
+
+
+class FalhaAbertura(RuntimeError):
+    """A execução não abriu: sem health-check novo no prazo ou recusa da API."""
+
+
+@dataclass(frozen=True)
+class ExecucaoAberta:
+    execucao_id: uuid.UUID
+    tentativa_id: uuid.UUID
+    aberta_em: datetime
+
+
+def _health_check_novo(cliente: "httpx.Client", inicio: datetime) -> bool:
+    resposta = cliente.get("/health-check/ultimo")
+    if resposta.status_code == 204:
+        return False
+    resposta.raise_for_status()
+    concluido_em = resposta.json().get("concluido_em")
+    return concluido_em is not None and datetime.fromisoformat(concluido_em) > inicio
+
+
+def abrir_execucao(
+    cliente: "httpx.Client",
+    labirinto: str,
+    timeout_s: float,
+    inicio: datetime,
+    dormir: Callable[[float], None] = time.sleep,
+) -> ExecucaoAberta:
+    """Espera um health-check concluído depois de `inicio` e abre a execução.
+
+    Consulta a cada 100 ms, até `timeout_s` (contado em consultas, para o teste
+    não depender do relógio).
+    """
+    consultas = max(1, math.ceil(timeout_s / INTERVALO_CONSULTA_S))
+    for numero in range(consultas):
+        if _health_check_novo(cliente, inicio):
+            break
+        if numero < consultas - 1:
+            dormir(INTERVALO_CONSULTA_S)
+    else:
+        raise FalhaAbertura(f"nenhum health-check concluído depois do início em {timeout_s:g} s")
+
+    resposta = cliente.post("/execucoes", json={"tipo_labirinto": labirinto})
+    if resposta.status_code == 409:
+        raise FalhaAbertura(f"execução recusada (409): {resposta.json().get('motivo')}")
+    resposta.raise_for_status()
+    corpo = resposta.json()
+    return ExecucaoAberta(
+        execucao_id=uuid.UUID(corpo["execucao_id"]),
+        tentativa_id=uuid.UUID(corpo["tentativa_id"]),
+        aberta_em=datetime.now(UTC),
+    )
+
+
+def _comando_abrir(args: argparse.Namespace) -> int:
+    import httpx
+
+    inicio = datetime.now(UTC)
+    with httpx.Client(base_url=args.url, timeout=5) as cliente:
+        try:
+            aberta = abrir_execucao(cliente, args.labirinto, args.timeout, inicio)
+        except (FalhaAbertura, httpx.HTTPError) as erro:
+            print(f"abrir: {erro}", file=sys.stderr)
+            return 1
+    print(f"execucao_id={aberta.execucao_id}")
+    print(f"tentativa_id={aberta.tentativa_id}")
+    print(f"aberta_em={aberta.aberta_em.isoformat(timespec='milliseconds')}")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    comandos = parser.add_subparsers(dest="comando", required=True)
+    abrir = comandos.add_parser("abrir", help="abre a execução logo depois do health-check")
+    abrir.add_argument("--url", default="http://localhost:8000", help="URL base da API")
+    abrir.add_argument("--labirinto", default="4x4", choices=("4x4", "8x4", "12x4"))
+    abrir.add_argument("--timeout", type=float, default=60, help="espera máxima em segundos")
+    abrir.set_defaults(executar=_comando_abrir)
+    args = parser.parse_args(argv)
+    return args.executar(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
