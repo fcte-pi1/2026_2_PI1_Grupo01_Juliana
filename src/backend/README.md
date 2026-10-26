@@ -154,11 +154,24 @@ A resposta traz os comandos para o robô: `{"comandos": []}`. O formato das mens
 
 ### Teste de carga (RNF-B11)
 
-O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem espera e verifica p95 < 100 ms sem crescimento. Para medir a API no ar, use o script, que manda `tel` no ritmo pedido e sai com código 1 se p95 ≥ 100 ms ou se o atraso acumulado passar de 1 s:
+O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem espera e verifica p95 < 100 ms sem crescimento. Para medir a API no ar, use o script, que manda as mensagens no ritmo pedido alternando `tel` e `passo` (RF08 e RF09):
 
 ```bash
 cd src/backend
 python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
+python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60 --csv carga.csv
+```
+
+- **Tentativa.** O script lê o `DATABASE_URL` (o mesmo da API), abre uma execução 4x4 com uma tentativa `running` antes de enviar e, no fim, marca a tentativa como `failed` e a execução como `cancelada`, mesmo se a carga for interrompida com Ctrl+C. Não é preciso criar nem encerrar nada no banco à mão.
+- **Recusa.** Se já houver uma tentativa aberta, o script não envia nada e sai com código 1: encerre essa tentativa antes de medir.
+- **Critério.** Sai com código 0 (APROVADO) só se p95 < 100 ms, o atraso acumulado não passar de 1 s, não houver erros e não houver crescimento: o p95 da última janela (10 s de mensagens) pode chegar ao dobro do p95 da primeira ou a ela mais 10 ms, o que for maior. O piso de 10 ms evita reprovar por ruído quando as latências são de poucos milissegundos. O mesmo critério vale no pytest.
+- **CSV.** Com `--csv`, grava uma linha por mensagem (`seq,tipo,instante_s,latencia_ms,status`); latência e status ficam vazios em erro de rede.
+
+Para gerar o gráfico da latência a partir do CSV (o matplotlib fica no extra `graficos`):
+
+```bash
+cd src/backend
+uv run --extra graficos python -m scripts.grafico_carga carga.csv carga.png
 ```
 
 ### Simular ponte (métricas / bateria)
@@ -173,18 +186,6 @@ python -m scripts.simular_ponte_telemetria --ticks 5 --encerrar cancelada
 python -m scripts.simular_ponte_telemetria --ticks 8 --encerrar interrompida --confirmar-firmware
 python -m scripts.simular_ponte_telemetria --health-check item-falha --componente-falha tof_direito
 ```
-
-O `carga_telemetria` lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
-
-```bash
-docker compose exec db psql -U micromouse -d micromouse -c "
-INSERT INTO execucao_logica (execucao_id, labirinto_id, status, tentativas_usadas, iniciada_em)
-VALUES ('00000000-0000-0000-0000-00000000c4a6', 1, 'em_andamento', 1, now());
-INSERT INTO tentativa (tentativa_id, execucao_id, attempt_index, status, tipo_inicio, iniciada_em)
-VALUES (gen_random_uuid(), '00000000-0000-0000-0000-00000000c4a6', 1, 'running', 'nova', now());"
-```
-
-Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed' WHERE execucao_id = '00000000-0000-0000-0000-00000000c4a6';`) para ela não receber a telemetria real.
 
 ---
 
