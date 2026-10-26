@@ -6,6 +6,7 @@
 #include "hal_tempo.h"
 
 #define PERIODO_MS 5
+#define DT_MAX_MS (PERIODO_MS * 4)
 
 /*
  * O feedforward já acerta o regime do modelo (potência máxima = VELOCIDADE_MAX).
@@ -114,17 +115,29 @@ void vel_passo(void)
         return;
     }
     ultimo_ms = agora;
+    /* Um intervalo longo (o primeiro passo muito depois do vel_iniciar, por
+       exemplo) não pode entrar na integral nem no prazo de travamento. */
+    if (dt_ms > DT_MAX_MS) {
+        for (int i = 0; i < MOTOR_QTD; i++) {
+            roda[i].pulsos = hal_encoder_ler((motor_id_t)i);
+        }
+        return;
+    }
     dt_s = (float)dt_ms * 0.001f;
     travou = false;
 
     for (int i = 0; i < MOTOR_QTD; i++) {
         int32_t pulsos = hal_encoder_ler((motor_id_t)i);
         int32_t delta = pulsos - roda[i].pulsos;
+        int16_t potencia = roda[i].potencia;
 
         roda[i].pulsos = pulsos;
         roda[i].medida_mm_s = (float)delta * MM_POR_PULSO / dt_s;
-        /* O prazo só corre com potência já na ponte e referência pedida. */
-        if (roda[i].ref_mm_s != 0.0f && roda[i].potencia != 0 && delta == 0) {
+        if (potencia < 0) {
+            potencia = (int16_t)-potencia;
+        }
+        /* Abaixo de MOV_TRAVADO_POTENCIA a roda nem vence a zona morta. */
+        if (roda[i].ref_mm_s != 0.0f && potencia >= MOV_TRAVADO_POTENCIA && delta == 0) {
             roda[i].parado_ms += dt_ms;
         } else {
             roda[i].parado_ms = 0;

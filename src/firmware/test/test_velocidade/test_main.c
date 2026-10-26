@@ -14,6 +14,9 @@
 #include "velocidade.h"
 
 #define REF_MM_S 400.0f
+/* 600 mm/s pede cerca de 706 de potência, acima de MOV_TRAVADO_POTENCIA.
+   400 mm/s fica em cerca de 471 e não pode contar como roda travada. */
+#define REF_TRAVA_MM_S 600.0f
 
 /* Corredor de 1x8: a 400 mm/s o robô não alcança a parede do fim no teste. */
 static const char CORREDOR_1X8[] =
@@ -184,16 +187,27 @@ static void test_encoder_parado_trava_no_prazo(void)
 {
     sim_travar_encoder(MOTOR_ESQ, true);
     sim_travar_encoder(MOTOR_DIR, true);
-    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
-    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    vel_definir_mm_s(MOTOR_ESQ, REF_TRAVA_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_TRAVA_MM_S);
+    conferir_trava_no_prazo();
+}
+
+static void test_encoder_parado_na_re_trava_no_prazo(void)
+{
+    /* No meio do corredor: a ré não bate na parede de trás durante o prazo. */
+    sim_definir_pose(CELULA_MM / 2.0f, 4.0f * CELULA_MM, PI_F / 2.0f);
+    sim_travar_encoder(MOTOR_ESQ, true);
+    sim_travar_encoder(MOTOR_DIR, true);
+    vel_definir_mm_s(MOTOR_ESQ, -REF_TRAVA_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, -REF_TRAVA_MM_S);
     conferir_trava_no_prazo();
 }
 
 static void test_uma_roda_parada_trava_no_prazo(void)
 {
     sim_travar_encoder(MOTOR_ESQ, true);
-    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
-    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    vel_definir_mm_s(MOTOR_ESQ, REF_TRAVA_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_TRAVA_MM_S);
     conferir_trava_no_prazo();
 
     TEST_ASSERT_EQUAL_INT32(0, hal_encoder_ler(MOTOR_ESQ));
@@ -204,8 +218,8 @@ static void test_reset_depois_do_stuck_continua_parado(void)
 {
     sim_travar_encoder(MOTOR_ESQ, true);
     sim_travar_encoder(MOTOR_DIR, true);
-    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
-    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    vel_definir_mm_s(MOTOR_ESQ, REF_TRAVA_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_TRAVA_MM_S);
     conferir_trava_no_prazo();
 
     vel_iniciar();
@@ -240,6 +254,83 @@ static void test_referencia_zero_nao_trava(void)
     TEST_ASSERT_FALSE(sim_motores_habilitados());
 }
 
+/* 10 mm/s pede cerca de 12 de potência, abaixo da zona morta do N20. */
+static void test_referencia_baixa_nao_trava(void)
+{
+    sim_travar_encoder(MOTOR_ESQ, true);
+    sim_travar_encoder(MOTOR_DIR, true);
+    vel_definir_mm_s(MOTOR_ESQ, 10.0f);
+    vel_definir_mm_s(MOTOR_DIR, -10.0f);
+    avancar_malha(MOTOR_TRAVADO_MS + 500);
+
+    TEST_ASSERT_FALSE(vel_travado());
+    TEST_ASSERT_TRUE(sim_motores_habilitados());
+}
+
+static void test_dt_grande_nao_aplica_o_passo(void)
+{
+    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    sim_mundo_avancar(2000);
+    vel_passo();
+
+    TEST_ASSERT_FALSE(sim_motores_habilitados());
+    TEST_ASSERT_FALSE(vel_travado());
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, vel_mm_s(MOTOR_ESQ));
+    TEST_ASSERT_EQUAL_FLOAT(0.0f, vel_mm_s(MOTOR_DIR));
+
+    conferir_velocidade(REF_MM_S, REF_MM_S);
+}
+
+static void test_dt_grande_nao_conta_travamento(void)
+{
+    sim_travar_encoder(MOTOR_ESQ, true);
+    sim_travar_encoder(MOTOR_DIR, true);
+    vel_definir_mm_s(MOTOR_ESQ, REF_TRAVA_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_TRAVA_MM_S);
+    avancar_malha(200);
+    TEST_ASSERT_FALSE(vel_travado());
+    TEST_ASSERT_TRUE(sim_motores_habilitados());
+
+    sim_mundo_avancar(2000);
+    vel_passo();
+    TEST_ASSERT_FALSE(vel_travado());
+    TEST_ASSERT_TRUE(sim_motores_habilitados());
+}
+
+static void test_dt_grande_nao_vira_pico_de_velocidade(void)
+{
+    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    avancar_malha(500);
+    sim_mundo_avancar(2000);
+    vel_passo();
+    sim_mundo_avancar(5);
+    vel_passo();
+
+    TEST_ASSERT_FLOAT_WITHIN(2000.0f, REF_MM_S, vel_mm_s(MOTOR_ESQ));
+    TEST_ASSERT_FLOAT_WITHIN(2000.0f, REF_MM_S, vel_mm_s(MOTOR_DIR));
+    TEST_ASSERT_FALSE(vel_travado());
+}
+
+static void test_dt_de_quatro_periodos_ainda_controla(void)
+{
+    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    sim_mundo_avancar(20);
+    vel_passo();
+    TEST_ASSERT_TRUE(sim_motores_habilitados());
+}
+
+static void test_dt_acima_de_quatro_periodos_nao_controla(void)
+{
+    vel_definir_mm_s(MOTOR_ESQ, REF_MM_S);
+    vel_definir_mm_s(MOTOR_DIR, REF_MM_S);
+    sim_mundo_avancar(21);
+    vel_passo();
+    TEST_ASSERT_FALSE(sim_motores_habilitados());
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -250,9 +341,16 @@ int main(void)
     RUN_TEST(test_converge_na_re);
     RUN_TEST(test_passo_so_age_a_cada_5_ms);
     RUN_TEST(test_encoder_parado_trava_no_prazo);
+    RUN_TEST(test_encoder_parado_na_re_trava_no_prazo);
     RUN_TEST(test_uma_roda_parada_trava_no_prazo);
     RUN_TEST(test_reset_depois_do_stuck_continua_parado);
     RUN_TEST(test_encoder_andando_nao_trava);
     RUN_TEST(test_referencia_zero_nao_trava);
+    RUN_TEST(test_referencia_baixa_nao_trava);
+    RUN_TEST(test_dt_grande_nao_aplica_o_passo);
+    RUN_TEST(test_dt_grande_nao_conta_travamento);
+    RUN_TEST(test_dt_grande_nao_vira_pico_de_velocidade);
+    RUN_TEST(test_dt_de_quatro_periodos_ainda_controla);
+    RUN_TEST(test_dt_acima_de_quatro_periodos_nao_controla);
     return UNITY_END();
 }

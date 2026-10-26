@@ -6,8 +6,11 @@
  *
  * vel_passo() roda a 200 Hz: lê o encoder, compara com a referência em mm/s
  * e manda a potência à ponte H (feedforward do regime do motor + PI).
- * Potência aplicada com o encoder parado por MOTOR_TRAVADO_MS desliga a
- * ponte até o próximo vel_iniciar(). Referência 0 não arma esse prazo.
+ * Potência de módulo pelo menos MOV_TRAVADO_POTENCIA, com o encoder parado
+ * por MOTOR_TRAVADO_MS, desliga a ponte até o próximo vel_iniciar().
+ * Referência 0, ou potência abaixo disso, não arma esse prazo.
+ * Se o intervalo desde o passo anterior passar de 4 períodos, vel_passo()
+ * só atualiza o relógio e os pulsos.
  *
  * Quem chama vel_passo() no robô entra depois. Este módulo não dirige
  * o movimento de célula.

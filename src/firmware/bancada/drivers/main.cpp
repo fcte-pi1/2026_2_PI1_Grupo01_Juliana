@@ -24,18 +24,19 @@
 #define PERIODO_MS     200
 
 static bateria_t bateria;
+static int16_t potencia[MOTOR_QTD];
 
-static void girar(motor_id_t motor, int16_t potencia)
+static void pedir(motor_id_t motor, int16_t valor)
 {
-    hal_motor_definir(MOTOR_ESQ, motor == MOTOR_ESQ ? potencia : 0);
-    hal_motor_definir(MOTOR_DIR, motor == MOTOR_DIR ? potencia : 0);
-    hal_motor_habilitar(true);
+    potencia[MOTOR_ESQ] = motor == MOTOR_ESQ ? valor : 0;
+    potencia[MOTOR_DIR] = motor == MOTOR_DIR ? valor : 0;
+    hal_motor_habilitar(valor != 0);
 }
 
 static void parar(void)
 {
-    hal_motor_definir(MOTOR_ESQ, 0);
-    hal_motor_definir(MOTOR_DIR, 0);
+    potencia[MOTOR_ESQ] = 0;
+    potencia[MOTOR_DIR] = 0;
     hal_motor_habilitar(false);
 }
 
@@ -63,10 +64,10 @@ void loop()
 {
     if (Serial.available()) {
         switch (Serial.read()) {
-        case 'e': girar(MOTOR_ESQ, POTENCIA_TESTE); break;
-        case 'E': girar(MOTOR_ESQ, -POTENCIA_TESTE); break;
-        case 'd': girar(MOTOR_DIR, POTENCIA_TESTE); break;
-        case 'D': girar(MOTOR_DIR, -POTENCIA_TESTE); break;
+        case 'e': pedir(MOTOR_ESQ, POTENCIA_TESTE); break;
+        case 'E': pedir(MOTOR_ESQ, -POTENCIA_TESTE); break;
+        case 'd': pedir(MOTOR_DIR, POTENCIA_TESTE); break;
+        case 'D': pedir(MOTOR_DIR, -POTENCIA_TESTE); break;
         case 'p': parar(); break;
         case 'n': testar_nvs(); break;
         default: break;
@@ -77,6 +78,10 @@ void loop()
     if (bateria_pronta(&bateria)) {
         hal_motor_definir_tensao(bateria_ponte_mv(&bateria));
     }
+    /* A tensão só entra no duty no hal_motor_definir. Reaplica a potência
+       guardada a cada volta, senão o PWM fica no valor da LiPo cheia. */
+    hal_motor_definir(MOTOR_ESQ, potencia[MOTOR_ESQ]);
+    hal_motor_definir(MOTOR_DIR, potencia[MOTOR_DIR]);
     Serial.printf("enc_e=%ld enc_d=%ld bat=%u mV ponte=%u mV\n",
                   (long)hal_encoder_ler(MOTOR_ESQ), (long)hal_encoder_ler(MOTOR_DIR),
                   bateria_mv(&bateria), bateria_ponte_mv(&bateria));
