@@ -229,3 +229,13 @@ button:focus-visible {
   *::before,
   *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* Testes de energia (7.2): gráficos e avisos montados a partir dos CSV */
+.energia-grafico { position: relative; height: 18rem; margin: 1rem 0; }
+.energia-aviso { color: var(--md-default-fg-color--light); font-style: italic; }
+.energia-fotos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.5rem; }
+.energia-fotos p { display: contents; }
+.energia-fotos img { width: 100%; }
+.energia-figura { display: block; margin: 0 auto; }
+.energia-fotos { max-width: 52rem; margin: 0 auto; }
+.energia-fotos--par { max-width: 40rem; grid-template-columns: repeat(2, 1fr); }
