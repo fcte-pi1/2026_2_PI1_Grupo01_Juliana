@@ -25,6 +25,7 @@ describe('unidades recebidas do backend (RNF-B01)', () => {
     render(<PainelAoVivo execucao={execucao} tentativa={execucao.tentativas[0]} labirinto={LABIRINTOS[0]} agora={agora} />)
     expect(cartao('Bateria').getByText('7810')).toHaveTextContent('mV')
     expect(cartao('Bateria').getByText('51,234567 % de carga')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Bateria' })).toHaveAttribute('aria-valuenow', '51.234567')
     expect(cartao('Velocidade').getByText('210')).toHaveTextContent('mm/s')
     expect(screen.getByText('7840 mV · OK')).toBeInTheDocument()
     expect(screen.getByText('90 mm · OK')).toBeInTheDocument()
@@ -66,5 +67,17 @@ describe('unidades recebidas do backend (RNF-B01)', () => {
     render(<PainelEncerrada execucao={execucao} tentativa={execucao.tentativas[0]} labirinto={LABIRINTOS[0]} agora={agora} />)
     expect(cartao('Bateria usada').getByText('Percentual pendente')).toBeInTheDocument()
     expect(cartao('Variação contra o melhor tempo').getByText('—')).toBeInTheDocument()
+  })
+
+  it.each([null, 0])('preserva tempo final %s sem substituir pela diferença entre datas', (tempo) => {
+    const agora = Date.now()
+    const execucao = buscarCenario('04-concluida').atual(agora).execucao!
+    execucao.tempo_total_s = tempo
+    execucao.tentativas[0].tempo_s = tempo
+    render(<PainelEncerrada execucao={execucao} tentativa={execucao.tentativas[0]} labirinto={LABIRINTOS[0]} agora={agora} />)
+    const cronometro = screen.getByText('Tempo da tentativa').closest('section')!
+    expect(within(cronometro).getByText(tempo === null ? '—' : '00:00,0', { selector: '.tempo__cronometro' })).toBeInTheDocument()
+    const total = screen.getByText('Tempo da execução').closest('section')!
+    expect(within(total).getByText(tempo === null ? '—' : '00:00,0', { selector: '.mono' })).toBeInTheDocument()
   })
 })
