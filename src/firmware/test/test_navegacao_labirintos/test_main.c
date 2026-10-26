@@ -6,9 +6,13 @@
  * D18: todas em sucesso com 1%, pelo menos 95% com 5%, e nenhuma corrida em
  * limite ou sucesso_falso. Copiar o estado com memcpy no
  * meio da corrida e seguir com a cópia não muda nada (retomada, FIRM-08).
+ * O trajeto anotado vai da largada ao objetivo, uma célula vizinha por vez
+ * (caso 4.12 do 7.4, US39 e US41).
  */
 
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unity.h>
 
@@ -154,12 +158,76 @@ static void test_todos_os_labirintos_terminam_em_sucesso(void)
 {
     static trajeto_t trajeto;
     static const char *const VERSOES[] = {"dir", "esq"};
+    int sucessos = 0;
+    int sucessos_falsos = 0;
+    char mensagem[96];
 
     for (size_t i = 0; i < QTD_PARES; i++) {
         for (size_t v = 0; v < 2; v++) {
             sim_relatorio_t rel = correr(PARES[i], VERSOES[v], &trajeto);
+            sucessos += rel.resultado == SIM_RESULTADO_SUCESSO;
+            sucessos_falsos += rel.resultado == SIM_RESULTADO_SUCESSO_FALSO;
             TEST_ASSERT_EQUAL_STRING_MESSAGE(sim_resultado_nome(SIM_RESULTADO_SUCESSO),
                                              sim_resultado_nome(rel.resultado), PARES[i]);
+        }
+    }
+
+    snprintf(mensagem, sizeof(mensagem), "%d labirintos (4x4, 8x4 e 12x4): %d em sucesso, %d sucesso_falso",
+             (int)(QTD_PARES * 2), sucessos, sucessos_falsos);
+    TEST_MESSAGE(mensagem);
+}
+
+/*
+ * US41: a lista de células reconstrói o trajeto. Começa na largada (0, 0),
+ * cada célula é vizinha da anterior e a última é o canto oposto, onde o
+ * robô declarou o sucesso (US39).
+ */
+static void test_trajeto_vai_da_largada_ao_objetivo_por_celulas_vizinhas(void)
+{
+    static trajeto_t trajeto;
+    static const char *const VERSOES[] = {"dir", "esq"};
+    char mensagem[64];
+
+    for (size_t i = 0; i < QTD_PARES; i++) {
+        for (size_t v = 0; v < 2; v++) {
+            sim_labirinto_t lab;
+            carregar(&lab, PARES[i], VERSOES[v]);
+            sim_relatorio_t rel = correr(PARES[i], VERSOES[v], &trajeto);
+            snprintf(mensagem, sizeof(mensagem), "%s-%s", PARES[i], VERSOES[v]);
+
+            TEST_ASSERT_TRUE_MESSAGE(trajeto.qtd <= MAX_CELULAS, mensagem);
+            TEST_ASSERT_EQUAL_INT_MESSAGE(rel.celulas + 1, trajeto.qtd, mensagem);
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, trajeto.celulas[0].x, mensagem);
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, trajeto.celulas[0].y, mensagem);
+
+            bool visitada[SIM_LAB_MAX][SIM_LAB_MAX] = {{false}};
+            int distintas = 0;
+            for (int c = 0; c < trajeto.qtd; c++) {
+                const sim_celula_t *atual = &trajeto.celulas[c];
+                if (!visitada[atual->x][atual->y]) {
+                    visitada[atual->x][atual->y] = true;
+                    distintas++;
+                }
+                if (c == 0) {
+                    continue;
+                }
+                const sim_celula_t *anterior = &trajeto.celulas[c - 1];
+                int passo = abs(atual->x - anterior->x) + abs(atual->y - anterior->y);
+                snprintf(mensagem, sizeof(mensagem), "%s-%s, celula %d", PARES[i], VERSOES[v], c);
+                TEST_ASSERT_EQUAL_INT_MESSAGE(1, passo, mensagem);
+            }
+            snprintf(mensagem, sizeof(mensagem), "%s-%s", PARES[i], VERSOES[v]);
+            TEST_ASSERT_EQUAL_INT_MESSAGE(rel.distintas, distintas, mensagem);
+
+            /* No referencial do robô o objetivo é (L - 1, A - 1), com L e A o tamanho do labirinto em algum giro. */
+            const sim_celula_t *ultima = &trajeto.celulas[trajeto.qtd - 1];
+            int lx = ultima->x + 1;
+            int ly = ultima->y + 1;
+            bool canto_oposto = (lx == lab.largura && ly == lab.altura) || (lx == lab.altura && ly == lab.largura);
+            TEST_ASSERT_TRUE_MESSAGE(canto_oposto, mensagem);
+            TEST_ASSERT_EQUAL_INT_MESSAGE(NAV_ACAO_SUCESSO, ultima->acao, mensagem);
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(rel.x, ultima->x, mensagem);
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(rel.y, ultima->y, mensagem);
         }
     }
 }
@@ -263,6 +331,7 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_todos_os_labirintos_terminam_em_sucesso);
+    RUN_TEST(test_trajeto_vai_da_largada_ao_objetivo_por_celulas_vizinhas);
     RUN_TEST(test_versoes_espelhadas_dao_o_mesmo_trajeto);
     RUN_TEST(test_com_1_por_cento_de_ruido_todas_dao_sucesso);
     RUN_TEST(test_com_5_por_cento_de_ruido_pelo_menos_95_por_cento_dao_sucesso);
