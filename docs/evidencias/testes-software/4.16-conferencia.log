@@ -1,0 +1,18 @@
+duração do ensaio: 631.8 s (do primeiro ao último RX)
+enviadas: 3853
+RX: 3852
+API 200: 3852
+API com outro status: 0
+TX por comando: nenhuma
+FILA: 0
+API falhou: 0
+execucao_id: 19269265-f04d-44e0-8341-20937f480423
+motivo do encerramento: time_exceeded
+antes da janela: hc_item=8, hc_resultado=1, passo=1, tel=2
+dentro da janela: passo=731, tel=2926
+depois da janela: passo=37, tel=145
+gravados: hc_item=8, passo=731, tel=2926
+fronteira: 1
+  2026-10-26T11:08:35.021-03:00 {"v":1,"boot":2,"seq":3670,"t_ms":587400,"tipo":"tel","estado":"running","x":1,"y":0,"rumo":"O","bat_mv":7313,"vel_mm_s":225,"eixo_longo":null}
+problemas: 0
+APROVADO
