@@ -302,8 +302,10 @@ class TestTransicoesExecucao:
         ret = gerenciador.retomar(db_session, execucao_id)
         tentativa = db_session.get(Tentativa, ret.tentativa_id)
         tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+        monitor = MonitorConexao(10)
+        monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
 
-        resultado = gerenciador.verificar_monitores(db_session, MonitorConexao(10))
+        resultado = gerenciador.verificar_monitores(db_session, monitor)
 
         assert resultado is not None
         assert [e.tipo for e in resultado.eventos] == ["status", "falha"]
@@ -549,13 +551,31 @@ def test_silencio_grava_link_lost_sem_mensagem(db_session: Session, gerenciador)
     ret = gerenciador.nova_execucao(db_session, "4x4")
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
-    assert gravar_se_cancelou(db_session, gerenciador, MonitorConexao(10)) is True
+    monitor = MonitorConexao(10)
+    monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
+    assert gravar_se_cancelou(db_session, gerenciador, monitor) is True
     db_session.expire_all()
     tentativa = db_session.get(Tentativa, ret.tentativa_id)
     execucao = db_session.get(ExecucaoLogica, ret.execucao_id)
     assert tentativa.status == "failed"
     assert tentativa.falha.motivo == "link_lost"
     assert execucao.status == "em_andamento"
+
+
+def test_link_lost_nao_limpa_interromper_pendente(db_session: Session, gerenciador):
+    ret = gerenciador.nova_execucao(db_session, "4x4")
+    tentativa = db_session.get(Tentativa, ret.tentativa_id)
+    tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
+    monitor = MonitorConexao(10)
+    monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
+    # O comando pode ter sido solicitado pelo operador antes de a ponte cair.
+    gerenciador._interrupcao_pendente = True
+
+    assert gerenciador.verificar_monitores(db_session, monitor) is not None
+
+    assert [comando.model_dump() for comando in gerenciador.comandos_pendentes()] == [
+        {"v": 1, "cmd": "interromper"}
+    ]
 
 
 @pytest.mark.parametrize("motivo", ["link_lost", "time_exceeded"])
@@ -579,6 +599,8 @@ def test_varredura_publica_falha_terminal_uma_vez(db_session: Session, gerenciad
 
     espia = Espia()
     monitor = MonitorConexao(10)
+    if motivo == "link_lost":
+        monitor.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
     assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is True
     assert gravar_se_cancelou(db_session, gerenciador, monitor, espia) is False
 
@@ -599,6 +621,7 @@ def test_perda_de_link_na_ingestao_grava_falha_e_descarta_a_linha(
     tentativa = db_session.get(Tentativa, tentativa_id)
     tentativa.iniciada_em = datetime.now(UTC) - timedelta(seconds=11)
     db_session.commit()
+    client.app.state.monitor_conexao.registrar_mensagem(datetime.now(UTC) - timedelta(seconds=11))
 
     resposta = client.post(
         "/telemetria",
