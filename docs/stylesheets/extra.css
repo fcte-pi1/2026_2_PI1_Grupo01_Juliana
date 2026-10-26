@@ -33,6 +33,8 @@
   --md-default-fg-color: var(--rt-ink);
   --md-default-fg-color--light: var(--rt-muted);
   --md-code-bg-color: #0b151c;
+  /* O primário continua escuro por causa do cabeçalho. Links e o item ativo herdam essa cor, então no tema escuro ela some. */
+  --md-typeset-a-color: var(--rt-orange-light);
 }
 
 html { scroll-behavior: smooth; }
