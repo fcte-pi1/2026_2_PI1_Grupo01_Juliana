@@ -6,12 +6,16 @@ simulador, ponte, API e banco.
 
 import json
 import re
+import uuid
+from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from contrato.telemetria import Comando
 from pydantic import ValidationError
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 PREFIXO_ENVIADA = "simulador: enviada: "
 TIPOS_PONTE = ("RX", "TX", "API", "CONEXAO", "FILA")
@@ -132,5 +136,137 @@ def conferir_ponte(enviadas: list[str], eventos: list[EventoPonte]) -> Resultado
         fila_descartada=len(fila),
         tx=tx,
         tx_invalidos=tx_invalidos,
+        problemas=problemas,
+    )
+
+
+FRONTEIRA = timedelta(milliseconds=50)
+ITENS_HEALTH_CHECK = 8
+
+
+@dataclass(frozen=True)
+class ResultadoBanco:
+    """Conferência no banco do que chegou com a tentativa aberta."""
+
+    execucao_id: uuid.UUID | None
+    motivo_encerramento: str | None
+    antes: dict[str, int]
+    dentro: dict[str, int]
+    depois: dict[str, int]
+    gravados: dict[str, int]
+    fronteira: list[EventoPonte]
+    problemas: list[str]
+
+    @property
+    def aprovado(self) -> bool:
+        return not self.problemas
+
+
+def _mensagem(evento: EventoPonte) -> dict:
+    try:
+        dado = json.loads(evento.conteudo)
+    except ValueError:
+        return {}
+    return dado if isinstance(dado, dict) else {}
+
+
+def _subsequencia(exigidos: list[tuple[int, int]], gravados: list[tuple[int, int]]) -> int | None:
+    """Índice do primeiro exigido que não aparece, em ordem, nos gravados."""
+    restantes = iter(gravados)
+    for indice, celula in enumerate(exigidos):
+        if celula not in restantes:
+            return indice
+    return None
+
+
+def conferir_banco(sessao: Session, eventos: list[EventoPonte], boot: int) -> ResultadoBanco:
+    """Todo `tel` e `passo` RX dentro da janela da tentativa do `boot` foi gravado.
+
+    O backend numera `passo_trajeto.seq` por conta própria (1, 2, ...) e só
+    regrava as paredes quando a célula repete; por isso os passos são
+    conferidos pela célula, na ordem, e não pelo `seq` da mensagem.
+    """
+    from app.models import (
+        HealthCheck,
+        HealthCheckItem,
+        LeituraTelemetria,
+        PassoTrajeto,
+        Tentativa,
+    )
+
+    problemas = []
+    tentativas = sessao.scalars(
+        select(Tentativa).join(HealthCheck).where(HealthCheck.boot == boot)
+    ).all()
+    if not tentativas:
+        problemas.append(f"nenhuma tentativa com health-check do boot {boot}")
+        return ResultadoBanco(None, None, {}, {}, {}, {}, [], problemas)
+    if len(tentativas) > 1:
+        problemas.append(f"{len(tentativas)} tentativas com health-check do boot {boot}")
+    tentativa = tentativas[0]
+    inicio, fim = tentativa.iniciada_em, tentativa.encerrada_em
+    if fim is None:
+        problemas.append("tentativa ainda aberta")
+
+    antes: Counter[str] = Counter()
+    dentro: Counter[str] = Counter()
+    depois: Counter[str] = Counter()
+    fronteira = []
+    passos_exigidos: list[tuple[int, int]] = []
+    for evento in (e for e in eventos if e.tipo == "RX"):
+        dado = _mensagem(evento)
+        tipo = dado.get("tipo", "?")
+        perto = abs(evento.hora - inicio) < FRONTEIRA
+        perto = perto or (fim is not None and abs(evento.hora - fim) < FRONTEIRA)
+        if perto:
+            fronteira.append(evento)
+        elif evento.hora < inicio:
+            antes[tipo] += 1
+        elif fim is not None and evento.hora > fim:
+            depois[tipo] += 1
+        else:
+            dentro[tipo] += 1
+            celula = (dado.get("x"), dado.get("y"))
+            if tipo == "passo" and (not passos_exigidos or passos_exigidos[-1] != celula):
+                passos_exigidos.append(celula)
+
+    passos = sessao.execute(
+        select(PassoTrajeto.x, PassoTrajeto.y)
+        .where(PassoTrajeto.execucao_id == tentativa.execucao_id)
+        .order_by(PassoTrajeto.seq)
+    ).all()
+    leituras = sessao.scalar(
+        select(func.count())
+        .select_from(LeituraTelemetria)
+        .where(LeituraTelemetria.tentativa_id == tentativa.tentativa_id)
+    )
+    itens = sessao.scalar(
+        select(func.count())
+        .select_from(HealthCheckItem)
+        .where(HealthCheckItem.hc_id == tentativa.hc_id)
+    )
+
+    faltando = _subsequencia(passos_exigidos, [tuple(p) for p in passos])
+    if faltando is not None:
+        problemas.append(
+            f"passo {faltando + 1} da janela não gravado: célula {passos_exigidos[faltando]}"
+        )
+    tel_fronteira = sum(1 for e in fronteira if _mensagem(e).get("tipo") == "tel")
+    if not dentro["tel"] <= leituras <= dentro["tel"] + tel_fronteira:
+        problemas.append(
+            f"leituras gravadas ({leituras}) diferente de tel RX na janela ({dentro['tel']}"
+            f", mais {tel_fronteira} na fronteira)"
+        )
+    if itens != ITENS_HEALTH_CHECK:
+        problemas.append(f"health-check com {itens} itens, esperado {ITENS_HEALTH_CHECK}")
+
+    return ResultadoBanco(
+        execucao_id=tentativa.execucao_id,
+        motivo_encerramento=tentativa.falha.motivo if tentativa.falha else None,
+        antes=dict(antes),
+        dentro=dict(dentro),
+        depois=dict(depois),
+        gravados={"tel": leituras, "passo": len(passos), "hc_item": itens},
+        fronteira=fronteira,
         problemas=problemas,
     )
