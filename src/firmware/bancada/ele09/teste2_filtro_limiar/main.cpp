@@ -2,14 +2,16 @@
  * Teste 2 - Filtro de media movel + limiar com LED (Dupla 3: Marcus e Fabio)
  * Ratatouille - PI1 2026.2
  *
- * Biblioteca: "Adafruit VL53L0X" (Gerenciador de Bibliotecas; aceite instalar
- *             as dependencias, como a Adafruit BusIO).
+ * Biblioteca: Adafruit VL53L0X (o PlatformIO baixa sozinho pelo lib_deps).
  *
  * Ligacao:  VL53L0X VIN -> 3V3, GND -> GND, SDA -> D21, SCL -> D22
  *           D2 -> resistor 1k -> perna LONGA do LED; perna CURTA -> GND
  *
- * Plotter Serial (115200): mostra 3 curvas - bruto, filtrado e o limiar (100 mm).
+ * Grafico: extensao Teleplot do VS Code (115200). Cada linha ">nome:valor"
+ * vira uma curva: bruto, filtrado e o limiar (100 mm). Feche o monitor serial
+ * do PlatformIO antes de conectar a Teleplot: so um programa usa a porta.
  */
+#include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_VL53L0X.h>
 
@@ -46,15 +48,28 @@ void setup() {
   digitalWrite(PINO_LED, LOW);
 
   Wire.begin(PINO_SDA, PINO_SCL);
-  if (!sensor.begin()) {
-    Serial.println("VL53L0X nao encontrado: confira a ligacao e rode o Teste 1");
-    while (true) delay(100);
+  /* 50 kHz em vez de 100 kHz: mais tolerante aos jumpers longos, emendas e
+   * pinos sem solda da bancada */
+  Wire.setClock(50000);
+  delay(100);   /* da tempo do sensor terminar de ligar */
+  /* Tenta de novo a cada 1 s em vez de travar: com os pinos do sensor sem
+   * solda, o contato pode falhar na primeira tentativa. */
+  while (!sensor.begin()) {
+    Serial.println("VL53L0X nao encontrado, tentando de novo (confira o contato do SDA/SCL)");
+    delay(1000);
   }
+  Serial.println("VL53L0X encontrado");
 }
 
 void loop() {
-  VL53L0X_RangingMeasurementData_t medida;
-  sensor.rangingTest(&medida, false);
+  VL53L0X_RangingMeasurementData_t medida = {};   /* zera: sem lixo de leituras antigas */
+  VL53L0X_Error erro = sensor.rangingTest(&medida, false);
+
+  /* Leitura que falhou (contato do I2C) e descartada: sem isso o codigo
+   * repetia o ultimo valor e o grafico parecia travado. */
+  if (erro != VL53L0X_ERROR_NONE) {
+    return;
+  }
 
   /* RangeStatus 4 = fora de alcance (nada na frente): conta como longe. */
   uint16_t bruto = (medida.RangeStatus == 4) ? ALCANCE_MAX : medida.RangeMilliMeter;
@@ -69,6 +84,6 @@ void loop() {
     digitalWrite(PINO_LED, LOW);
   }
 
-  /* Formato "nome:valor" -> o Plotter Serial desenha uma curva para cada um. */
-  Serial.printf("bruto:%u,filtrado:%u,limiar:%u\n", bruto, filtrado, LIMIAR_MM);
+  /* Formato da Teleplot: ">nome:valor", uma curva por nome. */
+  Serial.printf(">bruto:%u\n>filtrado:%u\n>limiar:%u\n", bruto, filtrado, LIMIAR_MM);
 }

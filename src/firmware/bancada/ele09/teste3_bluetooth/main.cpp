@@ -8,6 +8,7 @@
  *
  * Ligacao: igual ao Teste 2.
  */
+#include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_VL53L0X.h>
 #include "BluetoothSerial.h"
@@ -53,26 +54,36 @@ void setup() {
   SerialBT.begin("Ratatuli_ToF");   /* nome que aparece no celular */
 
   Wire.begin(PINO_SDA, PINO_SCL);
-  if (!sensor.begin()) {
-    Serial.println("VL53L0X nao encontrado: confira a ligacao e rode o Teste 1");
-    SerialBT.println("VL53L0X nao encontrado");
-    while (true) delay(100);
+  /* 50 kHz em vez de 100 kHz: mais tolerante aos jumpers longos, emendas e
+   * pinos sem solda da bancada */
+  Wire.setClock(50000);
+  /* Tenta de novo a cada 1 s em vez de travar: com os pinos do sensor sem
+   * solda, o contato pode falhar na primeira tentativa. */
+  while (!sensor.begin()) {
+    Serial.println("VL53L0X nao encontrado, tentando de novo (confira o contato do SDA/SCL)");
+    SerialBT.println("VL53L0X nao encontrado, tentando de novo");
+    delay(1000);
   }
+  Serial.println("VL53L0X encontrado");
   Serial.println("Bluetooth pronto: pareie com 'Ratatuli_ToF'");
   proxima_ms = millis();
 }
 
 void loop() {
-  VL53L0X_RangingMeasurementData_t medida;
-  sensor.rangingTest(&medida, false);
+  VL53L0X_RangingMeasurementData_t medida = {};
+  VL53L0X_Error erro = sensor.rangingTest(&medida, false);
 
-  uint16_t bruto = (medida.RangeStatus == 4) ? ALCANCE_MAX : medida.RangeMilliMeter;
-  if (bruto > ALCANCE_MAX) bruto = ALCANCE_MAX;
-  uint16_t filtrado = media_movel(bruto);
+  /* Leitura que falhou (contato do I2C) e descartada em vez de repetir o
+   * ultimo valor; o ciclo segue no mesmo ritmo de 10 Hz. */
+  if (erro == VL53L0X_ERROR_NONE) {
+    uint16_t bruto = (medida.RangeStatus == 4) ? ALCANCE_MAX : medida.RangeMilliMeter;
+    if (bruto > ALCANCE_MAX) bruto = ALCANCE_MAX;
+    uint16_t filtrado = media_movel(bruto);
 
-  digitalWrite(PINO_LED, filtrado < LIMIAR_MM ? HIGH : LOW);
+    digitalWrite(PINO_LED, filtrado < LIMIAR_MM ? HIGH : LOW);
 
-  SerialBT.println(filtrado);   /* telemetria pelo radio, nao pelo cabo */
+    SerialBT.println(filtrado);   /* telemetria pelo radio, nao pelo cabo */
+  }
 
   /* Taxa fixa de 10 Hz. Um delay(100) puro somaria o tempo da leitura do
    * sensor (~30 ms) e daria ~7,5 Hz; aqui o laco espera so o que falta
