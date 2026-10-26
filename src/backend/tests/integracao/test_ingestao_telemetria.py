@@ -15,6 +15,7 @@ from app.models import (
 )
 from app.repositories import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
+from app.services.monitor_conexao import MonitorConexao
 from contrato.telemetria import Comando, ler_linha
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
@@ -335,6 +336,25 @@ def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     assert tentativa_aberta.falha.motivo == "link_lost"
 
 
+def test_primeira_telemetria_apos_reinicio_nao_fecha_tentativa_antiga(
+    client, db_session, tentativa_aberta
+):
+    """#229: o monitor novo aguarda a ponte antes de medir ausência de sinal."""
+    tentativa_aberta.iniciada_em = datetime.now(UTC) - timedelta(seconds=20)
+    db_session.commit()
+    monitor_novo = MonitorConexao(limite_sem_sinal_s=10)
+    client.app.state.monitor_conexao = monitor_novo
+    client.app.state.ingestao_telemetria.monitor = monitor_novo
+
+    assert _enviar(client, _linha()).status_code == 200
+
+    db_session.expire_all()
+    tentativa = db_session.get(Tentativa, tentativa_aberta.tentativa_id)
+    assert tentativa.status == "running"
+    assert tentativa.falha is None
+    assert len(_leituras(db_session, tentativa)) == 1
+
+
 def _hc_item(seq: int, **campos) -> str:
     return json.dumps(
         {"v": 1, "boot": 7, "seq": seq, "t_ms": 1000 + seq * 100, "tipo": "hc_item"}
@@ -514,6 +534,52 @@ def test_seq_do_passo_e_por_execucao_e_retomada_so_no_primeiro(client, db_sessio
     assert [p.retomada for p in trajeto] == [False, False, True, False]
     assert trajeto[1].paredes_mask == 5
     assert trajeto[2].paredes_mask == 1
+
+
+def test_health_check_de_boot_maior_encerra_a_tentativa_aberta_como_link_lost(client, db_session):
+    execucao = _nova_execucao(db_session, "4x4")
+    tentativa = _nova_tentativa(db_session, execucao, "running")
+    agora = datetime.now(UTC)
+    hc = HealthCheck(
+        hc_id=uuid.uuid4(),
+        boot=7,
+        aprovado=True,
+        tipo_dip="4x4",
+        iniciado_em=agora,
+        concluido_em=agora,
+    )
+    Repositorio(db_session).salvar(hc)
+    tentativa.hc_id = hc.hc_id
+    db_session.flush()
+    _enviar(client, _passo(1, x=0, y=1))
+    _enviar(client, _passo(2, x=0, y=2))
+    _enviar(client, _linha(seq=3, x=0, y=2))
+
+    # o robô reiniciou (boot 8) antes de o monitor de link vencer
+    _enviar(client, _hc_item(0, boot=8))
+
+    db_session.refresh(tentativa)
+    assert tentativa.status == "failed"
+    assert (tentativa.falha.motivo, tentativa.falha.origem) == ("link_lost", "automatica")
+    assert (tentativa.falha.celula_x, tentativa.falha.celula_y) == (0, 2)
+    # o health-check do novo boot foi gravado e a execução segue aberta para retomar
+    assert db_session.scalar(select(HealthCheck).where(HealthCheck.boot == 8)) is not None
+    assert execucao.status == "em_andamento"
+
+
+def test_health_check_do_mesmo_boot_nao_encerra_a_tentativa(client, db_session):
+    execucao = _nova_execucao(db_session, "4x4")
+    tentativa = _nova_tentativa(db_session, execucao, "running")
+    agora = datetime.now(UTC)
+    hc = HealthCheck(hc_id=uuid.uuid4(), boot=7, aprovado=True, tipo_dip="4x4", iniciado_em=agora)
+    Repositorio(db_session).salvar(hc)
+    tentativa.hc_id = hc.hc_id
+    db_session.flush()
+
+    _enviar(client, _hc_item(0, boot=7))
+
+    db_session.refresh(tentativa)
+    assert tentativa.status == "running"
 
 
 def test_passo_repetido_nao_grava_de_novo(client, tentativa_aberta, db_session):

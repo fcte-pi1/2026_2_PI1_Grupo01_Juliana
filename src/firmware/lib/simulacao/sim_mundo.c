@@ -34,6 +34,7 @@ static struct {
     int16_t potencia[2];
     float velocidade_mm_s[2];
     float pulsos[2];
+    bool encoder_travado[2];
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
     bool tof_ausente[SIM_TOF_QTD];
     uint16_t tof_ruido_mm;
@@ -127,8 +128,11 @@ static void passo_1ms(void)
         m.pose.x_mm = novo_x;
         m.pose.y_mm = novo_y;
         m.pose.theta_rad += giro;
-        m.pulsos[0] += deslocamento[0] / MM_POR_PULSO;
-        m.pulsos[1] += deslocamento[1] / MM_POR_PULSO;
+        for (int i = 0; i < 2; i++) {
+            if (!m.encoder_travado[i]) {
+                m.pulsos[i] += deslocamento[i] / MM_POR_PULSO;
+            }
+        }
     }
 
     float uso_motores = (fabsf((float)m.potencia[0]) + fabsf((float)m.potencia[1])) / 2000.0f;
@@ -224,6 +228,13 @@ void sim_led_definir(bool aceso) { m.led = aceso; }
 void sim_buzzer_definir(bool ligado) { m.buzzer = ligado; }
 
 void sim_definir_tof_ausente(int tof, bool ausente) { m.tof_ausente[tof] = ausente; }
+
+void sim_travar_encoder(int motor, bool travado)
+{
+    if (motor >= 0 && motor < 2) {
+        m.encoder_travado[motor] = travado;
+    }
+}
 void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente)
 {
     m.tof_ruido_mm = amplitude_mm;
@@ -238,6 +249,36 @@ void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
 
 void sim_definir_bateria_mv(uint16_t mv) { m.bateria_mv = mv; }
 void sim_definir_boot(bool pressionado) { m.boot = pressionado; }
+
+/* 10 mm depois da fronteira: a lateral ainda mede a célula atual, não a vizinha. */
+#define ENTRADA_MM 10.0f
+
+void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
+{
+    float x = (celula_x + 0.5f) * (float)CELULA_MM;
+    float y = (celula_y + 0.5f) * (float)CELULA_MM;
+    float theta = PI_F / 2.0f;
+
+    switch (direcao) {
+    case 1: /* leste: entrou pela borda oeste */
+        x = celula_x * (float)CELULA_MM + ENTRADA_MM;
+        theta = 0.0f;
+        break;
+    case 2: /* sul: entrou pela borda norte */
+        y = (celula_y + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = -PI_F / 2.0f;
+        break;
+    case 3: /* oeste: entrou pela borda leste */
+        x = (celula_x + 1) * (float)CELULA_MM - ENTRADA_MM;
+        theta = PI_F;
+        break;
+    default: /* norte: entrou pela borda sul */
+        y = celula_y * (float)CELULA_MM + ENTRADA_MM;
+        theta = PI_F / 2.0f;
+        break;
+    }
+    sim_definir_pose(x, y, theta);
+}
 
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)
 {

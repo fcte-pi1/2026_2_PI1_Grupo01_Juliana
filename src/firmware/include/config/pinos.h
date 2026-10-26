@@ -23,25 +23,24 @@
 #define PINO_XSHUT_F        33  /* frontal; PROVISÓRIO até o esquemático novo */
 #define PINO_XSHUT_E        4   /* lateral esquerdo */
 #define PINO_XSHUT_D        5   /* lateral direito (GPIO5 é strapping: nível alto no boot) */
-/* GPIO 18 livre (era o XSHUT do segundo frontal) */
+/* GPIO 18 (era o XSHUT do segundo frontal) foi para o IN2 do motor direito */
 
 /*
  * Ponte H dupla (TB6612FNG): PWM de velocidade + 2 linhas de sentido por motor — PROVISÓRIO.
  *
  * A folha de Controle só tem as 5 redes do A4988 (STEP_E 25, DIR_E 26, STEP_D 27,
- * DIR_D 14, MOT_EN 13) e o único GPIO livre é o 15. A TB6612 pede 7 sinais, então
- * falta um pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas
- * linhas IN, o que cabe nas 5 redes atuais. A decisão é da Eletrônica.
+ * DIR_D 14, MOT_EN 13). A TB6612 pede 7 sinais: os dois IN2 vão nos GPIO livres
+ * 15 e 18, que ainda precisam de fio até a ponte. A decisão é da Eletrônica.
  *
  * Atenção: R1 (10 kΩ) puxa MOT_EN para 3,3 V. No A4988 isso desligava os
  * motores no boot; no STBY da TB6612 os liga. Precisa virar pull-down.
  */
 #define PINO_MOT_E_PWM      25   /* STEP_E */
 #define PINO_MOT_E_IN1      26   /* DIR_E */
-#define PINO_MOT_E_IN2      15   /* único GPIO livre (strapping: nível alto no boot) */
+#define PINO_MOT_E_IN2      15   /* GPIO livre (strapping: nível alto no boot) */
 #define PINO_MOT_D_PWM      27   /* STEP_D */
 #define PINO_MOT_D_IN1      14   /* DIR_D */
-#define PINO_MOT_D_IN2      (-1) /* PENDENTE: sem GPIO livre */
+#define PINO_MOT_D_IN2      18   /* GPIO livre (era o XSHUT do segundo frontal) */
 #define PINO_MOT_STBY       13   /* MOT_EN; nível baixo = motores desligados (estado seguro) */
 
 /* Encoders A/B (GPIO34, 35 e 39 são só entrada e não têm pull-up interno) */

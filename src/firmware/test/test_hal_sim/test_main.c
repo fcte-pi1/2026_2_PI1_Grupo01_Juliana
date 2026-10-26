@@ -66,6 +66,28 @@ static void test_motor_habilitado_gira_e_encoder_conta(void)
     TEST_ASSERT_TRUE(hal_encoder_ler(MOTOR_DIR) > 0);
 }
 
+static void test_reiniciar_com_motor_girando_para_e_volta_ao_standby(void)
+{
+    hal_motor_iniciar();
+    hal_motor_habilitar(true);
+    hal_motor_definir(MOTOR_ESQ, 800);
+    hal_motor_definir(MOTOR_DIR, -800);
+    sim_mundo_avancar(200);
+
+    /* reset no meio do movimento */
+    hal_motor_iniciar();
+    TEST_ASSERT_FALSE(sim_motores_habilitados());
+
+    /* a potência de antes não pode voltar; 1 s para a roda simulada parar de vez */
+    hal_motor_habilitar(true);
+    sim_mundo_avancar(1000);
+    int32_t esquerda = hal_encoder_ler(MOTOR_ESQ);
+    int32_t direita = hal_encoder_ler(MOTOR_DIR);
+    sim_mundo_avancar(500);
+    TEST_ASSERT_EQUAL_INT32(esquerda, hal_encoder_ler(MOTOR_ESQ));
+    TEST_ASSERT_EQUAL_INT32(direita, hal_encoder_ler(MOTOR_DIR));
+}
+
 static void test_tof_ausente_e_reportado_com_o_nome(void)
 {
     uint16_t mm;
@@ -197,6 +219,7 @@ int main(void)
     UNITY_BEGIN();
     RUN_TEST(test_motores_comecam_parados_e_em_standby);
     RUN_TEST(test_motor_habilitado_gira_e_encoder_conta);
+    RUN_TEST(test_reiniciar_com_motor_girando_para_e_volta_ao_standby);
     RUN_TEST(test_tof_ausente_e_reportado_com_o_nome);
     RUN_TEST(test_tof_ve_parede_lateral_na_largada);
     RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);

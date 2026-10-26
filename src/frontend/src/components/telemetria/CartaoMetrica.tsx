@@ -5,7 +5,7 @@ interface CartaoMetricaProps {
   valor: string
   unidade?: string
   detalhe?: ReactNode
-  /** Barra de progresso de 0 a 1 (ex.: bateria). */
+  /** Percentual de 0 a 100 recebido do backend (ex.: bateria). */
   progresso?: number
 }
 
@@ -22,11 +22,11 @@ export function CartaoMetrica({ rotulo, valor, unidade, detalhe, progresso }: Ca
           className="barra"
           role="progressbar"
           aria-label={rotulo}
-          aria-valuenow={Math.round(progresso * 100)}
+          aria-valuenow={progresso}
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className="barra__preenchida barra__preenchida--sucesso" style={{ width: `${progresso * 100}%` }} />
+          <div className="barra__preenchida barra__preenchida--sucesso" style={{ width: `${progresso}%` }} />
         </div>
       )}
       {detalhe && <p className="texto-suave">{detalhe}</p>}
