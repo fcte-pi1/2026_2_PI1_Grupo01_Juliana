@@ -5,7 +5,7 @@ from datetime import timedelta
 
 import pytest
 from app.models import LeituraTelemetria, PassoTrajeto
-from scripts.ensaio_serial import EventoPonte, conferir_banco
+from scripts.ensaio_serial import EventoPonte, conferir_banco, horas_gravadas
 from sqlalchemy import select
 
 BOOT = 41
@@ -106,3 +106,20 @@ def test_conferir_banco_reprova_tentativa_aberta_e_boot_sem_tentativa(fabrica, d
     assert conferir_banco(db_session, [], BOOT + 1).problemas == [
         f"nenhuma tentativa com health-check do boot {BOOT + 1}"
     ]
+
+
+def test_horas_gravadas_traz_leituras_e_passos_da_execucao(ensaio, db_session):
+    tentativa, _ = ensaio
+    leituras = db_session.scalars(
+        select(LeituraTelemetria.recebido_em).where(
+            LeituraTelemetria.tentativa_id == tentativa.tentativa_id
+        )
+    ).all()
+    passos = db_session.scalars(
+        select(PassoTrajeto.entrou_em).where(PassoTrajeto.execucao_id == tentativa.execucao_id)
+    ).all()
+
+    horas = horas_gravadas(db_session, tentativa.execucao_id)
+
+    assert len(horas) == 10
+    assert sorted(horas) == sorted([*leituras, *passos])

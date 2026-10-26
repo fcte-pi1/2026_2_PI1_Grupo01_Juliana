@@ -5,6 +5,7 @@ simulador, ponte, API e banco.
 """
 
 import argparse
+import csv
 import json
 import math
 import re
@@ -353,6 +354,150 @@ def _comando_abrir(args: argparse.Namespace) -> int:
     return 0
 
 
+DURACAO_MINIMA_S = 600
+JANELA_S = 10
+
+
+@dataclass(frozen=True)
+class Janela:
+    """Contagens de uma janela de 10 s, a partir do primeiro RX."""
+
+    inicio_s: int
+    enviadas: int
+    rx: int
+    gravadas: int
+
+
+def contar_janelas(
+    enviadas: list[str],
+    eventos: list[EventoPonte],
+    gravadas: list[datetime],
+    janela_s: int = JANELA_S,
+) -> list[Janela]:
+    """Enviadas, RX e gravadas por janela de `janela_s` desde o primeiro RX.
+
+    O log do simulador não tem hora: a enviada `k` leva a hora do RX `k - 1`
+    (a primeira, descartada pela ponte, leva a do primeiro RX; as que sobram,
+    a do último). Gravadas fora do intervalo ficam na primeira ou na última janela.
+    """
+    horas_rx = [e.hora for e in eventos if e.tipo == "RX"]
+    if not horas_rx:
+        return []
+    zero = horas_rx[0]
+
+    def indice(hora: datetime) -> int:
+        return max(0, int((hora - zero).total_seconds() // janela_s))
+
+    horas_enviadas = [horas_rx[min(max(k - 1, 0), len(horas_rx) - 1)] for k in range(len(enviadas))]
+    por_tipo = {
+        "enviadas": Counter(indice(h) for h in horas_enviadas),
+        "rx": Counter(indice(h) for h in horas_rx),
+        "gravadas": Counter(indice(h) for h in gravadas),
+    }
+    ultima = max(max(c, default=0) for c in por_tipo.values())
+    return [
+        Janela(
+            inicio_s=i * janela_s,
+            enviadas=por_tipo["enviadas"][i],
+            rx=por_tipo["rx"][i],
+            gravadas=por_tipo["gravadas"][i],
+        )
+        for i in range(ultima + 1)
+    ]
+
+
+def gravar_csv_janelas(caminho: Path, janelas: list[Janela]) -> None:
+    with open(caminho, "w", newline="", encoding="utf-8") as arquivo:
+        escritor = csv.writer(arquivo)
+        escritor.writerow(["janela_inicio_s", "enviadas", "rx", "gravadas"])
+        for j in janelas:
+            escritor.writerow([j.inicio_s, j.enviadas, j.rx, j.gravadas])
+
+
+def horas_gravadas(sessao: Session, execucao_id: uuid.UUID) -> list[datetime]:
+    """`recebido_em` das leituras e `entrou_em` dos passos da execução.
+
+    `passo_trajeto` não guarda o `recebido_em`; o `entrou_em` é a hora da
+    mensagem calculada pelo backend a partir dele.
+    """
+    from app.models import LeituraTelemetria, PassoTrajeto, Tentativa
+
+    leituras = sessao.scalars(
+        select(LeituraTelemetria.recebido_em)
+        .join(Tentativa)
+        .where(Tentativa.execucao_id == execucao_id)
+    ).all()
+    passos = sessao.scalars(
+        select(PassoTrajeto.entrou_em).where(PassoTrajeto.execucao_id == execucao_id)
+    ).all()
+    return [*leituras, *passos]
+
+
+def _contagens(contagem: dict[str, int]) -> str:
+    return ", ".join(f"{tipo}={n}" for tipo, n in sorted(contagem.items())) or "nenhuma"
+
+
+def relatorio(
+    ponte: ResultadoPonte, banco: ResultadoBanco, duracao_s: float
+) -> tuple[list[str], bool]:
+    """Linhas do relatório do `conferir` e se o ensaio foi aprovado."""
+    problemas = [*ponte.problemas, *banco.problemas]
+    if duracao_s < DURACAO_MINIMA_S:
+        problemas.append(f"ensaio de {duracao_s:.1f} s, menor que {DURACAO_MINIMA_S} s")
+    tx_por_comando = Counter(json.loads(t)["cmd"] for t in ponte.tx if t not in ponte.tx_invalidos)
+    if ponte.tx_invalidos:
+        tx_por_comando["fora do contrato"] = len(ponte.tx_invalidos)
+    linhas = [
+        f"duração do ensaio: {duracao_s:.1f} s (do primeiro ao último RX)",
+        f"enviadas: {ponte.enviadas}",
+        f"RX: {ponte.rx}",
+        f"API 200: {ponte.api_200}",
+        f"API com outro status: {ponte.api_outro_status}",
+        f"TX por comando: {_contagens(tx_por_comando)}",
+        f"FILA: {ponte.fila_descartada}",
+        f"API falhou: {ponte.api_falhou}",
+        f"execucao_id: {banco.execucao_id}",
+        f"motivo do encerramento: {banco.motivo_encerramento}",
+        f"antes da janela: {_contagens(banco.antes)}",
+        f"dentro da janela: {_contagens(banco.dentro)}",
+        f"depois da janela: {_contagens(banco.depois)}",
+        f"gravados: {_contagens(banco.gravados)}",
+        f"fronteira: {len(banco.fronteira)}",
+    ]
+    linhas.extend(
+        f"  {e.hora.isoformat(timespec='milliseconds')} {e.conteudo}" for e in banco.fronteira
+    )
+    linhas.append(f"problemas: {len(problemas)}")
+    linhas.extend(f"  {p}" for p in problemas)
+    aprovado = not problemas
+    linhas.append("APROVADO" if aprovado else "REPROVADO")
+    return linhas, aprovado
+
+
+def _comando_conferir(args: argparse.Namespace) -> int:
+    from app.db import SessionLocal
+
+    enviadas = ler_log_simulador(args.log_simulador)
+    eventos = ler_log_ponte(args.log_ponte)
+    if not enviadas:
+        print("conferir: nenhuma linha enviada no log do simulador", file=sys.stderr)
+        return 1
+    boot = json.loads(enviadas[0])["boot"]
+    horas_rx = [e.hora for e in eventos if e.tipo == "RX"]
+    duracao_s = (horas_rx[-1] - horas_rx[0]).total_seconds() if horas_rx else 0.0
+
+    ponte = conferir_ponte(enviadas, eventos)
+    with SessionLocal() as sessao:
+        banco = conferir_banco(sessao, eventos, boot)
+        gravadas = horas_gravadas(sessao, banco.execucao_id) if banco.execucao_id else []
+
+    linhas, aprovado = relatorio(ponte, banco, duracao_s)
+    print("\n".join(linhas))
+    if args.csv is not None:
+        gravar_csv_janelas(args.csv, contar_janelas(enviadas, eventos, gravadas))
+    return 0 if aprovado else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     comandos = parser.add_subparsers(dest="comando", required=True)
@@ -361,6 +506,11 @@ def main(argv: list[str] | None = None) -> int:
     abrir.add_argument("--labirinto", default="4x4", choices=("4x4", "8x4", "12x4"))
     abrir.add_argument("--timeout", type=float, default=60, help="espera máxima em segundos")
     abrir.set_defaults(executar=_comando_abrir)
+    conferir = comandos.add_parser("conferir", help="confere logs e banco depois do ensaio")
+    conferir.add_argument("--log-simulador", type=Path, required=True, help="stderr do simulador")
+    conferir.add_argument("--log-ponte", type=Path, required=True, help="log de auditoria")
+    conferir.add_argument("--csv", type=Path, help="CSV com as contagens por janela de 10 s")
+    conferir.set_defaults(executar=_comando_conferir)
     args = parser.parse_args(argv)
     return args.executar(args)
 
