@@ -1,0 +1,2986 @@
+
+<!doctype html>
+<html lang="pt" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Documentação técnica do projeto Ratatouille, um Micromouse autônomo para solução de labirintos e registro de telemetria.">
+      
+      
+        <meta name="author" content="Grupo Ratatouille — PI1 2026.2">
+      
+      
+        <link rel="canonical" href="https://pi1-2026-2.github.io/2026_2_PI1_Grupo01_Juliana/7.4%20-%20Testes%20de%20software/">
+      
+      
+        <link rel="prev" href="../7.3%20-%20Testes%20de%20hardware/">
+      
+      
+        <link rel="next" href="../7.5%20-%20Testes%20de%20integra%C3%A7%C3%A3o/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/brand/ratatouille-mark.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Testes de software - Ratatouille | Micromouse</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#testes-de-software" class="md-skip">
+          Pular para conteúdo
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Cabeçalho">
+    <a href=".." title="Ratatouille | Micromouse" class="md-header__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
+      
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Ratatouille | Micromouse
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Testes de software
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema escuro"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Ativar tema escuro" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Ativar tema claro"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Ativar tema claro" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Buscar" placeholder="Buscar" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Pesquisar">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Limpar" aria-label="Limpar" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Inicializando busca
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PI1-2026-2 / Ratatouille
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Abas" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Início
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../1%20-%20TAP/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Projeto
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../5%20-%20Cronograma/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Acompanhamento
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Validação
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Encerramento
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navegação" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Ratatouille | Micromouse" class="md-nav__button md-logo" aria-label="Ratatouille | Micromouse" data-md-component="logo">
+      
+  <img src="../assets/brand/ratatouille-mark.svg" alt="logo">
+
+    </a>
+    Ratatouille | Micromouse
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" title="Ir para repositório" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    PI1-2026-2 / Ratatouille
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Início
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Projeto
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Projeto
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1%20-%20TAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Termo de abertura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2%20-%20Requisitos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Requisitos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3%20-%20EAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estrutura analítica
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Projeto conceitual
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Projeto conceitual
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.1%20-%20Projeto%20conceitual%20de%20estruturas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Estruturas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.2%20-%20Projeto%20conceitual%20de%20energia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Energia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.3%20-%20Projeto%20conceitual%20de%20hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gloss%C3%A1rio/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossário
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acompanhamento
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Acompanhamento
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5%20-%20Cronograma/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cronograma
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../6%20-%20Or%C3%A7amento/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orçamento
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validação
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Validação
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.1%20-%20Testes%20de%20estrutura/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de estrutura
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.2%20-%20Testes%20de%20energia/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de energia
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.3%20-%20Testes%20de%20hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de software
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de software
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#matriz-de-casos-de-teste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matriz de casos de teste
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Matriz de casos de teste">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rastreabilidade-dos-casos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rastreabilidade dos casos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complemento-dos-resultados-obtidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complemento dos resultados obtidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#historias-de-usuario-e-prototipos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Histórias de usuário e protótipos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-do-back-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes do back-end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes do back-end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-validacao-de-mensagens-de-telemetria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Validação de mensagens de telemetria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-regras-de-tentativas-e-recusa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Regras de tentativas e recusa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-encerramento-manual-e-interrupcao-pendente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Encerramento manual e interrupção pendente
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-perda-de-link-e-estouro-de-10-min" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Perda de link e estouro de 10 min
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-consumo-velocidade-tempo-e-comparacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 Consumo, velocidade, tempo e comparação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#46-persistencia-da-execucao-e-unicidade-da-tentativa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.6 Persistência da execução e unicidade da tentativa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#47-carga-de-10-msgs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.7 Carga de 10 msg/s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#48-stream-sse-da-execucao-em-andamento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.8 Stream SSE da execução em andamento
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#416-telemetria-pela-serial-ate-a-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.16 Telemetria pela serial até a API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-de-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes de firmware
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes de firmware">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#412-navegacao-em-simulacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.12 Navegação em simulação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#413-deteccao-de-paredes-com-hal-simulada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.13 Detecção de paredes com HAL simulada
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#414-motores-encoders-e-pid-com-modelo-simulado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.14 Motores, encoders e PID com modelo simulado
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#415-bateria-com-tensoes-simuladas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.15 Bateria com tensões simuladas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-e-de-integracao-do-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários e de integração do firmware
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-do-front-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes do front-end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes do front-end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#49-acompanhamento-em-tempo-real-e-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.9 Acompanhamento em tempo real e health-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#410-labirinto-e-trajeto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.10 Labirinto e trajeto
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#411-historico-filtro-e-detalhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.11 Histórico, filtro e detalhe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pontos-encontrados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pontos encontrados
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-do-front-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários do front-end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-e-de-integracao-do-back-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários e de integração do back-end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-e2e-sistema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes E2E (sistema)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../7.5%20-%20Testes%20de%20integra%C3%A7%C3%A3o/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testes de integração
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../8%20-%20Avalia%C3%A7%C3%A3o%20de%20desempenho/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Avaliação de desempenho
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../9%20-%20Relat%C3%B3rio%20de%20encerramento%20do%20projeto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Encerramento
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#matriz-de-casos-de-teste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Matriz de casos de teste
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Matriz de casos de teste">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rastreabilidade-dos-casos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rastreabilidade dos casos
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complemento-dos-resultados-obtidos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complemento dos resultados obtidos
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#historias-de-usuario-e-prototipos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Histórias de usuário e protótipos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-do-back-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes do back-end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes do back-end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-validacao-de-mensagens-de-telemetria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Validação de mensagens de telemetria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-regras-de-tentativas-e-recusa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Regras de tentativas e recusa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-encerramento-manual-e-interrupcao-pendente" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Encerramento manual e interrupção pendente
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-perda-de-link-e-estouro-de-10-min" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Perda de link e estouro de 10 min
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-consumo-velocidade-tempo-e-comparacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 Consumo, velocidade, tempo e comparação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#46-persistencia-da-execucao-e-unicidade-da-tentativa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.6 Persistência da execução e unicidade da tentativa
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#47-carga-de-10-msgs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.7 Carga de 10 msg/s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#48-stream-sse-da-execucao-em-andamento" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.8 Stream SSE da execução em andamento
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#416-telemetria-pela-serial-ate-a-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.16 Telemetria pela serial até a API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-de-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes de firmware
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes de firmware">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#412-navegacao-em-simulacao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.12 Navegação em simulação
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#413-deteccao-de-paredes-com-hal-simulada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.13 Detecção de paredes com HAL simulada
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#414-motores-encoders-e-pid-com-modelo-simulado" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.14 Motores, encoders e PID com modelo simulado
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#415-bateria-com-tensoes-simuladas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.15 Bateria com tensões simuladas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-e-de-integracao-do-firmware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários e de integração do firmware
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evidencias-dos-testes-do-front-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidências dos testes do front-end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evidências dos testes do front-end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#49-acompanhamento-em-tempo-real-e-health-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.9 Acompanhamento em tempo real e health-check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#410-labirinto-e-trajeto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.10 Labirinto e trajeto
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#411-historico-filtro-e-detalhe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.11 Histórico, filtro e detalhe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pontos-encontrados" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pontos encontrados
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-do-front-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários do front-end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-unitarios-e-de-integracao-do-back-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes unitários e de integração do back-end
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testes-e2e-sistema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testes E2E (sistema)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/edit/main/docs/7.4 - Testes de software.md" title="Editar esta página" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana/raw/main/docs/7.4 - Testes de software.md" title="Exibir fonte desta página" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="testes-de-software">Testes de Software<a class="headerlink" href="#testes-de-software" title="Permanent link">&para;</a></h1>
+<h2 id="matriz-de-casos-de-teste">Matriz de casos de teste<a class="headerlink" href="#matriz-de-casos-de-teste" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>ID</strong></th>
+<th><strong>Descrição</strong></th>
+<th><strong>Data de Início</strong></th>
+<th><strong>Data de Conclusão</strong></th>
+<th><strong>Responsável</strong></th>
+<th><strong>Resultados Esperados</strong></th>
+<th><strong>Resultados Obtidos</strong></th>
+<th><strong>Observações</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">4.1</td>
+<td>Validação de mensagens de telemetria</td>
+<td>25/10/2026</td>
+<td>25/10/2026</td>
+<td>Christopher</td>
+<td>100% das malformadas descartadas; serviço segue respondendo</td>
+<td>33 de 33 malformadas descartadas com 422 e nada gravado (35 de 35 testes aprovados)</td>
+<td>Evidência na Figura 1</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.2</td>
+<td>Regras de tentativas e recusa</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td>T01–T13, E01–E08 e R01–R06; recusa sem mudar estado válido</td>
+<td>Abertura em <code>running</code> 1/3, retomada, recusa e cancelamento na 3ª (45 de 45 testes aprovados)</td>
+<td><code>iniciada_em</code> da execução sem asserção. Figura 2</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.3</td>
+<td>Encerramento manual e interrupção pendente</td>
+<td>25/10/2026</td>
+<td>25/10/2026</td>
+<td>Christopher</td>
+<td><code>failed</code> com <code>encerrado_operador</code> e <code>interromper</code> na serial em até 1 s</td>
+<td><code>interromper</code> com mediana de 98 ms e máx. de 195 ms (<code>tel</code> a 5 Hz); 5 de 5 aprovados</td>
+<td>Com <code>tel</code> a 1 Hz o tempo sobe (ver complemento). Figura 3</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.4</td>
+<td>Perda de link e estouro de 10 min</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td><code>link_lost</code> até 1 s após 10 s sem sinal; <code>time_exceeded</code> até 1 s após 600 s; 9 s de silêncio não dispara</td>
+<td>Disparo dentro de 1 s nos dois limites; reconexão aos 9 s mantém <code>running</code> (17 de 17 testes aprovados)</td>
+<td>Entre tentativas, os 10 min não cancelam a execução. Figura 4</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.5</td>
+<td>Consumo, velocidade, tempo e comparação</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td>Consumo em mV e p.p.; velocidade por células de 18 cm; tempo pelo relógio do backend; variação contra o melhor tempo</td>
+<td>3 células = 0,54 m e 0,18 m/s em 3 s; 8400→7800 mV = 600 mV e 45 p.p. (22 de 22 testes aprovados)</td>
+<td>Sem soma entre tentativas nem refino por ToF. Figura 5</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.6</td>
+<td>Persistência da execução e unicidade da tentativa</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td>Execução e tentativa relidas do banco; uma só tentativa aberta; <code>tentativa_id</code> único</td>
+<td>Gravação e releitura corretas; segunda tentativa aberta rejeitada pelo banco (10 de 10 testes aprovados)</td>
+<td>Campos finais da falha sem teste nesta suíte. Figura 6</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.7</td>
+<td>Carga de 10 msg/s</td>
+<td>25/10/2026</td>
+<td>25/10/2026</td>
+<td>Christopher</td>
+<td>p95 abaixo de 100 ms por 60 s, sem atraso acumulado</td>
+<td>600 mensagens em 60 s, 0 erros; p95 de 27,3 ms; atraso acumulado de 4,0 ms</td>
+<td>API e Postgres em Docker Compose. Evidência na Figura 7</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.8</td>
+<td>Stream SSE da execução em andamento</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td>Evento em até 1 s após o registro; quem entra no meio recebe o trajeto; <code>Last-Event-ID</code> sem duplicar</td>
+<td>Entrega em menos de 1 s; reenvio em ordem e sem duplicar (24 de 24 testes aprovados)</td>
+<td>O stream não filtra pelo status da tentativa. Figura 8</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.9</td>
+<td>Acompanhamento em tempo real e health-check</td>
+<td>26/10/2026</td>
+<td>26/10/2026</td>
+<td>Amanda de Moura</td>
+<td>Telemetria na tela em até 2 s, com a unidade recebida; health-check em bloco separado; aviso após 5 s sem dados</td>
+<td>Célula A3, 7810 mV e 210 mm/s em menos de 2 s; bloco Health-check visível (37 de 37 testes aprovados)</td>
+<td>Pílula "Atualizado há X s" e o bloco no detalhe sem teste direto. Figura 16</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.10</td>
+<td>Labirinto e trajeto</td>
+<td>24/10/2026</td>
+<td>24/10/2026</td>
+<td>João Marcos</td>
+<td>Trajeto e célula de falha iguais ao roteiro simulado</td>
+<td>Células, paredes e falha iguais aos 3 roteiros do simulador (9 de 9 testes aprovados)</td>
+<td>Execução manual na <code>dev</code> (ver complemento). Figuras 17 a 21</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.11</td>
+<td>Histórico, filtro e detalhe (Front↔Back)</td>
+<td>24/10/2026</td>
+<td>24/10/2026</td>
+<td>João Marcos</td>
+<td>Lista, filtro e detalhe conferidos contra o banco</td>
+<td>Lista, filtros e detalhe iguais à API (34 de 34 testes aprovados)</td>
+<td>Melhoria sugerida no complemento. Figuras 22 a 24</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.12</td>
+<td>Navegação em simulação</td>
+<td>25/10/2026</td>
+<td>25/10/2026</td>
+<td>Christopher</td>
+<td>20 ou mais labirintos 4x4/8x4/12x4 resolvidos, 0 sucessos falsos</td>
+<td>24 de 24 labirintos em sucesso, 0 <code>sucesso_falso</code> (6 de 6 testes aprovados)</td>
+<td>US40 só na navegação (ver complemento). Figura 10</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.13</td>
+<td>Detecção de paredes com HAL simulada</td>
+<td>23/10/2026</td>
+<td>23/10/2026</td>
+<td>Luiza</td>
+<td>50 de 50 casos simulados corretos (presente, ausente e com ruído)</td>
+<td>53 de 53 casos corretos, 45 sintéticos e 8 de ponta a ponta (20 de 20 testes aprovados)</td>
+<td>Evidência na Figura 11</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.14</td>
+<td>Motores, encoders e PID com modelo simulado</td>
+<td>23/10/2026</td>
+<td>23/10/2026</td>
+<td>Luiza</td>
+<td>Erro de velocidade de até 5%; <code>stuck</code> detectado</td>
+<td>Velocidade a até 5% da referência; <code>stuck</code> em 1000 ms (11 de 11 testes aprovados)</td>
+<td>Na branch do PR <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/238">#238</a> (integrado em 26/10). Figura 12</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.15</td>
+<td>Bateria com tensões simuladas</td>
+<td>23/10/2026</td>
+<td>23/10/2026</td>
+<td>Luiza</td>
+<td>Conversão para % e <code>low_battery</code> corretos nas duas fontes</td>
+<td>Percentual, alerta e <code>low_battery</code> corretos nas 2 fontes (13 de 13 testes aprovados)</td>
+<td>Evidência na Figura 13</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.16</td>
+<td>Telemetria pela serial até a API (via ponte)</td>
+<td>25/10/2026</td>
+<td>26/10/2026</td>
+<td>Christopher</td>
+<td>10 min sem perda; downlink só com os 3 comandos do contrato v1</td>
+<td>3.852 linhas recebidas e 3.852 respostas 200; 0 falhas; nenhum comando no downlink</td>
+<td>Dados simulados (ver complemento). Figura 9</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rastreabilidade-dos-casos">Rastreabilidade dos casos<a class="headerlink" href="#rastreabilidade-dos-casos" title="Permanent link">&para;</a></h3>
+<p>Histórias de usuário (US), casos de uso (UC) e requisitos de cada caso.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>ID</strong></th>
+<th><strong>Histórias de usuário</strong></th>
+<th><strong>Casos de uso</strong></th>
+<th><strong>Requisitos</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">4.1</td>
+<td>US10</td>
+<td>UC06</td>
+<td>RF08, RNF-B09</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.2</td>
+<td>US07, US12, US18, US19, US20, US21, US30, US31</td>
+<td>UC01, UC02, UC03, UC09, UC20, UC31</td>
+<td>RF10, RF16, RF17, RF18, RF19, RF29, RF38</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.3</td>
+<td>US17, US22, US32</td>
+<td>UC04, UC05, UC10, UC30</td>
+<td>RF15, RF30, RF39</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.4</td>
+<td>US23, US24</td>
+<td>UC12.1, UC12.2</td>
+<td>RF31, RF32, RNF-B08</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.5</td>
+<td>US13, US14, US15, US16</td>
+<td>UC08, UC19</td>
+<td>RF11, RF12, RF13, RF14</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.6</td>
+<td>US19, US25</td>
+<td>UC05</td>
+<td>RF17, RF33</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.7</td>
+<td>US10, US11</td>
+<td>UC06, UC07</td>
+<td>RF08, RF09, RNF-B11</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.8</td>
+<td>US08</td>
+<td>UC13</td>
+<td>RF06, RNF-B04</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.9</td>
+<td>US01, US04, US05</td>
+<td>UC13, UC18</td>
+<td>RF01, RF04, RF05, RNF-B01, RNF-B02</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.10</td>
+<td>US06, US11, US17, US29</td>
+<td>UC07, UC11, UC17</td>
+<td>RF09, RF15, RF37</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.11</td>
+<td>US02, US03, US09, US16, US26, US27, US28</td>
+<td>UC14, UC15, UC16, UC19</td>
+<td>RF02, RF03, RF07, RF14, RF34–RF36</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.12</td>
+<td>US39, US40, US41</td>
+<td>UC21, UC23, UC25, UC26</td>
+<td>RF26, RF27, RF28</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.13</td>
+<td>US33</td>
+<td>UC24</td>
+<td>RF20</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.14</td>
+<td>US34, US35, US45</td>
+<td>UC23, UC28</td>
+<td>RF21, RF22</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.15</td>
+<td>US36</td>
+<td>UC29</td>
+<td>RF23</td>
+</tr>
+<tr>
+<td style="text-align: center;">4.16</td>
+<td>US10, US32, US37</td>
+<td>UC06, UC27, UC30</td>
+<td>RF24, RNF-B06, RNF-B07</td>
+</tr>
+</tbody>
+</table>
+<h3 id="complemento-dos-resultados-obtidos">Complemento dos resultados obtidos<a class="headerlink" href="#complemento-dos-resultados-obtidos" title="Permanent link">&para;</a></h3>
+<p>Detalhes dos resultados que não aparecem na tabela nem nas seções de evidências.</p>
+<ul>
+<li><strong>4.3:</strong> com a <code>tel</code> a 1 Hz (robô parado), a mediana foi de 537 ms e o máximo de 1157 ms: o comando sai na resposta à próxima <code>tel</code>, então o tempo depende do período dela. Nas rotas <code>encerrar-tentativa</code> e <code>encerrar</code>, o <code>interromper</code> se repetiu a cada <code>tel</code> até a <code>falha</code> com origem <code>web</code> do robô e parou depois dela.</li>
+<li><strong>4.7:</strong> latência com p50 de 21,5 ms e máxima de 58,0 ms; p95 de 28,5 ms na janela inicial (10 s) e de 26,9 ms na final.</li>
+<li><strong>4.10:</strong> execução manual na <code>dev</code> em 1428f2b, antes do PR <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/239">#239</a>; com a <code>dev</code> atual o simulador não roda mais pela tela (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/249">#249</a>).</li>
+<li><strong>4.11:</strong> melhoria sugerida: mostrar um número curto no lugar do UUID da execução (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/248">#248</a>).</li>
+<li><strong>4.12:</strong> o tipo do labirinto que o robô leria no DIP switch (US40) é passado direto à navegação; a leitura das vias na placa fica para o robô montado.</li>
+<li><strong>4.16:</strong> o downlink esperado são os comandos do contrato v1 (<code>interromper</code>, <code>largar</code> e <code>health_check</code>); o esperado foi atualizado porque o contrato passou a ter <code>largar</code> e <code>health_check</code>. Os dados são simulados: o simulador de telemetria em porta serial virtual faz o papel da ESP32 pela USB, e o firmware real fica para a <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/217">#217</a> e o FIRM-11. 3.853 linhas enviadas pelo simulador e 3.852 recebidas pela ponte (a primeira é descartada ao abrir a porta), com conteúdo e ordem idênticos. Com a tentativa aberta (600 s, encerrada por <code>time_exceeded</code>), 2.926 <code>tel</code> e 731 <code>passo</code> recebidos e todos gravados, além dos 8 itens do health-check; 1 <code>tel</code> na fronteira de 50 ms ficou fora da contagem.</li>
+</ul>
+<h2 id="historias-de-usuario-e-prototipos">Histórias de usuário e protótipos<a class="headerlink" href="#historias-de-usuario-e-prototipos" title="Permanent link">&para;</a></h2>
+<p>As 45 histórias de usuário (US) do <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#backlog-do-software">backlog do software</a> e a tela do <a href="../4.4%20-%20Projeto%20conceitual%20de%20software/#prototipo">protótipo</a> de cada uma. O protótipo tem as mesmas 12 telas para os labirintos 4x4, 8x4 e 12x4, numeradas assim: 1 Início, 2 Health-check, 3 Em execução, 4 Concluída, 5 Execução recusada, 6 Sem comunicação, 7 Encerrar execução, 8 Encerrada como falha, 9 Retomar tentativa, 10 Retomada (tentativa 2), 11 Concluída após retomada e 12 Falha sem retomada.</p>
+<p>A situação vem da leitura do código da <code>dev</code> em 26/10/2026, comparando cada critério de aceitação do backlog com o que existe e com o que os testes afirmam. A coluna Observação traz o caso da matriz que verifica a história e, quando houver, o que falta no código ou nos testes. O roteiro de integração (7.5) verificará as histórias que dependem do robô montado:</p>
+<ul>
+<li><strong>Implementada:</strong> o critério existe no código e é exercitado por teste automatizado.</li>
+<li><strong>Simulada:</strong> no firmware, a lógica existe e é testada no PC com a HAL simulada; o driver real e a validação no robô montado ficam para FIRM-10 e FIRM-11.</li>
+<li><strong>Parcial:</strong> parte do critério não existe no código; o que falta está na coluna Observação.</li>
+<li><strong>Pendente:</strong> não implementada.</li>
+</ul>
+<p>"—" indica história sem interface (back-end e firmware). "Sem tela" indica história com interface implementada no front, mas sem tela no protótipo (histórico e detalhe das execuções).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>US</strong></th>
+<th><strong>História</strong></th>
+<th style="text-align: center;"><strong>Tela do protótipo</strong></th>
+<th style="text-align: center;"><strong>Situação</strong></th>
+<th><strong>Observação</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">US01</td>
+<td>Acompanhar a telemetria durante e após a execução</td>
+<td style="text-align: center;">3, 4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.9</td>
+</tr>
+<tr>
+<td style="text-align: center;">US02</td>
+<td>Ver os dados de uma execução finalizada</td>
+<td style="text-align: center;">4, 8, 11, 12</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US03</td>
+<td>Consultar o histórico de execuções</td>
+<td style="text-align: center;">Sem tela</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US04</td>
+<td>Ver a execução em andamento e o tempo desde a última atualização</td>
+<td style="text-align: center;">3, 6</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.9; pílula "Atualizado há X s" sem teste direto</td>
+</tr>
+<tr>
+<td style="text-align: center;">US05</td>
+<td>Ver o health-check em área separada</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.9; bloco no detalhe da execução sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US06</td>
+<td>Ver o trajeto sobre o labirinto</td>
+<td style="text-align: center;">3, 4, 8</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">US07</td>
+<td>Ver a tentativa (n/3) e retomar após falha</td>
+<td style="text-align: center;">3, 9, 10, 12</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US08</td>
+<td>Disponibilizar os dados da execução em andamento</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.8; o stream não filtra pelo status da tentativa</td>
+</tr>
+<tr>
+<td style="text-align: center;">US09</td>
+<td>Disponibilizar os dados das execuções anteriores</td>
+<td style="text-align: center;">Sem tela</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US10</td>
+<td>Receber a telemetria do Micromouse</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.1, 4.7, 4.16</td>
+</tr>
+<tr>
+<td style="text-align: center;">US11</td>
+<td>Registrar a sequência de células visitadas</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.7, 4.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">US12</td>
+<td>Iniciar nova execução informando o labirinto</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2; <code>iniciada_em</code> sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US13</td>
+<td>Calcular o consumo de bateria</td>
+<td style="text-align: center;">3, 4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.5</td>
+</tr>
+<tr>
+<td style="text-align: center;">US14</td>
+<td>Calcular a velocidade média</td>
+<td style="text-align: center;">3, 4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.5; sem refino por ToF e encoders</td>
+</tr>
+<tr>
+<td style="text-align: center;">US15</td>
+<td>Calcular o tempo da tentativa e da execução (limite de 10 min)</td>
+<td style="text-align: center;">3, 11</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.5; soma entre tentativas sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US16</td>
+<td>Comparar o tempo com o melhor já registrado</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.5, 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US17</td>
+<td>Registrar a célula e o motivo da falha</td>
+<td style="text-align: center;">8, 12</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.3, 4.10; <code>observacao</code> sem teste de persistência</td>
+</tr>
+<tr>
+<td style="text-align: center;">US18</td>
+<td>Registrar o status de tentativas e execuções</td>
+<td style="text-align: center;">3, 4, 8</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US19</td>
+<td>Identificar cada tentativa de forma única</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2, 4.6; unicidade só pela chave primária</td>
+</tr>
+<tr>
+<td style="text-align: center;">US20</td>
+<td>Recusar nova tentativa com outra aberta</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US21</td>
+<td>Avisar quando uma execução é recusada</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US22</td>
+<td>Encerrar manualmente a tentativa</td>
+<td style="text-align: center;">7, 8</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.3</td>
+</tr>
+<tr>
+<td style="text-align: center;">US23</td>
+<td>Detectar perda de comunicação</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.4</td>
+</tr>
+<tr>
+<td style="text-align: center;">US24</td>
+<td>Encerrar a execução aos 10 minutos</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.4; não cancela aos 10 min entre tentativas</td>
+</tr>
+<tr>
+<td style="text-align: center;">US25</td>
+<td>Gravar os dados finais no banco</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.6; campos finais das falhas sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US26</td>
+<td>Consultar as execuções de um labirinto</td>
+<td style="text-align: center;">Sem tela</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US27</td>
+<td>Consultar as execuções de todos os labirintos</td>
+<td style="text-align: center;">Sem tela</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US28</td>
+<td>Consultar todos os dados de uma execução</td>
+<td style="text-align: center;">Sem tela</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.11</td>
+</tr>
+<tr>
+<td style="text-align: center;">US29</td>
+<td>Armazenar as paredes detectadas</td>
+<td style="text-align: center;">3, 4</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.10</td>
+</tr>
+<tr>
+<td style="text-align: center;">US30</td>
+<td>Retomar após falha de componente</td>
+<td style="text-align: center;">9, 10</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US31</td>
+<td>Retomar após falha de trajeto ou encerramento manual</td>
+<td style="text-align: center;">9, 10, 11</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.2</td>
+</tr>
+<tr>
+<td style="text-align: center;">US32</td>
+<td>Enviar ao robô os comandos do contrato</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">Implementada</td>
+<td>Caso 4.3, 4.16; só <code>interromper</code> testado até a serial</td>
+</tr>
+<tr>
+<td style="text-align: center;">US33</td>
+<td>Detectar paredes com os sensores ToF</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Simulada</td>
+<td>Caso 4.13</td>
+</tr>
+<tr>
+<td style="text-align: center;">US34</td>
+<td>Controlar avanço, curva e parada</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.14; a aplicação não aciona as rodas (FIRM-05)</td>
+</tr>
+<tr>
+<td style="text-align: center;">US35</td>
+<td>Calcular a velocidade a partir dos encoders</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.14; velocidade não chega à telemetria (fixa em 0)</td>
+</tr>
+<tr>
+<td style="text-align: center;">US36</td>
+<td>Monitorar nível e consumo da bateria</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Simulada</td>
+<td>Caso 4.15</td>
+</tr>
+<tr>
+<td style="text-align: center;">US37</td>
+<td>Transmitir a telemetria ao sistema web</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.16; Bluetooth real inexistente; sai pela serial USB</td>
+</tr>
+<tr>
+<td style="text-align: center;">US38</td>
+<td>Sinalizar o estado por LED e buzzer</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Roteiro 7.5; LED só pisca; buzzer não é usado</td>
+</tr>
+<tr>
+<td style="text-align: center;">US39</td>
+<td>Detectar a chegada ao objetivo</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Simulada</td>
+<td>Caso 4.12</td>
+</tr>
+<tr>
+<td style="text-align: center;">US40</td>
+<td>Selecionar o labirinto no DIP switch</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Pendente</td>
+<td>Roteiro 7.5; tipo fixo em 4x4 (<code>ROBO_TIPO_LABIRINTO</code>)</td>
+</tr>
+<tr>
+<td style="text-align: center;">US41</td>
+<td>Registrar a posição e o trajeto</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.12; sem lista ordenada no firmware; trajeto vem dos <code>passo</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">US42</td>
+<td>Fazer o health-check antes da execução</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Roteiro 7.5; verifica bateria e ToF; motores e encoders sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US43</td>
+<td>Parar e apagar a memória pelo botão BOOT</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Pendente</td>
+<td>Roteiro 7.5; o botão não é lido pela aplicação</td>
+</tr>
+<tr>
+<td style="text-align: center;">US44</td>
+<td>Gravar mapa e estado em memória não volátil</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Simulada</td>
+<td>Roteiro 7.5; driver NVS real sem teste</td>
+</tr>
+<tr>
+<td style="text-align: center;">US45</td>
+<td>Detectar travamento automaticamente</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">Parcial</td>
+<td>Caso 4.14; a aplicação não usa <code>vel_travado()</code>; <code>stuck</code> é sem saída</td>
+</tr>
+</tbody>
+</table>
+<h2 id="evidencias-dos-testes-do-back-end">Evidências dos testes do back-end<a class="headerlink" href="#evidencias-dos-testes-do-back-end" title="Permanent link">&para;</a></h2>
+<p>Os casos 4.1 a 4.8 e o 4.16 rodam com o <code>pytest</code> em <code>src/backend</code>, contra a API e o Postgres de teste (ver o <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/tree/dev/src/backend#readme">README do back-end</a>). O 4.9 roda com o Vitest no front.</p>
+<h3 id="41-validacao-de-mensagens-de-telemetria">4.1 Validação de mensagens de telemetria<a class="headerlink" href="#41-validacao-de-mensagens-de-telemetria" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>tests/integracao/test_mensagens_malformadas.py</code> envia 33 mensagens malformadas, uma por regra do contrato, e confere que cada uma volta com 422 sem gravar nada. Um teste extra manda uma rajada intercalada de válidas e malformadas e confere que o serviço segue respondendo. Resultado: 35 de 35 aprovados.</p>
+<p><img alt="Execução da suíte test_mensagens_malformadas" src="../figs/testes-software/backend-4.1-malformadas.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 1: Execução da suíte test_mensagens_malformadas (4.1)</p></font></p>
+<h3 id="42-regras-de-tentativas-e-recusa">4.2 Regras de tentativas e recusa<a class="headerlink" href="#42-regras-de-tentativas-e-recusa" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>tests/integracao/test_transicoes_execucao.py</code> cobre a tabela de transições do BACK-03 (T01–T13, E01–E08 e R01–R06). Nova execução abre a tentativa 1 já em <code>running</code> e manda <code>largar</code>. Retomar depois de falha de trajeto abre a tentativa 2. Health-check reprovado, expirado (acima de 7 min) ou com o tipo do DIP diferente recusa a abertura. A terceira falha, o estouro de tempo e uma nova execução cancelam a execução anterior. Retomar com tentativa aberta, com a execução já encerrada ou com as três tentativas usadas devolve recusa sem mudar o estado válido. Resultado: 45 de 45 aprovados. A suíte não afirma o campo <code>iniciada_em</code> da execução.</p>
+<p><img alt="Execução da suíte test_transicoes_execucao" src="../figs/testes-software/backend-4.2-tentativas.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 2: Execução da suíte test_transicoes_execucao (4.2)</p></font></p>
+<h3 id="43-encerramento-manual-e-interrupcao-pendente">4.3 Encerramento manual e interrupção pendente<a class="headerlink" href="#43-encerramento-manual-e-interrupcao-pendente" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>tests/integracao/test_encerramento_ate_a_serial.py</code> encerra a tentativa pela API e mede o tempo até o <code>interromper</code> ser escrito na serial. Com a <code>tel</code> a 5 Hz, a mediana foi de 98 ms e o máximo de 195 ms em 20 encerramentos. Com a <code>tel</code> a 1 Hz, a mediana foi de 537 ms e o máximo de 1157 ms, porque o comando sai na resposta à próxima <code>tel</code>. Resultado: 5 de 5 aprovados.</p>
+<p><img alt="Execução do teste test_encerramento_ate_a_serial" src="../figs/testes-software/backend-4.3-encerramento.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 3: Execução do teste test_encerramento_ate_a_serial (4.3)</p></font></p>
+<h3 id="44-perda-de-link-e-estouro-de-10-min">4.4 Perda de link e estouro de 10 min<a class="headerlink" href="#44-perda-de-link-e-estouro-de-10-min" title="Permanent link">&para;</a></h3>
+<p>Os arquivos <code>tests/integracao/test_monitores_relogio.py</code> e <code>tests/unit/test_monitor_conexao.py</code> avançam um relógio falso, sem esperar 10 s nem 10 min de verdade. O <code>link_lost</code> sai até 1 s depois dos 10 s sem sinal, e a execução da tentativa 1 segue <code>em_andamento</code>. Com o robô falando o tempo todo, o <code>time_exceeded</code> sai até 1 s depois dos 600 s e a execução vai a <code>cancelada</code>. Três silêncios de 9 s, cada um seguido de uma mensagem, não disparam. Mensagem anterior à tentativa não conta, e a tentativa aberta antes do boot da API tem uma janela para reconectar. Resultado: 17 de 17 aprovados.</p>
+<p>O limite de 10 min é conferido com a tentativa aberta. No intervalo entre uma falha e a retomada, sem tentativa <code>running</code>, o relógio da execução não cancela aos 10 min (US24).</p>
+<p><img alt="Execução das suítes de link e de tempo" src="../figs/testes-software/backend-4.4-monitores.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 4: Execução das suítes de link e de tempo (4.4)</p></font></p>
+<h3 id="45-consumo-velocidade-tempo-e-comparacao">4.5 Consumo, velocidade, tempo e comparação<a class="headerlink" href="#45-consumo-velocidade-tempo-e-comparacao" title="Permanent link">&para;</a></h3>
+<p>A suíte unitária <code>tests/unit/test_calculo_metricas.py</code> e a de integração <code>tests/integracao/test_metricas_telemetria.py</code> conferem o cálculo (BACK-04):</p>
+<ul>
+<li><strong>Distância e velocidade:</strong> 3 células valem 0,54 m; em 3 s a média é 0,18 m/s. Revisita conta e a largada não: o percurso com uma volta, em 20 s, dá 0,027 m/s.</li>
+<li><strong>Consumo:</strong> de 8400 mV para 7800 mV são 600 mV e 45 p.p. na curva da LiPo; de 6400 mV para 5600 mV são 50 p.p. na curva das pilhas AA. O consumo parcial atualiza a cada <code>tel</code>.</li>
+<li><strong>Tempo:</strong> conta da largada, não do health-check, e usa o relógio do backend mesmo com a ponte duas horas defasada. No sucesso, a tentativa e a execução fecham com 30 s.</li>
+<li><strong>Comparação:</strong> 30 s contra um melhor de 40 s dá −25%. Sem histórico, ou com melhor zero ou negativo, a variação fica vazia.</li>
+</ul>
+<p>Resultado: 22 de 22 aprovados. A velocidade usa o tamanho da célula, sem refino pela posição dentro dela (ToF e encoders). O tempo total conferido é o de uma tentativa; a soma entre tentativas, intervalos incluídos, não entra nesta suíte.</p>
+<p><img alt="Execução das suítes de métricas" src="../figs/testes-software/backend-4.5-metricas.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 5: Execução das suítes de cálculo de métricas (4.5)</p></font></p>
+<h3 id="46-persistencia-da-execucao-e-unicidade-da-tentativa">4.6 Persistência da execução e unicidade da tentativa<a class="headerlink" href="#46-persistencia-da-execucao-e-unicidade-da-tentativa" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>tests/integracao/test_repositorio.py</code> grava a execução e a tentativa e as relê do Postgres. A tentativa volta com o mesmo <code>tentativa_id</code>. As tentativas saem ordenadas pelo <code>attempt_index</code>. Duas tentativas <code>running</code> na mesma execução quebram a restrição do banco; depois de a anterior fechar, a próxima aberta é aceita. O melhor tempo de cada labirinto ignora <code>failed</code> e, sem <code>success</code>, volta vazio. Resultado: 10 de 10 aprovados.</p>
+<p>A unicidade conferida é a da chave primária. Célula, motivo e observação da falha não são afirmados nesta suíte.</p>
+<p><img alt="Execução da suíte test_repositorio" src="../figs/testes-software/backend-4.6-persistencia.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 6: Execução da suíte test_repositorio (4.6)</p></font></p>
+<h3 id="47-carga-de-10-msgs">4.7 Carga de 10 msg/s<a class="headerlink" href="#47-carga-de-10-msgs" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>tests/integracao/test_carga_telemetria.py</code> e o script de carga mandam 600 mensagens em 60 s (300 <code>tel</code> e 300 <code>passo</code>) e medem a latência de cada resposta. O p95 total foi de 27,3 ms, abaixo do limite de 100 ms, e o p95 por janela de 10 s ficou estável ao longo do ensaio.</p>
+<p><img alt="Latência por mensagem na carga de 10 msg/s" src="../figs/testes-software/backend-4.7-carga.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 7: Latência da carga de telemetria, com p95 por janela de 10 s (4.7)</p></font></p>
+<h3 id="48-stream-sse-da-execucao-em-andamento">4.8 Stream SSE da execução em andamento<a class="headerlink" href="#48-stream-sse-da-execucao-em-andamento" title="Permanent link">&para;</a></h3>
+<p>Os arquivos <code>tests/integracao/test_stream_sse.py</code> e <code>tests/integracao/test_contrato_stream.py</code> abrem o fluxo da execução:</p>
+<ul>
+<li>Quem entra no meio recebe o trajeto inteiro, em ordem e sem passo repetido. <code>Last-Event-ID</code> reenvia só os seguintes; valor inválido reenvia tudo.</li>
+<li>O trajeto atravessa as tentativas da mesma execução. Execução encerrada reenvia o trajeto e fecha o fluxo.</li>
+<li>Do registro no banco até o evento sair, a entrega fica abaixo de 1 s (fatia do backend no RNF-B04). Falha ao publicar não desfaz a gravação.</li>
+<li><code>link_lost</code> e o encerramento manual publicam a falha retomável depois do commit. Encerrar a execução publica a falha que fecha o stream.</li>
+<li>Os frames seguem o contrato: só o <code>passo</code> traz o id da linha, e a telemetria publicada leva mV, porcentagem e rumo.</li>
+</ul>
+<p>Resultado: 24 de 24 aprovados. O evento sai para a execução esteja a tentativa <code>running</code> ou já encerrada: o stream não filtra pelo status da tentativa.</p>
+<p><img alt="Execução das suítes do stream SSE" src="../figs/testes-software/backend-4.8-sse.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 8: Execução das suítes do stream SSE (4.8)</p></font></p>
+<h3 id="416-telemetria-pela-serial-ate-a-api">4.16 Telemetria pela serial até a API<a class="headerlink" href="#416-telemetria-pela-serial-ate-a-api" title="Permanent link">&para;</a></h3>
+<p>O ensaio de 631,8 s passa o simulador de telemetria por uma porta serial virtual, a ponte e a API. O gráfico compara, em janelas de 10 s, as mensagens enviadas pelo simulador, recebidas pela ponte (RX) e gravadas no banco. A curva das gravadas cai antes das outras no fim porque a tentativa foi encerrada por <code>time_exceeded</code> aos 600 s.</p>
+<p><img alt="Mensagens por segundo no ensaio serial" src="../figs/testes-software/backend-4.16-serial.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 9: Ensaio serial, com as mensagens por segundo enviadas, recebidas e gravadas (4.16)</p></font></p>
+<h2 id="evidencias-dos-testes-de-firmware">Evidências dos testes de firmware<a class="headerlink" href="#evidencias-dos-testes-de-firmware" title="Permanent link">&para;</a></h2>
+<p>Os testes 4.12 a 4.15 rodam no PC com o <a href="https://github.com/ThrowTheSwitch/Unity">Unity</a> pelo PlatformIO. Os de 4.13 a 4.15 usam a HAL simulada no lugar dos sensores e dos motores (<code>-D HAL_SIMULADA</code>) e o mundo simulado (<code>lib/simulacao/sim_mundo.c</code>), enquanto o 4.12 usa o simulador de corrida (<code>lib/simulador/sim_corrida.c</code>), que lê o labirinto de um arquivo, entrega à navegação as paredes da célula em que o robô está e executa a ação que ela devolve. O mundo simulado faz o papel do robô: posição, paredes do labirinto, leituras dos ToF com ruído de semente fixa, motores com atraso de primeira ordem e encoders. Os erros de leitura do 4.12 também usam semente fixa. Assim os resultados se repetem a cada execução. Os comandos rodam dentro de <code>src/firmware</code> (ver o <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/tree/dev/src/firmware#comandos">README do firmware</a>).</p>
+<h3 id="412-navegacao-em-simulacao">4.12 Navegação em simulação<a class="headerlink" href="#412-navegacao-em-simulacao" title="Permanent link">&para;</a></h3>
+<p>A suíte <code>test_navegacao_labirintos</code> roda a navegação de verdade (<code>nav_passo</code>, FIRM-02) nos labirintos de <code>simulador-navegacao/labirintos</code>: 4 de 4x4, 4 de 8x4 e 4 de 12x4, cada um nas versões <code>-dir</code> e <code>-esq</code> (espelhadas), num total de 24. Cada corrida termina em um destes resultados: <code>sucesso</code> (declarou sucesso na célula de objetivo), <code>sucesso_falso</code> (declarou sucesso fora dela), <code>sem_caminho</code>, <code>colisao</code> ou <code>limite</code> (passou do limite de passos).</p>
+<ul>
+<li><strong>Sucesso em todos os labirintos</strong> (<code>test_todos_os_labirintos_terminam_em_sucesso</code>): sem erros de leitura, as 24 corridas precisam dar <code>sucesso</code>. Resultado: 24 em sucesso e 0 <code>sucesso_falso</code>, acima dos 20 pedidos.</li>
+<li><strong>Chegada ao objetivo e trajeto</strong> (<code>test_trajeto_vai_da_largada_ao_objetivo_por_celulas_vizinhas</code>, US39 e US41): a lista de células anotada a cada passo começa na largada (0, 0), cada célula é vizinha da anterior, a quantidade de células distintas bate com o relatório da corrida e a última é o canto oposto, onde o robô declarou o sucesso.</li>
+<li><strong>Versões espelhadas</strong> (<code>test_versoes_espelhadas_dao_o_mesmo_trajeto</code>): no referencial do robô, as versões <code>-dir</code> e <code>-esq</code> de cada labirinto dão o mesmo trajeto.</li>
+<li><strong>Leituras erradas:</strong> cada labirinto corre com as sementes 1 a 50 (1200 corridas), conferindo a parede da frente com 3 amostras. Com 1% de leituras erradas, 1200 de 1200 dão sucesso (meta de 100%); com 5%, 1197 de 1200 (99,75%, meta de 95%). Nenhuma corrida termina em <code>limite</code> ou <code>sucesso_falso</code>.</li>
+<li><strong>Retomada</strong> (<code>test_estado_copiado_no_meio_da_corrida_da_o_mesmo_trajeto</code>, FIRM-08): copiar o estado da navegação em qualquer passo da corrida e seguir com a cópia dá o mesmo trajeto e o mesmo resultado.</li>
+</ul>
+<p><img alt="Execução da suíte test_navegacao_labirintos" src="../figs/testes-software/firmware-4.12-navegacao.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 10: Execução da suíte test_navegacao_labirintos (4.12)</p></font></p>
+<h3 id="413-deteccao-de-paredes-com-hal-simulada">4.13 Detecção de paredes com HAL simulada<a class="headerlink" href="#413-deteccao-de-paredes-com-hal-simulada" title="Permanent link">&para;</a></h3>
+<p>A suíte <code>test_sensores</code> confere o filtro dos ToF e a decisão de parede (FIRM-03):</p>
+<ul>
+<li><strong>45 casos sintéticos</strong> (<code>test_45_casos_sinteticos</code>): sequências de leituras de um sensor (frente, esquerda ou direita) com parede presente, ausente, com ruído de ±15 mm e oscilando na faixa da histerese. Para cada caso, o teste confere se a decisão final é a esperada.</li>
+<li><strong>8 casos de ponta a ponta</strong> no mundo simulado: paredes da largada, célula aberta dos lados com ruído, paredes estáveis com ruído, pico isolado que não pode virar parede, parede da frente ao chegar no fim do corredor e as três situações da leitura lateral (no centro da célula, ao entrar nela e tarde demais).</li>
+<li>Os demais testes cobrem a mediana, a tolerância a falhas de leitura, a taxa de 20 Hz dos três sensores, o autoteste da largada e a sequência do XSHUT.</li>
+</ul>
+<p>Resultado: 53 de 53 casos corretos, acima dos 50 pedidos.</p>
+<p><img alt="Execução da suíte test_sensores" src="../figs/testes-software/firmware-4.13-paredes.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 11: Execução da suíte test_sensores (4.13)</p></font></p>
+<h3 id="414-motores-encoders-e-pid-com-modelo-simulado">4.14 Motores, encoders e PID com modelo simulado<a class="headerlink" href="#414-motores-encoders-e-pid-com-modelo-simulado" title="Permanent link">&para;</a></h3>
+<p>A suíte <code>test_velocidade</code> (FIRM-04) testa o PID de velocidade por roda, que roda a 200 Hz, contra o motor simulado:</p>
+<ul>
+<li><strong>Convergência:</strong> com referências de 400 mm/s, 200 mm/s e −300 mm/s (ré), a malha roda 500 ms e depois a velocidade medida pelos encoders em 200 ms precisa ficar a até 5% da referência nas duas rodas.</li>
+<li><strong>Stuck:</strong> com o encoder travado (<code>sim_travar_encoder</code>) e PWM ativo, a falha precisa sair em exatamente <code>MOTOR_TRAVADO_MS</code> (1000 ms), com as duas rodas ou só uma travada. Antes disso, nada pode ser marcado; depois, a ponte H fica desligada, mesmo após o reset.</li>
+<li><strong>Segurança:</strong> motores parados e ponte H em standby no boot e no reset, malha agindo só a cada 5 ms, sem <code>stuck</code> falso com a roda girando ou com referência zero.</li>
+</ul>
+<p>O limite de PWM pela tensão da bateria (6 V no motor) é conferido à parte, na suíte <code>test_ponte_h</code>.</p>
+<p><img alt="Execução da suíte test_velocidade" src="../figs/testes-software/firmware-4.14-velocidade.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 12: Execução da suíte test_velocidade (4.14)</p></font></p>
+<h3 id="415-bateria-com-tensoes-simuladas">4.15 Bateria com tensões simuladas<a class="headerlink" href="#415-bateria-com-tensoes-simuladas" title="Permanent link">&para;</a></h3>
+<p>A suíte <code>test_bateria</code> (FIRM-06) passa tensões simuladas pela mesma conversão usada na placa:</p>
+<ul>
+<li><strong>LiPo 2S:</strong> 8,4 V dá 100% e nível normal; 7,4 V dá alerta; 7,01 V ainda é alerta; 6,9 V é <code>low_battery</code>. Uma LiPo que cai abaixo do limiar das pilhas continua sendo tratada como LiPo.</li>
+<li><strong>Pilhas AA:</strong> 6,0 V dá 80% e nível normal; 5,2 V continua normal; abaixo de 5,0 V é <code>low_battery</code>.</li>
+<li><strong>Limites exatos</strong> de alerta e corte nas duas fontes, interpolação do percentual pela curva de descarga, média móvel de 16 leituras e tensão na ponte H sem a queda do diodo.</li>
+</ul>
+<p><img alt="Execução da suíte test_bateria" src="../figs/testes-software/firmware-4.15-bateria.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 13: Execução da suíte test_bateria (4.15)</p></font></p>
+<h2 id="testes-unitarios-e-de-integracao-do-firmware">Testes unitários e de integração do firmware<a class="headerlink" href="#testes-unitarios-e-de-integracao-do-firmware" title="Permanent link">&para;</a></h2>
+<p>Toda a suíte do firmware roda no ambiente <code>native_cov</code>, que compila os mesmos testes do <code>native</code> com <code>--coverage</code>. A cobertura é medida com o <a href="https://gcovr.com">gcovr</a>. Dos arquivos medidos, ficam de fora só os drivers reais da ESP32 (<code>lib/hal/esp32/hal_*</code>), que só compilam na placa e serão testados com o robô montado (FIRM-10). Os testes de integração são os que juntam módulos pelo mundo simulado: navegação completa em labirintos 4x4, 8x4 e 12x4 (<code>test_navegacao_labirintos</code>), simulador de corrida (<code>test_simulador</code>), sensores de ponta a ponta (<code>test_sensores</code>) e HAL simulada (<code>test_hal_sim</code>).</p>
+<p>Resultado na <code>dev</code> (26/10/2026): <strong>245 de 245 testes aprovados</strong> e <strong>95,4% das linhas</strong> cobertas (95,7% das funções e 87,1% dos desvios), acima da meta de 80%. A suíte já inclui os PRs do FIRM-04 (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/238">#238</a>, integrado em 26/10) e do FIRM-08 (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/239">#239</a>, integrado em 24/10).</p>
+<p><img alt="Resumo da suíte do firmware" src="../figs/testes-software/firmware-suite-unitaria.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 14: Resumo da suíte de testes do firmware (pio test -e native_cov)</p></font></p>
+<p><img alt="Cobertura do firmware por arquivo" src="../figs/testes-software/firmware-cobertura.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 15: Cobertura do firmware por arquivo (gcovr)</p></font></p>
+<h2 id="evidencias-dos-testes-do-front-end">Evidências dos testes do front-end<a class="headerlink" href="#evidencias-dos-testes-do-front-end" title="Permanent link">&para;</a></h2>
+<p>O caso 4.9 roda na suíte do Vitest, com o MSW no lugar da API. Os testes 4.10 e 4.11 foram feitos de dois jeitos. No primeiro, a cadeia real: o <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/tree/dev/src/simulador-telemetria">simulador de telemetria</a> manda os roteiros por HTTP para a API (<code>docker compose</code> em <code>src/backend</code>, com banco vazio), e o front roda sem mock (<code>VITE_API_MOCK=false npm run dev</code>). Cada tela foi comparada com a resposta da API para a mesma execução. Essa parte rodou em 24/10/2026 sobre a <code>dev</code> no commit 1428f2b. No segundo, a suíte do Vitest repete as mesmas conferências sem backend, para rodar em toda mudança.</p>
+<p>Duas regras da API mudam o jeito de rodar à mão: a execução só abre com um health-check válido (7 min), e a tentativa cai por <code>link_lost</code> depois de 10 s sem sinal do robô. Por isso o simulador precisa começar logo depois de <strong>Nova execução</strong>, e a retomada, logo depois da falha. No roteiro de colisão, a pausa entre as tentativas foi aumentada de 5 s para 9 s para dar tempo de retomar.</p>
+<p>Depois disso, o PR <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/239">#239</a> fez a API encerrar a tentativa aberta quando chega o health-check de um boot novo do robô. O simulador começa a correr logo depois do health-check, sem esperar o <code>largar</code>, então com a <code>dev</code> atual a tentativa aberta pela tela cai antes de receber os passos (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/249">#249</a>). A parte automática não depende disso e continua passando.</p>
+<h3 id="49-acompanhamento-em-tempo-real-e-health-check">4.9 Acompanhamento em tempo real e health-check<a class="headerlink" href="#49-acompanhamento-em-tempo-real-e-health-check" title="Permanent link">&para;</a></h3>
+<p>O arquivo <code>src/testes/front03.test.tsx</code> acompanha a execução pelo SSE (FRONT-03):</p>
+<ul>
+<li>A telemetria nomeada aparece em menos de 2 s: célula A3, 7810 mV e 210 mm/s, sem converter a unidade nem arredondar o valor (RNF-B01, RNF-B02).</li>
+<li>O health-check chega num bloco com título próprio e continua visível com a tentativa em <code>running</code>. Resultado parcial ou reprovado não é mostrado como aprovado.</li>
+<li>Depois de 5 s sem dados a tela avisa que está sem dados do robô e tira o aviso quando chega uma amostra nova.</li>
+<li>No sucesso, a tela reconsulta os dados finais e mantém a última célula, a bateria e a velocidade. Uma execução já encerrada, aberta pela URL, também restaura célula, bateria e health-check.</li>
+</ul>
+<p>Resultado: 37 de 37 aprovados. A pílula "Atualizado há X s" não tem teste direto: o que a suíte cobre é o aviso aos 5 s. O bloco de health-check na página de detalhe, fora do ao vivo, também não entra aqui.</p>
+<p><img alt="Execução da suíte front03" src="../figs/testes-software/front-4.9-tempo-real.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 16: Execução da suíte de acompanhamento em tempo real (4.9)</p></font></p>
+<h3 id="410-labirinto-e-trajeto">4.10 Labirinto e trajeto<a class="headerlink" href="#410-labirinto-e-trajeto" title="Permanent link">&para;</a></h3>
+<p>Foram usados os três roteiros 4x4 do simulador:</p>
+<ul>
+<li><strong><code>sucesso-4x4</code>:</strong> A1 → A2 → A3 → A4 → B4 → C4 → C3, terminando em sucesso. A tela desenha uma linha só, com o robô em C3, as paredes de cada célula iguais às do roteiro e nenhuma célula de falha (Figura 17).</li>
+<li><strong><code>colisao-retomada</code>:</strong> a T1 bate em B4, que fica vermelha com <code>FALHA T1</code>, e o cartão da falha mostra B4, "Colisão com parede" e "Detectada automaticamente". Depois da retomada, a T2 chega a C3. Os filtros T1 e T2 separam as duas tentativas (Figuras 18 e 19).</li>
+<li><strong><code>falha-componente</code>:</strong> a T1 para em A4 com o motor direito em falha. A célula fica vermelha, o robô aparece em vermelho ("· falhou") e o cartão mostra "Falha de componente · Componente: Motor direito" (Figura 20).</li>
+</ul>
+<p>O teste automático <code>src/testes/caso410Trajeto.test.tsx</code> lê os mesmos três arquivos de <code>src/simulador-telemetria/roteiros</code>, monta a resposta da API do jeito que o backend grava e confere, para cada roteiro, a ordem das células na linha do trajeto, os lados com parede em cada célula, o destaque da falha e o cartão. Se alguém mudar um roteiro ou o desenho do labirinto, o teste acusa (Figura 21).</p>
+<p>Na execução manual, o roteiro <code>colisao-retomada</code> ainda fazia a T2 começar de novo em A1, mas a US31 e o ADR-012 dizem que a retomada parte da célula da falha. A tela já seguia a regra: marca <code>RETOMADA</code> em B4, enquanto a linha da T2 sai de A1 (Figura 19). O PR <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/239">#239</a> corrigiu o roteiro, e a T2 agora recomeça em B4. Como o teste automático lê o roteiro, ele já confere a versão nova.</p>
+<p><img alt="Detalhe do roteiro sucesso-4x4" src="../figs/testes-software/front-4.10-sucesso.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 17: Detalhe da execução do roteiro sucesso-4x4 (4.10)</p></font></p>
+<p><img alt="Detalhe do roteiro colisao-retomada, filtro T1" src="../figs/testes-software/front-4.10-colisao-t1.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 18: Colisão em B4 na tentativa 1, filtro T1 (4.10)</p></font></p>
+<p><img alt="Detalhe do roteiro colisao-retomada, filtro T2" src="../figs/testes-software/front-4.10-colisao-t2.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 19: Tentativa 2 depois da retomada, filtro T2 (4.10)</p></font></p>
+<p><img alt="Detalhe do roteiro falha-componente" src="../figs/testes-software/front-4.10-componente.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 20: Falha de componente em A4 (4.10)</p></font></p>
+<p><img alt="Execução do teste caso410Trajeto" src="../figs/testes-software/front-4.10-trajeto.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 21: Teste automático do 4.10 contra os roteiros do simulador</p></font></p>
+<h3 id="411-historico-filtro-e-detalhe">4.11 Histórico, filtro e detalhe<a class="headerlink" href="#411-historico-filtro-e-detalhe" title="Permanent link">&para;</a></h3>
+<p>Depois dos roteiros, o banco tinha 7 execuções 4x4: 3 concluídas e 4 canceladas (as que caíram por <code>link_lost</code> ou foram encerradas). A tela de histórico foi comparada linha a linha com <code>GET /execucoes</code>:</p>
+<ul>
+<li><strong>Lista:</strong> mesma ordem (da mais recente para a mais antiga), mesmo status, tentativas, tempo total e velocidade média. A velocidade aparece com todas as casas que a API manda, como pede o RNF-B01 (sem arredondamento que altere o valor), e as execuções sem velocidade na API aparecem com "—" (Figura 22).</li>
+<li><strong>Filtro:</strong> 4x4 e Todos mostram as 7; 8x4 e 12x4 ficam vazios, como <code>GET /execucoes?tipo_labirinto=8x4</code> e <code>12x4</code>.</li>
+<li><strong>Detalhe:</strong> na execução da colisão, a tabela mostra 1/3 Falha (00:06,1, 5 mV, 0,5 p.p.) e 2/3 Sucesso (00:16,5, −2 mV, −0,2 p.p.), e a variação contra o melhor tempo é 119,9%, os mesmos valores de <code>GET /execucoes/{id}</code> (Figura 23).</li>
+</ul>
+<p>Os testes <code>front06.test.tsx</code> e <code>rotas.test.tsx</code> cobrem o mesmo fluxo com o MSW: lista decrescente com paginação do backend, filtro por labirinto, detalhe com as três tentativas, métricas, variação e trajeto por tentativa (Figura 24).</p>
+<p><img alt="Histórico de execuções" src="../figs/testes-software/front-4.11-lista.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 22: Histórico com as execuções gravadas no banco (4.11)</p></font></p>
+<p><img alt="Detalhe com a tabela de tentativas" src="../figs/testes-software/front-4.11-detalhe.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 23: Detalhe com trajeto, tentativas, falha e health-check (4.11)</p></font></p>
+<p><img alt="Execução dos testes front06 e rotas" src="../figs/testes-software/front-4.11-historico.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 24: Testes automáticos do histórico e do detalhe (4.11)</p></font></p>
+<h3 id="pontos-encontrados">Pontos encontrados<a class="headerlink" href="#pontos-encontrados" title="Permanent link">&para;</a></h3>
+<p>Nenhum deles reprova os casos 4.10 e 4.11, porque a tela mostra o que a API grava. Ficam registrados para correção:</p>
+<ul>
+<li><strong>UUID no lugar do número da execução:</strong> a API não manda <code>numero</code> (o campo é opcional no front e só os mocks o preenchem), então o título do detalhe e a lista mostram o UUID inteiro. Nenhum requisito pede o número, mas o UUID dificulta a leitura do histórico (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/248">#248</a>).</li>
+<li><strong>Consumo negativo:</strong> a T2 da colisão tem consumo de −2 mV. O simulador volta a bateria para 7,9 V a cada boot, e a bateria inicial da tentativa vem da última leitura do boot anterior. No robô real, a LiPo também pode subir alguns mV parada, e nem a API nem o front tratam esse caso (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/247">#247</a>).</li>
+<li><strong>Simulador sem esperar o <code>largar</code>:</strong> com a <code>dev</code> atual, a tentativa aberta pela tela cai por "reinício do robô" quando chega o health-check do simulador (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/249">#249</a>).</li>
+<li><strong>Objetivo dos roteiros:</strong> o <code>sucesso-4x4</code> e a T2 do <code>colisao-retomada</code> terminam em C3, e não no objetivo D4 do 4x4 (US39), e mesmo assim a API aceita o sucesso (<a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/246">#246</a>).</li>
+</ul>
+<h2 id="testes-unitarios-do-front-end">Testes unitários do front-end<a class="headerlink" href="#testes-unitarios-do-front-end" title="Permanent link">&para;</a></h2>
+<p>A suíte do front roda com o <a href="https://vitest.dev">Vitest</a> e o Testing Library, com o MSW no lugar da API. A cobertura é medida pelo provider v8 (<code>npm run test:cobertura</code> em <code>src/frontend</code>), com meta de 80% das linhas configurada no <code>vite.config.ts</code>. Ficam de fora só os arquivos que não vão para o build: os testes, os mocks do MSW, o <code>main.tsx</code> e os tipos gerados da API.</p>
+<p>Resultado (26/10/2026): <strong>230 de 230 testes aprovados</strong> e <strong>97,2% das linhas</strong> cobertas (94,3% das instruções, 94,1% das funções e 90,4% dos desvios), acima da meta de 80%.</p>
+<p><img alt="Cobertura do front-end" src="../figs/testes-software/front-cobertura.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 25: Cobertura do front-end por arquivo (vitest run --coverage)</p></font></p>
+<h2 id="testes-unitarios-e-de-integracao-do-back-end">Testes unitários e de integração do back-end<a class="headerlink" href="#testes-unitarios-e-de-integracao-do-back-end" title="Permanent link">&para;</a></h2>
+<p>A suíte do back-end roda com o <code>pytest</code> em <code>src/backend</code>, contra o Postgres de teste, e a cobertura é medida com o <code>pytest-cov</code> sobre os pacotes <code>app</code>, <code>ponte</code> e <code>contrato</code>, com meta de 80% das linhas (<code>--cov-fail-under=80</code>). Os testes de integração são os que passam pela API e pelo banco (<code>tests/integracao</code>), como a ingestão de telemetria, as rotas de execução, o stream SSE e a ponte serial. Os unitários (<code>tests/unit</code>) cobrem os serviços, o repositório e a ponte isoladamente.</p>
+<p>Resultado (26/10/2026): <strong>467 de 467 testes aprovados</strong> e <strong>96,79% das linhas</strong> cobertas (2.121 instruções, 68 não cobertas), acima da meta de 80%. O relatório lista só os arquivos abaixo de 100%; os outros 38 arquivos têm cobertura completa.</p>
+<p><img alt="Cobertura do back-end" src="../figs/testes-software/backend-cobertura.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 26: Cobertura do back-end e da ponte, arquivos abaixo de 100% (pytest --cov)</p></font></p>
+<h2 id="testes-e2e-sistema">Testes E2E (sistema)<a class="headerlink" href="#testes-e2e-sistema" title="Permanent link">&para;</a></h2>
+<p>Os testes E2E rodam com o <a href="https://playwright.dev">Playwright</a> em <code>src/frontend/e2e/us-conectado.spec.ts</code>, pela interface gráfica, contra a cadeia real: o simulador de navegação do firmware e o simulador de telemetria mandam as mensagens por HTTP para a API (<code>docker compose</code> em <code>src/backend</code>, com Postgres), e o front roda sem mock (<code>VITE_API_MOCK=false</code>). Cada teste confere a tela e, em seguida, o que a API gravou. Para repetir, com a API no ar em <code>http://127.0.0.1:8000</code>, rode <code>npm run test:e2e:conectado</code> em <code>src/frontend</code>.</p>
+<p>Resultado (26/10/2026): <strong>10 de 11 testes aprovados</strong> em 2,0 min.</p>
+<p>O roteiro abaixo guia os testes automatizados: cada caso tem um teste em <code>us-conectado.spec.ts</code> cujo título começa com o ID do caso. As telas são as do <a href="#historias-de-usuario-e-prototipos">protótipo</a>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;"><strong>ID</strong></th>
+<th><strong>Fluxo</strong></th>
+<th><strong>Histórias de usuário</strong></th>
+<th style="text-align: center;"><strong>Telas</strong></th>
+<th><strong>Resultado esperado</strong></th>
+<th style="text-align: center;"><strong>Resultado</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">E2E-01</td>
+<td>Execução completa com sucesso: health-check, Nova execução e conclusão</td>
+<td>US01, US04, US06, US08, US10, US11, US12, US14, US15, US18, US20, US25</td>
+<td style="text-align: center;">1, 2, 3, 4</td>
+<td>A tela mostra a tentativa 1/3, o trajeto e o tempo desde a última atualização; com a tentativa aberta, o Retomar é recusado (409); ao chegar a D4, a execução fica concluída, com os dados gravados</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-02a</td>
+<td>Nova execução bloqueada sem health-check válido (DIP divergente e reprovado)</td>
+<td>US12, US21</td>
+<td style="text-align: center;">2, 5</td>
+<td>A tela mostra o motivo e bloqueia a Nova execução; a API recusa com 409; nada é criado</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-02b</td>
+<td>Nova execução com uma execução em andamento cancela a anterior</td>
+<td>US12, US18</td>
+<td style="text-align: center;">—</td>
+<td>A anterior fica <code>cancelada</code> e a tentativa <code>failed</code>; a nova abre a tentativa 1/3 em <code>running</code></td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-03</td>
+<td>Encerramento manual e retomada na célula da falha</td>
+<td>US17, US19, US22, US31</td>
+<td style="text-align: center;">7, 8, 9, 10</td>
+<td>Tentativa 1 <code>failed</code> com motivo e célula; a retomada abre a tentativa 2/3 na mesma execução, com <code>tentativa_id</code> próprio e o trajeto preservado</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-04</td>
+<td>Falha de componente e retomada</td>
+<td>US30</td>
+<td style="text-align: center;">8, 9, 10</td>
+<td>Falha registrada com o componente; a retomada abre nova tentativa e conta no limite</td>
+<td style="text-align: center;"><strong>Reprovado</strong></td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-05</td>
+<td>Três falhas manuais esgotam as tentativas</td>
+<td>US07, US22</td>
+<td style="text-align: center;">12</td>
+<td>Depois da 3ª falha, o botão de retomar some e a execução fica <code>cancelada</code></td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-05b</td>
+<td>Execução cancelada não oferece retomada</td>
+<td>US07</td>
+<td style="text-align: center;">12</td>
+<td>Cancelada a execução, a tela não oferece o Retomar</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-06</td>
+<td>Perda de comunicação (10 s sem telemetria)</td>
+<td>US07, US23</td>
+<td style="text-align: center;">6, 8</td>
+<td>Tentativa <code>failed</code> por <code>link_lost</code> na última célula; a execução segue <code>em_andamento</code> e a tela oferece o Retomar</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-07</td>
+<td>Estouro do limite de 10 min</td>
+<td>US24</td>
+<td style="text-align: center;">—</td>
+<td>Execução cancelada por <code>time_exceeded</code></td>
+<td style="text-align: center;">Não realizado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-08</td>
+<td>Histórico, filtro por labirinto e detalhe das três tentativas</td>
+<td>US02, US03, US09, US13, US16, US17, US26, US27, US28</td>
+<td style="text-align: center;">Sem tela</td>
+<td>Lista e filtro batem com o banco; o detalhe reexibe trajeto, tentativas e a variação contra o melhor tempo</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-09</td>
+<td>Paredes enviadas pelo robô no desenho do labirinto</td>
+<td>US29</td>
+<td style="text-align: center;">3</td>
+<td>A máscara gravada é a enviada e cada parede aparece no lado certo da célula</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+<tr>
+<td style="text-align: center;">E2E-10</td>
+<td>Health-check pela web: 30 s sem resposta do robô</td>
+<td>US05, US32</td>
+<td style="text-align: center;">2</td>
+<td>O pedido sem resposta libera nova solicitação e não abre tentativa</td>
+<td style="text-align: center;">Aprovado</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Execução dos testes E2E conectados" src="../figs/testes-software/e2e-conectado.png" /></p>
+<p><font size="3"><p style="text-align: center">Figura 27: Execução dos testes E2E com o back-end real (npm run test:e2e:conectado), primeira rodada, com os seis testes originais</p></font></p>
+<p>O teste da US30 reprova por causa do simulador de telemetria, não do front. Ele reproduz o roteiro <code>falha-componente</code> com um <code>boot</code> novo, e o simulador começa a correr logo depois do health-check, sem esperar o <code>largar</code>. Desde o PR <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/pull/239">#239</a>, a API entende o health-check de um <code>boot</code> maior como reinício do robô e encerra a tentativa aberta como <code>link_lost</code>. Na execução, a tela mostrou "link_lost em A1" no lugar de <code>falha_componente</code> em A4, e o log da API registrou <code>tel</code>, <code>passo</code> e <code>falha</code> descartados por "nenhuma tentativa aberta". É o problema da <a href="https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/249">#249</a>, ainda aberta; a US30 fica sem E2E aprovado até ela ser resolvida.</p>
+<p>O E2E-07 não foi realizado. Ele exigiria subir uma segunda API com o limite de tempo reduzido, e esse comportamento fica coberto no nível de integração, com relógio simulado, pelo caso 4.4. Nem esse caso nem o E2E cobrem o cancelamento aos 10 minutos entre duas tentativas, comportamento que o back-end ainda não tem (US24).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Voltar para o topo
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Rodapé" >
+        
+          
+          <a href="../7.3%20-%20Testes%20de%20hardware/" class="md-footer__link md-footer__link--prev" aria-label="Anterior: Testes de hardware">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Anterior
+              </span>
+              <div class="md-ellipsis">
+                Testes de hardware
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../7.5%20-%20Testes%20de%20integra%C3%A7%C3%A3o/" class="md-footer__link md-footer__link--next" aria-label="Próximo: Testes de integração">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Próximo
+              </span>
+              <div class="md-ellipsis">
+                Testes de integração
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Ratatouille · PI1 2026.2
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/PI1-2026-2/2026_2_PI1_Grupo01_Juliana" target="_blank" rel="noopener" title="Repositório no GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.indexes", "navigation.footer", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copiado para \u00e1rea de transfer\u00eancia", "clipboard.copy": "Copiar para \u00e1rea de transfer\u00eancia", "search.result.more.one": "mais 1 nesta p\u00e1gina", "search.result.more.other": "# mais nesta p\u00e1gina", "search.result.none": "Nenhum documento encontrado", "search.result.one": "1 documento encontrado", "search.result.other": "# documentos encontrados", "search.result.placeholder": "Digite para iniciar a busca", "search.result.term.missing": "Ausente", "select.version": "Selecione a vers\u00e3o"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../javascripts/sidebar-toggle.js"></script>
+      
+        <script src="../javascripts/mathjax.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+      
+        <script src="../javascripts/testes-energia.js"></script>
+      
+    
+  </body>
+</html>
