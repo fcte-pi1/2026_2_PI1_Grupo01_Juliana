@@ -25,7 +25,7 @@ Além disso, o glossário busca:
 | **Execução** | Uma passagem do Micromouse por um labirinto. No sistema, corresponde a uma **tentativa** dentro de uma **execução lógica**. Evitar: corrida, run. |
 | **Execução Lógica** | Conjunto das até 3 tentativas do Micromouse em um mesmo tipo de labirinto, aberto pelo operador com **Nova execução**. Termina concluída quando uma tentativa alcança a área de objetivo, ou cancelada pelo tempo limite, pela perda de comunicação ou pelo esgotamento das tentativas. |
 | **Failed** | Estado final da tentativa em que o Micromouse não alcançou a área de objetivo, seja por falha no trajeto, falha de componente, perda de comunicação, estouro do tempo limite ou encerramento feito pelo operador. |
-| **Health-check** | Estado inicial da tentativa, em que o Micromouse verifica seus componentes (bateria, sensores e rodas) antes de iniciar o trajeto. |
+| **Health-check** | Verificação que o Micromouse faz de seus componentes (bateria, sensores e rodas) antes da largada. É um registro próprio, anterior à tentativa, e vale por 7 minutos. |
 | **Interrupção** | Comando que o Sistema de Telemetria envia ao Micromouse, pela ponte Bluetooth, quando o operador encerra a tentativa manualmente. É um dos três comandos do contrato, ao lado do largar e do health_check. O robô para e aguarda. |
 | **Labirinto** | Pista formada por células de 18 x 18 cm, com piso preto e paredes brancas de topo vermelho, nos formatos 4x4, 8x4 ou 12x4. |
 | **Micromouse** | Robô autônomo que explora o labirinto com o algoritmo flood fill (método Adachi) até a área de objetivo, mapeando as paredes e enviando telemetria ao sistema web. |
@@ -39,7 +39,7 @@ Além disso, o glossário busca:
 | **Success** | Estado final da tentativa em que o Micromouse alcançou a área de objetivo. |
 | **Telemetria** | Conjunto de dados enviados pelo Micromouse durante a execução, como célula atual, nível de bateria, velocidade, status e o instante de envio. |
 | **Tempo Limite** | Duração máxima de 10 minutos no total para cada tipo de labirinto, contada desde **Nova execução** e somando as até 3 tentativas da execução lógica e os intervalos entre elas. Ao ser ultrapassado, a tentativa aberta falha com o motivo time_exceeded e a execução lógica é cancelada. |
-| **Tentativa** | Cada passagem do Micromouse dentro de uma execução lógica, numerada de 1 a 3. Começa no health-check e termina em success ou failed. Evitar: corrida, run. |
+| **Tentativa** | Cada passagem do Micromouse dentro de uma execução lógica, numerada de 1 a 3. Abre já em running, depois de um health-check aprovado, e termina em success ou failed. Evitar: corrida, run. |
 | **Tentativa Rejeitada** | Ação recusada pelo sistema por não corresponder ao estado da execução lógica (por exemplo, uma retomada sem tentativa em falha, uma quarta tentativa ou uma nova execução enquanto outra ainda está em andamento). Não é uma tentativa e não entra no histórico. Evitar: execução recusada, execução rejeitada. |
 | **Tipo de Labirinto** | Formato do labirinto (4x4, 8x4 ou 12x4). Selecionado no DIP switch do robô antes de ligá-lo. O operador também o informa em **Nova execução**, apenas no backend, para que a web desenhe a grade do labirinto e confira o DIP switch; essa informação nunca é enviada ao robô pela web. |
 | **Trajeto** | Sequência cronológica de células visitadas pelo Micromouse em uma execução, que permite reconstruir o percurso completo. |
