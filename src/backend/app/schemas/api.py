@@ -5,9 +5,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 Labirinto = Literal["4x4", "8x4", "12x4"]
-TipoLabirinto = Labirinto 
+TipoLabirinto = Labirinto
 StatusExecucao = Literal["em_andamento", "concluida", "cancelada"]
-StatusTentativa = Literal["health-check", "running", "success", "failed"]
+StatusTentativa = Literal["running", "success", "failed"]
 TipoInicio = Literal["nova", "retomada"]
 TipoDip = Literal["4x4", "8x4", "12x4", "invalido"]
 Componente = Literal[
@@ -32,6 +32,15 @@ MotivoFalha = Literal[
     "encerrado_operador",
 ]
 MotivoEncerramento = Literal["collision", "stuck", "out_of_track"]
+MotivoRecusa = Literal[
+    "tentativa_aberta",
+    "limite_3",
+    "execucao_cancelada",
+    "health_check_ausente",
+    "health_check_reprovado",
+    "health_check_expirado",
+    "dip_divergente",
+]
 OrigemFalha = Literal["automatica", "encerrado_operador"]
 Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
@@ -57,6 +66,25 @@ class ItemHealthCheck(BaseModel):
     valor_lido: float | None = None
 
 
+class UltimoHealthCheck(BaseModel):
+    aprovado: bool | None = None
+    tipo_dip: TipoDip | None = None
+    iniciado_em: datetime
+    concluido_em: datetime | None = None
+    valido_ate: datetime | None = None
+    itens: list[ItemHealthCheck] = Field(default_factory=list)
+
+
+class EventoHealthCheckAtual(UltimoHealthCheck):
+    """Retrato do health-check na stream própria, antes de existir execução."""
+
+    tipo: Literal["health_check"] = "health_check"
+
+
+class SolicitacaoHealthCheck(BaseModel):
+    solicitado_em: datetime
+
+
 class Falha(BaseModel):
     motivo: MotivoFalha
     origem: OrigemFalha
@@ -80,6 +108,7 @@ class Tentativa(BaseModel):
     bateria_inicial: float | None = None
     bateria_final: float | None = None
     consumo_bateria: float | None = None
+    consumo_bateria_pct: float | None = None
     health_check: list[ItemHealthCheck] = Field(default_factory=list)
     falha: Falha | None = None
 
@@ -138,6 +167,74 @@ class RetornoNovaExecucao(BaseModel):
     attempt_index: int = Field(ge=1, le=3)
 
 
+class Recusa(BaseModel):
+    motivo: MotivoRecusa
+    ocorrida_em: datetime
+
+
 # Alias usado antes do alinhamento ARQ-02
 ExecucaoCriadaResponse = RetornoNovaExecucao
 ExecucaoResumo = ResumoExecucao
+
+
+class EventoTelemetria(BaseModel):
+    tipo: Literal["telemetria"] = "telemetria"
+    ordem: int = Field(ge=1)
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    bateria: int
+    bateria_pct: float | None = None
+    velocidade: int | None = None
+    rumo: Rumo | None = None
+    eixo_longo: EixoLongo | None = None
+    enviado_em: datetime
+
+
+class EventoPasso(BaseModel):
+    tipo: Literal["passo"] = "passo"
+    passo_id: int
+    seq: int = Field(ge=1)
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    paredes_mask: int = Field(ge=0, le=15)
+    retomada: bool
+    # coluna obrigatória no banco: o evento nunca sai com entrou_em nulo
+    entrou_em: datetime
+
+
+class EventoStatus(BaseModel):
+    tipo: Literal["status"] = "status"
+    tentativa_id: UUID
+    attempt_index: int = Field(ge=1, le=3)
+    status_tentativa: StatusTentativa
+    status_execucao: StatusExecucao
+    tipo_dip: TipoDip | None = None
+
+
+class EventoHealthCheck(BaseModel):
+    tipo: Literal["health_check"] = "health_check"
+    tentativa_id: UUID
+    componente: Componente
+    aprovado: bool
+    valor_lido: float | None = None
+
+
+class EventoFalha(BaseModel):
+    tipo: Literal["falha"] = "falha"
+    tentativa_id: UUID
+    motivo: MotivoFalha
+    origem: OrigemFalha
+    celula_x: int = Field(ge=0, le=11)
+    celula_y: int = Field(ge=0, le=11)
+    componente: Componente | None = None
+    observacao: str | None = Field(default=None, max_length=100)
+    momento_falha: datetime
+    status_execucao: StatusExecucao
+
+
+class EventoSucesso(BaseModel):
+    tipo: Literal["sucesso"] = "sucesso"
+    tentativa_id: UUID
+    x: int = Field(ge=0, le=11)
+    y: int = Field(ge=0, le=11)
+    status_execucao: StatusExecucao

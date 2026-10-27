@@ -10,6 +10,11 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:cobertura": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:conectado": "playwright test -c playwright.conectado.config.ts",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:install": "playwright install chromium",
     "preview": "vite preview",
     "gerar-tipos": "openapi-typescript ../backend/openapi.yaml -o src/api/schema.ts"
   },
@@ -20,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -27,6 +33,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.3",
     "eslint": "^10.12.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",

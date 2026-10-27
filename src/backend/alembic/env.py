@@ -6,6 +6,7 @@ from app.db import Base
 from app.models import (  # noqa: F401
     ExecucaoLogica,
     Falha,
+    HealthCheck,
     HealthCheckItem,
     Labirinto,
     LeituraTelemetria,

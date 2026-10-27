@@ -17,6 +17,8 @@ __pycache__/
 .piolibdeps/
 .clang_complete
 .gcc-flags.json
+src/firmware/cobertura*.html
+src/firmware/cobertura*.css
 
 # Node (src/frontend)
 node_modules/
@@ -378,3 +380,6 @@ src/firmware/**/build/
 
 # Simulador (estado local: boot persistido)
 .simulador/
+
+# Ponte serial (log de auditoria)
+**/logs/ponte/

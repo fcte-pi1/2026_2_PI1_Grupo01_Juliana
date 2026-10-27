@@ -7,20 +7,20 @@ import { HISTORICO, resumoAPI, ULTIMA_EXECUCAO } from '../mocks/dados'
 import { servidor } from '../mocks/servidor'
 import { renderizarRota } from './renderizar'
 
-/** Texto que identifica cada um dos 12 estados do protótipo na rota `/`. */
+/** Estados ativos em `/`; execuções encerradas podem ser reabertas pelo detalhe. */
 const MARCA_DO_CENARIO: Record<string, RegExp> = {
   '01-inicio': /Nenhuma execução ativa/,
   '02-health-check': /6 de 8 OK/,
   '03-em-execucao': /Tempo da execução/,
-  '04-concluida': /concluída na tentativa 1/,
+  '04-concluida': /Concluída/,
   '05-execucao-recusada': /Nova execução recusada/,
   '06-sem-comunicacao': /Sem dados do robô há/,
   '07-encerrar-execucao': /Encerrar a tentativa 1 da execução #0042\?/,
   '08-encerrada-como-falha': /Retomar tentativa \(2\/3\)/,
   '09-retomar-tentativa': /Retomar a execução #0042\?/,
   '10-retomada-tentativa-2': /Tentativa 2\/3/,
-  '11-concluida-apos-retomada': /concluída na tentativa 2/,
-  '12-falha-sem-retomada': /Sem retomada/,
+  '11-concluida-apos-retomada': /2\/3/,
+  '12-falha-sem-retomada': /Cancelada/,
 }
 
 describe('rota /', () => {
@@ -29,7 +29,8 @@ describe('rota /', () => {
   })
 
   it.each(CENARIOS.map((c) => [c.id, c.modal] as const))('exibe o cenário %s', async (id, modal) => {
-    renderizarRota(modal ? `/?modal=${modal}` : '/', id)
+    const encerrada = ['04-concluida', '11-concluida-apos-retomada', '12-falha-sem-retomada'].includes(id)
+    renderizarRota(encerrada ? '/execucoes/e-0042' : modal ? `/?modal=${modal}` : '/', id)
     if (id === '05-execucao-recusada') {
       await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
       const dialogo = await screen.findByRole('dialog')
@@ -38,10 +39,11 @@ describe('rota /', () => {
     expect((await screen.findAllByText(MARCA_DO_CENARIO[id])).length).toBeGreaterThan(0)
   })
 
-  it('Nova execução abre o health-check', async () => {
+  it('Nova execução abre a tentativa já em execução após o health-check', async () => {
     renderizarRota('/', '01-inicio')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
     expect(await screen.findByRole('heading', { name: 'Health-check' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Encerrar tentativa' })).toBeEnabled()
   })
 
   it('mostra o estado da última execução sem usar o resultado da tentativa', async () => {
@@ -51,6 +53,18 @@ describe('rota /', () => {
     expect(within(cartao).queryByText('Sucesso')).not.toBeInTheDocument()
   })
 
+  it('carrega a última execução com um pedido só, sem percorrer o histórico', async () => {
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      pedidos.push(new URL(request.url).search)
+      return HttpResponse.json([resumoAPI(ULTIMA_EXECUCAO)])
+    }))
+    renderizarRota('/')
+    expect(await screen.findByText('Última execução · 4x4')).toBeInTheDocument()
+    expect(pedidos.length).toBeGreaterThan(0)
+    expect(pedidos.every((busca) => !busca.includes('offset'))).toBe(true)
+  })
+
   it.each([null, undefined])('usa o status da última execução quando resultado é %s', async (resultado) => {
     servidor.use(http.get('*/api/execucoes', () => HttpResponse.json([
       { ...resumoAPI(ULTIMA_EXECUCAO), resultado },
@@ -58,7 +72,6 @@ describe('rota /', () => {
     renderizarRota('/')
     const cartao = (await screen.findByText('Última execução · 4x4')).closest('section')!
     expect(within(cartao).getByText('Concluída')).toBeInTheDocument()
-    expect(within(cartao).queryByText('—')).not.toBeInTheDocument()
   })
 
   it('Encerrar tentativa registra a falha e oferece a retomada', async () => {
@@ -69,6 +82,33 @@ describe('rota /', () => {
     await userEvent.click(within(modal).getByRole('button', { name: 'Encerrar como falha' }))
     expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('Encerrar execução cancela a rodada inteira e não oferece retomada', async () => {
+    renderizarRota('/', '03-em-execucao')
+    await userEvent.click(await screen.findByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/Não será possível retomá-la/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Execução ativa #0042' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
+    expect(screen.getByText(/esta execução não aceita novas tentativas/)).toBeInTheDocument()
+  })
+
+  it('Encerrar execução depois da falha impede a retomada', async () => {
+    renderizarRota('/', '08-encerrada-como-falha')
+    expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Encerrar execução' }))
+    const modal = await screen.findByRole('dialog', { name: /por completo/ })
+    expect(within(modal).getByText(/não aceitará novas tentativas/)).toBeInTheDocument()
+    await userEvent.click(within(modal).getByRole('button', { name: 'Encerrar execução' }))
+    expect(await screen.findByRole('heading', { name: 'Execução cancelada #0042' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Retomar/ })).not.toBeInTheDocument()
   })
 
   it('Retomar parte da célula da falha e só libera depois do checklist', async () => {
@@ -91,8 +131,28 @@ describe('rota /execucoes', () => {
     expect(await screen.findByRole('link', { name: '#0041' })).toBeInTheDocument()
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('—')).not.toBeInTheDocument()
+  })
+
+  it('percorre as páginas do backend e lista todas as execuções em ordem decrescente', async () => {
+    const base = resumoAPI(HISTORICO[0])
+    const todas = Array.from({ length: 230 }, (_, i) => ({ ...base, execucao_id: `e-${i}`, numero: 230 - i,
+      iniciada_em: new Date(Date.UTC(2026, 9, 1) - i * 60_000).toISOString() }))
+    const pedidos: string[] = []
+    servidor.use(http.get('*/api/execucoes', ({ request }) => {
+      const busca = new URL(request.url).searchParams
+      pedidos.push(`${busca.get('limite')}/${busca.get('offset')}`)
+      const offset = Number(busca.get('offset'))
+      return HttpResponse.json(todas.slice(offset, offset + Number(busca.get('limite'))))
+    }))
+    renderizarRota('/execucoes')
+    expect(await screen.findByRole('link', { name: '#0001' })).toBeInTheDocument()
+    expect(pedidos).toEqual(['100/0', '100/100', '100/200'])
+    const links = within(screen.getByRole('table')).getAllByRole('link')
+    expect(links).toHaveLength(230)
+    expect(links[0]).toHaveTextContent('#0230')
+    expect(links.at(-1)).toHaveTextContent('#0001')
   })
 
   it('lista as execuções e filtra por labirinto', async () => {
@@ -102,7 +162,7 @@ describe('rota /execucoes', () => {
 
     const tabela = within(screen.getByRole('table'))
     expect(tabela.getAllByText('Concluída')).toHaveLength(3)
-    expect(tabela.getByText('Cancelada')).toBeInTheDocument()
+    expect(tabela.getAllByText('Cancelada')).toHaveLength(2)
     expect(tabela.queryByText('Sucesso')).not.toBeInTheDocument()
     expect(tabela.queryByText('Falha')).not.toBeInTheDocument()
 
@@ -125,12 +185,40 @@ describe('rota /execucoes/:id', () => {
     expect(within(screen.getByRole('table')).getByText('Sucesso')).toBeInTheDocument()
   })
 
+  it('mostra o trajeto de cada tentativa em separado', async () => {
+    renderizarRota('/execucoes/e-0042', '11-concluida-apos-retomada')
+    await screen.findByRole('heading', { name: 'Execução #0042' })
+    const trechos = () => Array.from(document.querySelectorAll('polyline.labirinto__trajeto'),
+      (linha) => linha.classList.contains('labirinto__trajeto--retomada') ? 'retomada' : 'tentativa 1')
+    const grupo = within(screen.getByRole('group', { name: 'Trajeto por tentativa' }))
+    expect(grupo.getAllByRole('button').map((b) => b.textContent)).toEqual(['Todas', 'T1', 'T2'])
+    expect(trechos()).toEqual(['tentativa 1', 'retomada'])
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T1' }))
+    expect(trechos()).toEqual(['tentativa 1'])
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+
+    await userEvent.click(grupo.getByRole('button', { name: 'T2' }))
+    expect(trechos()).toEqual(['retomada'])
+    // o filtro recorta só o trajeto: a falha da T1 continua, e a T2 parte dela
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
+    expect(screen.getByText(/^Retomada em [A-Z]\d+$/, { selector: '.legenda' })).toBeInTheDocument()
+    expect(screen.queryByText('Tentativa 1', { selector: '.legenda' })).not.toBeInTheDocument()
+    expect(screen.getByText('Tentativas em ordem cronológica')).toBeInTheDocument()
+  })
+
   it('mantém a execução em andamento quando a última tentativa falhou', async () => {
     renderizarRota('/execucoes/e-0042', '08-encerrada-como-falha')
     expect(await screen.findByRole('heading', { name: 'Execução #0042' })).toBeInTheDocument()
     expect(screen.getByText('Em andamento')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Falha')).toBeInTheDocument()
     expect(screen.queryByText('Cancelada')).not.toBeInTheDocument()
+  })
+
+  it('mostra o trajeto longo do 12x4 com a célula da falha', async () => {
+    renderizarRota('/execucoes/e-0034')
+    expect(await screen.findByRole('img', { name: /Labirinto 12x4 com 48 células visitadas/ })).toBeInTheDocument()
+    expect(screen.getByText('FALHA T1')).toBeInTheDocument()
   })
 
   it('avisa quando a execução não existe', async () => {

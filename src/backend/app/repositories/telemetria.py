@@ -43,6 +43,20 @@ class TelemetriaRepository:
         )
         return list(self._session.scalars(stmt))
 
+    def listar_passos_depois(self, execucao_id: UUID, passo_id: int) -> list[PassoTrajeto]:
+        """Passos acima do `passo_id` informado, na ordem, para o reenvio do SSE.
+
+        Ordena por `passo_id`, que é o valor do `Last-Event-ID`, e é servida pelo
+        índice (execucao_id, passo_id). Com 0 devolve o trajeto inteiro, que é o
+        caso de quem abre a tela no meio da corrida.
+        """
+        stmt = (
+            select(PassoTrajeto)
+            .where(PassoTrajeto.execucao_id == execucao_id, PassoTrajeto.passo_id > passo_id)
+            .order_by(PassoTrajeto.passo_id)
+        )
+        return list(self._session.scalars(stmt))
+
     def gravar_paredes(
         self, execucao_id: UUID, x: int, y: int, mascara: int, detectada_em: datetime
     ) -> None:

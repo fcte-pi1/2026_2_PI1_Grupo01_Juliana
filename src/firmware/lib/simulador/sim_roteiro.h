@@ -12,7 +12,7 @@
  * ou "falha". Os tempos vêm de um modelo simples de velocidade constante e os
  * valores do health-check são fictícios.
  *
- * Os serializadores serão trocados pelos do contrato (src/firmware/contrato)
+ * Os serializadores serão trocados pelos do contrato (lib/contrato)
  * quando o ARQ-01 entrar na main; as linhas geradas não mudam.
  */
 

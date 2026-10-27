@@ -1,40 +1,29 @@
 """RNF-B11: a ingestão aguenta a rajada de telemetria sem atraso acumulado."""
 
-import json
 import time
 import uuid
 from datetime import UTC, datetime
 
-from app.models import ExecucaoLogica, Labirinto, Tentativa
+import pytest
+from app.models import ExecucaoLogica, Labirinto, LeituraTelemetria, PassoTrajeto, Tentativa
 from app.repositories import Repositorio
-from scripts.carga_telemetria import P95_MAXIMO_S, _p95
-from sqlalchemy import select
+from scripts.carga_telemetria import (
+    P95_MAXIMO_S,
+    TentativaAbertaError,
+    _p95,
+    executar_carga,
+    mensagem,
+    sem_crescimento,
+)
+from sqlalchemy import func, select
+from sqlalchemy.orm import sessionmaker
 
 TOTAL = 600
 JANELA = 100
 RECEBIDO_EM = "2026-10-08T12:00:00+00:00"
 
 
-def _mensagem(seq: int) -> str:
-    """tel nos índices pares e passo nos ímpares, alternando entre (0,0) e (0,1)."""
-    base = {"v": 1, "boot": 50, "seq": seq, "t_ms": 1000 + 100 * seq}
-    if seq % 2 == 0:
-        campos = {
-            "tipo": "tel",
-            "estado": "running",
-            "x": 0,
-            "y": 0,
-            "rumo": "N",
-            "bat_mv": 7800,
-            "vel_mm_s": 200,
-            "eixo_longo": None,
-        }
-    else:
-        campos = {"tipo": "passo", "x": 0, "y": (seq // 2) % 2, "paredes": 9}
-    return json.dumps({**base, **campos}, separators=(",", ":"))
-
-
-def _abrir_tentativa(db_session) -> None:
+def _abrir_tentativa(db_session) -> Tentativa:
     labirinto_id = db_session.scalar(select(Labirinto.labirinto_id).where(Labirinto.tipo == "4x4"))
     execucao = ExecucaoLogica(
         execucao_id=uuid.uuid4(),
@@ -53,6 +42,12 @@ def _abrir_tentativa(db_session) -> None:
         iniciada_em=datetime.now(UTC),
     )
     Repositorio(db_session).salvar(tentativa)
+    return tentativa
+
+
+def _fabrica(db_session):
+    """Sessões na mesma conexão do fixture, para enxergar o que o client grava."""
+    return sessionmaker(bind=db_session.get_bind(), join_transaction_mode="create_savepoint")
 
 
 def test_600_mensagens_sem_espera_ficam_abaixo_de_100_ms_sem_crescer(client, db_session):
@@ -60,7 +55,7 @@ def test_600_mensagens_sem_espera_ficam_abaixo_de_100_ms_sem_crescer(client, db_
 
     tempos = []
     for seq in range(TOTAL):
-        corpo = {"linha": _mensagem(seq), "recebido_em": RECEBIDO_EM}
+        corpo = {"linha": mensagem(50, seq, 1000 + 100 * seq), "recebido_em": RECEBIDO_EM}
         inicio = time.perf_counter()
         resposta = client.post("/telemetria", json=corpo)
         tempos.append(time.perf_counter() - inicio)
@@ -70,6 +65,38 @@ def test_600_mensagens_sem_espera_ficam_abaixo_de_100_ms_sem_crescer(client, db_
     p95_inicio = _p95(tempos[:JANELA])
     p95_fim = _p95(tempos[-JANELA:])
     assert p95 < P95_MAXIMO_S, f"p95 = {p95 * 1000:.1f} ms"
-    assert p95_fim <= 2 * p95_inicio, (
+    assert sem_crescimento(tempos, JANELA), (
         f"p95 cresceu de {p95_inicio * 1000:.1f} ms para {p95_fim * 1000:.1f} ms"
     )
+
+
+def test_executar_carga_aprova_e_fecha_a_propria_tentativa(client, db_session):
+    resultado = executar_carga(client, _fabrica(db_session), taxa=50, duracao=1)
+
+    assert resultado.aprovado, resultado
+    assert len(resultado.registros) == 50
+    db_session.expire_all()
+    tentativa = db_session.scalar(
+        select(Tentativa).where(Tentativa.execucao_id == resultado.execucao_id)
+    )
+    execucao = db_session.get(ExecucaoLogica, resultado.execucao_id)
+    assert tentativa.status == "failed"
+    assert execucao.status == "cancelada"
+    leituras = db_session.scalar(
+        select(func.count()).where(LeituraTelemetria.tentativa_id == tentativa.tentativa_id)
+    )
+    passos = db_session.scalar(
+        select(func.count()).where(PassoTrajeto.tentativa_id == tentativa.tentativa_id)
+    )
+    assert leituras > 0
+    assert passos > 0
+
+
+def test_executar_carga_recusa_com_tentativa_ja_aberta(client, db_session):
+    existente = _abrir_tentativa(db_session)
+
+    with pytest.raises(TentativaAbertaError):
+        executar_carga(client, _fabrica(db_session), taxa=50, duracao=1)
+
+    db_session.expire_all()
+    assert db_session.get(Tentativa, existente.tentativa_id).status == "running"

@@ -1,0 +1,32 @@
+"""Erros de domínio da execução lógica (BACK-03)."""
+
+from datetime import datetime
+
+
+class RecusaTentativa(Exception):
+    def __init__(self, motivo: str, ocorrida_em: datetime) -> None:
+        self.motivo = motivo
+        self.ocorrida_em = ocorrida_em
+        super().__init__(motivo)
+
+
+class ExecucaoNaoEncontrada(Exception):
+    pass
+
+
+class TentativaIndisponivel(Exception):
+    """Encerrar ou ação similar sem tentativa aberta na execução."""
+
+    pass
+
+
+class TentativaEmAndamento(Exception):
+    """Pedido que exige o robô parado, feito com uma tentativa em running."""
+
+    pass
+
+
+class ExecucaoIndisponivel(Exception):
+    """A execução não está em andamento."""
+
+    pass

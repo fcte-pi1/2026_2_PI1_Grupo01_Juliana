@@ -3,21 +3,30 @@ import { api } from './clienteApi'
 import type { components } from './schema'
 import type {
   ComponenteHealthCheck, EncerrarPedido, Execucao, ExecucaoAtualResposta,
-  Labirinto, NovaExecucaoPedido, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto,
+  Labirinto, NovaExecucaoPedido, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto, UltimoHealthCheck,
 } from './tipos'
 
 type DetalheAPI = components['schemas']['ExecucaoDetalhe'] & { numero?: number }
 type ResumoAPI = components['schemas']['ResumoExecucao'] & { numero?: number }
 
 function normalizarExecucao(dados: DetalheAPI): Execucao {
+  const leitura = dados.leituras?.at(-1)
+  const passo = dados.trajeto?.at(-1)
+  const posicao = passo?.entrou_em && (!leitura || Date.parse(passo.entrou_em) > Date.parse(leitura.enviado_em)) ? passo : leitura ?? passo
+  const tentativa = [...(dados.tentativas ?? [])].sort((a, b) => b.attempt_index - a.attempt_index)[0]
+  const falha = tentativa?.status === 'failed' ? tentativa.falha : null
   return {
     ...dados,
+    celula_atual: falha ? { x: falha.celula_x, y: falha.celula_y } : posicao ? { x: posicao.x, y: posicao.y } : null,
     labirinto: dados.tipo_labirinto,
     encerrada_em: dados.encerrada_em ?? null,
     tempo_total_s: dados.tempo_total_s ?? null,
+    variacao_melhor_tempo_pct: dados.variacao_melhor_tempo_pct ?? null,
     ultima_mensagem_em: dados.ultima_mensagem_em ?? null,
+    eixo_longo: dados.eixo_longo ?? null,
     trajeto: dados.trajeto ?? [],
-    leituras: (dados.leituras ?? []).map((leitura) => ({ ...leitura, velocidade: leitura.velocidade ?? null })),
+    leituras: (dados.leituras ?? []).map((leitura) => ({ ...leitura, bateria_pct: null,
+      velocidade: leitura.velocidade ?? null, rumo: leitura.rumo ?? null })),
     tentativas: (dados.tentativas ?? []).map((tentativa) => ({
       ...tentativa,
       tipo_descoberto: tentativa.tipo_dip ?? null,
@@ -27,6 +36,7 @@ function normalizarExecucao(dados: DetalheAPI): Execucao {
       bateria_inicial: tentativa.bateria_inicial ?? null,
       bateria_final: tentativa.bateria_final ?? null,
       consumo_bateria: tentativa.consumo_bateria ?? null,
+      consumo_bateria_pct: tentativa.consumo_bateria_pct ?? null,
       // Componentes sem resposta aparecem como pendentes, sem inventar resultados.
       health_check: !tentativa.health_check?.length ? [] : (Object.keys(ROTULO_COMPONENTE) as ComponenteHealthCheck[]).map((componente) => {
         const item = tentativa.health_check.find((i) => i.componente === componente)
@@ -41,16 +51,34 @@ function normalizarExecucao(dados: DetalheAPI): Execucao {
   }
 }
 
+/** Maior página aceita por GET /execucoes. */
+export const LIMITE_PAGINA = 100
+
+const paraResumo = (resumo: ResumoAPI): ResumoExecucao => ({
+  ...resumo,
+  labirinto: resumo.tipo_labirinto,
+  resultado: resumo.status,
+  tempo_total_s: resumo.tempo_total_s ?? null,
+  velocidade_media: resumo.velocidade_media ?? null,
+  consumo_bateria: resumo.consumo_bateria ?? null,
+})
+
+/** Primeira página do histórico, num pedido só: o painel ao vivo não espera o histórico inteiro. */
 export const listarExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
   const dados = await api.get<ResumoAPI[]>(labirinto ? `/execucoes?tipo_labirinto=${labirinto}` : '/execucoes', sinal)
-  return dados.map((resumo) => ({
-    ...resumo,
-    labirinto: resumo.tipo_labirinto,
-    resultado: resumo.status,
-    tempo_total_s: resumo.tempo_total_s ?? null,
-    velocidade_media: resumo.velocidade_media ?? null,
-    consumo_bateria: resumo.consumo_bateria ?? null,
-  }))
+  return dados.map(paraResumo)
+}
+
+/** Histórico completo (RF03). O backend pagina, então percorre todas as páginas; só a tela de histórico usa. */
+export const listarTodasExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
+  const dados: ResumoAPI[] = []
+  for (let offset = 0; ; offset += LIMITE_PAGINA) {
+    const filtro = labirinto ? `tipo_labirinto=${labirinto}&` : ''
+    const pagina = await api.get<ResumoAPI[]>(`/execucoes?${filtro}limite=${LIMITE_PAGINA}&offset=${offset}`, sinal)
+    dados.push(...pagina)
+    if (pagina.length < LIMITE_PAGINA) break
+  }
+  return dados.map(paraResumo)
 }
 
 export const buscarExecucaoAtual = async (sinal?: AbortSignal): Promise<ExecucaoAtualResposta> => {
@@ -83,8 +111,17 @@ export const buscarExecucao = async (id: string, sinal?: AbortSignal) =>
 export const criarExecucao = (pedido: NovaExecucaoPedido) =>
   api.post<RetornoNovaExecucao>('/execucoes', pedido)
 
-export const encerrarTentativa = (id: string, pedido: EncerrarPedido) =>
-  api.post<Execucao>(`/execucoes/${id}/encerrar-tentativa`, pedido)
+export const encerrarTentativa = async (id: string, pedido: EncerrarPedido) =>
+  normalizarExecucao(await api.post<DetalheAPI>(`/execucoes/${id}/encerrar-tentativa`, pedido))
+
+export const encerrarExecucao = async (id: string) =>
+  normalizarExecucao(await api.post<DetalheAPI>(`/execucoes/${id}/encerrar`))
 
 export const retomarTentativa = (id: string) =>
-  api.post<Execucao>(`/execucoes/${id}/retomar`)
+  api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`)
+
+export const buscarUltimoHealthCheck = (sinal?: AbortSignal) =>
+  api.get<UltimoHealthCheck | null>('/health-check/ultimo', sinal)
+
+export const solicitarHealthCheck = () =>
+  api.post<components['schemas']['SolicitacaoHealthCheck']>('/health-check/solicitar')

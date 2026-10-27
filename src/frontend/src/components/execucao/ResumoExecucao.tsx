@@ -9,10 +9,11 @@ interface ResumoExecucaoProps {
   criadaEm: string
   largada: string
   objetivo: string
+  tempoHealthCheck?: string
 }
 
 /** Faixa de chips no topo da execução: número, labirinto, tentativa n/3, horários. */
-export function ResumoExecucao({ numero, labirinto, attemptIndex, criadaEm, largada, objetivo }: ResumoExecucaoProps) {
+export function ResumoExecucao({ numero, labirinto, attemptIndex, criadaEm, largada, objetivo, tempoHealthCheck }: ResumoExecucaoProps) {
   return (
     <section className="cartao resumo-execucao">
       <strong className="resumo-execucao__numero mono">{numero}</strong>
@@ -22,6 +23,7 @@ export function ResumoExecucao({ numero, labirinto, attemptIndex, criadaEm, larg
       <span className="chip">
         {largada} → {objetivo}
       </span>
+      {tempoHealthCheck && <span className="resumo-execucao__tempo"><span className="rotulo">Em health-check há </span><strong className="mono">{tempoHealthCheck}</strong></span>}
     </section>
   )
 }

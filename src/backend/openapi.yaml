@@ -7,6 +7,7 @@ info:
 
 tags:
   - name: execucoes
+  - name: health-check
   - name: stream
   - name: telemetria
 
@@ -112,9 +113,11 @@ paths:
       tags: [execucoes]
       summary: Registra uma nova execução, contando 1/3 tentativas.
       description: >
-        O operador informa o labirinto. O backend abre a execução lógica,
-        começa o relógio de 10 minutos e cria a tentativa 1.
-        Se já houver execução em andamento, ela é cancelada.
+        O operador informa o labirinto. Exige um health-check aprovado, concluído
+        há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409
+        e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio
+        de 10 minutos e cria a tentativa 1 já em running, com o comando `largar`
+        para o robô. Se já houver execução em andamento, ela é cancelada.
       requestBody:
         required: true
         content:
@@ -134,8 +137,90 @@ paths:
                 execucao_id: 123e4567-e89b-12d3-a456-426614174000
                 tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
                 attempt_index: 1
+        "409":
+          $ref: "#/components/responses/Recusa"
         "422":
           $ref: "#/components/responses/ErroValidacao"
+
+  /health-check/ultimo:
+    get:
+      operationId: buscarUltimoHealthCheck
+      tags: [health-check]
+      summary: Health-check mais recente, pré-requisito da largada
+      description: >
+        A tela mostra os itens e, quando aprovado, até quando ele libera a
+        largada (valido_ate, 7 minutos depois da conclusão).
+      responses:
+        "200":
+          description: Há pelo menos um health-check.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UltimoHealthCheck"
+              example:
+                aprovado: true
+                tipo_dip: "4x4"
+                iniciado_em: "2026-10-07T13:58:00-03:00"
+                concluido_em: "2026-10-07T13:58:02-03:00"
+                valido_ate: "2026-10-07T14:05:02-03:00"
+                itens:
+                  - componente: bateria
+                    aprovado: true
+                    valor_lido: 7840
+                  - componente: tof_frontal
+                    aprovado: true
+                    valor_lido: 180
+        "204":
+          description: O robô ainda não enviou nenhum health-check.
+
+  /health-check/solicitar:
+    post:
+      operationId: solicitarHealthCheck
+      tags: [health-check]
+      summary: Pedir ao robô um novo health-check
+      description: >
+        O operador pede um novo health-check, por exemplo depois de um reprovado,
+        de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao
+        POST /telemetria passa a incluir o comando `health_check` até o robô
+        enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada.
+        O resultado aparece em GET /health-check/ultimo e na stream
+        GET /health-check/stream.
+      responses:
+        "202":
+          description: Pedido registrado; o robô recebe o comando na próxima resposta da ponte.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitacaoHealthCheck"
+              example:
+                solicitado_em: "2026-10-07T14:10:00-03:00"
+        "409":
+          $ref: "#/components/responses/Conflito"
+
+  /health-check/stream:
+    get:
+      operationId: abrirStreamHealthCheck
+      tags: [health-check]
+      summary: Health-check ao vivo, antes de existir execução
+      description: >
+        Fluxo do health-check do robô, independente de uma execução. O primeiro
+        evento, quando já há um health-check, repete GET /health-check/ultimo.
+        Cada hc_item e hc_resultado seguintes republicam o retrato inteiro.
+        Enquanto não há evento novo, o servidor manda um comentário de
+        keep-alive a cada 1 s. Esse relógio começa com a abertura do GET.
+      responses:
+        "200":
+          description: Fluxo text/event-stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              examples:
+                atual:
+                  summary: Retrato enviado na abertura e a cada item ou resultado
+                  value: |
+                    event: health_check
+                    data: {"tipo":"health_check","aprovado":null,"tipo_dip":null,"iniciado_em":"2026-10-07T13:58:00-03:00","concluido_em":null,"valido_ate":null,"itens":[{"componente":"bateria","aprovado":true,"valor_lido":7840}]}
 
   /execucoes/em-andamento:
     get:
@@ -154,8 +239,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExecucaoDetalhe"
               examples:
-                tela-02-health-check:
-                  $ref: "#/components/examples/Tela02HealthCheck"
                 tela-03-em-execucao:
                   $ref: "#/components/examples/Tela03EmExecucao"
                 tela-06-sem-comunicacao:
@@ -207,6 +290,8 @@ paths:
         em_andamento, para a retomada. O backend passa a devolver
         `{"v":1,"cmd":"interromper"}` em `comandos` em todo POST /telemetria
         até a confirmação do robô ou nova tentativa.
+        Sem tentativa aberta, ou com a execução já encerrada, responde 409 e `detail` é texto.
+        O 422 fica para corpo inválido (`ErroValidacao`, `detail` é lista).
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       requestBody:
@@ -235,8 +320,36 @@ paths:
                   $ref: "#/components/examples/Tela08EncerradaComoFalha"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
         "422":
           $ref: "#/components/responses/ErroValidacao"
+
+  /execucoes/{execucao_id}/encerrar:
+    post:
+      operationId: encerrarExecucao
+      tags: [execucoes]
+      summary: Encerrar a execução lógica por completo
+      description: >
+        A execução passa a `cancelada` e não aceita retomada. Se houver tentativa
+        aberta, ela é registrada como `failed` com motivo e origem `encerrado_operador`,
+        e o backend passa a devolver `{"v":1,"cmd":"interromper"}` em `comandos`
+        até a confirmação do robô. Se a tentativa já estiver encerrada, só a
+        execução é cancelada. Execução já concluída ou cancelada responde 409
+        e `detail` é texto.
+      parameters:
+        - $ref: "#/components/parameters/ExecucaoId"
+      responses:
+        "200":
+          description: Execução cancelada, com a tentativa aberta encerrada quando havia uma.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecucaoDetalhe"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
 
   /execucoes/{execucao_id}/retomar:
     post:
@@ -245,9 +358,10 @@ paths:
       summary: Abrir a tentativa seguinte depois de uma falha
       description: >
         O pedido não tem corpo. Em caso de sucesso a resposta é o retorno
-        da tentativa 2 ou 3. Recusa com 409 e não cria tentativa quando
-        já existe tentativa aberta, quando as três já foram usadas ou
-        quando a execução está cancelada.
+        da tentativa 2 ou 3, já em running, com o comando `largar` para o robô.
+        Recusa com 409 e não cria tentativa quando já existe tentativa aberta,
+        quando as três já foram usadas, quando a execução está cancelada ou
+        quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
       responses:
@@ -279,6 +393,13 @@ paths:
         No evento passo, a linha id é o passo_id. Ao reconectar, o navegador
         envia esse valor em Last-Event-ID e o backend reenvia os passos
         posteriores. A amostra telemetria não entra nesse replay.
+        O reenvio atravessa as três tentativas, porque o trajeto é da execução.
+        Enquanto não há evento novo, o servidor manda um comentário de keep-alive
+        a cada 15 s. O id de um passo pode repetir: quando o robô relê uma célula
+        em que já estava, só a máscara de paredes muda, e o mesmo passo_id é
+        republicado para a tela redesenhar. O servidor fecha o fluxo em dois
+        casos: execução já encerrada, logo depois do reenvio, e fila do cliente
+        estourada. Nos dois, reconectar com Last-Event-ID recompõe o trajeto.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
         - name: Last-Event-ID
@@ -287,7 +408,10 @@ paths:
           schema:
             type: integer
             minimum: 0
-          description: passo_id do último passo já aplicado na tela.
+          description: >
+            passo_id do último passo já aplicado na tela. O backend trata valor
+            ausente, vazio, negativo ou não numérico como 0, e aí reenvia o
+            trajeto inteiro.
       responses:
         "200":
           description: Fluxo text/event-stream.
@@ -297,10 +421,10 @@ paths:
                 type: string
               examples:
                 telemetria:
-                  summary: Amostra de célula, bateria e velocidade
+                  summary: Amostra de célula, bateria em mV e velocidade em mm/s
                   value: |
                     event: telemetria
-                    data: {"tipo":"telemetria","ordem":42,"x":0,"y":2,"bateria":7.81,"velocidade":0.21,"rumo":"N","eixo_longo":null,"enviado_em":"2026-10-07T14:03:21-03:00"}
+                    data: {"tipo":"telemetria","ordem":42,"x":0,"y":2,"bateria":7810,"bateria_pct":56.0,"velocidade":210,"rumo":"N","eixo_longo":null,"enviado_em":"2026-10-07T14:03:21-03:00"}
                 passo:
                   summary: id igual ao passo_id, para o Last-Event-ID
                   value: |
@@ -308,7 +432,7 @@ paths:
                     event: passo
                     data: {"tipo":"passo","passo_id":41,"seq":2,"x":0,"y":1,"paredes_mask":9,"retomada":false,"entrou_em":"2026-10-07T14:03:22-03:00"}
                 status:
-                  summary: Health-check aprovado, tentativa passa a running
+                  summary: Tentativa aberta em running, na largada
                   value: |
                     event: status
                     data: {"tipo":"status","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","attempt_index":1,"status_tentativa":"running","status_execucao":"em_andamento","tipo_dip":"4x4"}
@@ -316,7 +440,7 @@ paths:
                   summary: Um componente verificado
                   value: |
                     event: health_check
-                    data: {"tipo":"health_check","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","componente":"bateria","aprovado":true,"valor_lido":7.84}
+                    data: {"tipo":"health_check","tentativa_id":"7c9e6679-7425-40de-944b-e07fc1f90ae7","componente":"bateria","aprovado":true,"valor_lido":7840}
                 falha:
                   summary: Tentativa encerrada com falha
                   value: |
@@ -335,14 +459,17 @@ paths:
       operationId: receberTelemetria
       tags: [telemetria]
       summary: Receber uma linha de telemetria da ponte
-      description: >
+      description: >-
         Corpo **EntradaPonte** (4.4.1): a ponte repassa a linha crua lida da serial
         e o instante `recebido_em` com fuso horário. Toda validação do JSON serial v1
         fica no backend. Linha aceita ou descartada só em log (seq repetido, sem tentativa
-        aberta, hc_item fora do health-check) responde 200; rota 501 até BACK-02 concluir
-        a ingestão. Após **Encerrar tentativa**, a resposta inclui o comando de interrupção
-        em `comandos` em todo POST até a `falha` com `origem` = `web` ou nova tentativa;
-        a ponte escreve cada item na serial sem traduzir.
+        aberta) responde 200. O health-check (`hc_item`, `hc_resultado`) é gravado mesmo sem
+        tentativa aberta, pois é pré-requisito da largada. Depois de **Nova execução** ou
+        **Retomar**, a resposta inclui o comando `largar` em `comandos` até a primeira `tel`
+        em running ou o primeiro `passo`. Após **Encerrar tentativa**, inclui o comando de
+        interrupção em todo POST até a `falha` com `origem` = `web` ou nova tentativa. Depois
+        de POST /health-check/solicitar, inclui `health_check` até o primeiro `hc_item` ou
+        `hc_resultado`; a ponte escreve cada item na serial sem traduzir.
       requestBody:
         required: true
         content:
@@ -370,13 +497,51 @@ paths:
                       - v: 1
                         cmd: interromper
         "422":
-          description: >
-            Linha inválida (mais de 256 B, JSON inválido, v ≠ 1, campo faltando ou fora da
-            faixa, célula fora do labirinto). A ponte não deve reenviar 4xx.
+          description: >-
+            Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo
+            desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do
+            labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na
+            serial como no 200. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`,
+            por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`.
+            A ponte não deve reenviar 4xx.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErroValidacao"
+                oneOf:
+                  - $ref: "#/components/schemas/ErroLinhaInvalida"
+                  - $ref: "#/components/schemas/ErroValidacao"
+              examples:
+                linha-invalida:
+                  summary: Linha recusada sem downlink pendente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos: []
+                linha-invalida-interrupcao-pendente:
+                  summary: Linha recusada depois de encerrar a tentativa manualmente
+                  value:
+                    detail: linha com 300 bytes (máximo 256)
+                    comandos:
+                      - v: 1
+                        cmd: interromper
+                corpo-nao-json:
+                  summary: Corpo que não é JSON
+                  value:
+                    detail:
+                      - type: json_invalid
+                        loc: [body, 1]
+                        msg: JSON decode error
+                        input: {}
+                        ctx:
+                          error: Expecting property name enclosed in double quotes
+                corpo-sem-linha:
+                  summary: EntradaPonte sem o campo linha
+                  value:
+                    detail:
+                      - type: missing
+                        loc: [body, linha]
+                        msg: Field required
+                        input:
+                          recebido_em: "2026-10-13T17:00:00.000-03:00"
 
 components:
   parameters:
@@ -399,16 +564,16 @@ components:
             detail: Execução não encontrada.
     Recusa:
       description: >
-        A retomada foi recusada. Nenhuma tentativa nova é gravada.
+        A abertura da tentativa foi recusada. Nenhuma tentativa nova é gravada.
         O motivo diz se já havia tentativa aberta, se as três já foram
-        usadas ou se a execução está cancelada.
+        usadas, se a execução está cancelada ou o que falta no health-check.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Recusa"
           examples:
             tela-05-tentativa-aberta:
-              summary: Já existe tentativa em health-check ou running.
+              summary: Já existe tentativa em running.
               value:
                 motivo: tentativa_aberta
                 ocorrida_em: "2026-10-07T14:04:02-03:00"
@@ -422,6 +587,21 @@ components:
               value:
                 motivo: execucao_cancelada
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
+            health-check-expirado:
+              summary: O último health-check aprovado foi concluído há mais de 7 minutos.
+              value:
+                motivo: health_check_expirado
+                ocorrida_em: "2026-10-07T14:12:00-03:00"
+    Conflito:
+      description: >
+        O pedido é válido, mas o estado atual não permite a ação.
+        `detail` é texto, diferente do 422 de validação.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErroMensagem"
+          example:
+            detail: Não há tentativa aberta para encerrar.
     ErroValidacao:
       description: Corpo ou parâmetro fora do contrato.
       content:
@@ -430,49 +610,6 @@ components:
             $ref: "#/components/schemas/ErroValidacao"
 
   examples:
-    Tela02HealthCheck:
-      summary: Health-check em andamento
-      value:
-        execucao_id: 123e4567-e89b-12d3-a456-426614174000
-        tipo_labirinto: "4x4"
-        status: em_andamento
-        tentativas_usadas: 1
-        iniciada_em: "2026-10-07T14:00:00-03:00"
-        encerrada_em: null
-        tempo_total_s: null
-        variacao_melhor_tempo_pct: null
-        eixo_longo: null
-        ultima_mensagem_em: "2026-10-07T14:00:04-03:00"
-        tentativas:
-          - tentativa_id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
-            attempt_index: 1
-            status: health-check
-            tipo_inicio: nova
-            tipo_dip: null
-            iniciada_em: "2026-10-07T14:00:00-03:00"
-            encerrada_em: null
-            tempo_s: null
-            velocidade_media: null
-            bateria_inicial: null
-            bateria_final: null
-            consumo_bateria: null
-            health_check:
-              - componente: bateria
-                aprovado: true
-                valor_lido: 7.84
-              - componente: tof_frontal
-                aprovado: true
-                valor_lido: 180
-            falha: null
-        trajeto: []
-        leituras:
-          - ordem: 1
-            x: 0
-            y: 0
-            bateria: 7.84
-            velocidade: 0
-            rumo: "N"
-            enviado_em: "2026-10-07T14:00:04-03:00"
     Tela03EmExecucao:
       summary: Tentativa 1 em running
       value:
@@ -910,7 +1047,10 @@ components:
       enum: [em_andamento, concluida, cancelada]
     StatusTentativa:
       type: string
-      enum: [health-check, running, success, failed]
+      description: >
+        A tentativa nasce em running, na largada. O health-check é pré-requisito
+        e não faz parte da tentativa (GET /health-check/ultimo).
+      enum: [running, success, failed]
     TipoInicio:
       type: string
       enum: [nova, retomada]
@@ -951,7 +1091,18 @@ components:
       enum: [automatica, encerrado_operador]
     MotivoRecusa:
       type: string
-      enum: [tentativa_aberta, limite_3, execucao_cancelada]
+      description: >
+        Os motivos health_check_* e dip_divergente valem para Nova execução e
+        Retomar: falta um health-check, o último foi reprovado, foi concluído há
+        mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+      enum:
+        - tentativa_aberta
+        - limite_3
+        - execucao_cancelada
+        - health_check_ausente
+        - health_check_reprovado
+        - health_check_expirado
+        - dip_divergente
     Rumo:
       type: string
       enum: ["N", "S", "L", "O"]
@@ -1004,6 +1155,58 @@ components:
         valor_lido:
           type: number
           nullable: true
+    UltimoHealthCheck:
+      type: object
+      description: >
+        Health-check mais recente do robô. Em andamento, aprovado e concluido_em
+        vêm nulos e os itens chegam aos poucos. valido_ate só vem quando aprovado:
+        até lá, Nova execução e Retomar são aceitos.
+      required: [iniciado_em, itens]
+      properties:
+        aprovado:
+          type: boolean
+          nullable: true
+        tipo_dip:
+          allOf:
+            - $ref: "#/components/schemas/TipoDip"
+          nullable: true
+        iniciado_em:
+          type: string
+          format: date-time
+        concluido_em:
+          type: string
+          format: date-time
+          nullable: true
+        valido_ate:
+          type: string
+          format: date-time
+          nullable: true
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemHealthCheck"
+    EventoHealthCheckAtual:
+      description: >
+        Retrato do health-check na stream GET /health-check/stream.
+        Não é o evento por componente da stream da execução.
+      allOf:
+        - $ref: "#/components/schemas/UltimoHealthCheck"
+        - type: object
+          required: [tipo]
+          properties:
+            tipo:
+              type: string
+              enum: [health_check]
+    SolicitacaoHealthCheck:
+      type: object
+      description: >
+        Pedido de novo health-check registrado. O resultado é o primeiro
+        health-check com iniciado_em a partir de solicitado_em.
+      required: [solicitado_em]
+      properties:
+        solicitado_em:
+          type: string
+          format: date-time
     Falha:
       type: object
       required: [motivo, origem, celula_x, celula_y, momento_falha]
@@ -1067,14 +1270,19 @@ components:
         bateria_inicial:
           type: number
           nullable: true
-          description: Tensão em volts no início da tentativa.
+          description: Nivel bat_mv no inicio da tentativa, em mV (contrato v1).
         bateria_final:
           type: number
           nullable: true
+          description: Ultima leitura bat_mv na tentativa, em mV.
         consumo_bateria:
           type: number
           nullable: true
-          description: Queda de tensão (bateria_inicial − bateria_final), em volts.
+          description: Queda de tensao (bateria_inicial − bateria_final), em mV.
+        consumo_bateria_pct:
+          type: number
+          nullable: true
+          description: Queda de carga LiPo 2S em pontos percentuais (curva robo.h).
         health_check:
           type: array
           items:
@@ -1129,11 +1337,13 @@ components:
           maximum: 11
         bateria:
           type: number
-          description: Tensão em volts, convertida de bat_mv.
+          description: >
+            Tensão em mV, como o robô envia em bat_mv (ADR-016). Converter para
+            percentual de carga é do backend, pela curva da fonte ativa.
         velocidade:
           type: number
           nullable: true
-          description: Metros por segundo, convertidos de vel_mm_s.
+          description: vel_mm_s informado pelo robo, em mm/s (contrato v1).
         rumo:
           oneOf:
             - $ref: "#/components/schemas/Rumo"
@@ -1246,8 +1456,19 @@ components:
         consumo_bateria:
           type: number
           nullable: true
-          description: Queda de tensão da última tentativa concluída (bateria_inicial − bateria_final), em volts.
+          description: Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida.
 
+    EventoSSE:
+      description: >
+        Conteúdo do campo data de um frame do stream. O campo tipo discrimina
+        qual dos seis eventos é e repete o valor da linha event do frame.
+      oneOf:
+        - $ref: "#/components/schemas/EventoTelemetria"
+        - $ref: "#/components/schemas/EventoPasso"
+        - $ref: "#/components/schemas/EventoStatus"
+        - $ref: "#/components/schemas/EventoHealthCheck"
+        - $ref: "#/components/schemas/EventoFalha"
+        - $ref: "#/components/schemas/EventoSucesso"
     EventoTelemetria:
       type: object
       required: [tipo, ordem, x, y, bateria, enviado_em]
@@ -1263,9 +1484,18 @@ components:
           type: integer
         bateria:
           type: number
+          description: Tensão em mV, igual ao bat_mv do contrato serial (ADR-016).
+        bateria_pct:
+          type: number
+          nullable: true
+          description: >
+            Percentual de carga calculado pelo backend (RF11), pela curva de
+            descarga da fonte ativa. A própria tensão diz qual é a fonte, porque
+            as faixas da LiPo 2S e do pacote de pilhas não se sobrepõem.
         velocidade:
           type: number
           nullable: true
+          description: Velocidade em mm/s, igual ao vel_mm_s do contrato serial.
         rumo:
           oneOf:
             - $ref: "#/components/schemas/Rumo"
@@ -1397,7 +1627,11 @@ components:
           enum: [1]
         cmd:
           type: string
-          enum: [interromper]
+          description: >
+            interromper: encerramento manual da tentativa. largar: largada pedida
+            pelo operador em Nova execução ou Retomar. health_check: o operador
+            pediu um novo health-check.
+          enum: [interromper, largar, health_check]
     EntradaPonte:
       type: object
       required: [linha, recebido_em]
@@ -1422,6 +1656,16 @@ components:
             Comandos para a ponte escrever na serial (JSON compacto + \\n).
             Vazio quando não há downlink pendente.
 
+    ErroLinhaInvalida:
+      allOf:
+        - $ref: "#/components/schemas/RespostaPonte"
+        - type: object
+          required: [detail]
+          properties:
+            detail:
+              type: string
+              description: Motivo da recusa da linha, só para log.
+
     Recusa:
       type: object
       required: [motivo, ocorrida_em]
@@ -1432,6 +1676,12 @@ components:
           type: string
           format: date-time
     ErroNaoEncontrado:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+    ErroMensagem:
       type: object
       required: [detail]
       properties:
@@ -1448,8 +1698,13 @@ components:
             properties:
               loc:
                 type: array
+                description: >
+                  Caminho do erro; o FastAPI usa inteiros para posições (por exemplo,
+                  o caractere em que o JSON do corpo quebrou).
                 items:
-                  type: string
+                  oneOf:
+                    - type: string
+                    - type: integer
               msg:
                 type: string
               type:

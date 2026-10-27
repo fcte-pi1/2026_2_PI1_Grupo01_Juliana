@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import type { ResumoExecucao } from '../../api/tipos'
-import { formatarDataHora, formatarNumero, formatarNumeroExecucao, formatarTempo } from '../../utils/formatacao'
+import { formatarDataHora, formatarMedicao, formatarNumeroExecucao, formatarTempo } from '../../utils/formatacao'
 import { PilulaResultado } from './PilulaResultado'
 
 interface CartaoUltimaExecucaoProps {
@@ -25,11 +25,11 @@ export function CartaoUltimaExecucao({ execucao }: CartaoUltimaExecucaoProps) {
         </div>
         <div>
           <dt>Velocidade média</dt>
-          <dd className="mono">{execucao.velocidade_media !== null ? `${formatarNumero(execucao.velocidade_media, 3)} m/s` : '—'}</dd>
+          <dd className="mono">{execucao.velocidade_media !== null ? `${formatarMedicao(execucao.velocidade_media)} m/s` : '—'}</dd>
         </div>
         <div>
           <dt>Bateria usada</dt>
-          <dd className="mono">{execucao.consumo_bateria !== null ? `${formatarNumero(execucao.consumo_bateria, 1)} %` : '—'}</dd>
+          <dd className="mono">{execucao.consumo_bateria !== null ? `${formatarMedicao(execucao.consumo_bateria)} mV` : '—'}</dd>
         </div>
       </dl>
       <Link to={`/execucoes/${execucao.execucao_id}`}>Ver trajeto e detalhes →</Link>

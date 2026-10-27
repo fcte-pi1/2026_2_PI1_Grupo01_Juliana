@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Labirinto, TipoLabirinto } from '../../api/tipos'
 import { formatarNumeroExecucao, formatarTempo, LADO_CELULA_M } from '../../utils/formatacao'
 import { VisualizacaoLabirinto } from '../labirinto/VisualizacaoLabirinto'
@@ -11,6 +12,7 @@ interface SeletorLabirintoProps {
 
 interface FormNovaExecucaoProps extends SeletorLabirintoProps {
   proximoNumero?: number
+  verificacao?: ReactNode
 }
 
 export function SeletorLabirinto({ labirintos, selecionado, aoSelecionar, desabilitado }: SeletorLabirintoProps) {
@@ -45,7 +47,7 @@ export function SeletorLabirinto({ labirintos, selecionado, aoSelecionar, desabi
 }
 
 /** Escolha do tipo de labirinto em Nova execução (US12). O tipo fica só no backend (RF27). */
-export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSelecionar, desabilitado }: FormNovaExecucaoProps) {
+export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSelecionar, desabilitado, verificacao }: FormNovaExecucaoProps) {
   const atual = labirintos.find((l) => l.tipo === selecionado)
 
   return (
@@ -53,19 +55,27 @@ export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSel
       <div className="cartao__cabecalho">
         <div>
           <h2 className="cartao__titulo">Nova execução</h2>
-          <p className="texto-suave">Escolha o labirinto e crie a execução. O resto acontece sozinho.</p>
+          <p className="texto-suave">Escolha o labirinto, confira o health-check e confirme a largada.</p>
         </div>
         {proximoNumero !== undefined && <span className="chip">próximo ID {formatarNumeroExecucao(proximoNumero)}</span>}
       </div>
 
       <span className="rotulo">Labirinto</span>
       <SeletorLabirinto labirintos={labirintos} selecionado={selecionado} aoSelecionar={aoSelecionar} desabilitado={desabilitado} />
+      {verificacao}
 
-      {atual && <VisualizacaoLabirinto largura={atual.largura} altura={atual.altura} trajeto={[]} />}
+      {atual && (
+        <VisualizacaoLabirinto
+          largura={atual.largura}
+          altura={atual.altura}
+          eixoLongo={atual.largura === atual.altura ? null : 'x'}
+          trajeto={[]}
+        />
+      )}
 
       <p className="aviso aviso--info">
-        Nova execução, no topo da tela, abre uma execução com a Tentativa 1/3 em health-check. Depois é só ligar o
-        robô em A1.
+        Posicione o robô em A1 e realize o health-check. Com a verificação aprovada e válida para o labirinto escolhido,
+        Nova execução confirma a largada e abre a Tentativa 1/3.
       </p>
     </section>
   )

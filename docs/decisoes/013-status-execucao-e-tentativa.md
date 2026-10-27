@@ -8,7 +8,7 @@
 A US18 e o dicionário de dados do [4.4](../4.4%20-%20Projeto%20conceitual%20de%20software.md) dão o nome `status` a dois domínios:
 
 - **Execução lógica:** `em_andamento`, `concluida` ou `cancelada`.
-- **Tentativa:** `health-check`, `running`, `success` ou `failed`.
+- **Tentativa:** `running`, `success` ou `failed`. O health-check não é status da tentativa: é um registro anterior a ela ([ADR-017](017-downlink-tres-comandos.md)).
 
 No banco, a tabela qualifica a coluna (`EXECUCAO_LOGICA.status` e `TENTATIVA.status`). No contrato HTTP da View com o backend (`src/backend/openapi.yaml`, ARQ-02), os dois valores às vezes viajam no mesmo JSON. Um campo `resultado` (`success` | `failed`) chegou a ser cogitado no resumo do histórico para evitar essa colisão. Ele não existe no dicionário.
 

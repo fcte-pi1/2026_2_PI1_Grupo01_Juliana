@@ -2,6 +2,9 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+from app.models import PassoTrajeto
+from sqlalchemy import select
+
 INICIO = datetime(2026, 10, 7, 17, 0, tzinfo=UTC)  # mesmo instante padrão da fábrica
 
 
@@ -61,8 +64,8 @@ def test_resumo_usa_ultima_tentativa_e_ultima_concluida(client, fabrica):
         attempt_index=1,
         status="failed",
         velocidade_media=Decimal("0.15"),
-        bateria_inicial=Decimal("8.3"),
-        bateria_final=Decimal("8.1"),
+        bateria_inicial=Decimal("8300"),
+        bateria_final=Decimal("8100"),
     )
     fabrica.tentativa(execucao, attempt_index=2, status="running", velocidade_media=Decimal("0.2"))
 
@@ -72,7 +75,34 @@ def test_resumo_usa_ultima_tentativa_e_ultima_concluida(client, fabrica):
     assert resumo["tentativas_usadas"] == 2
     assert resumo["tempo_total_s"] == 50.0
     assert resumo["velocidade_media"] == 0.2
-    assert resumo["consumo_bateria"] == 0.2
+    assert resumo["consumo_bateria"] == 200
+
+
+def test_resumo_consumo_geral_usa_inicial_da_primeira_tentativa(client, fabrica):
+    execucao = fabrica.execucao(status="concluida", tentativas_usadas=2)
+    fabrica.tentativa(
+        execucao,
+        attempt_index=1,
+        status="failed",
+        bateria_inicial=Decimal("8400"),
+        bateria_final=Decimal("8100"),
+        consumo_bateria=Decimal("300"),
+    )
+    fabrica.tentativa(
+        execucao,
+        attempt_index=2,
+        status="success",
+        bateria_inicial=Decimal("8000"),
+        bateria_final=Decimal("7600"),
+        consumo_bateria=Decimal("400"),
+    )
+
+    (resumo,) = client.get("/execucoes").json()
+    detalhe = client.get(f"/execucoes/{execucao.execucao_id}").json()
+
+    assert resumo["consumo_bateria"] == 800
+    assert detalhe["tentativas"][0]["consumo_bateria"] == 300
+    assert detalhe["tentativas"][1]["consumo_bateria"] == 400
 
 
 def test_detalhe_inexistente_retorna_404(client):
@@ -96,10 +126,83 @@ def test_detalhe_com_tentativas_trajeto_health_check_e_falha(client, fabrica):
     assert detalhe["tentativas"][0]["falha"]["motivo"] == "collision"
     assert detalhe["tentativas"][0]["falha"]["celula_x"] == 5
     assert detalhe["tentativas"][2]["falha"] is None
-    assert detalhe["tentativas"][0]["consumo_bateria"] == 0.1
+    assert detalhe["tentativas"][0]["consumo_bateria"] == 200
     assert [p["seq"] for p in detalhe["trajeto"]] == list(range(1, 19))
     assert detalhe["eixo_longo"] == "x"
     assert detalhe["variacao_melhor_tempo_pct"] is None
+
+
+def test_detalhe_us28_reexibe_o_trajeto_das_tres_tentativas(client, fabrica, db_session):
+    """Duas interrupções do operador e a terceira tentativa conclui o 4x4."""
+    execucao = fabrica.execucao_us28_interrupcoes_operador()
+
+    detalhe = client.get(f"/execucoes/{execucao.execucao_id}").json()
+
+    tentativas = detalhe["tentativas"]
+    assert detalhe["status"] == "concluida"
+    assert detalhe["tipo_labirinto"] == "4x4"
+    assert detalhe["tentativas_usadas"] == 3
+    assert [t["attempt_index"] for t in tentativas] == [1, 2, 3]
+    assert [t["status"] for t in tentativas] == ["failed", "failed", "success"]
+    assert [t["tipo_inicio"] for t in tentativas] == ["nova", "retomada", "retomada"]
+    assert tentativas[0]["falha"]["motivo"] == "collision"
+    assert tentativas[1]["falha"]["motivo"] == "stuck"
+    assert [t["falha"]["origem"] for t in tentativas[:2]] == [
+        "encerrado_operador",
+        "encerrado_operador",
+    ]
+    assert [t["falha"]["componente"] for t in tentativas[:2]] == [None, None]
+    assert (tentativas[0]["falha"]["celula_x"], tentativas[0]["falha"]["celula_y"]) == (0, 2)
+    assert (tentativas[1]["falha"]["celula_x"], tentativas[1]["falha"]["celula_y"]) == (1, 3)
+    assert tentativas[2]["falha"] is None
+    assert [(p["x"], p["y"], p["retomada"]) for p in detalhe["trajeto"]] == [
+        (0, 0, False),
+        (0, 1, False),
+        (0, 2, False),
+        (0, 2, True),
+        (0, 3, False),
+        (1, 3, False),
+        (1, 3, True),
+        (2, 3, False),
+        (3, 3, False),
+    ]
+    assert [p["paredes_mask"] for p in detalhe["trajeto"]] == [14, 12, 12, 12, 9, 3, 3, 3, 7]
+    norte, sul, leste, oeste = 1, 2, 4, 8
+    lado = {(0, 1): (norte, sul), (1, 0): (leste, oeste)}
+    ultima = {}
+    for passo in detalhe["trajeto"]:
+        ultima[(passo["x"], passo["y"])] = passo["paredes_mask"]
+    for antes, depois in zip(detalhe["trajeto"], detalhe["trajeto"][1:]):
+        deslocamento = (depois["x"] - antes["x"], depois["y"] - antes["y"])
+        if deslocamento == (0, 0):
+            continue
+        saida, entrada = lado[deslocamento]
+        assert ultima[(antes["x"], antes["y"])] & saida == 0
+        assert ultima[(depois["x"], depois["y"])] & entrada == 0
+
+    inicios = [datetime.fromisoformat(t["iniciada_em"]) for t in tentativas]
+    donos = db_session.scalars(
+        select(PassoTrajeto.tentativa_id)
+        .where(PassoTrajeto.execucao_id == execucao.execucao_id)
+        .order_by(PassoTrajeto.seq)
+    ).all()
+    ids = [t["tentativa_id"] for t in tentativas]
+    assert [str(tentativa_id) for tentativa_id in donos] == [
+        ids[0],
+        ids[0],
+        ids[0],
+        ids[1],
+        ids[1],
+        ids[1],
+        ids[2],
+        ids[2],
+        ids[2],
+    ]
+    for passo, indice in zip(detalhe["trajeto"], [0, 0, 0, 1, 1, 1, 2, 2, 2], strict=True):
+        entrada = datetime.fromisoformat(passo["entrou_em"])
+        assert inicios[indice] <= entrada
+        if indice < 2:
+            assert entrada < inicios[indice + 1]
 
 
 def test_detalhe_devolve_leituras_so_da_ultima_tentativa(client, fabrica):
@@ -115,6 +218,19 @@ def test_detalhe_devolve_leituras_so_da_ultima_tentativa(client, fabrica):
     assert detalhe["ultima_mensagem_em"].startswith(
         ultimas[-1].recebido_em.strftime("%Y-%m-%dT%H:%M:%S")
     )
+
+
+def test_detalhe_expoe_rumo_das_leituras(client, fabrica, db_session):
+    execucao = fabrica.execucao(tentativas_usadas=1)
+    tentativa = fabrica.tentativa(execucao, status="success")
+    leituras = fabrica.leituras(tentativa, 2)
+    leituras[1].rumo = "L"
+    db_session.commit()
+
+    detalhe = client.get(f"/execucoes/{execucao.execucao_id}").json()
+
+    assert detalhe["leituras"][0]["rumo"] is None
+    assert detalhe["leituras"][1]["rumo"] == "L"
 
 
 def test_detalhe_monta_paredes_mask_a_partir_das_paredes(client, fabrica):

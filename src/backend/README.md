@@ -91,6 +91,23 @@ ruff check .
 pytest -q          # resumo; use pytest -v para mais detalhe
 ```
 
+### Validação BACK-03 (GerenciadorExecucoes)
+
+Checklist da task (transições T/E/R, critérios de aceite, rotas de execução):
+
+```bash
+cd src/backend
+source .venv/bin/activate
+export TEST_DATABASE_URL=postgresql+psycopg://micromouse:micromouse@localhost:5432/micromouse_test
+
+python -m scripts.validar_back03        # escopo completo
+python -m scripts.validar_back03 -v     # saída detalhada
+python -m scripts.validar_back03 --apenas-criterios
+python -m scripts.validar_back03 --mostrar-mapa   # T01–R05 → nome do teste
+```
+
+Sai com código **0** se tudo passar, **1** se algum teste falhar.
+
 ---
 
 ## Rodar tudo no Docker (API + Postgres)
@@ -131,30 +148,75 @@ A ponte serial envia cada linha recebida do robô, sem alterar, para `POST /tele
 
 A resposta traz os comandos para o robô: `{"comandos": []}`. O formato das mensagens é o contrato v1 (`contrato/telemetria.py`, exemplos em `src/contrato/exemplos.jsonl`).
 
-- **422**: linha inválida (mais de 256 B, não é JSON, `v` ≠ 1, `tipo` desconhecido, campo faltando ou fora da faixa, `falha` incoerente ou célula fora do labirinto da execução). Nada é gravado e o motivo vai para o log (WARNING, logger `app.telemetria`). **A ponte não deve reenviar respostas 4xx**: a mesma linha vai falhar de novo.
+- **422**: linha inválida (mais de 256 B, não é JSON, `v` diferente de 1, `tipo` desconhecido, campo faltando ou fora da faixa, `falha` incoerente ou célula fora do labirinto da execução). Nada é gravado e o motivo vai para o log (WARNING, logger `app.telemetria`). A resposta é `{"detail": "<motivo>", "comandos": [...]}`: **a ponte escreve os `comandos` na serial como no 200**, para não perder uma interrupção pendente. Se o próprio corpo `EntradaPonte` vier malformado, o 422 é o padrão do FastAPI (`detail` em lista, sem `comandos`). **A ponte não deve reenviar respostas 4xx**: a mesma linha vai falhar de novo.
 - **200**: mensagem aceita e gravada na tentativa aberta (`health-check` ou `running`). Também devolve 200, sem gravar e com INFO no log, a mensagem sem tentativa aberta, o evento repetido e o `hc_item` fora do health-check.
 - **Deduplicação**: eventos (`hc_item`, `hc_resultado`, `passo`, `falha`, `sucesso`) com `seq` menor ou igual ao último aceito no mesmo `boot` são repetidos (o firmware reenvia o buffer ao reconectar). O `seq` só é marcado como visto depois do commit; se a gravação falhar, o reenvio é aceito. A `tel` nunca é repetida.
 
 ### Teste de carga (RNF-B11)
 
-O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem espera e verifica p95 < 100 ms sem crescimento. Para medir a API no ar, use o script, que manda `tel` no ritmo pedido e sai com código 1 se p95 ≥ 100 ms ou se o atraso acumulado passar de 1 s:
+O pytest `tests/integracao/test_carga_telemetria.py` envia 600 mensagens sem espera e verifica p95 < 100 ms sem crescimento. Para medir a API no ar, use o script, que manda as mensagens no ritmo pedido alternando `tel` e `passo` (RF08 e RF09):
 
 ```bash
 cd src/backend
 python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60
+python -m scripts.carga_telemetria --url http://localhost:8000 --taxa 10 --duracao 60 --csv carga.csv
 ```
 
-O script lê o `DATABASE_URL` (o mesmo da API) e sai com código 1 se não houver tentativa aberta, porque sem ela as mensagens são descartadas e a carga não mede a gravação. Para criar uma no banco de desenvolvimento:
+- **Tentativa.** O script lê o `DATABASE_URL` (o mesmo da API), abre uma execução 4x4 com uma tentativa `running` antes de enviar e, no fim, marca a tentativa como `failed` e a execução como `cancelada`, mesmo se a carga for interrompida com Ctrl+C. Não é preciso criar nem encerrar nada no banco à mão.
+- **Recusa.** Se já houver uma tentativa aberta, o script não envia nada e sai com código 1: encerre essa tentativa antes de medir.
+- **Critério.** Sai com código 0 (APROVADO) só se p95 < 100 ms, o atraso acumulado não passar de 1 s, não houver erros e não houver crescimento: o p95 da última janela (10 s de mensagens) pode chegar ao dobro do p95 da primeira ou a ela mais 10 ms, o que for maior. O piso de 10 ms evita reprovar por ruído quando as latências são de poucos milissegundos. O mesmo critério vale no pytest.
+- **CSV.** Com `--csv`, grava uma linha por mensagem (`seq,tipo,instante_s,latencia_ms,status`); latência e status ficam vazios em erro de rede.
+
+Para gerar o gráfico da latência a partir do CSV (o matplotlib fica no extra `graficos`):
 
 ```bash
-docker compose exec db psql -U micromouse -d micromouse -c "
-INSERT INTO execucao_logica (execucao_id, labirinto_id, status, tentativas_usadas, iniciada_em)
-VALUES ('00000000-0000-0000-0000-00000000c4a6', 1, 'em_andamento', 1, now());
-INSERT INTO tentativa (tentativa_id, execucao_id, attempt_index, status, tipo_inicio, iniciada_em)
-VALUES (gen_random_uuid(), '00000000-0000-0000-0000-00000000c4a6', 1, 'running', 'nova', now());"
+cd src/backend
+uv run --extra graficos python -m scripts.grafico_carga carga.csv carga.png
 ```
 
-Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed' WHERE execucao_id = '00000000-0000-0000-0000-00000000c4a6';`) para ela não receber a telemetria real.
+### Simular ponte (métricas / bateria)
+
+Com a API rodando, o script abre uma execução, envia `hc_resultado`, depois `tel` a cada 1 s (bateria caindo, posição e velocidade), `passo` periódico e imprime consumo (mV e %), tempo e velocidade após cada POST — útil para validar BACK-04 como no hardware:
+
+```bash
+cd src/backend
+python -m scripts.simular_ponte_telemetria
+python -m scripts.simular_ponte_telemetria --ticks 30 --queda-mv 15 --passo-a-cada 2 --encerrar sucesso
+python -m scripts.simular_ponte_telemetria --ticks 5 --encerrar cancelada
+python -m scripts.simular_ponte_telemetria --ticks 8 --encerrar interrompida --confirmar-firmware
+python -m scripts.simular_ponte_telemetria --health-check item-falha --componente-falha tof_direito
+```
+
+---
+
+### Validar firmware → frontend
+
+Com a API no ar, o script envia linhas do contrato serial e confere labirinto, orientação do mapa, encerramento da execução e o comando `interromper`. Depois roda os testes do frontend do desenho e do botão:
+
+```bash
+cd src/backend
+python -m scripts.validar_firmware_frontend
+python -m scripts.validar_firmware_frontend --sem-frontend
+```
+---
+
+## Stream SSE (BACK-07)
+
+`GET /execucoes/{execucao_id}/stream` devolve `text/event-stream` com os eventos da execução. A linha `event:` repete o campo `tipo` do JSON em `data:`, e os seis tipos estão no `openapi.yaml`: `telemetria`, `passo`, `status`, `health_check`, `falha` e `sucesso`.
+
+```bash
+curl -N http://localhost:8000/execucoes/<execucao_id>/stream
+curl -N -H "Last-Event-ID: 40" http://localhost:8000/execucoes/<execucao_id>/stream
+```
+
+- **Reenvio.** O fluxo começa reenviando os passos com `passo_id` maior que o `Last-Event-ID`. Sem o cabeçalho (ou com valor vazio, negativo ou não numérico), reenvia o trajeto inteiro da execução — é o que a tela recebe ao abrir no meio da corrida. Só o evento `passo` tem linha `id:`; amostras de `telemetria` e eventos terminais não entram no reenvio.
+- **Keep-alive.** Sem evento novo, sai uma linha de comentário a cada 15 s.
+- **Fim do fluxo.** O servidor fecha quando recebe ao vivo um evento terminal (`falha` que cancela a execução ou `sucesso`), quando a execução já está encerrada após o reenvio, ou quando a fila do cliente estoura (500 eventos). Reconectar com `Last-Event-ID` recompõe o trajeto, mas não repete o evento terminal.
+- **Publicação.** Acontece **depois** do COMMIT da ingestão, da varredura de link/tempo ou do encerramento pelo operador. Uma falha na publicação é registrada no log e não desfaz a gravação nem falha a requisição (RNF-B07).
+- **Um worker só.** A fila de cada cliente é memória do processo. Com `uvicorn --workers 2`, um `POST /telemetria` que caia no worker 2 não alcança o stream preso no worker 1. O mesmo já valia para o deduplicador e o relógio do robô.
+- **404** quando não existe execução com aquele `execucao_id`.
+
+Para ver funcionando sem robô, abra o `curl` acima e mande passos pelo `POST /telemetria` (seção anterior) ou rode o `src/simulador-telemetria`. Cada rodada precisa de um `boot` novo: o deduplicador guarda `(boot, seq)` em memória e descarta o que já viu.
 
 ---
 
@@ -164,10 +226,10 @@ Depois da medição, encerre a tentativa (`UPDATE tentativa SET status = 'failed
 |--------|------------------|
 | BACK-01 Persistência / consultas | `app/repositories/`, `app/models/` |
 | BACK-03 Máquina de estados | `app/services/gerenciador_execucoes.py` |
-| BACK-04 Métricas | `app/services/calculo_metricas.py` |
+| BACK-04 Métricas | `app/services/calculo_metricas.py`, `app/services/atualizacao_metricas.py` · `python -m scripts.validar_back04` |
 | BACK-05 Link / tempo | `app/services/monitor_conexao.py` (limites em `app/config.py`) |
 | BACK-06 SQL específico | `app/repositories/` |
-| BACK-07 SSE | `app/services/publicador_sse.py`, `app/routers/stream.py` |
+| BACK-07 SSE | `app/services/publicador_sse.py`, `app/services/fabrica_eventos.py`, `app/services/fluxo_sse.py`, `app/routers/stream.py` |
 | BACK-08 Ponte serial | `ponte/` (processo separado) |
 | HTTP / contrato ARQ-02 | `app/routers/` (501 até implementar) |
 | POST /telemetria (4.4.1) | `contrato/telemetria.py` (`EntradaPonte`, `RespostaPonte`) |

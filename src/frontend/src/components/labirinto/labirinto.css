@@ -5,68 +5,162 @@
   gap: var(--esp-3);
 }
 
-.labirinto__grade {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
+.labirinto__svg {
+  display: block;
   width: 100%;
-  max-width: 520px;
+  max-height: 680px;
   margin: 0 auto;
-  background: var(--cor-labirinto-fundo);
-  border-radius: var(--raio-md);
 }
 
-.labirinto--compacto .labirinto__grade {
-  max-width: 140px;
-  gap: 3px;
-  padding: 6px;
-  margin: 0;
+.labirinto--compacto .labirinto__svg {
+  max-height: 420px;
+}
+
+.labirinto__fundo {
+  fill: var(--cor-labirinto-fundo);
 }
 
 .labirinto__celula {
-  position: relative;
-  border: 3px solid transparent;
-  border-radius: 4px;
-  background: var(--cor-labirinto-celula);
-  min-width: 0;
+  fill: var(--cor-labirinto-celula);
 }
 
-.labirinto--compacto .labirinto__celula {
-  border-width: 0;
-}
-
-.labirinto__celula--visitada {
-  background: #1e3a8a;
-}
-
-.labirinto__celula--retomada {
-  background: var(--cor-retomada);
-}
-
-.labirinto__celula--largada {
-  background: var(--cor-sucesso);
-}
-
-.labirinto__celula--objetivo {
-  background: var(--cor-alerta);
-}
-
-.labirinto__celula--atual {
-  outline: 2px solid #93c5fd;
-  outline-offset: 1px;
-}
-
-.labirinto__celula--falha {
-  background: var(--cor-perigo);
-}
-
-.labirinto__seq {
-  position: absolute;
-  top: 2px;
-  left: 4px;
+.labirinto__eixo text {
+  fill: var(--cor-lateral-suave);
   font-family: var(--fonte-mono);
-  font-size: 10px;
-  color: rgb(255 255 255 / 0.75);
+  font-size: 22px;
+  text-anchor: middle;
+}
+
+/* Células com significado: largada, objetivo, retomada e falha */
+.labirinto__destaque {
+  stroke-width: 3;
+}
+
+.labirinto__destaque--largada {
+  fill: rgb(22 163 74 / 0.25);
+  stroke: var(--cor-sucesso);
+}
+
+.labirinto__destaque--objetivo {
+  fill: rgb(245 158 11 / 0.25);
+  stroke: var(--cor-alerta);
+}
+
+.labirinto__destaque--falha {
+  fill: rgb(220 38 38 / 0.35);
+  stroke: #f87171;
+}
+
+/* a retomada fica na célula da falha: só a borda tracejada, para o vermelho continuar visível */
+.labirinto__destaque--retomada {
+  fill: none;
+  stroke: #a78bfa;
+  stroke-dasharray: 10 6;
+}
+
+.labirinto__rotulo text {
+  font-family: var(--fonte-mono);
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.labirinto__rotulo--largada rect {
+  fill: #14532d;
+}
+
+.labirinto__rotulo--largada text {
+  fill: #86efac;
+}
+
+.labirinto__rotulo--objetivo rect {
+  fill: #78350f;
+}
+
+.labirinto__rotulo--objetivo text {
+  fill: #fcd34d;
+}
+
+.labirinto__rotulo--retomada rect {
+  fill: #3b0764;
+}
+
+.labirinto__rotulo--retomada text {
+  fill: #ddd6fe;
+}
+
+.labirinto__rotulo--falha rect {
+  fill: #7f1d1d;
+}
+
+.labirinto__rotulo--falha text {
+  fill: #fecaca;
+}
+
+.labirinto__parede line {
+  stroke: var(--cor-labirinto-parede);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+/* Trajeto: uma linha por trecho, tentativa 1 em azul e retomadas em roxo */
+.labirinto__trajeto {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.labirinto--compacto .labirinto__trajeto {
+  stroke-width: 14;
+}
+
+.labirinto__trajeto--retomada {
+  stroke: #a78bfa;
+}
+
+/* O trecho do último passo cresce da célula anterior até a nova */
+.labirinto__trajeto--novo {
+  stroke-dasharray: 100;
+  animation: labirinto-passo 0.3s ease-out;
+}
+
+@keyframes labirinto-passo {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.labirinto__no {
+  fill: #e2e8f0;
+}
+
+.labirinto__robo {
+  fill: #22c55e;
+  stroke: #dcfce7;
+  stroke-width: 4;
+  transition:
+    transform 0.3s ease-out,
+    fill 0.3s;
+}
+
+.labirinto__robo--falha {
+  fill: #ef4444;
+  stroke: #fee2e2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labirinto__trajeto--novo {
+    animation: none;
+  }
+
+  .labirinto__robo {
+    transition: none;
+  }
 }
 
 .labirinto__legenda {
@@ -88,6 +182,14 @@
   vertical-align: -1px;
 }
 
+.legenda--trajeto::before {
+  background: #3b82f6;
+}
+
+.legenda--retomada::before {
+  background: #a78bfa;
+}
+
 .legenda--largada::before {
   background: var(--cor-sucesso);
 }
@@ -96,14 +198,16 @@
   background: var(--cor-alerta);
 }
 
-.legenda--visitada::before {
-  background: #1e3a8a;
-}
-
-.legenda--retomada::before {
-  background: var(--cor-retomada);
-}
-
 .legenda--falha::before {
   background: var(--cor-perigo);
+}
+
+.legenda--aviso::before {
+  display: none;
+}
+
+.legenda--aviso {
+  width: 100%;
+  text-align: center;
+  font-style: italic;
 }

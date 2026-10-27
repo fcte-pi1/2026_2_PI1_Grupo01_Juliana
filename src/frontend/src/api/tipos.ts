@@ -6,6 +6,9 @@ export type TipoLabirinto = components['schemas']['Labirinto']
 
 export type StatusExecucao = components['schemas']['StatusExecucao']
 
+/** Lado em que o 8x4 ou o 12x4 se estende, informado pelo backend. */
+export type EixoLongo = components['schemas']['EixoLongo']
+
 export type StatusTentativa = components['schemas']['StatusTentativa']
 
 export type TipoInicio = 'nova' | 'retomada'
@@ -36,7 +39,9 @@ export type MotivoEncerramento = Extract<MotivoFalha, 'collision' | 'stuck' | 'o
 
 export type OrigemFalha = 'automatica' | 'encerrado_operador'
 
-export type MotivoRecusa = 'tentativa_aberta' | 'limite_3' | 'execucao_cancelada'
+export type MotivoRecusa = components['schemas']['MotivoRecusa']
+
+export type UltimoHealthCheck = components['schemas']['UltimoHealthCheck']
 
 export interface Celula {
   x: number
@@ -61,12 +66,19 @@ export interface LeituraTelemetria {
   ordem: number
   x: number
   y: number
+  /** Tensão recebida do robô, em mV. */
   bateria: number
+  /** Carga calculada pelo backend; o GET atual não fornece este campo. */
+  bateria_pct?: number | null
+  /** Velocidade instantânea em mm/s; a média da tentativa usa m/s. */
   velocidade: number | null
+  rumo?: components['schemas']['Rumo'] | null
   enviado_em: string
 }
 
 export interface PassoTrajeto {
+  passo_id?: number
+  entrou_em?: string | null
   seq: number
   x: number
   y: number
@@ -98,6 +110,7 @@ export interface Tentativa {
   bateria_inicial: number | null
   bateria_final: number | null
   consumo_bateria: number | null
+  consumo_bateria_pct?: number | null
   health_check: ItemHealthCheck[]
   falha: Falha | null
 }
@@ -110,6 +123,10 @@ export interface Recusa {
 /** Execução lógica com tudo o que as telas de Início e Detalhe exibem. */
 export interface Execucao {
   execucao_id: string
+  /** Última posição recebida por REST/SSE, sem fabricar uma leitura de telemetria. */
+  celula_atual?: Celula | null
+  /** Instante observado de recebimento SSE; não altera o horário informado pelo robô. */
+  ultima_atualizacao_em?: number
   numero?: number
   labirinto: TipoLabirinto
   status: StatusExecucao
@@ -117,10 +134,13 @@ export interface Execucao {
   iniciada_em: string
   encerrada_em: string | null
   tempo_total_s: number | null
+  variacao_melhor_tempo_pct?: number | null
   tentativas: Tentativa[]
   trajeto: PassoTrajeto[]
   leituras: LeituraTelemetria[]
   ultima_mensagem_em: string | null
+  /** Null no 4x4 e enquanto o robô não saiu do canto 4x4 da largada. */
+  eixo_longo: EixoLongo | null
 }
 
 /** Linha do histórico (GET /execucoes). */
@@ -158,6 +178,9 @@ export interface EncerrarPedido {
 
 /** Eventos do stream SSE da execução (GET /execucoes/{id}/stream). */
 export type EventoExecucao =
-  | { tipo: 'leitura'; leitura: LeituraTelemetria }
-  | { tipo: 'passo'; passo: PassoTrajeto }
-  | { tipo: 'tentativa'; tentativa: Tentativa }
+  | components['schemas']['EventoTelemetria']
+  | components['schemas']['EventoPasso']
+  | components['schemas']['EventoStatus']
+  | components['schemas']['EventoHealthCheck']
+  | components['schemas']['EventoFalha']
+  | components['schemas']['EventoSucesso']
