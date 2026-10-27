@@ -126,7 +126,7 @@ test.afterEach(async () => {
   await confirmarInterrupcao()
 })
 
-test('US22 e US31: firmware, encerramento manual e retomada na célula da falha', async ({ page }) => {
+test('E2E-03: US22 e US31: firmware, encerramento manual e retomada na célula da falha', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 1)
   const observacao = 'a'.repeat(100)
@@ -206,7 +206,7 @@ test('US22 e US31: firmware, encerramento manual e retomada na célula da falha'
   }
 })
 
-test('US07 e US22: três falhas manuais escondem a retomada', async ({ page }) => {
+test('E2E-05: US07 e US22: três falhas manuais escondem a retomada', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -239,7 +239,7 @@ test('US07 e US22: três falhas manuais escondem a retomada', async ({ page }) =
   }
 })
 
-test('US07: execução cancelada não oferece retomada', async ({ page }) => {
+test('E2E-05b: US07: execução cancelada não oferece retomada', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -258,7 +258,7 @@ test('US07: execução cancelada não oferece retomada', async ({ page }) => {
   }
 })
 
-test('US30: falha de componente permite retomar a mesma execução', async ({ page }) => {
+test('E2E-04: US30: falha de componente permite retomar a mesma execução', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -300,7 +300,7 @@ test('US30: falha de componente permite retomar a mesma execução', async ({ pa
   }
 })
 
-test('health-check: 30 s sem o robô libera nova solicitação e não abre tentativa', async ({ page }) => {
+test('E2E-10: health-check: 30 s sem o robô libera nova solicitação e não abre tentativa', async ({ page }) => {
   await page.goto('/')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
   const iniciar = page.getByRole('button', { name: /Nova execução/ })
@@ -323,7 +323,7 @@ test('health-check: 30 s sem o robô libera nova solicitação e não abre tenta
   await expect(iniciar).toBeDisabled()
 })
 
-test('US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas do 4x4', async ({ page }) => {
+test('E2E-08: US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas do 4x4', async ({ page }) => {
   const fatias = fatiarCorrida(await readFile(path.join(pasta, '4x4-01-dir.jsonl'), 'utf8'))
   const arquivos = await Promise.all(fatias.trechos.map(async (conteudo, indice) => {
     const arquivo = path.join(pasta, `us28-t${indice + 1}.jsonl`)
@@ -535,6 +535,65 @@ test('E2E-06: 10 s sem telemetria encerram a tentativa por link_lost e permitem 
   await expect(page.getByRole('button', { name: 'Encerrar tentativa', exact: true })).toHaveCount(0)
 })
 
+test('E2E-09: as paredes enviadas pelo robô aparecem nos lados certos de cada célula', async ({ page }) => {
+  const boot = bootNovo()
+  await prepararLargada(page, boot)
+  const id = (await execucaoAtual()).execucao_id
+  const enviadas = await mascarasEnviadas()
+  expect(Object.keys(enviadas).length).toBeGreaterThan(4)
+
+  await reproduzir(gravacao.trecho, boot)
+  await reproduzir(gravacao.resto, boot)
+  await expect.poll(async () => (await detalhe(id)).status).toBe('concluida')
+  const pronto = await detalhe(id)
+
+  const gravadas: Record<string, number> = {}
+  for (const passo of pronto.trajeto) gravadas[`${passo.x},${passo.y}`] = passo.paredes_mask
+  expect(gravadas).toEqual(enviadas)
+
+  await page.goto(`/execucoes/${id}`)
+  await expect(page.getByRole('img', { name: /Labirinto 4x4 com \d+ células visitadas/ })).toBeVisible()
+  const desenho = await page.evaluate(() => {
+    const pontos = Array.from(document.querySelectorAll('polyline.labirinto__trajeto'))
+      .flatMap((linha) => (linha.getAttribute('points') ?? '').trim().split(/\s+/).filter(Boolean))
+      .map((par) => par.split(',').map(Number))
+    const celulas = Array.from(document.querySelectorAll('svg.labirinto__svg g'))
+      .filter((grupo) => grupo.querySelector(':scope > title') && grupo.querySelector(':scope > .labirinto__parede'))
+      .map((grupo) => ({
+        nome: (grupo.querySelector(':scope > title')?.textContent ?? '').split(' · ')[0],
+        linhas: Array.from(grupo.querySelectorAll('.labirinto__parede line')).map((linha) => ({
+          x1: Number(linha.getAttribute('x1')),
+          y1: Number(linha.getAttribute('y1')),
+          x2: Number(linha.getAttribute('x2')),
+        })),
+      }))
+    return { pontos, celulas }
+  })
+
+  // um ponto da polilinha por passo: é o centro da célula daquele passo
+  expect(desenho.pontos).toHaveLength(pronto.trajeto.length)
+  const centros = new Map<string, number[]>()
+  pronto.trajeto.forEach((passo, indice) => centros.set(nomeCelula(passo.x, passo.y), desenho.pontos[indice]))
+  expect(desenho.celulas.map((celula) => celula.nome).sort()).toEqual(Array.from(centros.keys()).sort())
+
+  let paredesDesenhadas = 0
+  for (const celula of desenho.celulas) {
+    const [cx, cy] = centros.get(celula.nome)!
+    const desenhados = celula.linhas
+      .map((linha) => (linha.x2 === linha.x1 ? (linha.x1 > cx ? 'L' : 'O') : (linha.y1 < cy ? 'N' : 'S')))
+      .sort()
+      .join('')
+    const mascara = enviadas[`${letra(celula.nome)},${numeroCelula(celula.nome)}`]
+    const esperados = [mascara & 1 ? 'N' : '', mascara & 2 ? 'S' : '', mascara & 4 ? 'L' : '', mascara & 8 ? 'O' : '']
+      .filter(Boolean)
+      .sort()
+      .join('')
+    expect(desenhados, `paredes de ${celula.nome}`).toBe(esperados)
+    paredesDesenhadas += celula.linhas.length
+  }
+  expect(paredesDesenhadas).toBeGreaterThan(0)
+})
+
 async function prepararLargada(page: Page, boot: number) {
   await page.goto('/')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
@@ -649,6 +708,17 @@ function abrirExecucaoPelaApi() {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ tipo_labirinto: '4x4' }),
   })
+}
+
+async function mascarasEnviadas() {
+  const mascaras: Record<string, number> = {}
+  for (const arquivo of [gravacao.trecho, gravacao.resto]) {
+    for (const linha of (await readFile(arquivo, 'utf8')).trim().split('\n')) {
+      const mensagem = JSON.parse(linha) as { tipo: string; x?: number; y?: number; paredes?: number }
+      if (mensagem.tipo === 'passo') mascaras[`${mensagem.x},${mensagem.y}`] = mensagem.paredes ?? 0
+    }
+  }
+  return mascaras
 }
 
 async function execucaoAtual() {
