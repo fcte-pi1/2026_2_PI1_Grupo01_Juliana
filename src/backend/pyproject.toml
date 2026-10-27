@@ -27,6 +27,9 @@ ponte = [
     "httpx>=0.28",
     "pyserial>=3.5",
 ]
+graficos = [
+    "matplotlib>=3.8",
+]
 
 [build-system]
 requires = ["hatchling"]

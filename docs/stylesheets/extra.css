@@ -33,6 +33,8 @@
   --md-default-fg-color: var(--rt-ink);
   --md-default-fg-color--light: var(--rt-muted);
   --md-code-bg-color: #0b151c;
+  /* O primário continua escuro por causa do cabeçalho. Links e o item ativo herdam essa cor, então no tema escuro ela some. */
+  --md-typeset-a-color: var(--rt-orange-light);
 }
 
 html { scroll-behavior: smooth; }
@@ -230,36 +232,40 @@ button:focus-visible {
   *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
 
-/* Setas para recolher as laterais (javascripts/laterais.js), só onde elas ficam fixas na tela */
-.laterais-botao {
-  position: fixed;
-  top: 50%;
-  z-index: 3;
-  display: none;
-  width: 1.1rem;
-  height: 2.6rem;
-  padding: 0;
-  border: 1px solid var(--md-default-fg-color--lightest);
-  background: var(--md-default-bg-color);
-  color: var(--md-default-fg-color--light);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-  transform: translateY(-50%);
+/* Barras laterais recolhíveis: navegação (esquerda) e índice (direita) */
+.rt-sidebar-toggles {
+  align-items: center;
+  display: flex;
+  margin-left: 0.35rem;
 }
-.laterais-botao:hover,
-.laterais-botao:focus-visible { color: var(--md-accent-fg-color); border-color: currentcolor; }
-.laterais-botao--nav { left: 0; border-left: 0; border-radius: 0 0.3rem 0.3rem 0; }
-.laterais-botao--toc { right: 0; border-right: 0; border-radius: 0.3rem 0 0 0.3rem; }
-.laterais-botao[hidden] { display: none !important; }
 
-@media screen and (min-width: 60em) {
-  .laterais-botao--toc { display: block; }
-  .laterais-sem-toc .md-sidebar--secondary { display: none; }
+.rt-sidebar-toggles .md-header__button {
+  border-radius: 0.4rem;
 }
-@media screen and (min-width: 76.25em) {
-  .laterais-botao--nav { display: block; }
-  .laterais-sem-nav .md-sidebar--primary { display: none; }
-  .laterais-sem-nav .md-main__inner.md-grid,
-  .laterais-sem-toc .md-main__inner.md-grid { max-width: 76rem; }
+
+.rt-sidebar-toggles .md-header__button[aria-expanded="false"] {
+  background: rgb(247 251 252 / 16%);
+  color: var(--rt-orange-light);
 }
+
+@media screen and (max-width: 59.984375em) {
+  .rt-sidebar-toggles { display: none; }
+}
+
+@media screen and (max-width: 76.234375em) {
+  .rt-sidebar-toggles [data-rt-toggle="nav"] { display: none; }
+}
+
+@media print {
+  .rt-sidebar-toggles { display: none; }
+}
+
+/* Testes de energia (7.2): gráficos e avisos montados a partir dos CSV */
+.energia-grafico { position: relative; height: 18rem; margin: 1rem 0; }
+.energia-aviso { color: var(--md-default-fg-color--light); font-style: italic; }
+.energia-fotos { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.5rem; }
+.energia-fotos p { display: contents; }
+.energia-fotos img { width: 100%; }
+.energia-figura { display: block; margin: 0 auto; }
+.energia-fotos { max-width: 52rem; margin: 0 auto; }
+.energia-fotos--par { max-width: 40rem; grid-template-columns: repeat(2, 1fr); }

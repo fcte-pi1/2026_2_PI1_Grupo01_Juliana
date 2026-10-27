@@ -15,6 +15,7 @@ from app.models import (
 )
 from app.repositories import Repositorio
 from app.repositories.telemetria import TelemetriaRepository
+from app.services.monitor_conexao import MonitorConexao
 from contrato.telemetria import Comando, ler_linha
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
@@ -333,6 +334,25 @@ def test_link_lost_no_post_apos_silencio(client, db_session, tentativa_aberta):
     assert execucao.status == "em_andamento"
     assert tentativa_aberta.falha is not None
     assert tentativa_aberta.falha.motivo == "link_lost"
+
+
+def test_primeira_telemetria_apos_reinicio_nao_fecha_tentativa_antiga(
+    client, db_session, tentativa_aberta
+):
+    """#229: o monitor novo aguarda a ponte antes de medir ausência de sinal."""
+    tentativa_aberta.iniciada_em = datetime.now(UTC) - timedelta(seconds=20)
+    db_session.commit()
+    monitor_novo = MonitorConexao(limite_sem_sinal_s=10)
+    client.app.state.monitor_conexao = monitor_novo
+    client.app.state.ingestao_telemetria.monitor = monitor_novo
+
+    assert _enviar(client, _linha()).status_code == 200
+
+    db_session.expire_all()
+    tentativa = db_session.get(Tentativa, tentativa_aberta.tentativa_id)
+    assert tentativa.status == "running"
+    assert tentativa.falha is None
+    assert len(_leituras(db_session, tentativa)) == 1
 
 
 def _hc_item(seq: int, **campos) -> str:

@@ -1,0 +1,11 @@
+# Teste 2.2 (7.2 - Testes de energia): corrente de cada componente, medida em separado.
+# Os valores previstos vêm do 4.2 (Tabelas 1 e 6). Preencha tensao_medida_V e corrente_medida_mA.
+# Corrente em mA, tensão em V, com vírgula ou ponto. Linhas que começam com # são ignoradas.
+componente;tensao_prevista_V;corrente_prevista_mA;tensao_medida_V;corrente_medida_mA;observacao
+Motor N20 girando livre (um motor);6,0;150;6,01;28;direto na fonte, oscilando entre 26 e 30 mA. Previsto é o de cruzeiro, com o peso do robô: girando livre deve dar menos
+Motor N20 com a roda travada (um motor, no máximo 2 s);6,0;800;6,01;211;eixo segurado com a mão por 2 s. Pico da fonte; o multímetro oscilou entre 145 e 212 mA, em torno de 165 mA
+ESP32 ligado, sem Bluetooth conectado;5,0;68;5,32;42;código simples, pelo VIN. Previsto: modem-sleep (30 a 68 mA)
+ESP32 transmitindo pelo Bluetooth;5,0;240;5,32;118;código com transmissão, pelo VIN. Previsto: pico de transmissão (180 a 240 mA)
+Sensor ToF VL53L0X (um sensor);3,3;20;;;ligado no 3V3 do ESP32: o conjunto deu 42 mA na fonte, igual ao ESP32 sozinho, então o ToF não apareceu na leitura. Repetir com o multímetro em série no 3V3
+Encoder (um motor);3,3;8;;;
+Robô completo em operação (pela LiPo);7,4;430;;;corrente média do 4.2, Tabela 6
