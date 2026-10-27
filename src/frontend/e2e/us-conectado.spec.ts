@@ -30,6 +30,7 @@ import { expect, test, type Page } from '@playwright/test'
  */
 
 const executar = promisify(execFile)
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const API = 'http://127.0.0.1:8000'
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const FIRMWARE = path.resolve(AQUI, '../../firmware/simulador-navegacao')
@@ -196,6 +197,7 @@ test('E2E-03: US22 e US31: firmware, encerramento manual e retomada na célula d
     expect(depois.status).toBe('em_andamento')
     expect(depois.tentativas_usadas).toBe(2)
     expect(depois.tentativas[1].tentativa_id).not.toBe(antes.tentativas[0].tentativa_id)
+    for (const tentativa of [antes.tentativas[0], depois.tentativas[1]]) expect(tentativa.tentativa_id).toMatch(UUID)
     expect(depois.tentativas[1]).toMatchObject({ attempt_index: 2, status: 'running' })
     expect(depois.tentativas[0].falha).toEqual(antes.tentativas[0].falha)
     expect(depois.trajeto.slice(0, antes.trajeto.length)).toEqual(antes.trajeto)
@@ -435,6 +437,13 @@ test('E2E-01: execução completa com sucesso, do health-check à conclusão', a
   await expect(page.getByLabel('Tentativa 1 de 3')).toBeVisible()
   await expect(page.getByLabel('Dados da execução em tempo real').getByText('A2', { exact: true })).toBeVisible()
   expect((await execucaoAtual()).trajeto.map((passo) => [passo.x, passo.y])).toEqual([[0, 0], [0, 1]])
+  await expect(page.getByText(/Atualizado há \d+ s/)).toBeVisible()
+
+  // US20: com a tentativa aberta, o Retomar é recusado e nenhuma tentativa nova nasce
+  const recusa = await fetch(`${API}/execucoes/${id}/retomar`, { method: 'POST' })
+  expect(recusa.status).toBe(409)
+  expect(await recusa.json()).toMatchObject({ motivo: 'tentativa_aberta' })
+  expect((await execucaoAtual()).tentativas).toHaveLength(1)
 
   await reproduzir(gravacao.resto, boot)
   await expect.poll(async () => (await detalhe(id)).status).toBe('concluida')
