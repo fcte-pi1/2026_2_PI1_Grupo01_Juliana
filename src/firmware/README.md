@@ -30,8 +30,10 @@ Rodar dentro de `src/firmware`:
 | Comando | O que faz |
 |---|---|
 | `pio test -e native` | Roda os testes no PC, sem placa |
+| `pio test -e native_cov` | Os mesmos testes, gerando os dados de cobertura ([cobertura](#cobertura-dos-testes)) |
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
+| `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
@@ -71,6 +73,19 @@ O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em
 
 O script sai com 0 (`Resultado: OK`) só se chegou alguma mensagem do contrato e não houve buraco nem linha inválida; senão sai com 1 (`Resultado: FALHOU`). Os testes dele rodam com `pytest tools`.
 
+### Cobertura dos testes
+
+O ambiente `native_cov` roda os testes do `native` compilados com `--coverage`. O relatório sai pelo [gcovr](https://gcovr.com):
+
+```bash
+pip install gcovr
+pio test -e native_cov
+gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --print-summary
+gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --html-details cobertura.html
+```
+
+Os drivers reais (`lib/hal/esp32/hal_*`) ficam de fora porque só compilam na placa. O `src/` (tarefas do FreeRTOS) também, porque não entra no `native`. A meta do 7.4 é de pelo menos 80% das linhas.
+
 ### Medir o desempenho da navegação na placa
 
 O flood fill precisa recalcular em menos de 5 ms na ESP32. O teste `test_desempenho_nav` monta o pior caso (12x4 com a orientação indefinida e paredes em serpentina) e mede `nav_recalcular` 100 vezes. Com a ESP32 ligada no USB:
@@ -89,7 +104,8 @@ src/firmware/
 ├── include/config/       pinos.h e robo.h (valores e fontes do ARQ-09)
 ├── lib/
 │   ├── hal/              contratos do hardware (hal_tof.h, hal_motor.h, ...)
-│   │   └── sim/          implementação simulada de cada contrato
+│   │   ├── sim/          implementação simulada de cada contrato
+│   │   └── esp32/        drivers reais (bateria, motores e encoders); compilados sem HAL_SIMULADA
 │   ├── simulacao/        mundo simulado: labirinto em texto + física do robô
 │   ├── simulador/        corrida célula a célula e roteiro de telemetria (FIRM-02)
 │   ├── contrato/         serializador do contrato v1 (ARQ-01) e seu teste byte a byte
@@ -113,7 +129,7 @@ As camadas só dependem das de baixo: `app` usa `navegacao`, `controle` e `senso
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais entram ao lado no FIRM-10 (#141) e trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (por enquanto bateria, motores, encoders e NVS) e são compilados no CI pelo programa de bancada `esp32_drivers`; os outros e o firmware completo com eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
@@ -163,7 +179,7 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 
 ## Pendências
 
-- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). A ESP32 de 30 pinos tem 23 GPIOs livres e o robô pede 24 sinais: o esquemático fecha a conta porque ainda usa as 5 redes do A4988, mas a TB6612 pede 7, e `MOT_D_IN2` ficou sem pino. Uma saída é ligar PWMA/PWMB em nível alto e fazer o PWM nas linhas IN. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
+- **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). O esquemático ainda usa as 5 redes do A4988, mas a TB6612 pede 7 sinais: os dois `IN2` foram para os GPIO livres 15 e 18 (o 18 era o XSHUT do segundo frontal) e precisam de fio na placa. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
 - Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura), as curvas de descarga da bateria (Energia, até os testes da 7.2) e os limiares de parede dos ToF (`PAREDE_*_MM`, tirados da geometria; calibrar na pista no FIRM-10).
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 

@@ -93,26 +93,55 @@ Um arquivo por execução: `PONTE_LOG_DIR/ponte-AAAAMMDD-HHMMSS.log`, com a hora
 
 ## Ensaio de 10 min com o simulador
 
-Roteiro manual para conferir a ponte de ponta a ponta sem o robô (Linux, macOS ou WSL).
+Roteiro do caso 4.16 para conferir a cadeia simulador, ponte, API e banco sem o robô (Linux, macOS ou WSL). Os comandos do `ensaio_serial` rodam em `src/backend`, com o extra `dev` (traz o `httpx`).
 
-1. Suba a API e o banco (ver `src/backend/README.md`) e abra a web.
-2. Em `src/simulador-telemetria`, rode um roteiro longo em pty:
-
-   ```sh
-   uv run python -m simulador roteiros/estouro-10min.json --saida pty
-   ```
-
-   O simulador imprime o caminho da porta (por exemplo `/dev/pts/5`) e espera alguém abrir.
-3. Em `src/backend`, rode a ponte nessa porta:
+1. Suba a API e o banco (ver `src/backend/README.md`).
+2. Em `src/backend`, deixe rodando em outro terminal o comando que abre a execução, como o operador faria clicando em **Nova execução**:
 
    ```sh
-   python -m ponte --porta /dev/pts/5
+   python -m scripts.ensaio_serial abrir --url http://localhost:8000 --labirinto 4x4
    ```
 
-4. Na web, clique em **Nova execução** e acompanhe a corrida.
-5. Clique em **Encerrar** na web. No log, confira que o `TX {"v":1,"cmd":"interromper"}` aparece em até 1 s depois do clique, e que o simulador encerra a corrida.
-6. Confira que todo `TX` do log é um comando do contrato (`interromper`, `largar` ou `health_check`).
-7. Encerre a ponte e o simulador com Ctrl+C.
-8. Para a queda da API, rode de novo o simulador (passo 2) e a ponte (passo 3), **sem** clicar em **Nova execução**. Derrube a API por cerca de 5 s e suba de novo. No log, confira que nenhuma linha se perdeu: toda linha `RX` tem uma linha `API <status> comandos=<n>` correspondente, sem `FILA descartada`. Sem tentativa aberta, o backend responde 200 e descarta as linhas só no log dele, o que basta para conferir a ponte. Não derrube a API com uma tentativa aberta: reiniciar a API no meio dela a encerra com `link_lost` (issue #229).
+   Ele espera um health-check concluído depois do seu início (até `--timeout`, 60 s por padrão) e então faz `POST /execucoes`. Imprime `execucao_id`, `tentativa_id` e `aberta_em` e sai com 0; com 409 ou sem health-check novo, sai com 1. Rode-o antes do simulador, porque o simulador corre logo depois do `hc_resultado`, sem esperar o `largar`.
+3. Em `src/simulador-telemetria`, rode o roteiro longo em pty, com o stderr salvo em arquivo:
 
-Para um ensaio mais curto, troque o roteiro por `roteiros/sucesso-4x4.json`.
+   ```sh
+   mkdir -p /tmp/ensaio
+   uv run python -m simulador roteiros/estouro-10min.json --saida pty 2> /tmp/ensaio/simulador.log
+   ```
+
+   O caminho da porta (por exemplo `/dev/pts/5`) fica no próprio arquivo (`grep "porta serial virtual" /tmp/ensaio/simulador.log`), e o simulador espera alguém abrir. O arquivo também guarda uma linha `simulador: enviada: <linha JSON>` por mensagem, que o `conferir` usa.
+4. Em `src/backend`, rode a ponte nessa porta, com o log numa pasta só do ensaio:
+
+   ```sh
+   python -m ponte --porta /dev/pts/5 --url http://localhost:8000 --log-dir /tmp/ensaio/ponte
+   ```
+
+5. Espere o simulador terminar (cerca de 10 min 15 s). A tentativa é encerrada pelo backend com `time_exceeded` 600 s depois da abertura.
+6. Encerre a ponte com Ctrl+C.
+7. Em `src/backend`, confira o ensaio, com `DATABASE_URL` apontando para o banco da API (fora do Docker, use `localhost` e a porta publicada do banco, não o host `db` do `.env`):
+
+   ```sh
+   python -m scripts.ensaio_serial conferir \
+     --log-simulador /tmp/ensaio/simulador.log \
+     --log-ponte /tmp/ensaio/ponte/ponte-AAAAMMDD-HHMMSS.log \
+     --csv /tmp/ensaio/janelas.csv
+   ```
+
+   O comando imprime as contagens e termina em `APROVADO` (código 0) ou `REPROVADO` (código 1). Ele confere:
+
+   - na ponte: enviadas igual a RX mais 1, porque a ponte descarta a primeira linha depois de abrir a porta e não registra o descarte; as demais enviadas iguais aos RX, no mesmo texto e na mesma ordem; uma resposta `API` por RX, todas 200; nenhum `API falhou` nem `FILA`; todo `TX` igual a um comando do contrato (`interromper`, `largar` ou `health_check`);
+   - no banco: a tentativa do health-check com o `boot` do ensaio, já encerrada; dentro da janela da tentativa (da abertura ao encerramento), todo `passo` gravado em `passo_trajeto` e uma `leitura_telemetria` por `tel`, e o health-check com 8 itens. As mensagens antes da abertura e depois do encerramento recebem 200 e não são gravadas; aparecem no relatório, mas não contam como perda. RX a menos de 50 ms das bordas da janela ficam à parte, porque o relógio da ponte e o do backend não são o mesmo;
+   - a duração do ensaio, do primeiro ao último RX, de pelo menos 600 s.
+
+   Com `--csv`, grava as contagens por janela de 10 s (`janela_inicio_s,enviadas,rx,gravadas`). O gráfico sai com:
+
+   ```sh
+   uv run --extra graficos python -m scripts.grafico_ensaio_serial /tmp/ensaio/janelas.csv /tmp/ensaio/serial.png
+   ```
+
+Para um ensaio mais curto, troque o roteiro por `roteiros/sucesso-4x4.json` (o `conferir` reprova pela duração, mas as demais conferências valem).
+
+### Queda da API
+
+Roteiro à parte, manual. Rode de novo o simulador (passo 3, sem redirecionar o stderr se quiser ver a porta no terminal) e a ponte (passo 4), **sem** rodar o `abrir` nem clicar em **Nova execução**. Derrube a API por cerca de 5 s e suba de novo. No log, confira que nenhuma linha se perdeu: toda linha `RX` tem uma linha `API <status> comandos=<n>` correspondente, sem `FILA descartada`. Sem tentativa aberta, o backend responde 200 e descarta as linhas só no log dele, o que basta para conferir a ponte. Não derrube a API com uma tentativa aberta: reiniciar a API no meio dela a encerra com `link_lost` (issue #229).

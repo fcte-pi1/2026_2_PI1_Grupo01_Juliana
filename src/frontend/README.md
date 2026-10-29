@@ -20,7 +20,7 @@ npm run dev        # http://localhost:5173
 | `npm run build`     | build de produção em `dist/`                  |
 
 Na primeira execução dos testes E2E, instale o navegador com
-`npm run test:e2e:install`.
+`npm run test:e2e:install`. Há também a suíte conectada ao back-end real (`npm run test:e2e:conectado`); o [guia dos testes E2E](e2e/README.md) explica as duas.
 
 O CI (`.github/workflows/frontend.yml`) roda lint, tipos, testes unitários, testes E2E e build em todo PR que mexe em `src/frontend`.
 

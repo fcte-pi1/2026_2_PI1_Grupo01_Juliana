@@ -30,6 +30,7 @@ import { expect, test, type Page } from '@playwright/test'
  */
 
 const executar = promisify(execFile)
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const API = 'http://127.0.0.1:8000'
 const AQUI = path.dirname(fileURLToPath(import.meta.url))
 const FIRMWARE = path.resolve(AQUI, '../../firmware/simulador-navegacao')
@@ -70,6 +71,7 @@ interface Gravacao {
   hc: string
   trecho: string
   continuacao: string
+  resto: string
 }
 
 let pasta = ''
@@ -102,10 +104,12 @@ test.beforeAll(async () => {
   const hc = path.join(pasta, 'hc.jsonl')
   const trecho = path.join(pasta, 'trecho.jsonl')
   const continuacao = path.join(pasta, 'continuacao.jsonl')
+  const resto = path.join(pasta, 'resto.jsonl')
   await writeFile(hc, `${linhas.slice(0, fimHc + 1).map((linha) => linha.texto).join('\n')}\n`)
   await writeFile(trecho, `${depois.slice(0, fimTrecho + 1).map((linha) => linha.texto).join('\n')}\n`)
   await writeFile(continuacao, `${depois.slice(fimTrecho + 1, fimContinuacao + 1).map((linha) => linha.texto).join('\n')}\n`)
-  gravacao = { hc, trecho, continuacao }
+  await writeFile(resto, `${depois.slice(fimTrecho + 1).map((linha) => linha.texto).join('\n')}\n`)
+  gravacao = { hc, trecho, continuacao, resto }
 })
 
 test.afterAll(async () => {
@@ -123,7 +127,7 @@ test.afterEach(async () => {
   await confirmarInterrupcao()
 })
 
-test('US22 e US31: firmware, encerramento manual e retomada na célula da falha', async ({ page }) => {
+test('E2E-03: US22 e US31: firmware, encerramento manual e retomada na célula da falha', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 1)
   const observacao = 'a'.repeat(100)
@@ -193,6 +197,7 @@ test('US22 e US31: firmware, encerramento manual e retomada na célula da falha'
     expect(depois.status).toBe('em_andamento')
     expect(depois.tentativas_usadas).toBe(2)
     expect(depois.tentativas[1].tentativa_id).not.toBe(antes.tentativas[0].tentativa_id)
+    for (const tentativa of [antes.tentativas[0], depois.tentativas[1]]) expect(tentativa.tentativa_id).toMatch(UUID)
     expect(depois.tentativas[1]).toMatchObject({ attempt_index: 2, status: 'running' })
     expect(depois.tentativas[0].falha).toEqual(antes.tentativas[0].falha)
     expect(depois.trajeto.slice(0, antes.trajeto.length)).toEqual(antes.trajeto)
@@ -203,7 +208,7 @@ test('US22 e US31: firmware, encerramento manual e retomada na célula da falha'
   }
 })
 
-test('US07 e US22: três falhas manuais escondem a retomada', async ({ page }) => {
+test('E2E-05: US07 e US22: três falhas manuais escondem a retomada', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -236,7 +241,7 @@ test('US07 e US22: três falhas manuais escondem a retomada', async ({ page }) =
   }
 })
 
-test('US07: execução cancelada não oferece retomada', async ({ page }) => {
+test('E2E-05b: US07: execução cancelada não oferece retomada', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -255,7 +260,7 @@ test('US07: execução cancelada não oferece retomada', async ({ page }) => {
   }
 })
 
-test('US30: falha de componente permite retomar a mesma execução', async ({ page }) => {
+test('E2E-04: US30: falha de componente permite retomar a mesma execução', async ({ page }) => {
   const boot = bootNovo()
   const batimento = pulso(boot, 0, 0)
   try {
@@ -297,7 +302,7 @@ test('US30: falha de componente permite retomar a mesma execução', async ({ pa
   }
 })
 
-test('health-check: 30 s sem o robô libera nova solicitação e não abre tentativa', async ({ page }) => {
+test('E2E-10: health-check: 30 s sem o robô libera nova solicitação e não abre tentativa', async ({ page }) => {
   await page.goto('/')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
   const iniciar = page.getByRole('button', { name: /Nova execução/ })
@@ -320,7 +325,7 @@ test('health-check: 30 s sem o robô libera nova solicitação e não abre tenta
   await expect(iniciar).toBeDisabled()
 })
 
-test('US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas do 4x4', async ({ page }) => {
+test('E2E-08: US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas do 4x4', async ({ page }) => {
   const fatias = fatiarCorrida(await readFile(path.join(pasta, '4x4-01-dir.jsonl'), 'utf8'))
   const arquivos = await Promise.all(fatias.trechos.map(async (conteudo, indice) => {
     const arquivo = path.join(pasta, `us28-t${indice + 1}.jsonl`)
@@ -423,6 +428,181 @@ test('US02, US03, US16 e US26 a US28: histórico, filtro e as três tentativas d
   expect(await page.evaluate(caminhoLivre)).toBe(true)
 })
 
+test('E2E-01: execução completa com sucesso, do health-check à conclusão', async ({ page }) => {
+  const boot = bootNovo()
+  await prepararLargada(page, boot)
+  const id = (await execucaoAtual()).execucao_id
+
+  await reproduzir(gravacao.trecho, boot)
+  await expect(page.getByLabel('Tentativa 1 de 3')).toBeVisible()
+  await expect(page.getByLabel('Dados da execução em tempo real').getByText('A2', { exact: true })).toBeVisible()
+  expect((await execucaoAtual()).trajeto.map((passo) => [passo.x, passo.y])).toEqual([[0, 0], [0, 1]])
+  await expect(page.getByText(/Atualizado há \d+ s/)).toBeVisible()
+
+  // US20: com a tentativa aberta, o Retomar é recusado e nenhuma tentativa nova nasce
+  const recusa = await fetch(`${API}/execucoes/${id}/retomar`, { method: 'POST' })
+  expect(recusa.status).toBe(409)
+  expect(await recusa.json()).toMatchObject({ motivo: 'tentativa_aberta' })
+  expect((await execucaoAtual()).tentativas).toHaveLength(1)
+
+  await reproduzir(gravacao.resto, boot)
+  await expect.poll(async () => (await detalhe(id)).status).toBe('concluida')
+  const pronto = await detalhe(id)
+  expect(pronto.tentativas).toHaveLength(1)
+  expect(pronto.tentativas[0]).toMatchObject({ attempt_index: 1, status: 'success', falha: null })
+  expect(pronto.tentativas[0].tempo_s).toBeGreaterThan(0)
+  expect(pronto.tentativas[0].velocidade_media).toBeGreaterThan(0)
+  expect(pronto.trajeto[0]).toMatchObject({ x: 0, y: 0 })
+  expect(pronto.trajeto.at(-1)).toMatchObject({ x: 3, y: 3 })
+
+  const rotulo = await rotuloDaExecucao(id)
+  await page.goto(`/execucoes/${id}`)
+  await expect(page.getByRole('heading', { name: `Execução ${rotulo}` })).toBeVisible()
+  const linha = page.getByRole('row').nth(1)
+  await expect(linha).toContainText('1/3')
+  await expect(linha).toContainText('Sucesso')
+  await expect(linha).toContainText(formatarTempo(pronto.tentativas[0].tempo_s))
+  await expect(linha).toContainText(formatarMedicao(pronto.tentativas[0].velocidade_media, 'm/s'))
+  await expect(page.getByText('OBJETIVO', { exact: true })).toBeVisible()
+  expect(await page.evaluate(caminhoLivre)).toBe(true)
+})
+
+test('E2E-02a: sem health-check válido a Nova execução não abre (DIP divergente e reprovado)', async ({ page }) => {
+  await page.goto('/')
+  const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
+  const iniciar = page.getByRole('button', { name: /Nova execução/ })
+
+  const divergente = await hcVariado('dip', (linha) => { if (linha.tipo === 'hc_resultado') linha.tipo_dip = '8x4' })
+  await expect(solicitar).toBeEnabled()
+  await solicitar.click()
+  await reproduzir(divergente, bootNovo())
+  await expect(page.getByText('O robô informou 8x4; o labirinto selecionado é 4x4.')).toBeVisible()
+  await expect(iniciar).toBeDisabled()
+  expect((await fetch(`${API}/execucoes/em-andamento`)).status).toBe(204)
+  const recusaDip = await abrirExecucaoPelaApi()
+  expect(recusaDip.status).toBe(409)
+  expect(await recusaDip.json()).toMatchObject({ motivo: 'dip_divergente' })
+
+  const reprovado = await hcVariado('reprovado', (linha) => {
+    if (linha.tipo === 'hc_resultado') linha.aprovado = false
+    if (linha.tipo === 'hc_item' && linha.componente === 'tof_frontal') linha.aprovado = false
+  })
+  await expect(solicitar).toBeEnabled()
+  await solicitar.click()
+  await reproduzir(reprovado, bootNovo())
+  await expect(page.getByText('Health-check reprovado. Corrija a falha e solicite outra verificação.')).toBeVisible()
+  await expect(iniciar).toBeDisabled()
+  expect((await fetch(`${API}/execucoes/em-andamento`)).status).toBe(204)
+  const recusaReprovado = await abrirExecucaoPelaApi()
+  expect(recusaReprovado.status).toBe(409)
+  expect(await recusaReprovado.json()).toMatchObject({ motivo: 'health_check_reprovado' })
+  expect((await fetch(`${API}/execucoes/em-andamento`)).status).toBe(204)
+})
+
+test('E2E-02b: Nova execução com uma execução em andamento cancela a anterior', async ({ page }) => {
+  await prepararLargada(page, bootNovo())
+  const anterior = await execucaoAtual()
+  expect(anterior.tentativas[0].status).toBe('running')
+
+  await page.getByRole('button', { name: /\+ Nova execução/ }).click()
+  const modal = page.getByRole('dialog')
+  await expect(modal).toContainText('será cancelada')
+  await modal.getByRole('button', { name: 'Confirmar nova execução' }).click()
+  await expect(modal).toHaveCount(0)
+
+  await expect.poll(async () => (await execucaoAtual()).execucao_id).not.toBe(anterior.execucao_id)
+  const nova = await execucaoAtual()
+  expect(nova.status).toBe('em_andamento')
+  expect(nova.tentativas_usadas).toBe(1)
+  expect(nova.tentativas[0]).toMatchObject({ attempt_index: 1, status: 'running' })
+  await expect(page.getByLabel('Tentativa 1 de 3')).toBeVisible()
+
+  const velha = await detalhe(anterior.execucao_id)
+  expect(velha.status).toBe('cancelada')
+  expect(velha.tentativas[0].status).toBe('failed')
+
+  await page.goto('/execucoes')
+  await expect(page.getByRole('link', { name: await rotuloDaExecucao(nova.execucao_id) })).toBeVisible()
+  await expect(page.getByRole('link', { name: await rotuloDaExecucao(anterior.execucao_id) })).toBeVisible()
+})
+
+test('E2E-06: 10 s sem telemetria encerram a tentativa por link_lost e permitem a retomada', async ({ page }) => {
+  const boot = bootNovo()
+  await prepararLargada(page, boot)
+  await reproduzir(gravacao.trecho, boot)
+  const id = (await execucaoAtual()).execucao_id
+  await expect(page.getByLabel('Dados da execução em tempo real').getByText('A2', { exact: true })).toBeVisible()
+
+  await expect.poll(async () => (await detalhe(id)).tentativas[0].status, { timeout: 30_000, intervals: [1_000] }).toBe('failed')
+  const depois = await detalhe(id)
+  expect(depois.status).toBe('em_andamento')
+  expect(depois.tentativas[0].falha).toMatchObject({
+    motivo: 'link_lost', origem: 'automatica', celula_x: 0, celula_y: 1, componente: null,
+  })
+  await expect(page.getByText(/Tentativa 1 registrada como Falha/)).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Encerrar tentativa', exact: true })).toHaveCount(0)
+})
+
+test('E2E-09: as paredes enviadas pelo robô aparecem nos lados certos de cada célula', async ({ page }) => {
+  const boot = bootNovo()
+  await prepararLargada(page, boot)
+  const id = (await execucaoAtual()).execucao_id
+  const enviadas = await mascarasEnviadas()
+  expect(Object.keys(enviadas).length).toBeGreaterThan(4)
+
+  await reproduzir(gravacao.trecho, boot)
+  await reproduzir(gravacao.resto, boot)
+  await expect.poll(async () => (await detalhe(id)).status).toBe('concluida')
+  const pronto = await detalhe(id)
+
+  const gravadas: Record<string, number> = {}
+  for (const passo of pronto.trajeto) gravadas[`${passo.x},${passo.y}`] = passo.paredes_mask
+  expect(gravadas).toEqual(enviadas)
+
+  await page.goto(`/execucoes/${id}`)
+  await expect(page.getByRole('img', { name: /Labirinto 4x4 com \d+ células visitadas/ })).toBeVisible()
+  const desenho = await page.evaluate(() => {
+    const pontos = Array.from(document.querySelectorAll('polyline.labirinto__trajeto'))
+      .flatMap((linha) => (linha.getAttribute('points') ?? '').trim().split(/\s+/).filter(Boolean))
+      .map((par) => par.split(',').map(Number))
+    const celulas = Array.from(document.querySelectorAll('svg.labirinto__svg g'))
+      .filter((grupo) => grupo.querySelector(':scope > title') && grupo.querySelector(':scope > .labirinto__parede'))
+      .map((grupo) => ({
+        nome: (grupo.querySelector(':scope > title')?.textContent ?? '').split(' · ')[0],
+        linhas: Array.from(grupo.querySelectorAll('.labirinto__parede line')).map((linha) => ({
+          x1: Number(linha.getAttribute('x1')),
+          y1: Number(linha.getAttribute('y1')),
+          x2: Number(linha.getAttribute('x2')),
+        })),
+      }))
+    return { pontos, celulas }
+  })
+
+  // um ponto da polilinha por passo: é o centro da célula daquele passo
+  expect(desenho.pontos).toHaveLength(pronto.trajeto.length)
+  const centros = new Map<string, number[]>()
+  pronto.trajeto.forEach((passo, indice) => centros.set(nomeCelula(passo.x, passo.y), desenho.pontos[indice]))
+  expect(desenho.celulas.map((celula) => celula.nome).sort()).toEqual(Array.from(centros.keys()).sort())
+
+  let paredesDesenhadas = 0
+  for (const celula of desenho.celulas) {
+    const [cx, cy] = centros.get(celula.nome)!
+    const desenhados = celula.linhas
+      .map((linha) => (linha.x2 === linha.x1 ? (linha.x1 > cx ? 'L' : 'O') : (linha.y1 < cy ? 'N' : 'S')))
+      .sort()
+      .join('')
+    const mascara = enviadas[`${letra(celula.nome)},${numeroCelula(celula.nome)}`]
+    const esperados = [mascara & 1 ? 'N' : '', mascara & 2 ? 'S' : '', mascara & 4 ? 'L' : '', mascara & 8 ? 'O' : '']
+      .filter(Boolean)
+      .sort()
+      .join('')
+    expect(desenhados, `paredes de ${celula.nome}`).toBe(esperados)
+    paredesDesenhadas += celula.linhas.length
+  }
+  expect(paredesDesenhadas).toBeGreaterThan(0)
+})
+
 async function prepararLargada(page: Page, boot: number) {
   await page.goto('/')
   const solicitar = page.getByRole('button', { name: 'Solicitar health-check', exact: true })
@@ -521,6 +701,33 @@ function pulso(boot: number, x: number, y: number) {
     },
     erro: () => ultimoErro,
   }
+}
+
+async function hcVariado(nome: string, alterar: (linha: Record<string, unknown>) => void) {
+  const linhas = (await readFile(gravacao.hc, 'utf8')).trim().split('\n').map((linha) => JSON.parse(linha) as Record<string, unknown>)
+  linhas.forEach(alterar)
+  const arquivo = path.join(pasta, `hc-${nome}.jsonl`)
+  await writeFile(arquivo, `${linhas.map((linha) => JSON.stringify(linha)).join('\n')}\n`)
+  return arquivo
+}
+
+function abrirExecucaoPelaApi() {
+  return fetch(`${API}/execucoes`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tipo_labirinto: '4x4' }),
+  })
+}
+
+async function mascarasEnviadas() {
+  const mascaras: Record<string, number> = {}
+  for (const arquivo of [gravacao.trecho, gravacao.resto]) {
+    for (const linha of (await readFile(arquivo, 'utf8')).trim().split('\n')) {
+      const mensagem = JSON.parse(linha) as { tipo: string; x?: number; y?: number; paredes?: number }
+      if (mensagem.tipo === 'passo') mascaras[`${mensagem.x},${mensagem.y}`] = mensagem.paredes ?? 0
+    }
+  }
+  return mascaras
 }
 
 async function execucaoAtual() {

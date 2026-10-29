@@ -5,18 +5,19 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 **Convenções** 
 
 - **Execução lógica:** `em_andamento` | `concluida` | `cancelada`.
-- **Tentativa:** `health-check` | `running` | `success` | `failed` | **∅** (nenhuma tentativa aberta na execução).
-- **Aberta:** `health-check` ou `running`.
+- **Tentativa:** `running` | `success` | `failed` | **∅** (nenhuma tentativa aberta na execução).
+- **Aberta:** `running`.
+- **Health-check:** registro anterior à tentativa ([ADR-017](017-downlink-tres-comandos.md)). **Nova execução** e **Retomar** exigem o último health-check aprovado, concluído há até 7 minutos e com `tipo_dip` igual ao do labirinto; senão são recusados (R06).
 - Contadores: `attempt_index` ∈ {1,2,3}; relógio da execução desde **Nova execução** (RF32).
-- Ações recusadas registram **tentativa rejeitada** (RF19) sem alterar estados válidos.
+- Ações recusadas em uma execução existente (**Retomar**) registram **tentativa rejeitada** (RF19) sem alterar estados válidos. A recusa de **Nova execução** só é informada ao operador.
 
 `success` é o único status de tentativa que conclui a execução. `failed` na tentativa 1 ou 2, inclusive **Encerrar tentativa** e perda de link, mantém a execução `em_andamento`. Na tentativa 3, essas falhas deixam a tentativa `failed` e a execução vai a `cancelada`, porque não cabe retomada. O estouro do tempo total e uma nova execução cancelam a execução imediatamente.
 
 | Tentativa | Execução depois | Linhas |
 | --- | --- | --- |
-| `health-check` ou `running` | `em_andamento` | T01, T03 |
+| `running` | `em_andamento` | T01, T02 |
 | `success` | `concluida` | T05, T11 |
-| `failed` na tentativa 1 ou 2, inclusive **Encerrar tentativa** | `em_andamento` | T04, T06, T07 |
+| `failed` na tentativa 1 ou 2, inclusive **Encerrar tentativa** | `em_andamento` | T06, T07 |
 | `failed` na tentativa 3, inclusive **Encerrar tentativa** | `cancelada` | T07, T12 |
 | `failed` por link (10 s) na tentativa 1 ou 2 | `em_andamento` | T08 |
 | `failed` por link na tentativa 3 ou por tempo (10 min) | `cancelada` | T08, T09 |
@@ -31,20 +32,20 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 
 | ID  | Estado tentativa (antes)    | Evento                                    | Estado tentativa (depois) | Estado execução (depois) | Efeito esperado                                                               |
 | --- | --------------------------- | ----------------------------------------- | ------------------------- | ------------------------ | ----------------------------------------------------------------------------- |
-| T01 | ∅                           | Abertura com **Nova execução** (UC01)     | `health-check`            | `em_andamento`           | Nova `execucao_id`, `tentativa_id`, `attempt_index`=1, `iniciada_em` execução |
-| T02 | ∅                           | **Retomar tentativa** válida (UC31)       | `health-check`            | `em_andamento`           | Nova `tentativa_id`, `attempt_index`+1, `tipo_inicio`=retomada                |
-| T03 | `health-check`              | Telemetria: health-check OK → `running`   | `running`                 | `em_andamento`           | Transição só por telemetria (RF10), sem downlink                              |
-| T04 | `health-check`              | Telemetria: falha no health-check         | `failed`                  | `em_andamento`*          | Motivo `health_check_failed` ou `falha_componente` (RF15)                     |
+| T01 | ∅                           | Abertura com **Nova execução** (UC01) e health-check válido | `running`       | `em_andamento`           | Nova `execucao_id`, `tentativa_id`, `attempt_index`=1, `iniciada_em` execução; `largar` ao robô |
+| T02 | ∅                           | **Retomar tentativa** válida (UC31) com health-check válido | `running`      | `em_andamento`           | Nova `tentativa_id`, `attempt_index`+1, `tipo_inicio`=retomada; `largar` ao robô |
+| T03 | ∅                           | Telemetria: health-check concluído e aprovado | ∅                         | `em_andamento`           | Registro próprio, sem tentativa; vale 7 minutos (RF29)                        |
+| T04 | ∅                           | Telemetria: health-check reprovado        | ∅                         | `em_andamento`           | Nova execução e Retomar recusados (R06); nenhuma tentativa é criada           |
 | T05 | `running`                   | Telemetria: `success`                     | `success`                 | `concluida`              | Métricas; execução encerrada com sucesso (RF26, RF33)                         |
 | T06 | `running`                   | Telemetria: `failed` (trajeto/componente) | `failed`                  | `em_andamento`†          | Motivo conforme RF15; célula/componente gravados                              |
-| T07 | `health-check` ou `running` | **Encerrar tentativa** (UC04)             | `failed`                  | `em_andamento`†          | Motivo escolhido + `encerrado_operador`; `interrupcao_pendente`=true (RF39). Na tentativa 3, a execução segue para T12 e fica `cancelada` |
-| T08 | `health-check` ou `running` | **Perda de link** 10 s (UC12.2)           | `failed`                  | `em_andamento`†          | Motivo `link_lost`; sem downlink; na tentativa 3 segue para T12               |
-| T09 | `health-check` ou `running` | **Tempo execução** ≥600 s (UC12.1)        | `failed`                  | `cancelada`              | Motivo `time_exceeded`; sem downlink                                          |
+| T07 | `running`                   | **Encerrar tentativa** (UC04)             | `failed`                  | `em_andamento`†          | Motivo escolhido + `encerrado_operador`; `interrupcao_pendente`=true (RF39). Na tentativa 3, a execução segue para T12 e fica `cancelada` |
+| T08 | `running`                   | **Perda de link** 10 s (UC12.2)           | `failed`                  | `em_andamento`†          | Motivo `link_lost`; sem downlink; na tentativa 3 segue para T12               |
+| T09 | `running`                   | **Tempo execução** ≥600 s (UC12.1)        | `failed`                  | `cancelada`              | Motivo `time_exceeded`; sem downlink                                          |
 | T10 | `failed`                    | —                                         | `failed`                  | †                        | Terminal; só nova tentativa via T02 ou fim de execução                        |
 | T11 | `success`                   | —                                         | `success`                 | `concluida`              | Terminal                                                                      |
 
 
-\* e † Com `attempt_index` 1 ou 2, a execução permanece `em_andamento` e cabe **Retomar tentativa**. Com `attempt_index`=3, a falha segue para **T12** e a execução fica `cancelada`. Isso inclui **Encerrar tentativa** (T07) e perda de link (T08) na terceira tentativa.
+† Com `attempt_index` 1 ou 2, a execução permanece `em_andamento` e cabe **Retomar tentativa**. Com `attempt_index`=3, a falha segue para **T12** e a execução fica `cancelada`. Isso inclui **Encerrar tentativa** (T07) e perda de link (T08) na terceira tentativa.
 
 
 | ID  | Estado tentativa (antes) | Evento                                             | Estado tentativa (depois)               | Estado execução (depois) | Efeito esperado                           |
@@ -83,11 +84,12 @@ Estado derivado das tentativas e dos monitores de tempo/link. Use com a tabela 1
 
 | ID  | Condição                                                     | Ação do operador                                             | Resultado                                 |
 | --- | ------------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------- |
-| R01 | Existe tentativa **aberta**                                  | **Retomar tentativa** ou abrir outra tentativa na mesma exec | Recusa RF19; registro tentativa rejeitada |
+| R01 | Existe tentativa **aberta**                                  | **Retomar tentativa**                                        | Recusa RF19; registro tentativa rejeitada |
 | R02 | Execução não `em_andamento` ou última tentativa não `failed` | **Retomar tentativa**                                        | Recusa RF19                               |
 | R03 | `attempt_index`=3 já consumido                               | **Retomar tentativa**                                        | Recusa RF19                               |
 | R04 | Execução `cancelada` ou `concluida`                          | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
 | R05 | Nenhuma tentativa aberta                                     | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
+| R06 | Health-check ausente, reprovado, expirado (> 7 min) ou com `tipo_dip` diferente do labirinto | **Nova execução** ou **Retomar tentativa** | Recusa RF19; só a do Retomar registra tentativa rejeitada |
 
 
 **Nova execução** com execução anterior `em_andamento` **não** é recusa: cancela a anterior (E02), conforme US12.

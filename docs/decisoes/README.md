@@ -12,7 +12,7 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [006](006-downlink-apenas-interrupcao.md) | Downlink: só interrupção manual (substituída pela [017](017-downlink-tres-comandos.md)) | Backend, Front, Firmware |
 | [007](007-falha-componente-consome-tentativa.md) | Falha de componente encerra tentativa | Firmware, Backend, Testes |
 | [008](008-numeracao-uc01-uc34.md) | Numeração única UC01–UC34 | Software, Requisitos |
-| [009](009-health-check-nove-itens.md) | Health-check com 9 componentes fixos | Firmware, Backend, Eletrônica |
+| [009](009-health-check-nove-itens.md) | Health-check com 8 componentes fixos | Firmware, Backend, Eletrônica |
 | [010](010-reconexao-deduplicacao-seq.md) | Reconexão ≤10 s e deduplicação por `seq` | Backend, Firmware, Ponte |
 | [011](011-execucao-logica-tres-tentativas.md) | Execução lógica, 3 tentativas e 10 min totais | Backend, Front, Testes |
 | [012](012-retomada-celula-falha.md) | Retomada na célula da falha (sem checkpoint anterior) | Front, Backend, Firmware, Testes |

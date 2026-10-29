@@ -21,6 +21,9 @@ void hal_motor_definir(motor_id_t motor, int16_t potencia)
     }
 }
 
+/* O mundo simulado já trata 1000 como VELOCIDADE_MAX_MM_S, sem bateria. */
+void hal_motor_definir_tensao(uint16_t ponte_mv) { (void)ponte_mv; }
+
 void hal_encoder_iniciar(void) {}
 
 int32_t hal_encoder_ler(motor_id_t motor)
