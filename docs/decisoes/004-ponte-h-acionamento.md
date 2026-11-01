@@ -14,5 +14,5 @@ A V1 usava drivers **A4988** e sinais STEP/DIR para passos. Os motores N20 exige
 ## Consequências
 
 - EAP 3.3.1 descreve ponte H, não A4988.
-- Folhas de esquemático do 4.3 devem substituir STEP/DIR/MOT_EN pela interface V2.
+- Folhas de esquemático do 4.3 trocaram STEP/DIR/MOT_EN pela interface V2 na issue #202.
 - Energia dimensiona pico de corrente dos N20 na ponte H.
