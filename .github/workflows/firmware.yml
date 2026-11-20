@@ -115,3 +115,6 @@ jobs:
 
       - name: Compilar o firmware com a HAL real e o ToF mockado
         run: pio run -e esp32_real_tof_mock
+
+      - name: Compilar a simulação com o botão BOOT físico
+        run: pio run -e esp32_sim_boot
