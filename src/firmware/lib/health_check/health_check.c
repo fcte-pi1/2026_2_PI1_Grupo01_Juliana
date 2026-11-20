@@ -3,6 +3,7 @@
 #include "hal_bateria.h"
 #include "dip.h"
 #include "hal_dip.h"
+#include "hal_motor.h"
 
 static void definir(contrato_hc_item_t *item, contrato_componente_t componente, bool aprovado,
                     bool tem_valor, int32_t valor)
@@ -56,6 +57,7 @@ void hc_executar(bateria_t *bateria, hc_esperar_t esperar, hc_resultado_t *resul
     for (int i = 0; i < BATERIA_MEDIA_AMOSTRAS; i++) {
         bateria_amostrar(bateria, hal_bateria_ler_adc_mv());
     }
+    hal_motor_definir_tensao(bateria_ponte_mv(bateria));
 
     tof_autoteste_t tof[TOF_QTD];
     tof_autoteste_executar(tof);
