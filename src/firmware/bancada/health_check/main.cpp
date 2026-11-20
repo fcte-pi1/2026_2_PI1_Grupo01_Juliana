@@ -209,6 +209,23 @@ static void depurar_sensor(void)
     hal_tof_iniciar();
 }
 
+/* Inicia os 3 ToF de novo e diz quais respondem, sem reiniciar a placa. */
+static void reiniciar_tof(void)
+{
+    bool todos = hal_tof_iniciar();
+    delay(150); /* a primeira medida contínua leva alguns ms */
+    for (int i = 0; i < TOF_QTD; i++) {
+        uint16_t mm = 0;
+        bool ok = hal_tof_ler_mm((tof_id_t)i, &mm);
+        if (ok) {
+            Serial.printf("%s: respondeu (%u mm)\n", hal_tof_nome((tof_id_t)i), mm);
+        } else {
+            Serial.printf("%s: NAO respondeu\n", hal_tof_nome((tof_id_t)i));
+        }
+    }
+    Serial.printf("tof: %s\n", todos ? "os 3 iniciaram" : "algum nao iniciou");
+}
+
 static void mostrar_tof(void)
 {
     Serial.println("tof: frontal / esquerdo / direito em mm (-- = sem resposta)");
@@ -302,7 +319,7 @@ void setup()
                       hal_tof_ler_mm((tof_id_t)i, &mm) ? "respondeu" : "NAO respondeu");
     }
     Serial.printf("tof: %s\n", tof_ok ? "os 3 iniciaram" : "algum nao iniciou (confira XSHUT e I2C)");
-    Serial.println("bancada do health-check: c o f v x i t d b m h (m e h giram as rodas: rodas no ar)");
+    Serial.println("bancada do health-check: c o f v x i t r d b m h (m e h giram as rodas: rodas no ar)");
 }
 
 void loop()
@@ -316,6 +333,7 @@ void loop()
         case 'x': testar_xshut(); break;
         case 'i': varrer_i2c(); break;
         case 't': mostrar_tof(); break;
+        case 'r': reiniciar_tof(); break;
         case 'd': mostrar_dip(); break;
         case 'b': mostrar_bateria(); break;
         case 'm': testar_motores(); break;

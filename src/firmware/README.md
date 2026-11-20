@@ -36,7 +36,7 @@ Rodar dentro de `src/firmware`:
 | `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
 | `pio run -e esp32_real -t upload` | Firmware com a HAL real, **só o health-check**, com os ToF reais. Reprova enquanto os ToF laterais não funcionarem |
 | `pio run -e esp32_real_tof_mock -t upload` | O mesmo, com o ToF mockado (leituras fixas): o health-check aprova e serve para o e2e no cenário ideal |
-| `pio run -e esp32_hc_bancada -t upload` | Bancada interativa por comandos na serial (`d` DIP, `b` bateria, `t` ToF, `m` motores, `h` health-check, `i` varredura do I²C, `x`, `f` e `v` para diagnosticar o XSHUT dos ToF) |
+| `pio run -e esp32_hc_bancada -t upload` | Bancada interativa por comandos na serial (`d` DIP, `b` bateria, `t` ToF, `r` reinicia os ToF sem reiniciar a placa, `m` motores, `h` health-check, `i` varredura do I²C, `x`, `f` e `v` para diagnosticar o XSHUT dos ToF) |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
