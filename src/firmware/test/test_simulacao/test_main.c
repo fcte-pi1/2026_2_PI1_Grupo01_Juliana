@@ -51,6 +51,21 @@ static void test_labirinto_le_paredes_dos_dois_lados(void)
     TEST_ASSERT_TRUE(sim_labirinto_tem_parede(&lab, 5, 5, SIM_PAREDE_N));
 }
 
+static void test_robo_no_centro_da_celula_nas_quatro_direcoes(void)
+{
+    static const char LAB[] = "+---+---+\n|       |\n+---+---+\n";
+    TEST_ASSERT_TRUE(sim_mundo_iniciar(LAB));
+    const float THETA[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
+    for (int d = 0; d < 4; d++) {
+        sim_mundo_no_centro_da_celula(1, 0, d);
+        sim_pose_t p = sim_pose();
+        TEST_ASSERT_FLOAT_WITHIN(0.01f, 1.5f * CELULA_MM, p.x_mm);
+        TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.5f * CELULA_MM, p.y_mm);
+        TEST_ASSERT_FLOAT_WITHIN(0.001f, THETA[d], p.theta_rad);
+        TEST_ASSERT_FALSE(p.colidiu);
+    }
+}
+
 static void test_labirinto_rejeita_desenho_malformado(void)
 {
     sim_labirinto_t lab;
@@ -225,6 +240,7 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_labirinto_le_paredes_dos_dois_lados);
+    RUN_TEST(test_robo_no_centro_da_celula_nas_quatro_direcoes);
     RUN_TEST(test_labirinto_rejeita_desenho_malformado);
     RUN_TEST(test_tof_mede_distancia_ate_as_paredes);
     RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);

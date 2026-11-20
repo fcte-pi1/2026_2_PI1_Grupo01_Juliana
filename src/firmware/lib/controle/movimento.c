@@ -28,6 +28,7 @@ static struct {
     float aceleracao;          /* da referência, em mm/s² */
     float velocidade_max;
     float desvio;              /* pulsos que a roda direita vai à frente da esquerda */
+    float andado;              /* pulsos já andados no avanço, média das rodas */
     uint32_t decorrido_ms;
     uint32_t assentado_ms;
     int32_t ultimo[MOTOR_QTD];      /* última leitura do encoder, para ver a roda travada */
@@ -97,6 +98,7 @@ static void iniciar(tipo_t tipo, int32_t pulsos, float velocidade_max)
     mov.aceleracao = 0.0f;
     mov.velocidade_max = velocidade_max;
     mov.desvio = 0.0f;
+    mov.andado = 0.0f;
     mov.decorrido_ms = 0;
     mov.assentado_ms = 0;
     for (int i = 0; i < MOTOR_QTD; i++) {
@@ -145,6 +147,11 @@ void mov_parar(void)
 mov_estado_t mov_estado(void)
 {
     return mov.estado;
+}
+
+float mov_andado_mm(void)
+{
+    return mov.andado * MM_POR_PULSO;
 }
 
 void mov_informar_tof(const mov_tof_t *tof)
@@ -240,6 +247,7 @@ mov_estado_t mov_atualizar(void)
     float direita = sinal_dir * (float)(hal_encoder_ler(MOTOR_DIR) - mov.inicio[MOTOR_DIR]);
 
     if (mov.tipo == TIPO_AVANCO) {
+        mov.andado = (esquerda + direita) / 2.0f;
         if (MOV_KP_CENTRO != 0.0f) {
             mov.desvio += MOV_KP_CENTRO * erro_lateral_mm();
         }

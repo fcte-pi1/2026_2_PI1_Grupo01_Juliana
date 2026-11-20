@@ -291,6 +291,14 @@ void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
     sim_definir_pose(x, y, theta);
 }
 
+void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao)
+{
+    static const float THETA[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
+    sim_definir_pose(((float)celula_x + 0.5f) * (float)CELULA_MM,
+                     ((float)celula_y + 0.5f) * (float)CELULA_MM,
+                     THETA[direcao >= 0 && direcao < 4 ? direcao : 0]);
+}
+
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)
 {
     m.pose.x_mm = x_mm;

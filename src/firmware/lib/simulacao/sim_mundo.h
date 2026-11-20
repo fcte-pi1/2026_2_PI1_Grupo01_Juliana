@@ -51,6 +51,9 @@ void sim_buzzer_definir(bool ligado);
 
 void sim_mundo_na_celula(int celula_x, int celula_y, int direcao);
 
+/* Põe o robô no centro da célula, virado para a direção (0 norte, 1 leste, 2 sul, 3 oeste). */
+void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao);
+
 /* Usado pelos testes para provocar situações */
 void sim_definir_tof_ausente(int tof, bool ausente);
 

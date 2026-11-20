@@ -56,6 +56,13 @@
 /* NVS: a flash aguenta cerca de 100 mil apagamentos por setor. */
 #define MEM_GRAVACOES_MAX           600     /* gravações do mapa por inicialização; um robô que oscila entre células não gasta a flash */
 
+/*
+ * Leitura da parede lateral: o lateral a 45° só lê a célula com confiança logo ao entrar nela (ver a
+ * detecção de parede). O avanço guarda a leitura quando já andou isto, ou seja, ~10 mm depois da
+ * fronteira da célula nova. PROVISÓRIO: calibrar na pista.
+ */
+#define EXEC_LEITURA_LATERAL_MM     (CELULA_MM / 2 + 10)
+
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
 #define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
 

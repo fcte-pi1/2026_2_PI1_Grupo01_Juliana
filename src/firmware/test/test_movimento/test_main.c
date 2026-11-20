@@ -107,6 +107,26 @@ static void test_girar_90_conta_os_pulsos_de_90_graus(void)
     TEST_ASSERT_FLOAT_WITHIN(0.5f, CELULA_MM / 2.0f, p.y_mm);
 }
 
+static void test_andado_acompanha_o_avanco_e_fica_em_zero_no_giro(void)
+{
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, mov_andado_mm());
+
+    TEST_ASSERT_TRUE(mov_avancar_celula());
+    for (int i = 0; i < 40; i++) {
+        sim_mundo_avancar(MOV_PERIODO_MS);
+        mov_atualizar();
+    }
+    float no_meio = mov_andado_mm();
+    TEST_ASSERT_TRUE(no_meio > 0.0f && no_meio < CELULA_MM);
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    TEST_ASSERT_FLOAT_WITHIN(2.0f, (float)CELULA_MM, mov_andado_mm());
+
+    TEST_ASSERT_TRUE(mov_girar(90));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, mov_andado_mm());
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, mov_andado_mm());
+}
+
 static void test_girar_menos_90_vai_para_a_direita(void)
 {
     TEST_ASSERT_TRUE(mov_girar(-90));
@@ -268,6 +288,7 @@ int main(void)
     RUN_TEST(test_pulsos_calculados);
     RUN_TEST(test_avancar_celula_conta_os_pulsos_de_180_mm);
     RUN_TEST(test_girar_90_conta_os_pulsos_de_90_graus);
+    RUN_TEST(test_andado_acompanha_o_avanco_e_fica_em_zero_no_giro);
     RUN_TEST(test_girar_menos_90_vai_para_a_direita);
     RUN_TEST(test_girar_180_volta_para_tras);
     RUN_TEST(test_angulo_invalido_nao_move);
