@@ -2,7 +2,8 @@
 
 /*
  * Encoders pelo PCNT (FIRM-04, #130), quadratura x4: 7 PPR x 30 x 4 = 840 por volta.
- * O contador é de 16 bits e zera em ±LIMITE; a interrupção soma o LIMITE no acumulado.
+ * O contador é de 16 bits e zera em ±LIMITE; a leitura (200 Hz no controle) percebe o salto e soma o
+ * LIMITE ao acumulado (encoder_soma), sem interrupção.
  *
  * GPIO34, 35 e 39 não têm pull-up interno, precisa vir do encoder ou de fora.
  */
@@ -11,6 +12,7 @@
 #include <driver/pcnt.h>
 
 #include "config/pinos.h"
+#include "encoder_soma.h"
 #include "hal_encoder.h"
 
 #define LIMITE 30000
@@ -22,7 +24,7 @@ typedef struct {
     pcnt_unit_t unidade;
     int8_t a;
     int8_t b;
-    bool invertido; /* PROVISÓRIO: ver na bancada */
+    bool invertido; /* acompanha o motor: a roda para a frente conta positivo */
 } encoder_pinos_t;
 
 static const encoder_pinos_t ENCODERS[MOTOR_QTD] = {
@@ -31,24 +33,8 @@ static const encoder_pinos_t ENCODERS[MOTOR_QTD] = {
 };
 
 static portMUX_TYPE trava = portMUX_INITIALIZER_UNLOCKED;
-static volatile int32_t acumulado[MOTOR_QTD];
-static int32_t ultimo[MOTOR_QTD];
+static encoder_soma_t soma[MOTOR_QTD];
 static bool iniciado;
-
-static void IRAM_ATTR ao_chegar_no_limite(void *arg)
-{
-    int motor = (int)(intptr_t)arg;
-    uint32_t evento = 0;
-    pcnt_get_event_status(ENCODERS[motor].unidade, &evento);
-
-    portENTER_CRITICAL_ISR(&trava);
-    if (evento & PCNT_EVT_H_LIM) {
-        acumulado[motor] += LIMITE;
-    } else if (evento & PCNT_EVT_L_LIM) {
-        acumulado[motor] -= LIMITE;
-    }
-    portEXIT_CRITICAL_ISR(&trava);
-}
 
 static void configurar(int motor)
 {
@@ -80,13 +66,10 @@ static void configurar(int motor)
     pcnt_set_filter_value(e->unidade, FILTRO_CICLOS);
     pcnt_filter_enable(e->unidade);
 
-    pcnt_event_enable(e->unidade, PCNT_EVT_H_LIM);
-    pcnt_event_enable(e->unidade, PCNT_EVT_L_LIM);
-    pcnt_isr_handler_add(e->unidade, ao_chegar_no_limite, (void *)(intptr_t)motor);
-
     pcnt_counter_pause(e->unidade);
     pcnt_counter_clear(e->unidade);
     pcnt_counter_resume(e->unidade);
+    encoder_soma_iniciar(&soma[motor], 0);
 }
 
 void hal_encoder_iniciar(void)
@@ -94,10 +77,7 @@ void hal_encoder_iniciar(void)
     if (iniciado) {
         return;
     }
-    pcnt_isr_service_install(0);
     for (int i = 0; i < MOTOR_QTD; i++) {
-        acumulado[i] = 0;
-        ultimo[i] = 0;
         configurar(i);
     }
     iniciado = true;
@@ -112,19 +92,7 @@ int32_t hal_encoder_ler(motor_id_t motor)
     int16_t contagem = 0;
     portENTER_CRITICAL(&trava);
     pcnt_get_counter_value(ENCODERS[motor].unidade, &contagem);
-    int32_t total = acumulado[motor] + contagem;
-
-    /*
-     * O hardware zera o contador um pouco antes da interrupção somar o LIMITE.
-     * Se a leitura cair nesse meio, o total pula ~LIMITE; desfaz o pulo.
-     */
-    int32_t salto = total - ultimo[motor];
-    if (salto > LIMITE / 2) {
-        total -= LIMITE;
-    } else if (salto < -LIMITE / 2) {
-        total += LIMITE;
-    }
-    ultimo[motor] = total;
+    int32_t total = encoder_soma_atualizar(&soma[motor], contagem, LIMITE);
     portEXIT_CRITICAL(&trava);
 
     return ENCODERS[motor].invertido ? -total : total;
