@@ -1,0 +1,57 @@
+# Teste 5.5: firmware esp32_sim (HAL simulada) rodando na ESP32 real, telemetria pela serial USB (115200).
+# Trechos da saída do monitor serial; "[...]" marca linhas repetidas que foram cortadas.
+
+# ---------------------------------------------------------------------------------------------
+# Execução 1: estado antigo guardado na NVS (boot 3). O robô sobe como success e retomada.
+# ---------------------------------------------------------------------------------------------
+# Ratatouille: firmware com HAL SIMULADA
+{"v":1,"boot":3,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":3,"seq":1,"t_ms":856,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":125}
+{"v":1,"boot":3,"seq":2,"t_ms":906,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":3,"seq":3,"t_ms":956,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":204}
+{"v":1,"boot":3,"seq":4,"t_ms":1000,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":3,"seq":5,"t_ms":1050,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":3,"seq":6,"t_ms":1100,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":3,"seq":7,"t_ms":1150,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":3,"seq":8,"t_ms":1200,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":3,"seq":9,"t_ms":1250,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+{"v":1,"boot":3,"seq":10,"t_ms":1300,"tipo":"passo","x":3,"y":3,"paredes":1}
+{"v":1,"boot":3,"seq":11,"t_ms":2000,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":3,"seq":12,"t_ms":3000,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+[... uma tel por segundo até seq 36 (t_ms 27000), sempre estado success ...]
+
+# ---------------------------------------------------------------------------------------------
+# Execução 2: flash apagada (pio run -t erase) e firmware regravado. Boot limpo (boot 2).
+# A mensagem "mem_tipos NOT_FOUND" é o aviso da biblioteca de NVS para a chave que ainda não existe.
+# ---------------------------------------------------------------------------------------------
+[    27][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+{"v":1,"boot":2,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":2,"seq":1,"t_ms":860,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":665}
+{"v":1,"boot":2,"seq":2,"t_ms":910,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":2,"seq":3,"t_ms":960,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+[  994][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+{"v":1,"boot":2,"seq":4,"t_ms":1005,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":5,"t_ms":1050,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":2,"seq":6,"t_ms":1100,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":2,"seq":7,"t_ms":1150,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":2,"seq":8,"t_ms":1200,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":2,"seq":9,"t_ms":1205,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":10,"t_ms":1300,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+{"v":1,"boot":2,"seq":11,"t_ms":1350,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":2,"seq":12,"t_ms":1400,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":2,"seq":13,"t_ms":1424,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":14,"t_ms":1600,"tipo":"passo","x":0,"y":3,"paredes":8}
+{"v":1,"boot":2,"seq":15,"t_ms":1650,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":16,"t_ms":1800,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":2,"seq":17,"t_ms":1850,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":18,"t_ms":2000,"tipo":"passo","x":2,"y":3,"paredes":1}
+{"v":1,"boot":2,"seq":19,"t_ms":2050,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":20,"t_ms":2200,"tipo":"passo","x":3,"y":3,"paredes":1}
+{"v":1,"boot":2,"seq":21,"t_ms":2250,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":2,"seq":22,"t_ms":3050,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+[... uma tel por segundo até seq 46 (t_ms 27050), sempre estado success ...]
+
+# Observações:
+# - Nenhuma mensagem "falha" nas duas execuções; seq contínuo (0 a 46 na execução 2).
+# - hc_item e hc_resultado saem pelo contrato v1; os valores (8398 mV, 503 pulsos, ToF) são do simulador.
+# - A tel "running" (seq 4, 9, 13) sai ANTES do hc_resultado (seq 10): o robô ainda parte sem esperar o largar.

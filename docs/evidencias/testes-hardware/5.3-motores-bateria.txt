@@ -1,0 +1,11 @@
+# Teste 5.3. Bancada esp32_hc_bancada, 20/11/2026, interruptor ligado, rodas no ar.
+# Comando b
+bateria: fonte = 7768 mV  ponte = 7418 mV  nivel = 0 (0 normal, 1 alerta, 2 baixa)
+
+# Comando m, duas execucoes (300 ms por roda, 30 % de potencia, minimo 50 pulsos)
+motores: girando cada roda, rodas no ar...
+  esquerda: 33 pulsos (minimo 50) -> REPROVADA
+  direita: 525 pulsos (minimo 50) -> aprovada
+motores: girando cada roda, rodas no ar...
+  esquerda: 316 pulsos (minimo 50) -> aprovada
+  direita: 530 pulsos (minimo 50) -> aprovada

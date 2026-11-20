@@ -1,0 +1,46 @@
+# Teste 5.2. Bancada esp32_hc_bancada, 20/11/2026, interruptor da bateria desligado (USB).
+# Boot: três tentativas de início por sensor; os dois laterais não iniciam.
+[  1787][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3051][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4315][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+
+# Comando x: um XSHUT por vez em nivel alto, sondando o endereco 0x29.
+  tof_frontal (GPIO33 em alto): sensor respondeu
+  tof_esquerdo (GPIO4 em alto): nada respondeu
+  tof_direito (GPIO5 em alto): sensor respondeu
+
+# Comando f (descoberta): so GPIO5 e GPIO33 acordam um sensor.
+f: GPIO5 acorda um sensor.
+   begin = FALHOU (Status -6)
+f: GPIO33 acorda um sensor.
+   begin = OK (Status 0)
+   150 mm / 117 mm / 77 mm / 55 mm / 45 mm / 44 mm / 45 mm / 8191 mm / 149 mm / 30 mm / ...
+
+# Comando v no sensor do GPIO5, biblioteca da Adafruit com depuracao.
+VL53L0X Info:
+Device Name: VL53L0X ES1 or later, Type: VL53L0X, ID: VL53L0CAV0DH/1$5
+Rev Major: 1, Minor: 1
+VL53L0X: StaticInit
+VL53L0X: PerformRefSpadManagement
+[  9089][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# Mesmo sensor, biblioteca da Pololu: init devolve OK, mas toda leitura falha.
+p: init = OK
+[ 10846][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+   0 mm
+
+# ---------------------------------------------------------------------------------------------
+# Variação do clock e do timeout do I2C (comandos c e o; depois v no sensor do GPIO5)
+# Resultado: igual em todas as condições. begin FALHOU em PerformRefSpadManagement, Error 263, Status -6.
+# ---------------------------------------------------------------------------------------------
+i2c: clock = 50000 Hz, timeout de leitura = 50 ms    -> begin = FALHOU (Status -6)
+i2c: clock = 50000 Hz, timeout de leitura = 500 ms   -> begin = FALHOU (Status -6)
+i2c: clock = 100000 Hz, timeout de leitura = 50 ms   -> begin = FALHOU (Status -6)
+i2c: clock = 400000 Hz, timeout de leitura = 50 ms   -> begin = FALHOU (Status -6)
+i2c: clock = 50000 Hz, timeout de leitura = 500 ms   -> begin = FALHOU (Status -6)
+# Em todas: ID do chip (0xC0) = 0xEE (VL53L0X), mas a leitura da calibração dá Error 263.
