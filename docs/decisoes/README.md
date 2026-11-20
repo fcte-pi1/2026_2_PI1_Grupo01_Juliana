@@ -22,6 +22,7 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [016](016-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
 | [017](017-downlink-tres-comandos.md) | Downlink: três comandos do contrato | Backend, Front, Firmware |
 | [018](018-firmware-hal-real-com-tof-mockado.md) | Firmware com a HAL real (`esp32_real`), ToF mockado em ambiente à parte | Firmware, Testes, Eletrônica |
+| [019](019-robo-anda-e-para-leitura-lateral-ao-entrar.md) | O robô anda e para, a parede lateral é lida ao entrar na célula e o laço mantém o controle de posição | Firmware, Testes |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 
