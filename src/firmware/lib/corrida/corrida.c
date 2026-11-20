@@ -128,6 +128,25 @@ int corrida_decidir(corrida_t *c, nav_leitura_t leitura, bool *reposicionar,
     return qtd;
 }
 
+void corrida_movimento_falhou(corrida_t *c, corrida_efeitos_t *ef)
+{
+    memset(ef, 0, sizeof *ef);
+    if (!maq_andando(&c->maq)) {
+        return;
+    }
+    maq_evento(&c->maq, MAQ_EV_CORRIDA_FALHA);
+    c->estado = CONTRATO_ESTADO_FAILED;
+    mem_gravar(&c->nav, c->estado);
+    c->acao = NAV_ACAO_SEM_PASSO;
+    ef->parar_motores = true;
+    ef->tem_falha = true;
+    ef->falha.motivo = CONTRATO_MOTIVO_STUCK;
+    ef->falha.origem = CONTRATO_ORIGEM_AUTOMATICA;
+    ef->falha.x = (uint8_t)c->nav.x;
+    ef->falha.y = (uint8_t)c->nav.y;
+    ef->falha.componente = CONTRATO_COMPONENTE_NENHUM;
+}
+
 contrato_estado_t corrida_estado_contrato(const corrida_t *c)
 {
     return maq_estado_contrato(&c->maq);

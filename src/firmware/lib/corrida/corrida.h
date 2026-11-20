@@ -66,6 +66,12 @@ void corrida_health_check_concluido(corrida_t *c, bool aprovado, nav_tipo_t tipo
 int corrida_decidir(corrida_t *c, nav_leitura_t leitura, bool *reposicionar,
                     telemetria_decisao_evento_t saida[TELEMETRIA_DECISAO_EVENTOS_MAX]);
 
+/*
+ * O movimento falhou (roda travada ou fora do tempo): a corrida vai a failed, grava a NVS e pede a
+ * falha automática `stuck` na célula atual. Só age em RUNNING.
+ */
+void corrida_movimento_falhou(corrida_t *c, corrida_efeitos_t *efeitos);
+
 contrato_estado_t corrida_estado_contrato(const corrida_t *c);
 
 /* true só andando e sem ação terminal. */
