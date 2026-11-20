@@ -2,10 +2,9 @@
  * Tarefa de navegação (núcleo 1): lê os sensores, pede a decisão à navegação
  * e publica para a telemetria a amostra da tel e os eventos do contrato.
  *
- * As rodas ainda não executam a ação (FIRM-05). Com a HAL simulada, o robô é
- * colocado na célula em que a navegação entrou, na faixa em que o ToF lateral
- * mede essa célula. O laço mostra o caminho completo:
- * sensores -> navegação -> NVS -> filas -> telemetria.
+ * Com a HAL simulada, o robô é colocado na célula em que a navegação entrou,
+ * na faixa em que o ToF lateral mede essa célula. O laço mostra o caminho
+ * completo: sensores -> navegação -> NVS -> filas -> telemetria.
  *
  * No boot, carrega o mapa da NVS (FIRM-08), publica o health-check (hc_item e
  * hc_resultado, com inicio "retomada" quando o mapa voltou) e, a cada célula
@@ -18,17 +17,19 @@
 #include "bateria.h"
 #include "config/robo.h"
 #include "eventos.h"
+#include "dip.h"
 #include "hal_bateria.h"
-#include "hal_encoder.h"
+#include "hal_dip.h"
 #include "hal_led.h"
 #include "hal_motor.h"
 #include "hal_tempo.h"
 #include "hal_tof.h"
+#include "health_check.h"
 #include "memoria.h"
+#include "movimento.h"
 #include "nav.h"
 #include "sensores.h"
 #include "telemetria_nav.h"
-#include "tof_autoteste.h"
 
 #ifdef HAL_SIMULADA
 #include "sim_mundo.h"
@@ -81,47 +82,48 @@ static void publicar_passo(int8_t x, int8_t y, uint8_t paredes)
     app_publicar_evento(&ev);
 }
 
-/* Health-check do boot. Devolve false se algum item reprovou; *motivo e *componente dizem a falha. */
-static bool publicar_health_check(mem_inicio_t inicio, bateria_t *bateria, contrato_motivo_t *motivo,
-                                  contrato_componente_t *componente)
+/* Espera do autoteste dos motores: a tarefa dorme, e a simulação deixa o mundo andar. */
+static void esperar_ms(uint32_t ms)
 {
-    for (int i = 0; i < BATERIA_MEDIA_AMOSTRAS; i++) {
-        bateria_amostrar(bateria, hal_bateria_ler_adc_mv());
+#ifdef HAL_SIMULADA
+    for (uint32_t t = 0; t < ms; t += PERIODO_MS) {
+        sim_mundo_avancar(PERIODO_MS);
+        vTaskDelay(pdMS_TO_TICKS(PERIODO_MS));
     }
-    uint16_t mv = bateria_mv(bateria);
-    bool bateria_ok = mv > 0 && bateria_nivel(bateria) != BATERIA_BAIXA;
-    publicar_hc_item(CONTRATO_COMPONENTE_BATERIA, bateria_ok, mv > 0, mv);
+#else
+    vTaskDelay(pdMS_TO_TICKS(ms));
+#endif
+}
 
-    bool aprovado = bateria_ok;
-    *motivo = bateria_ok ? CONTRATO_MOTIVO_NENHUM : CONTRATO_MOTIVO_LOW_BATTERY;
-    *componente = bateria_ok ? CONTRATO_COMPONENTE_NENHUM : CONTRATO_COMPONENTE_BATERIA;
-
-    tof_autoteste_t tof[TOF_QTD];
-    tof_autoteste_executar(tof);
-    for (int i = 0; i < TOF_QTD; i++) {
-        contrato_componente_t id = (contrato_componente_t)(CONTRATO_COMPONENTE_TOF_FRONTAL + i);
-        publicar_hc_item(id, tof[i].aprovado, tof[i].tem_valor, tof[i].valor_mm);
-        if (!tof[i].aprovado && aprovado) {
-            aprovado = false;
-            *motivo = CONTRATO_MOTIVO_FALHA_COMPONENTE;
-            *componente = id;
-        }
+/*
+ * Roda o health-check (8 itens) e publica um hc_item por componente e o
+ * hc_resultado. Reprovação não gera falha: vai só nesses eventos.
+ * Devolve se foi aprovado.
+ */
+static bool publicar_health_check(mem_inicio_t inicio, bateria_t *bateria)
+{
+    hc_resultado_t resultado;
+    mov_parar(); /* o autoteste gira as rodas: o movimento tem que estar parado */
+#ifdef HAL_SIMULADA
+    sim_definir_rodas_no_ar(true); /* como no robô real durante o autoteste */
+#endif
+    hc_executar(bateria, esperar_ms, &resultado);
+#ifdef HAL_SIMULADA
+    sim_definir_rodas_no_ar(false);
+#endif
+    for (int i = 0; i < HC_ITENS; i++) {
+        const contrato_hc_item_t *item = &resultado.item[i];
+        publicar_hc_item(item->componente, item->aprovado, item->tem_valor, item->valor);
     }
-
-    /* Motores não têm leitura de saúde; os encoders respondem com a contagem. */
-    publicar_hc_item(CONTRATO_COMPONENTE_MOTOR_ESQUERDO, true, false, 0);
-    publicar_hc_item(CONTRATO_COMPONENTE_MOTOR_DIREITO, true, false, 0);
-    publicar_hc_item(CONTRATO_COMPONENTE_ENCODER_ESQUERDO, true, true, hal_encoder_ler(MOTOR_ESQ));
-    publicar_hc_item(CONTRATO_COMPONENTE_ENCODER_DIREITO, true, true, hal_encoder_ler(MOTOR_DIR));
 
     telemetria_evento_t ev = {};
     ev.tipo = TELEMETRIA_EVENTO_HC_RESULTADO;
-    ev.m.hc_resultado.aprovado = aprovado;
-    ev.m.hc_resultado.tipo_dip = (contrato_tipo_dip_t)ROBO_TIPO_LABIRINTO;
+    ev.m.hc_resultado.aprovado = resultado.aprovado;
+    ev.m.hc_resultado.tipo_dip = resultado.tipo_dip;
     ev.m.hc_resultado.inicio =
         inicio == MEM_RETOMADA ? CONTRATO_INICIO_RETOMADA : CONTRATO_INICIO_NOVA;
     app_publicar_evento(&ev);
-    return aprovado;
+    return resultado.aprovado;
 }
 
 #ifdef HAL_SIMULADA
@@ -137,7 +139,7 @@ void tarefa_navegacao(void *parametro)
     /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
     static nav_estado_t nav;
     contrato_estado_t estado = CONTRATO_ESTADO_HEALTH_CHECK;
-    mem_inicio_t inicio = mem_carregar(&nav, &estado, ROBO_TIPO_LABIRINTO);
+    mem_inicio_t inicio = mem_carregar(&nav, &estado, dip_tipo_nav(hal_dip_ler()));
     bateria_t bateria;
     bateria_iniciar(&bateria);
 
@@ -145,12 +147,10 @@ void tarefa_navegacao(void *parametro)
     acompanhar_celula(&nav);
 #endif
 
-    contrato_motivo_t motivo_hc = CONTRATO_MOTIVO_NENHUM;
-    contrato_componente_t componente_hc = CONTRATO_COMPONENTE_NENHUM;
-    bool hc_ok = publicar_health_check(inicio, &bateria, &motivo_hc, &componente_hc);
+    bool hc_ok = publicar_health_check(inicio, &bateria);
     if (!hc_ok) {
-        estado = CONTRATO_ESTADO_FAILED;
-        publicar_falha(motivo_hc, nav.x, nav.y, componente_hc);
+        /* Sem falha: o robô só fica parado em health-check até um novo health-check aprovado. */
+        estado = CONTRATO_ESTADO_HEALTH_CHECK;
     } else if (estado == CONTRATO_ESTADO_HEALTH_CHECK) {
         estado = CONTRATO_ESTADO_RUNNING;
     }
