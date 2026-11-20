@@ -62,6 +62,8 @@ Roda o health-check ao ligar e a cada comando `health_check` da ponte, e envia o
 cd src/backend && python -m ponte --porta /dev/ttyACM0
 ```
 
+O botão **BOOT** passa pela máquina de estados (`lib/estados`) e pelo detector de gestos (`lib/boot`): toque curto (soltar antes de 1,5 s) apaga o mapa da NVS; toque longo (segurar 1,5 s, com bipe duplo) apaga também os tipos resolvidos. A serial mostra, em linhas com `#`, quais chaves (`mem_mapa` e `mem_tipos`) existem na NVS antes e depois de cada toque. O LED azul e o buzzer (GPIO2 e GPIO12) dão o retorno; o buzzer é tratado como ativo. Para ter dados reais na NVS, rode antes o `esp32_sim`, que grava o mapa e os tipos ao percorrer o labirinto.
+
 O DIP lido nas vias 1 e 2 vira o `tipo_dip` (`00` = 4x4, `01` = 8x4, `10` = 12x4, `11` = inválido, que reprova). Com `esp32_real_tof_mock` o ToF não mede nada: ele devolve leituras fixas.
 
 ### Verificar a serial
