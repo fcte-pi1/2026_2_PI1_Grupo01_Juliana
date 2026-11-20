@@ -14,6 +14,10 @@
  *   [HW]   docs/4.3 - Projeto conceitual de hardware.md e hw/SCH_Micromouse_2026-09-26.pdf
  */
 
+/* Botão BOOT */
+#define BOTAO_DEBOUNCE_MS           30      /* o contato precisa ficar estável por este tempo */
+#define BOTAO_LONGO_MS              1500    /* a partir daqui o toque é longo; PROVISÓRIO, confirmar com a equipe */
+
 /* Pista — [TAP] células de 18 cm, paredes de 1,2 cm */
 #define CELULA_MM                   180
 #define PAREDE_ESPESSURA_MM         12
