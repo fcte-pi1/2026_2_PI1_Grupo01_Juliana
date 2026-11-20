@@ -1,0 +1,56 @@
+# Teste 5.2, hipótese "pino de XSHUT". Bancada esp32_hc_bancada, 20/11/2026, interruptor desligado (USB).
+
+# Comando x: um GPIO de XSHUT por vez em nível alto, sondando o endereço 0x29.
+xshut: um GPIO por vez em nivel alto, sondando o endereco 0x29
+  tof_frontal (GPIO33 em alto): sensor respondeu
+  tof_esquerdo (GPIO4 em alto): nada respondeu
+  tof_direito (GPIO5 em alto): sensor respondeu
+xshut: reiniciando os ToF...
+[ 11950][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+
+# Comando i (varredura do I2C) depois da reinicialização: 0x30 é o frontal já reconfigurado;
+# 0x29 é o sensor do GPIO5, vivo no endereço de fábrica, que o driver não conseguiu configurar.
+i2c: enderecos que responderam:
+  0x29
+  0x30
+i2c: 2 dispositivo(s)
+
+# Comando f: todos os GPIOs candidatos a XSHUT em nível baixo, depois um por vez em alto.
+# Só o GPIO5 e o GPIO33 acordam um sensor. O GPIO33 mede (distância muda com a mão); o GPIO5 falha no begin.
+f: interruptor da bateria DESLIGADO; segurando todos os candidatos em nivel baixo...
+f: GPIO5 acorda um sensor. Distancia por 3 s (passe a mao na frente de cada modulo):
+[  5649][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+   begin = FALHOU (Status -6)
+f: GPIO33 acorda um sensor. Distancia por 3 s (passe a mao na frente de cada modulo):
+   begin = OK (Status 0)
+   150 mm
+   117 mm
+   77 mm
+   55 mm
+   45 mm
+   44 mm
+   45 mm
+   8191 mm
+   149 mm
+   30 mm
+   52 mm
+   118 mm
+   182 mm
+   234 mm
+   273 mm
+   270 mm
+   226 mm
+   163 mm
+   110 mm
+   64 mm
+   35 mm
+   39 mm
+   64 mm
+   95 mm
+   145 mm
+   207 mm
+   256 mm
+   286 mm
+   278 mm
+   212 mm
+f: 2 GPIO(s) acordam um sensor
