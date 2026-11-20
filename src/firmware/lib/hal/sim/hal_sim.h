@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +43,9 @@ void hal_bt_sim_injetar(const char *dados);
  */
 typedef void (*hal_led_sim_espelho_t)(bool aceso);
 void hal_led_sim_definir_espelho(hal_led_sim_espelho_t espelho);
+
+/* Vias do DIP switch simulado, uma por bit (bit 0 = via 1). O padrão é 0: 4x4. */
+void hal_dip_sim_definir(uint8_t vias);
 
 /* Simula a gravação de um firmware novo: apaga tudo da NVS. */
 void hal_nvs_sim_apagar_tudo(void);

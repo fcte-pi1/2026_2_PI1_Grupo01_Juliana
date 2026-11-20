@@ -4,18 +4,24 @@
 
 #include "hal_bateria.h"
 #include "hal_boot.h"
+#include "hal_dip.h"
 #include "hal_led.h"
 #include "hal_sim.h"
 #include "hal_tempo.h"
 #include "sim_mundo.h"
 
 static hal_led_sim_espelho_t espelho_led;
+static uint8_t dip_vias;
 
 void hal_bateria_iniciar(void) {}
 uint16_t hal_bateria_ler_adc_mv(void) { return sim_bateria_adc_mv(); }
 
 void hal_boot_iniciar(void) {}
 bool hal_boot_pressionado(void) { return sim_boot_pressionado(); }
+
+void hal_dip_iniciar(void) {}
+uint8_t hal_dip_ler(void) { return dip_vias; }
+void hal_dip_sim_definir(uint8_t vias) { dip_vias = (uint8_t)(vias & 0x0F); }
 
 void hal_led_iniciar(void)
 {
