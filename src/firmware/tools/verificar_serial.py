@@ -8,8 +8,13 @@ de `seq` nem linha inválida. O que chega antes da primeira mensagem (log de
 boot da ESP32, restos repetidos pelo conversor USB-serial) é descartado e só
 contado.
 
+Com a máquina de estados o robô espera o comando `largar` depois do health-check;
+`--largar` manda o comando uma vez, alguns segundos depois de abrir a porta, para o
+teste cobrir também os `passo` e o `sucesso`.
+
 Uso:
     python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600
+    python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600 --largar
     python tools/verificar_serial.py --arquivo captura.jsonl
 """
 
@@ -27,6 +32,8 @@ VERSAO = 1
 TIPOS = ("hc_item", "hc_resultado", "tel", "passo", "falha", "sucesso")
 BAUD_PADRAO = 115200
 DURACAO_PADRAO_S = 600.0
+LARGAR_APOS_PADRAO_S = 5.0  # o health-check do boot leva cerca de 1,5 s
+COMANDO_LARGAR = b'{"v":1,"cmd":"largar"}\n'
 
 
 def validar(texto: bytes, tamanho: int) -> tuple[dict | None, str | None]:
@@ -136,7 +143,9 @@ def verificar(linhas: Iterable[bytes]) -> Verificacao:
     return verificacao
 
 
-def ler_serial(porta: str, baud: int, duracao_s: float) -> Iterator[bytes]:
+def ler_serial(
+    porta: str, baud: int, duracao_s: float, largar_apos_s: float | None = None
+) -> Iterator[bytes]:
     """Lê linhas da porta serial até acabar a duração."""
     import serial  # só no modo porta: o modo --arquivo não precisa do pyserial
 
@@ -149,12 +158,17 @@ def ler_serial(porta: str, baud: int, duracao_s: float) -> Iterator[bytes]:
     conexao.rts = False
     conexao.open()
     with conexao:
-        yield from ler_linhas(conexao, duracao_s)
+        yield from ler_linhas(conexao, duracao_s, largar_apos_s)
 
 
-def ler_linhas(conexao, duracao_s: float) -> Iterator[bytes]:
-    """Lê linhas completas de uma conexão já aberta até acabar a duração."""
-    fim = time.monotonic() + duracao_s
+def ler_linhas(conexao, duracao_s: float, largar_apos_s: float | None = None) -> Iterator[bytes]:
+    """Lê linhas completas de uma conexão já aberta até acabar a duração.
+
+    Com `largar_apos_s`, escreve o comando `largar` uma vez quando esse tempo passar.
+    """
+    inicio = time.monotonic()
+    fim = inicio + duracao_s
+    largado = largar_apos_s is None
     # A porta pode abrir no meio de uma linha: limpa a entrada e descarta
     # tudo até o primeiro fim de linha, para não contar o pedaço como inválido.
     conexao.reset_input_buffer()
@@ -163,6 +177,9 @@ def ler_linhas(conexao, duracao_s: float) -> Iterator[bytes]:
     # ficam acumulados até completar a linha.
     linha = b""
     while time.monotonic() < fim:
+        if not largado and time.monotonic() - inicio >= largar_apos_s:
+            conexao.write(COMANDO_LARGAR)
+            largado = True
         linha += conexao.readline()
         if not linha.endswith(b"\n"):
             continue
@@ -190,6 +207,11 @@ def criar_parser() -> argparse.ArgumentParser:
         metavar="S",
         help=f"segundos de leitura da porta (padrão: {DURACAO_PADRAO_S:.0f})",
     )
+    parser.add_argument(
+        "--largar",
+        action="store_true",
+        help="manda o comando largar uma vez depois do health-check (só com --porta)",
+    )
     return parser
 
 
@@ -200,7 +222,8 @@ def main(argv: list[str] | None = None) -> int:
         with args.arquivo.open("rb") as arquivo:
             verificacao = verificar(arquivo)
     else:
-        verificacao = verificar(ler_serial(args.porta, args.baud, args.duracao))
+        largar_apos = LARGAR_APOS_PADRAO_S if args.largar else None
+        verificacao = verificar(ler_serial(args.porta, args.baud, args.duracao, largar_apos))
     print(verificacao.resumo())
     return 0 if verificacao.ok() else 1
 

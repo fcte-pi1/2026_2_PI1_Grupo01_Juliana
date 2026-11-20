@@ -140,12 +140,16 @@ class ConexaoFalsa:
     def __init__(self, pedacos: list[bytes]):
         self.pedacos = list(pedacos)
         self.entrada_limpa = False
+        self.escritas: list[bytes] = []
 
     def reset_input_buffer(self) -> None:
         self.entrada_limpa = True
 
     def readline(self) -> bytes:
         return self.pedacos.pop(0) if self.pedacos else b""
+
+    def write(self, dados: bytes) -> None:
+        self.escritas.append(dados)
 
 
 def test_porta_aberta_no_meio_descarta_o_pedaco_da_primeira_linha():
@@ -168,3 +172,24 @@ def test_linha_partida_pelo_timeout_do_readline_sai_inteira():
         linhas.append(linha)
         break
     assert linhas == [inteira]
+
+
+def test_sem_largar_nada_e_escrito_na_porta():
+    conexao = ConexaoFalsa([b'"x":0}\n', mensagem(0).encode()])
+    for _ in ler_linhas(conexao, 0.3):
+        pass
+    assert conexao.escritas == []
+
+
+def test_largar_escreve_o_comando_uma_vez_depois_do_prazo():
+    conexao = ConexaoFalsa([b'"x":0}\n', mensagem(0).encode(), b"", b"", mensagem(1).encode()])
+    for _ in ler_linhas(conexao, 0.3, largar_apos_s=0.0):
+        pass
+    assert conexao.escritas == [b'{"v":1,"cmd":"largar"}\n']
+
+
+def test_largar_antes_do_prazo_nao_escreve():
+    conexao = ConexaoFalsa([b'"x":0}\n', mensagem(0).encode()])
+    for _ in ler_linhas(conexao, 0.2, largar_apos_s=60.0):
+        pass
+    assert conexao.escritas == []

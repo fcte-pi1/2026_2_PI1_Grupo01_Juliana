@@ -54,7 +54,7 @@ O [Wokwi](https://wokwi.com) simula a ESP32 e roda o mesmo `firmware.bin` que ir
 3. Compile com `pio run`.
 4. Com a pasta `src/firmware` aberta, `F1` e depois **Wokwi: Start Simulator**.
 
-A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial.
+A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial. O robô espera o comando `largar` depois do health-check: digite `{"v":1,"cmd":"largar"}` e Enter no terminal serial para ele partir.
 
 ### Firmware com a HAL real (`esp32_real`)
 
@@ -76,8 +76,11 @@ O `tools/verificar_serial.py` lê a serial da ESP32 e diz se alguma mensagem se 
 cd src/firmware
 source .venv/bin/activate                     # o pyserial vem do requirements.txt
 python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600
+python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600 --largar   # manda o largar 5 s depois de abrir a porta
 python tools/verificar_serial.py --arquivo captura.jsonl   # confere linhas já capturadas
 ```
+
+O robô espera o comando `largar` depois do health-check. Sem `--largar` a captura só tem o health-check e a `tel` em `health-check`; com `--largar` ela cobre também os `passo` e o `sucesso`.
 
 O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em cada uma das outras o script confere o tamanho (até 256 bytes contando o `\n`), o JSON, `v = 1`, o tipo e se o `seq` é o anterior mais 1 dentro do mesmo `boot`. No fim imprime o resumo:
 
