@@ -61,6 +61,19 @@ Resultados possíveis:
 > [!NOTE]
 > A navegação recebe o tipo do labirinto (o que o robô lê no DIP switch) pelo `nav_iniciar()`, e o simulador passa o tipo do arquivo. Os 24 labirintos terminam em `sucesso`, e o CI (`.github/workflows/firmware.yml`) roda com `--exigir-sucesso`: falha se algum deixar de ser resolvido. O teste `test/test_navegacao_labirintos` confere ainda que as versões `-dir` e `-esq` dão o mesmo trajeto no referencial do robô.
 
+## Varredura de robustez
+
+O `varredura.sh` roda o simulador em vários níveis de leituras erradas, com as sementes de 1 a 50, e imprime uma tabela em Markdown com a contagem de cada resultado e as células percorridas nas corridas em sucesso (FIRM-13, [#144](https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana/issues/144)). Por padrão usa os labirintos 8x4 e 12x4 e 3 leituras na conferência da frente:
+
+```bash
+./varredura.sh                              # 0%, 1%, 2%, 5%, 8%, 10%, 15%, 20% e 30%
+./varredura.sh -a 9 10 20                   # só 10% e 20%, com 9 leituras da frente
+./varredura.sh -s 10 5                      # só 5%, com as sementes de 1 a 10
+LABIRINTOS="labirintos/4x4-*.txt" ./varredura.sh
+```
+
+O script sai com código 1 se alguma corrida terminar em `sucesso_falso` ou `limite`. Os resultados estão em [Leituras erradas](../../../docs/4.4%20-%20Projeto%20conceitual%20de%20software.md#leituras-erradas), no 4.4.
+
 ## Labirintos
 
 Os 24 arquivos de `labirintos/` são válidos e cobrem os três tamanhos nas duas orientações e nos dois lados:
