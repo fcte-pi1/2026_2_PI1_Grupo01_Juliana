@@ -86,6 +86,8 @@
 #define TOF_D_X_MM      20.0f
 #define TOF_D_Y_MM     -30.0f
 #define TOF_D_ANG      -45.0f
+/* I²C dos ToF: 50 kHz tolera os jumpers da bancada; subir na placa definitiva. */
+#define TOF_I2C_HZ          50000
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
 
 /*
