@@ -43,7 +43,7 @@ Rodar dentro de `src/firmware`:
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
 
-Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado. Depois do health-check o robô **espera o comando `largar`** (a `tel` fica em `health-check` e nenhum `passo` sai); só parte com o último health-check aprovado. O `interromper`, o `health_check` (só parado) e o `largar` chegam pela serial, por exemplo com `python tools/monitor_comandos.py`. O LED azul pisca a 2,5 Hz e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
+Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado. Depois do health-check o robô **espera o comando `largar`** (a `tel` fica em `health-check` e nenhum `passo` sai); só parte com o último health-check aprovado. O `interromper`, o `health_check` (só parado) e o `largar` chegam pela serial, por exemplo com `python tools/monitor_comandos.py`. O LED azul (GPIO2) mostra o estado do robô (tabela abaixo) e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
 
 ### Sem placa: simulador Wokwi
 
@@ -106,14 +106,30 @@ gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --html-details cobertu
 
 Os drivers reais (`lib/hal/esp32/hal_*`) ficam de fora porque só compilam na placa. O `src/` (tarefas do FreeRTOS) também, porque não entra no `native`. A meta do 7.4 é de pelo menos 80% das linhas.
 
+### LED por estado
+
+O LED da placa (GPIO2) segue a máquina de estados (`lib/sinal`):
+
+| Estado | LED |
+|---|---|
+| health-check rodando | pisca rápido (400 ms, 200 aceso) |
+| aguardando o `largar` | aceso fixo |
+| reprovado | pisca lento (2 s, 1 s aceso) |
+| running | pisca médio (1 s, 500 ms aceso) |
+| success | 3 piscadas e fica aceso |
+| failed | pisca muito rápido (200 ms, 100 aceso) |
+
+O bipe do BOOT (1 toque apaga o mapa, 2 apagam tudo) continua pelo buzzer e pisca o LED junto.
+
 ### Rodar os testes dentro da ESP32
 
-Os testes `test_estados`, `test_boot` e `test_corrida` têm um `entrada_arduino.cpp` e rodam também na placa, com a ESP32 ligada no USB:
+Os testes `test_estados`, `test_boot`, `test_corrida` e `test_sinal` têm um `entrada_arduino.cpp` e rodam também na placa, com a ESP32 ligada no USB:
 
 ```bash
 pio test -e esp32_sim -f test_estados --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
 pio test -e esp32_sim -f test_boot --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
 pio test -e esp32_sim -f test_corrida --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+pio test -e esp32_sim -f test_sinal --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
 ```
 
 O `test_corrida` usa a NVS da flash: apaga `mem_mapa` e `mem_tipos` antes de cada caso e deixa o mapa do último gravado, então o primeiro boot seguinte do firmware sai como `retomada`.
@@ -150,6 +166,7 @@ src/firmware/
 │   ├── boot/             gestos do botão BOOT com debounce: toque, curto e longo (FIRM-09), C puro
 │   ├── health_check/     os 8 itens do health-check e o autoteste de motor e encoder (FIRM-09)
 │   ├── dip/              tipo do labirinto a partir das vias 1 e 2 do DIP (FIRM-09)
+│   ├── sinal/            padrão do LED para cada estado do robô (FIRM-09), C puro
 │   ├── corrida/          junta a máquina, a navegação e a NVS: largar, interromper, health_check e BOOT (FIRM-09), C puro
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01), C puro
