@@ -21,6 +21,7 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [015](015-rumo-persistido-leitura-telemetria.md) | `rumo` da `tel` persistido em leituras (commit à parte) | Backend, Front |
 | [016](016-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
 | [017](017-downlink-tres-comandos.md) | Downlink: três comandos do contrato | Backend, Front, Firmware |
+| [018](018-firmware-hal-real-com-tof-mockado.md) | Firmware com a HAL real (`esp32_real`), ToF mockado em ambiente à parte | Firmware, Testes, Eletrônica |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 
