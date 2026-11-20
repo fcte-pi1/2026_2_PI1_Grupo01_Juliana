@@ -134,6 +134,12 @@ uint32_t telemetria_descartados(void);
  */
 bool telemetria_consumir_interrupcao(void);
 
+/* Idem, para o comando largar (Nova execução ou Retomar). */
+bool telemetria_consumir_largada(void);
+
+/* Idem, para o comando health_check. */
+bool telemetria_consumir_health_check(void);
+
 /*
  * Lê o contador boot da NVS (chave TELEMETRIA_CHAVE_BOOT), soma 1, grava e
  * devolve o novo valor; sem a chave, o primeiro boot é 1. Se a gravação
