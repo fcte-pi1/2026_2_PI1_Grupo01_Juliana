@@ -1,0 +1,20 @@
+# Teste 5.13. Suíte test_sinal (padrão do LED por estado) na ESP32 real, 20/11/2026.
+# Comando: pio test -e esp32_sim -f test_sinal --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# Transcrição da saída do terminal (print 5.13-sinal-led-esp32.png). A suíte é gravada na placa e o resultado volta pela serial USB.
+
+Collected 21 tests
+Processing test_sinal in esp32_sim environment
+Building & Uploading...
+Testing...
+test_health_check_pisca_rapido_200_aceso_200_apagado    [PASSED]
+test_aguardando_fica_aceso_o_tempo_todo [PASSED]
+test_reprovado_pisca_lento_1_s_aceso_1_s_apagado        [PASSED]
+test_running_pisca_medio_500_aceso_500_apagado  [PASSED]
+test_failed_pisca_muito_rapido_100_aceso_100_apagado    [PASSED]
+test_success_pisca_3_vezes_e_fica_aceso [PASSED]
+test_mudar_de_estado_reinicia_o_padrao  [PASSED]
+test_estado_repetido_nao_reinicia_o_padrao      [PASSED]
+test_a_virada_do_relogio_de_32_bits_nao_quebra_o_padrao [PASSED]
+esp32_sim:test_sinal [PASSED] Took 9.49 seconds
+9 test cases: 9 succeeded in 00:00:09.494
+# No PC: pio test -e native -f test_sinal, 9 de 9.
