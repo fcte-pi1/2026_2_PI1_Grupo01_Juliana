@@ -1,0 +1,40 @@
+# Teste 5.23. Corrida simulada andando de verdade na ESP32 (esp32_sim_boot), 21/11/2026.
+# HAL simulada: o robô anda pela física do mundo simulado (anda e para, parede lateral lida ao entrar na célula).
+# Roteiro: pio run -e esp32_sim_boot -t upload; python tools/monitor_comandos.py; l, h, l, i, h. Interruptor da bateria desligado.
+# O primeiro boot saiu como "retomada" (célula (0,1)) porque os testes na placa (test_execucao e test_corrida) deixam o mapa na flash.
+# Transcrição do monitor serial (linhas do bootloader omitidas). Não foram feitos nesta rodada: BOOT na corrida e reset com retomada.
+
+# Boot 2: health-check aprovado, robô parado esperando o largar
+{"v":1,"boot":2,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+# Corrida 1: percorre o labirinto de verdade, passando por (2,3), (2,2) e (3,2) até o objetivo (3,3)
+{"v":1,"boot":2,"seq":15,"t_ms":6420,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":2,"seq":16,"t_ms":6625,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":20,"t_ms":7360,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":2,"seq":26,"t_ms":8300,"tipo":"passo","x":0,"y":3,"paredes":9}
+{"v":1,"boot":2,"seq":34,"t_ms":9760,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":2,"seq":40,"t_ms":10700,"tipo":"passo","x":2,"y":3,"paredes":5}
+{"v":1,"boot":2,"seq":48,"t_ms":12160,"tipo":"passo","x":2,"y":2,"paredes":2}
+{"v":1,"boot":2,"seq":56,"t_ms":13620,"tipo":"passo","x":3,"y":2,"paredes":4}
+{"v":1,"boot":2,"seq":64,"t_ms":15080,"tipo":"passo","x":3,"y":3,"paredes":13}
+{"v":1,"boot":2,"seq":66,"t_ms":15140,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":2,"seq":67,"t_ms":16120,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+# health_check parado em success
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":2,"seq":73,"t_ms":21535,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8395}
+{"v":1,"boot":2,"seq":74,"t_ms":22357,"tipo":"tel","estado":"health-check","x":3,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":82,"t_ms":22755,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# largar depois do sucesso: recomeça do (0,0)
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":2,"seq":86,"t_ms":26275,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":2,"seq":87,"t_ms":26360,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":92,"t_ms":27215,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":2,"seq":97,"t_ms":28155,"tipo":"passo","x":0,"y":2,"paredes":12}
+# interromper no meio da corrida
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":2,"seq":101,"t_ms":28685,"tipo":"falha","motivo":null,"origem":"web","x":0,"y":3,"componente":null}
+{"v":1,"boot":2,"seq":103,"t_ms":29770,"tipo":"tel","estado":"failed","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+# health_check depois de failed: roda os 8 itens e a tel volta a health-check
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":2,"seq":108,"t_ms":34297,"tipo":"tel","estado":"health-check","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":2,"seq":116,"t_ms":34705,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
