@@ -73,6 +73,27 @@ maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)
     return MAQ_ACAO_NENHUMA;
 }
 
+bool maq_falha_da_acao(maq_acao_t acao, uint8_t x, uint8_t y, contrato_falha_t *falha)
+{
+    switch (acao) {
+    case MAQ_ACAO_PARAR_FALHA_WEB:
+    case MAQ_ACAO_REPETIR_FALHA_WEB:
+        falha->motivo = CONTRATO_MOTIVO_NENHUM;
+        falha->origem = CONTRATO_ORIGEM_WEB;
+        break;
+    case MAQ_ACAO_PARAR_FALHA_BOOT:
+        falha->motivo = CONTRATO_MOTIVO_ENCERRADO_OPERADOR;
+        falha->origem = CONTRATO_ORIGEM_BOOT;
+        break;
+    default:
+        return false;
+    }
+    falha->x = x;
+    falha->y = y;
+    falha->componente = CONTRATO_COMPONENTE_NENHUM;
+    return true;
+}
+
 contrato_estado_t maq_estado_contrato(const maq_t *m)
 {
     switch (m->estado) {

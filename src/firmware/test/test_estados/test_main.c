@@ -5,6 +5,8 @@
 
 #include <unity.h>
 
+#include <string.h>
+
 #include "maquina.h"
 
 static maq_t m;
@@ -229,7 +231,62 @@ void test_toque_simples_parado_nao_apaga_nada(void)
     TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_BOOT_TOQUE));
 }
 
+static void serializar_falha(maq_acao_t acao, uint8_t x, uint8_t y, char *linha, size_t tam)
+{
+    contrato_falha_t falha;
+    TEST_ASSERT_TRUE(maq_falha_da_acao(acao, x, y, &falha));
+    contrato_cabecalho_t cab = {.boot = 8, .seq = 57, .t_ms = 19870};
+    TEST_ASSERT_GREATER_THAN_INT(0, contrato_falha(linha, tam, &cab, &falha));
+}
+
+void test_falha_da_interrupcao_pela_web_e_a_do_contrato(void)
+{
+    char linha[256];
+    serializar_falha(MAQ_ACAO_PARAR_FALHA_WEB, 1, 2, linha, sizeof(linha));
+    /* Linha do exemplo do contrato: origem web, motivo e componente nulos. */
+    TEST_ASSERT_EQUAL_STRING(
+        "{\"v\":1,\"boot\":8,\"seq\":57,\"t_ms\":19870,\"tipo\":\"falha\",\"motivo\":null,"
+        "\"origem\":\"web\",\"x\":1,\"y\":2,\"componente\":null}\n",
+        linha);
+}
+
+void test_falha_repetida_da_web_sai_igual_a_primeira(void)
+{
+    char primeira[256], repetida[256];
+    serializar_falha(MAQ_ACAO_PARAR_FALHA_WEB, 1, 2, primeira, sizeof(primeira));
+    serializar_falha(MAQ_ACAO_REPETIR_FALHA_WEB, 1, 2, repetida, sizeof(repetida));
+    TEST_ASSERT_EQUAL_STRING(primeira, repetida);
+}
+
+void test_falha_do_boot_e_a_do_contrato(void)
+{
+    char linha[256];
+    contrato_falha_t falha;
+    TEST_ASSERT_TRUE(maq_falha_da_acao(MAQ_ACAO_PARAR_FALHA_BOOT, 1, 3, &falha));
+    contrato_cabecalho_t cab = {.boot = 9, .seq = 63, .t_ms = 21040};
+    TEST_ASSERT_GREATER_THAN_INT(0, contrato_falha(linha, sizeof(linha), &cab, &falha));
+    TEST_ASSERT_EQUAL_STRING(
+        "{\"v\":1,\"boot\":9,\"seq\":63,\"t_ms\":21040,\"tipo\":\"falha\",\"motivo\":"
+        "\"encerrado_operador\",\"origem\":\"boot\",\"x\":1,\"y\":3,\"componente\":null}\n",
+        linha);
+}
+
+void test_acoes_sem_falha_nao_geram_falha(void)
+{
+    contrato_falha_t falha;
+    TEST_ASSERT_FALSE(maq_falha_da_acao(MAQ_ACAO_NENHUMA, 0, 0, &falha));
+    TEST_ASSERT_FALSE(maq_falha_da_acao(MAQ_ACAO_PARTIR, 0, 0, &falha));
+    TEST_ASSERT_FALSE(maq_falha_da_acao(MAQ_ACAO_RODAR_HEALTH_CHECK, 0, 0, &falha));
+    TEST_ASSERT_FALSE(maq_falha_da_acao(MAQ_ACAO_APAGAR_MAPA, 0, 0, &falha));
+    TEST_ASSERT_FALSE(maq_falha_da_acao(MAQ_ACAO_APAGAR_TUDO, 0, 0, &falha));
+}
+
+#ifdef ARDUINO
+/* Na ESP32 o ponto de entrada é o setup() de entrada_arduino.cpp. */
+int executar_testes(void)
+#else
 int main(void)
+#endif
 {
     UNITY_BEGIN();
     RUN_TEST(test_boot_comeca_no_health_check_e_nao_anda);
@@ -256,5 +313,9 @@ int main(void)
     RUN_TEST(test_boot_parado_apaga_tambem_depois_de_reprovado_success_e_failed);
     RUN_TEST(test_boot_durante_o_health_check_e_ignorado);
     RUN_TEST(test_toque_simples_parado_nao_apaga_nada);
+    RUN_TEST(test_falha_da_interrupcao_pela_web_e_a_do_contrato);
+    RUN_TEST(test_falha_repetida_da_web_sai_igual_a_primeira);
+    RUN_TEST(test_falha_do_boot_e_a_do_contrato);
+    RUN_TEST(test_acoes_sem_falha_nao_geram_falha);
     return UNITY_END();
 }

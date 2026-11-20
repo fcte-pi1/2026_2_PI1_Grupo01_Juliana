@@ -70,6 +70,13 @@ void maq_iniciar(maq_t *m);
 
 maq_acao_t maq_evento(maq_t *m, maq_evento_t evento);
 
+/*
+ * A falha que a ação pede, na célula (x, y). Devolve false para as ações que não enviam falha.
+ * Interrupção pela web: origem web, sem motivo. BOOT na corrida: origem boot, encerrado_operador.
+ * Nenhuma das duas leva componente.
+ */
+bool maq_falha_da_acao(maq_acao_t acao, uint8_t x, uint8_t y, contrato_falha_t *falha);
+
 /* Estado que a tel informa. */
 contrato_estado_t maq_estado_contrato(const maq_t *m);
 
