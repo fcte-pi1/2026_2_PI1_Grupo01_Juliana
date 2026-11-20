@@ -23,11 +23,35 @@ static corrida_t c;
 static corrida_efeitos_t ef;
 static telemetria_decisao_evento_t saida[TELEMETRIA_DECISAO_EVENTOS_MAX];
 
+/* Na ESP32 a NVS é a da flash e abre uma vez só; no PC é a simulada em RAM. */
+static void iniciar_nvs(void)
+{
+#ifdef ARDUINO
+    static bool iniciada;
+    if (!iniciada) {
+        iniciada = hal_nvs_iniciar();
+    }
+#else
+    (void)hal_nvs_iniciar();
+#endif
+}
+
+static void limpar_nvs(void)
+{
+#ifdef ARDUINO
+    iniciar_nvs();
+    hal_nvs_apagar(MEM_CHAVE_MAPA);
+    hal_nvs_apagar(MEM_CHAVE_TIPOS);
+#else
+    hal_nvs_sim_apagar_tudo();
+#endif
+}
+
 static void boot(void)
 {
     sim_mundo_iniciar(LABIRINTO_DEMO);
     (void)hal_tof_iniciar();
-    (void)hal_nvs_iniciar();
+    iniciar_nvs();
     corrida_iniciar(&c, ROBO_TIPO_LABIRINTO);
     sim_mundo_na_celula(c.nav.x, c.nav.y, (int)c.nav.direcao);
     sensores_iniciar();
@@ -64,7 +88,7 @@ static void ate_passar_de_uma_celula(void)
     TEST_ASSERT_TRUE_MESSAGE(c.nav.x != 0 || c.nav.y != 0, "a corrida nao saiu da largada");
 }
 
-void setUp(void) { hal_nvs_sim_apagar_tudo(); }
+void setUp(void) { limpar_nvs(); }
 
 void tearDown(void) {}
 
