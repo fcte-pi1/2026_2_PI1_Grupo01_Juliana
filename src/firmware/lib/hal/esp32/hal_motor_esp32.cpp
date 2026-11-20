@@ -24,11 +24,11 @@ typedef struct {
     int8_t in1;
     int8_t in2;
     uint8_t canal;
-    bool invertido; /* PROVISÓRIO: ver na bancada */
+    bool invertido; /* confirmado na bancada: o esquerdo gira para trás sem inverter; o direito já gira para a frente */
 } motor_pinos_t;
 
 static const motor_pinos_t MOTORES[MOTOR_QTD] = {
-    /* MOTOR_ESQ */ {PINO_MOT_E_PWM, PINO_MOT_E_IN1, PINO_MOT_E_IN2, CANAL_PWM_E, false},
+    /* MOTOR_ESQ */ {PINO_MOT_E_PWM, PINO_MOT_E_IN1, PINO_MOT_E_IN2, CANAL_PWM_E, true},
     /* MOTOR_DIR */ {PINO_MOT_D_PWM, PINO_MOT_D_IN1, PINO_MOT_D_IN2, CANAL_PWM_D, false},
 };
 

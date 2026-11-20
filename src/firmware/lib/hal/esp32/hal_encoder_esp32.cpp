@@ -28,7 +28,7 @@ typedef struct {
 } encoder_pinos_t;
 
 static const encoder_pinos_t ENCODERS[MOTOR_QTD] = {
-    /* MOTOR_ESQ */ {PCNT_UNIT_0, PINO_ENC_E_A, PINO_ENC_E_B, false},
+    /* MOTOR_ESQ */ {PCNT_UNIT_0, PINO_ENC_E_A, PINO_ENC_E_B, true},
     /* MOTOR_DIR */ {PCNT_UNIT_1, PINO_ENC_D_A, PINO_ENC_D_B, false},
 };
 
