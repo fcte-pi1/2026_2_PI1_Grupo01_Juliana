@@ -203,6 +203,40 @@ void test_dip_invalido_reprova_sem_nomear_componente(void)
     }
 }
 
+void test_eventos_seguem_a_ordem_do_contrato_e_levam_o_resultado(void)
+{
+    tof_autoteste_t tof[TOF_QTD];
+    tofs_ok(tof);
+    int32_t pulsos[MOTOR_QTD] = {400, 380};
+    hc_avaliar(7800, BATERIA_NORMAL, tof, pulsos, CONTRATO_DIP_8X4, &r);
+
+    telemetria_evento_t ev[HC_EVENTOS];
+    TEST_ASSERT_EQUAL(HC_EVENTOS, hc_montar_eventos(&r, CONTRATO_INICIO_NOVA, ev));
+    for (int i = 0; i < HC_ITENS; i++) {
+        TEST_ASSERT_EQUAL(TELEMETRIA_EVENTO_HC_ITEM, ev[i].tipo);
+        TEST_ASSERT_EQUAL(r.item[i].componente, ev[i].m.hc_item.componente);
+        TEST_ASSERT_EQUAL_INT32(r.item[i].valor, ev[i].m.hc_item.valor);
+    }
+    TEST_ASSERT_EQUAL(TELEMETRIA_EVENTO_HC_RESULTADO, ev[HC_ITENS].tipo);
+    TEST_ASSERT_TRUE(ev[HC_ITENS].m.hc_resultado.aprovado);
+    TEST_ASSERT_EQUAL(CONTRATO_DIP_8X4, ev[HC_ITENS].m.hc_resultado.tipo_dip);
+    TEST_ASSERT_EQUAL(CONTRATO_INICIO_NOVA, ev[HC_ITENS].m.hc_resultado.inicio);
+}
+
+void test_evento_de_resultado_reprovado_e_de_retomada(void)
+{
+    tof_autoteste_t tof[TOF_QTD];
+    tofs_ok(tof);
+    tof[TOF_FRONTAL].aprovado = false;
+    hc_avaliar(7800, BATERIA_NORMAL, tof, pulsos_ok, DIP_4X4, &r);
+
+    telemetria_evento_t ev[HC_EVENTOS];
+    hc_montar_eventos(&r, CONTRATO_INICIO_RETOMADA, ev);
+    TEST_ASSERT_FALSE(ev[HC_ITENS].m.hc_resultado.aprovado);
+    TEST_ASSERT_EQUAL(CONTRATO_INICIO_RETOMADA, ev[HC_ITENS].m.hc_resultado.inicio);
+    TEST_ASSERT_FALSE(ev[1].m.hc_item.aprovado);
+}
+
 /* ---------- pela HAL simulada ---------- */
 
 void test_executar_com_a_hal_simulada_aprova_tudo(void)
@@ -313,6 +347,8 @@ int main(void)
     RUN_TEST(test_pulsos_no_limite_aprovam_e_um_abaixo_reprova);
     RUN_TEST(test_dip_valido_vai_no_resultado);
     RUN_TEST(test_dip_invalido_reprova_sem_nomear_componente);
+    RUN_TEST(test_eventos_seguem_a_ordem_do_contrato_e_levam_o_resultado);
+    RUN_TEST(test_evento_de_resultado_reprovado_e_de_retomada);
     RUN_TEST(test_executar_com_a_hal_simulada_aprova_tudo);
     RUN_TEST(test_executar_gira_as_rodas_e_leva_os_pulsos_reais_dos_encoders);
     RUN_TEST(test_executar_com_encoder_travado_reprova_motor_e_encoder_daquela_roda);

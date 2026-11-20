@@ -8,6 +8,8 @@
  *
  * Comandos (um caractere):
  *   x  liga o XSHUT de um sensor por vez e diz qual GPIO acorda um sensor no endereço 0x29
+ *   c  troca o clock do I2C (50, 100 e 400 kHz, em rodízio); depois rode v ou h
+ *   o  alterna o timeout das leituras do I2C entre 50 ms (padrão) e 500 ms
  *   f  descobre em quais GPIOs estão os XSHUT dos ToF e reinicia a placa (interruptor DESLIGADO)
  *   v  sobe só o sensor do GPIO5, roda a biblioteca com depuração e depois lê o ID do chip (só leitura)
  *   i  varre o I2C e lista os endereços que respondem (ToF iniciados: 0x30, 0x31, 0x32)
@@ -34,6 +36,29 @@
 #include "health_check.h"
 #include "telemetria.h"
 #include "tof_enderecos.h"
+
+static uint32_t clock_i2c_hz = TOF_I2C_HZ;
+static uint16_t timeout_i2c_ms = 50;
+
+static void mostrar_i2c_atual(void)
+{
+    Serial.printf("i2c: clock = %lu Hz, timeout de leitura = %u ms\n",
+                  (unsigned long)Wire.getClock(), (unsigned)Wire.getTimeOut());
+}
+
+static void trocar_clock(void)
+{
+    clock_i2c_hz = clock_i2c_hz == 50000 ? 100000 : (clock_i2c_hz == 100000 ? 400000 : 50000);
+    Wire.setClock(clock_i2c_hz);
+    mostrar_i2c_atual();
+}
+
+static void alternar_timeout(void)
+{
+    timeout_i2c_ms = timeout_i2c_ms == 50 ? 500 : 50;
+    Wire.setTimeOut(timeout_i2c_ms);
+    mostrar_i2c_atual();
+}
 
 static bateria_t bateria;
 static uint8_t dip_anterior = 0xFF;
@@ -165,6 +190,7 @@ static void ler_id_do_chip(void)
 static void depurar_sensor(void)
 {
     const tof_id_t id = TOF_DIREITO;
+    mostrar_i2c_atual();
     Serial.printf("v: so %s (GPIO%d) em alto; a biblioteca vai imprimir o que encontrar\n",
                   hal_tof_nome(id), tof_pino_xshut(id));
     for (int k = 0; k < TOF_QTD; k++) {
@@ -276,13 +302,15 @@ void setup()
                       hal_tof_ler_mm((tof_id_t)i, &mm) ? "respondeu" : "NAO respondeu");
     }
     Serial.printf("tof: %s\n", tof_ok ? "os 3 iniciaram" : "algum nao iniciou (confira XSHUT e I2C)");
-    Serial.println("bancada do health-check: f v x i t d b m h (m e h giram as rodas: rodas no ar)");
+    Serial.println("bancada do health-check: c o f v x i t d b m h (m e h giram as rodas: rodas no ar)");
 }
 
 void loop()
 {
     if (Serial.available()) {
         switch (Serial.read()) {
+        case 'c': trocar_clock(); break;
+        case 'o': alternar_timeout(); break;
         case 'f': descobrir_xshut(); break;
         case 'v': depurar_sensor(); break;
         case 'x': testar_xshut(); break;

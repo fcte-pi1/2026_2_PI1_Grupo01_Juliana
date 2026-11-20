@@ -34,6 +34,9 @@ Rodar dentro de `src/firmware`:
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
+| `pio run -e esp32_real -t upload` | Firmware com a HAL real, **só o health-check**, com os ToF reais. Reprova enquanto os ToF laterais não funcionarem |
+| `pio run -e esp32_real_tof_mock -t upload` | O mesmo, com o ToF mockado (leituras fixas): o health-check aprova e serve para o e2e no cenário ideal |
+| `pio run -e esp32_hc_bancada -t upload` | Bancada interativa por comandos na serial (`d` DIP, `b` bateria, `t` ToF, `m` motores, `h` health-check, `i` varredura do I²C, `x`, `f` e `v` para diagnosticar o XSHUT dos ToF) |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
@@ -50,6 +53,16 @@ O [Wokwi](https://wokwi.com) simula a ESP32 e roda o mesmo `firmware.bin` que ir
 4. Com a pasta `src/firmware` aberta, `F1` e depois **Wokwi: Start Simulator**.
 
 A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial.
+
+### Firmware com a HAL real (`esp32_real`)
+
+Roda o health-check ao ligar e a cada comando `health_check` da ponte, e envia os `hc_item`, o `hc_resultado` e a `tel` (estado `health-check`, a 1 Hz) pelo contrato v1. Não anda: os motores só giram no autoteste, **com as rodas no ar e o interruptor da bateria ligado**. Sem o interruptor, motores e encoders reprovam. O enlace é a serial USB, então a ponte do notebook abre `/dev/ttyACM0`:
+
+```bash
+cd src/backend && python -m ponte --porta /dev/ttyACM0
+```
+
+O DIP lido nas vias 1 e 2 vira o `tipo_dip` (`00` = 4x4, `01` = 8x4, `10` = 12x4, `11` = inválido, que reprova). Com `esp32_real_tof_mock` o ToF não mede nada: ele devolve leituras fixas.
 
 ### Verificar a serial
 

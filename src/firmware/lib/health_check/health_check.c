@@ -52,6 +52,24 @@ void hc_avaliar(uint16_t bateria_mv, bateria_nivel_t bateria_nivel,
     }
 }
 
+int hc_montar_eventos(const hc_resultado_t *resultado, contrato_inicio_t inicio,
+                      telemetria_evento_t eventos[HC_EVENTOS])
+{
+    for (int i = 0; i < HC_ITENS; i++) {
+        telemetria_evento_t *ev = &eventos[i];
+        *ev = (telemetria_evento_t){0};
+        ev->tipo = TELEMETRIA_EVENTO_HC_ITEM;
+        ev->m.hc_item = resultado->item[i];
+    }
+    telemetria_evento_t *fim = &eventos[HC_ITENS];
+    *fim = (telemetria_evento_t){0};
+    fim->tipo = TELEMETRIA_EVENTO_HC_RESULTADO;
+    fim->m.hc_resultado.aprovado = resultado->aprovado;
+    fim->m.hc_resultado.tipo_dip = resultado->tipo_dip;
+    fim->m.hc_resultado.inicio = inicio;
+    return HC_EVENTOS;
+}
+
 void hc_executar(bateria_t *bateria, hc_esperar_t esperar, hc_resultado_t *resultado)
 {
     for (int i = 0; i < BATERIA_MEDIA_AMOSTRAS; i++) {

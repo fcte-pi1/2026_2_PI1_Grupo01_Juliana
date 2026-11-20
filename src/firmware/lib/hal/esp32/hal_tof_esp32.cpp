@@ -1,4 +1,4 @@
-#if !defined(HAL_SIMULADA) && defined(ARDUINO)
+#if !defined(HAL_SIMULADA) && !defined(TOF_MOCK) && defined(ARDUINO)
 
 /*
  * Os 3 VL53L0X na ESP32, pela biblioteca da Adafruit.

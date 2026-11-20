@@ -38,18 +38,6 @@
 #define PERIODO_MS              50   /* 20 Hz: leitura dos ToF (FIRM-03) */
 #define CICLOS_POR_DECISAO      4    /* a navegação decide a 5 Hz; a taxa da tel quem decide é a telemetria */
 
-static void publicar_hc_item(contrato_componente_t componente, bool aprovado, bool tem_valor,
-                             int32_t valor)
-{
-    telemetria_evento_t ev = {};
-    ev.tipo = TELEMETRIA_EVENTO_HC_ITEM;
-    ev.m.hc_item.componente = componente;
-    ev.m.hc_item.aprovado = aprovado;
-    ev.m.hc_item.tem_valor = tem_valor;
-    ev.m.hc_item.valor = valor;
-    app_publicar_evento(&ev);
-}
-
 static void publicar_falha(contrato_motivo_t motivo, int8_t x, int8_t y,
                            contrato_componente_t componente)
 {
@@ -111,18 +99,13 @@ static bool publicar_health_check(mem_inicio_t inicio, bateria_t *bateria)
 #ifdef HAL_SIMULADA
     sim_definir_rodas_no_ar(false);
 #endif
-    for (int i = 0; i < HC_ITENS; i++) {
-        const contrato_hc_item_t *item = &resultado.item[i];
-        publicar_hc_item(item->componente, item->aprovado, item->tem_valor, item->valor);
+    telemetria_evento_t eventos[HC_EVENTOS];
+    int n = hc_montar_eventos(&resultado,
+                              inicio == MEM_RETOMADA ? CONTRATO_INICIO_RETOMADA : CONTRATO_INICIO_NOVA,
+                              eventos);
+    for (int i = 0; i < n; i++) {
+        app_publicar_evento(&eventos[i]);
     }
-
-    telemetria_evento_t ev = {};
-    ev.tipo = TELEMETRIA_EVENTO_HC_RESULTADO;
-    ev.m.hc_resultado.aprovado = resultado.aprovado;
-    ev.m.hc_resultado.tipo_dip = resultado.tipo_dip;
-    ev.m.hc_resultado.inicio =
-        inicio == MEM_RETOMADA ? CONTRATO_INICIO_RETOMADA : CONTRATO_INICIO_NOVA;
-    app_publicar_evento(&ev);
     return resultado.aprovado;
 }
 

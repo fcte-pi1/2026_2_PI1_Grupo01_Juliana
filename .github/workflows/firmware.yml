@@ -109,3 +109,9 @@ jobs:
 
       - name: Compilar a bancada do health-check
         run: pio run -e esp32_hc_bancada
+
+      - name: Compilar o firmware com a HAL real
+        run: pio run -e esp32_real
+
+      - name: Compilar o firmware com a HAL real e o ToF mockado
+        run: pio run -e esp32_real_tof_mock

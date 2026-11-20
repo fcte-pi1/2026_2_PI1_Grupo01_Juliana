@@ -23,6 +23,7 @@
 #include "bateria.h"
 #include "motor_autoteste.h"
 #include "telemetria.h"
+#include "telemetria_envio.h"
 #include "tof_autoteste.h"
 
 #ifdef __cplusplus
@@ -30,6 +31,7 @@ extern "C" {
 #endif
 
 #define HC_ITENS 8
+#define HC_EVENTOS (HC_ITENS + 1) /* um hc_item por componente e o hc_resultado */
 
 typedef struct {
     contrato_hc_item_t item[HC_ITENS]; /* bateria, 3 ToF, 2 motores, 2 encoders */
@@ -43,6 +45,10 @@ typedef struct {
 void hc_avaliar(uint16_t bateria_mv, bateria_nivel_t bateria_nivel,
                 const tof_autoteste_t tof[TOF_QTD], const int32_t pulsos[MOTOR_QTD],
                 contrato_tipo_dip_t tipo_dip, hc_resultado_t *resultado);
+
+/* Transforma o resultado nos eventos do contrato, na ordem de envio. Devolve HC_EVENTOS. */
+int hc_montar_eventos(const hc_resultado_t *resultado, contrato_inicio_t inicio,
+                      telemetria_evento_t eventos[HC_EVENTOS]);
 
 /*
  * Mede pela HAL (bateria, ToF, giro das rodas e DIP) e avalia. As rodas giram
