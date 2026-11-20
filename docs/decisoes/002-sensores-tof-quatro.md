@@ -1,6 +1,6 @@
 # ADR-002 — Quatro sensores ToF (I²C)
 
-**Status:** Aceito  
+**Status:** Substituída pela [ADR-018](018-sensores-tof-tres.md)  
 **Data:** 2026-09-30
 
 ## Contexto
