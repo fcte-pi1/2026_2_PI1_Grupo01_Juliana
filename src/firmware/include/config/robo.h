@@ -18,7 +18,7 @@
 #define CELULA_MM                   180
 #define PAREDE_ESPESSURA_MM         12
 #define LABIRINTO_MAX_CELULAS       12   /* maior lado possível (12x4) */
-/* PROVISÓRIO: fixo até o firmware ler o DIP switch. Usar onde nav.h já foi incluído. */
+/* Só para testes: o firmware lê o tipo no DIP switch (lib/dip). Usar onde nav.h já foi incluído. */
 #define ROBO_TIPO_LABIRINTO         NAV_TIPO_4X4
 
 /* Rodas e tração */
@@ -62,6 +62,10 @@
  * limitada a 100 %. Dá 71 % com 8,4 V, 81 % com 7,4 V e 100 % com as pilhas (≤ 6 V).
  */
 #define MOTOR_TENSAO_NOMINAL_MV     6000    /* [EST] N20 de 6 V */
+/* Autoteste de motor e encoder do health-check: giro curto de uma roda por vez, rodas no ar. */
+#define MOTOR_AUTOTESTE_POTENCIA    300     /* 30 %, a mesma da bancada dos drivers; ~500 pulsos esperados no tempo abaixo */
+#define MOTOR_AUTOTESTE_MS          300
+#define MOTOR_AUTOTESTE_MIN_PULSOS  50      /* PROVISÓRIO: ~6 mm de roda; ajustar com a bancada */
 #define MOTOR_TRAVADO_MS            1000    /* encoder parado com PWM ativo: desliga a ponte H (stuck) */
 
 /*

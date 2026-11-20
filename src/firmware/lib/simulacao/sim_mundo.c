@@ -35,6 +35,7 @@ static struct {
     float velocidade_mm_s[2];
     float pulsos[2];
     bool encoder_travado[2];
+    bool rodas_no_ar;
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
     bool tof_ausente[SIM_TOF_QTD];
     uint16_t tof_ruido_mm;
@@ -119,7 +120,15 @@ static void passo_1ms(void)
     float novo_x = m.pose.x_mm + avanco * cosf(theta_medio);
     float novo_y = m.pose.y_mm + avanco * sinf(theta_medio);
 
-    if (robo_encosta_em_parede(novo_x, novo_y)) {
+    if (m.rodas_no_ar) {
+        /* Rodas no ar (autoteste do health-check): giram e contam, mas o robô não sai do lugar. */
+        m.pose.colidiu = false;
+        for (int i = 0; i < 2; i++) {
+            if (!m.encoder_travado[i]) {
+                m.pulsos[i] += deslocamento[i] / MM_POR_PULSO;
+            }
+        }
+    } else if (robo_encosta_em_parede(novo_x, novo_y)) {
         /* Bateu: o robô não sai do lugar e as rodas (e os encoders) param. */
         m.pose.colidiu = true;
         m.velocidade_mm_s[0] = m.velocidade_mm_s[1] = 0.0f;
@@ -155,6 +164,8 @@ void sim_mundo_avancar(uint32_t dt_ms)
 }
 
 uint32_t sim_tempo_ms(void) { return m.tempo_ms; }
+
+void sim_definir_rodas_no_ar(bool no_ar) { m.rodas_no_ar = no_ar; }
 
 void sim_motor_habilitar(bool habilitar) { m.motores_habilitados = habilitar; }
 

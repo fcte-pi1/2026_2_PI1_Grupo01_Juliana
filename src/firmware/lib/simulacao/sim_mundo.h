@@ -56,6 +56,8 @@ void sim_definir_tof_ausente(int tof, bool ausente);
 
 /* O encoder deixa de contar. A roda e a pose continuam. */
 void sim_travar_encoder(int motor, bool travado);
+/* Rodas no ar: as rodas giram e os encoders contam, mas a pose não muda e não há colisão. */
+void sim_definir_rodas_no_ar(bool no_ar);
 void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);
