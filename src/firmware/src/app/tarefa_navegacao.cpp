@@ -34,6 +34,7 @@
 #include "movimento.h"
 #include "nav.h"
 #include "sensores.h"
+#include "sinal.h"
 #include "telemetria_nav.h"
 
 #ifdef HAL_SIMULADA
@@ -153,9 +154,11 @@ void tarefa_navegacao(void *parametro)
     /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
     static corrida_t corrida;
     static botao_t botao;
+    static sinal_t sinal;
     bateria_t bateria;
     bateria_iniciar(&bateria);
     botao_iniciar(&botao);
+    sinal_iniciar(&sinal);
     corrida_iniciar(&corrida, dip_tipo_nav(hal_dip_ler()));
 
     /* Executa o que a lib pediu depois de um evento. */
@@ -198,7 +201,6 @@ void tarefa_navegacao(void *parametro)
     health_check();
 
     TickType_t proximo = xTaskGetTickCount();
-    bool led = false;
     int ciclo = 0;
 #ifdef TELEMETRIA_DEPURACAO
     uint32_t volta_anterior = hal_tempo_ms();
@@ -299,10 +301,9 @@ void tarefa_navegacao(void *parametro)
             amostra.tel.eixo_longo = CONTRATO_EIXO_DESCONHECIDO;
             amostra.em_movimento = corrida_em_movimento(&corrida);
             app_publicar_amostra(&amostra);
-
-            led = !led;
-            hal_led_definir(led);
         }
+
+        hal_led_definir(sinal_led(&sinal, corrida.maq.estado, hal_tempo_ms()));
 
         vTaskDelayUntil(&proximo, pdMS_TO_TICKS(PERIODO_MS));
     }

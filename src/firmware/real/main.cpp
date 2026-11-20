@@ -34,6 +34,7 @@
 #include "health_check.h"
 #include "maquina.h"
 #include "memoria.h"
+#include "sinal.h"
 #include "telemetria_envio.h"
 
 #define PERIODO_LACO_MS      5
@@ -43,6 +44,7 @@ static bateria_t bateria;
 static telemetria_amostra_t amostra;
 static maq_t maq;
 static botao_t botao;
+static sinal_t sinal;
 
 /* A tel continua saindo durante o autoteste dos motores. */
 static void esperar(uint32_t ms)
@@ -142,6 +144,7 @@ void setup()
     telemetria_iniciar(telemetria_proximo_boot());
     maq_iniciar(&maq);
     botao_iniciar(&botao);
+    sinal_iniciar(&sinal);
 
     amostra = {};
     amostra.tel.estado = CONTRATO_ESTADO_HEALTH_CHECK;
@@ -175,5 +178,6 @@ void loop()
     }
     telemetria_consumir_largada();
     telemetria_consumir_interrupcao();
+    hal_led_definir(sinal_led(&sinal, maq.estado, agora));
     delay(PERIODO_LACO_MS);
 }
