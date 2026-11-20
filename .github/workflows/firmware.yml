@@ -118,3 +118,12 @@ jobs:
 
       - name: Compilar a simulação com o botão BOOT físico
         run: pio run -e esp32_sim_boot
+
+      - name: Compilar o firmware completo no robô
+        run: pio run -e esp32_robo
+
+      - name: Compilar o firmware completo no robô com o ToF mockado
+        run: pio run -e esp32_robo_tof_mock
+
+      - name: Compilar a bancada de calibração
+        run: pio run -e esp32_calibracao
