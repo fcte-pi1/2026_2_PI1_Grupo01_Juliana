@@ -16,7 +16,6 @@ static uint8_t dip_vias;
 void hal_bateria_iniciar(void) {}
 uint16_t hal_bateria_ler_adc_mv(void) { return sim_bateria_adc_mv(); }
 
-/* Com BOOT_FISICO o BOOT é o botão da placa, de hal_boot_esp32. */
 #ifndef BOOT_FISICO
 void hal_boot_iniciar(void) {}
 bool hal_boot_pressionado(void) { return sim_boot_pressionado(); }
