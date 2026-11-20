@@ -36,12 +36,14 @@ Rodar dentro de `src/firmware`:
 | `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
 | `pio run -e esp32_real -t upload` | Firmware com a HAL real, **só o health-check**, com os ToF reais. Reprova enquanto os ToF laterais não funcionarem |
 | `pio run -e esp32_real_tof_mock -t upload` | O mesmo, com o ToF mockado (leituras fixas): o health-check aprova e serve para o e2e no cenário ideal |
+| `pio run -e esp32_sim_boot -t upload` | Igual ao `esp32_sim`, mas com o botão BOOT físico da placa e a navegação a 1 Hz (uma célula por segundo): dá tempo de apertar o BOOT no meio da corrida simulada |
+| `python tools/monitor_comandos.py` | Monitor serial que manda os comandos do contrato por tecla (`l` largar, `i` interromper, `h` health_check, `t` mostra toda a `tel`, `q` sai) e só imprime a `tel` quando o estado muda |
 | `pio run -e esp32_hc_bancada -t upload` | Bancada interativa por comandos na serial (`d` DIP, `b` bateria, `t` ToF, `r` reinicia os ToF sem reiniciar a placa, `m` motores, `h` health-check, `i` varredura do I²C, `x`, `f` e `v` para diagnosticar o XSHUT dos ToF) |
 | `pio device monitor` | Mostra o que a ESP32 escreve na serial (115200) |
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
 
-Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado: o LED azul pisca a 2,5 Hz e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
+Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado. Depois do health-check o robô **espera o comando `largar`** (a `tel` fica em `health-check` e nenhum `passo` sai); só parte com o último health-check aprovado. O `interromper`, o `health_check` (só parado) e o `largar` chegam pela serial, por exemplo com `python tools/monitor_comandos.py`. O LED azul pisca a 2,5 Hz e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
 
 ### Sem placa: simulador Wokwi
 
@@ -101,6 +103,18 @@ gcovr -r . --filter lib/ --exclude 'lib/hal/esp32/hal_.*' --html-details cobertu
 
 Os drivers reais (`lib/hal/esp32/hal_*`) ficam de fora porque só compilam na placa. O `src/` (tarefas do FreeRTOS) também, porque não entra no `native`. A meta do 7.4 é de pelo menos 80% das linhas.
 
+### Rodar os testes dentro da ESP32
+
+Os testes `test_estados`, `test_boot` e `test_corrida` têm um `entrada_arduino.cpp` e rodam também na placa, com a ESP32 ligada no USB:
+
+```bash
+pio test -e esp32_sim -f test_estados --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+pio test -e esp32_sim -f test_boot --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+pio test -e esp32_sim -f test_corrida --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+```
+
+O `test_corrida` usa a NVS da flash: apaga `mem_mapa` e `mem_tipos` antes de cada caso e deixa o mapa do último gravado, então o primeiro boot seguinte do firmware sai como `retomada`.
+
 ### Medir o desempenho da navegação na placa
 
 O flood fill precisa recalcular em menos de 5 ms na ESP32. O teste `test_desempenho_nav` monta o pior caso (12x4 com a orientação indefinida e paredes em serpentina) e mede `nav_recalcular` 100 vezes. Com a ESP32 ligada no USB:
@@ -129,14 +143,19 @@ src/firmware/
 │   ├── sensores/         ToF: mediana, paredes com histerese, autoteste e sequência XSHUT (FIRM-03)
 │   ├── energia/          estado da bateria
 │   ├── memoria/          mapa e estado na NVS com versão e CRC, para retomar depois de um reset (FIRM-08)
+│   ├── estados/          máquina de estados do robô: health-check, aguardando, reprovado, running, success e failed (FIRM-09), C puro
+│   ├── boot/             gestos do botão BOOT com debounce: toque, curto e longo (FIRM-09), C puro
+│   ├── health_check/     os 8 itens do health-check e o autoteste de motor e encoder (FIRM-09)
+│   ├── dip/              tipo do labirinto a partir das vias 1 e 2 do DIP (FIRM-09)
+│   ├── corrida/          junta a máquina, a navegação e a NVS: largar, interromper, health_check e BOOT (FIRM-09), C puro
 │   ├── controle/         PID e movimentos (FIRM-04, FIRM-05)
 │   └── navegacao/        flood fill (FIRM-01), C puro
 ├── src/
 │   ├── main.cpp          setup() e loop() do Arduino
-│   └── app/              tarefas FreeRTOS, estados, health-check, telemetria
+│   └── app/              tarefas FreeRTOS: navegação (traduz botão e comandos em eventos da corrida) e telemetria
 ├── simulador-navegacao/  programa de PC que roda a navegação nos labirintos (FIRM-02)
 │   └── labirintos/       24 labirintos válidos: 4x4, 8x4 e 12x4, espelhados
-├── tools/                verificar_serial.py, que confere a telemetria lida da serial
+├── tools/                verificar_serial.py (confere a telemetria da serial) e monitor_comandos.py (comandos por tecla)
 └── test/                 testes Unity que rodam no PC
 ```
 
@@ -144,7 +163,7 @@ As camadas só dependem das de baixo: `app` usa `navegacao`, `controle` e `senso
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (por enquanto bateria, motores, encoders e NVS) e são compilados no CI pelo programa de bancada `esp32_drivers`; os outros e o firmware completo com eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (bateria, motores, encoders, NVS, DIP, botão BOOT, LED e buzzer, e os ToF) e são compilados no CI pelo programa de bancada `esp32_drivers`; os outros e o firmware completo com eles entram no FIRM-10 (#141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
