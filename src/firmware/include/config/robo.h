@@ -53,6 +53,9 @@
 #define MOV_GANHO_FRONTAL           0.0f    /* 0 a 1: quanto o fim do avanço segue a parede da frente */
 #define MOV_FRENTE_ALVO_MM          44      /* frontal com o robô centrado e parede à frente */
 
+/* NVS: a flash aguenta cerca de 100 mil apagamentos por setor. */
+#define MEM_GRAVACOES_MAX           600     /* gravações do mapa por inicialização; um robô que oscila entre células não gasta a flash */
+
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
 #define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
 
