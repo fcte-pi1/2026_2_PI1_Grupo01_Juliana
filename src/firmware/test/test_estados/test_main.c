@@ -1,5 +1,5 @@
 /*
- * Máquina de estados — FIRM-09 (#138). Cada teste segue um cenário da spec:
+ * Máquina de estados. Cada teste segue um cenário da spec:
  * health-check, largada com o último health-check aprovado, comandos e BOOT.
  */
 

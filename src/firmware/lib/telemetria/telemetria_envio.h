@@ -134,10 +134,8 @@ uint32_t telemetria_descartados(void);
  */
 bool telemetria_consumir_interrupcao(void);
 
-/* Idem, para o comando largar (Nova execução ou Retomar). */
 bool telemetria_consumir_largada(void);
 
-/* Idem, para o comando health_check. */
 bool telemetria_consumir_health_check(void);
 
 /*

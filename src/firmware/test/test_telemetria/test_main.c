@@ -483,8 +483,6 @@ static void test_consumir_duas_vezes_devolve_true_e_depois_false(void)
     TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
 }
 
-/* ---------- comandos largar e health_check ---------- */
-
 #define LARGAR "{\"v\":1,\"cmd\":\"largar\"}"
 #define HEALTH_CHECK "{\"v\":1,\"cmd\":\"health_check\"}"
 

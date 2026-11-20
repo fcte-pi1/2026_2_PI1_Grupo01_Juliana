@@ -2,7 +2,7 @@
 #define MAQUINA_H
 
 /*
- * Máquina de estados do robô — FIRM-09 (#138).
+ * Máquina de estados do robô.
  *
  * Decide, a partir de um evento, o novo estado e a ação que quem a chama deve
  * executar. Não lê HAL nem tempo: a tarefa de navegação traduz botão, comandos
@@ -12,8 +12,8 @@
  *        │                          ▲                              │
  *        └─ reprovado ─► REPROVADO  └──── health_check ◄───────────┘
  *
- * AGUARDANDO e REPROVADO saem como "health-check" na tel (4.4.1): o contrato
- * não tem estado novo. A largada (ADR-017) só vale com o último health-check
+ * AGUARDANDO e REPROVADO saem como "health-check" na tel: o contrato
+ * não tem estado novo. A largada só vale com o último health-check
  * aprovado. O comando health_check só é atendido parado, fora de tentativa.
  *
  * C puro, sem HAL: roda igual na ESP32 e nos testes do PC.
@@ -53,8 +53,8 @@ typedef enum {
     MAQ_ACAO_NENHUMA,
     MAQ_ACAO_RODAR_HEALTH_CHECK,
     MAQ_ACAO_PARTIR,
-    MAQ_ACAO_PARAR_FALHA_WEB,   /* parar e enviar falha encerrado_operador, origem web */
-    MAQ_ACAO_PARAR_FALHA_BOOT,  /* idem, origem boot */
+    MAQ_ACAO_PARAR_FALHA_WEB,   /* parar e confirmar com falha origem web, sem motivo (o backend rejeita motivo aqui) */
+    MAQ_ACAO_PARAR_FALHA_BOOT,  /* parar e enviar falha origem boot, motivo encerrado_operador */
     MAQ_ACAO_REPETIR_FALHA_WEB, /* já parado: só repete a confirmação */
     MAQ_ACAO_APAGAR_MAPA,
     MAQ_ACAO_APAGAR_TUDO        /* o mapa e os tipos resolvidos, com bipe duplo */

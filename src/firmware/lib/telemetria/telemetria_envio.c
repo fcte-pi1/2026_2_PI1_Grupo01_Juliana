@@ -112,10 +112,6 @@ uint32_t telemetria_descartados(void)
  * (núcleo 1). stdatomic em 32 bits: a ESP32 faz a troca com S32C1I, sem
  * trava, e ler e zerar numa só operação não perde um comando que chegue entre
  * as duas. Um volatile só garantiria a leitura, não a troca.
- *
- * Cada um dos três comandos do contrato (ADR-017) tem a sua flag. A ponte repete
- * o comando até o robô responder, então o mesmo comando pode ligar a flag de
- * novo; quem decide se ainda vale é a máquina de estados.
  */
 static atomic_uint interrupcao;
 static atomic_uint largada;
