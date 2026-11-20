@@ -1,0 +1,31 @@
+# Teste 5.2. ToF: troca de módulo entre conectores da placa, 20/11/2026.
+# Bancada esp32_hc_bancada (HAL real, ToF real, 50 kHz). O módulo que falhava como lateral esquerdo foi ligado no conector do frontal.
+# Resultado relatado: o módulo responde no conector do frontal, então o módulo está bom e o defeito está no conector do lateral na placa.
+# Transcrição do monitor serial (boot, comando r e leitura contínua pela tecla t; a leitura mostra 40 linhas por rodada, resumidas).
+# A segunda posição lateral continua sem módulo funcional neste teste.
+
+[  1853][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3117][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4381][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+tof: algum nao iniciou (confira XSHUT e I2C)
+bancada do health-check: c o f v x i t r d b m h (m e h giram as rodas: rodas no ar)
+dip: vias 4321 = 0000  codigo(1,2) = 00  tipo = 4x4
+# comando r (reinicia os ToF sem reiniciar a placa)
+[ 11085][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[ 12349][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[ 13613][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu (77 mm)
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+tof: algum nao iniciou
+# comando t (leitura contínua): o módulo no conector do frontal mede de forma estável
+tof: frontal / esquerdo / direito em mm (-- = sem resposta)
+    77     --     --
+    81     --     --
+    77     --     --
+    77     --     --
+    78     --     --
+    [... 40 leituras entre 76 e 82 mm, com um objeto a cerca de 8 cm; as duas últimas sobem para 100 e 112 mm quando o objeto se afasta ...]
