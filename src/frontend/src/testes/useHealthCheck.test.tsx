@@ -20,7 +20,7 @@ function aprovado(iniciado = Date.now() - 20_000): UltimoHealthCheck {
   return {
     iniciado_em: iso(iniciado),
     concluido_em: iso(Date.now()),
-    valido_ate: iso(Date.now() + 420_000),
+    valido_ate: iso(Date.now() + 600_000),
     aprovado: true,
     tipo_dip: '4x4',
     itens: healthCheck(8),

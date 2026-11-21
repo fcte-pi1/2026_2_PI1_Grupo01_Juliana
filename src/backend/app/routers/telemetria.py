@@ -121,5 +121,6 @@ def receber_telemetria(
         # a interrupção vai em toda resposta, inclusive na 422 (4.4.1)
         comandos = RespostaPonte(comandos=estado.gerenciador.comandos_pendentes())
         return JSONResponse(
-            status_code=422, content={"detail": str(erro), **comandos.model_dump(mode="json")}
+            status_code=422,
+            content={"detail": str(erro), **comandos.model_dump(mode="json")},
         )

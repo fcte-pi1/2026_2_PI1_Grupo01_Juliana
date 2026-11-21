@@ -707,7 +707,8 @@
   color: var(--cor-texto);
 }
 
-.campo textarea {
+.campo textarea,
+.campo input[type='text'] {
   padding: 10px 12px;
   border: 1px solid var(--cor-borda-forte);
   border-radius: var(--raio-md);
@@ -754,4 +755,50 @@
 .metricas-compactas .metrica__unidade {
   margin-left: 4px;
   font-size: var(--texto-xs);
+}
+
+
+
+.lista-configuracoes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lista-configuracoes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.campo input[type='text'] {
+  width: 100%;
+  font-family: inherit;
+  font-size: var(--texto-md);
+}
+
+.campos-rotulo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--esp-3);
+  margin: var(--esp-3) 0;
+}
+
+.filtros-historico {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-3);
+}
+
+.cartao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-2);
+}
+
+.tabela__id {
+  font-size: var(--texto-xs);
+  overflow-wrap: anywhere;
 }

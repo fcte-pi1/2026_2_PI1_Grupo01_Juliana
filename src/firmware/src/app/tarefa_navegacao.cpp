@@ -218,7 +218,7 @@ void tarefa_navegacao(void *parametro)
         corrida_efeitos_t ef;
         corrida_evento(&corrida, ev, &ef);
         aplicar(ef);
-        if (ev == MAQ_EV_CMD_LARGAR) {
+        if (ev == MAQ_EV_CMD_LARGAR || ev == MAQ_EV_CMD_LARGAR_FORCADO) {
             tem_lateral = false;
             parado_desde = hal_tempo_ms();
         }
@@ -284,8 +284,10 @@ void tarefa_navegacao(void *parametro)
         if (telemetria_consumir_health_check()) {
             evento(MAQ_EV_CMD_HEALTH_CHECK);
         }
-        if (telemetria_consumir_largada()) {
-            evento(MAQ_EV_CMD_LARGAR);
+        telemetria_largada_t largada = telemetria_consumir_largada_modo();
+        if (largada != TELEMETRIA_LARGADA_NENHUMA) {
+            evento(largada == TELEMETRIA_LARGADA_FORCADA ? MAQ_EV_CMD_LARGAR_FORCADO
+                                                         : MAQ_EV_CMD_LARGAR);
         }
 
         /* Movimento: um ciclo do controle; a falha vira a falha automática stuck. */

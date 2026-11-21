@@ -1,10 +1,12 @@
 import { NavLink } from 'react-router'
+import { useEstadoRobo } from '../../hooks/useEstadoRobo'
 import { StatusReceptor } from './StatusReceptor'
 
 const DOCUMENTACAO = 'https://fcte-pi1.github.io/2026_2_PI1_Grupo01_Juliana/'
 const REPOSITORIO = 'https://github.com/fcte-pi1/2026_2_PI1_Grupo01_Juliana'
 
 export function BarraLateral() {
+  const receptor = useEstadoRobo()
   return (
     <aside className="lateral">
       <div className="lateral__marca">
@@ -33,8 +35,8 @@ export function BarraLateral() {
         </a>
       </nav>
 
-      {/* Estado real do receptor vem do backend no BACK-08. */}
-      <StatusReceptor estado="desconhecido" />
+      <StatusReceptor estado={receptor.estado} segundosSemSinal={receptor.segundosSemSinal}
+        aoReconectar={() => { void receptor.reconectar() }} reconectando={receptor.pedindo || receptor.reconexaoPedida} erro={receptor.erro} />
       <span className="lateral__versao mono">v0.1 · PI1 2026.2</span>
     </aside>
   )

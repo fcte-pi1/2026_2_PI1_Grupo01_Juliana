@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 Labirinto = Literal["4x4", "8x4", "12x4"]
 TipoLabirinto = Labirinto
@@ -46,6 +46,27 @@ Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
 
 
+class EstadoRobo(BaseModel):
+    ultimo_sinal_em: datetime | None = None
+    segundos_sem_sinal: float | None = Field(default=None, ge=0)
+    ponte: Literal["conectada", "reconectando", "desligada"] = "desligada"
+    porta: str | None = None
+    reconexao_pedida: bool = False
+
+
+class RelatoPonte(BaseModel):
+    estado: Literal["conectada", "reconectando"]
+    porta: str = Field(min_length=1, max_length=100)
+
+
+class RespostaRelatoPonte(BaseModel):
+    reconectar: bool
+
+
+class PedidoReconexao(BaseModel):
+    aceito: bool
+
+
 class BackHealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     banco_acessivel: bool
@@ -53,6 +74,13 @@ class BackHealthResponse(BaseModel):
 
 class NovaExecucaoRequest(BaseModel):
     tipo_labirinto: Labirinto
+    configuracao: str | None = Field(default=None, max_length=60)
+    observacao: str | None = Field(default=None, max_length=200)
+    ignorar_bateria: bool = False
+
+
+class RetomarRequest(BaseModel):
+    ignorar_bateria: bool = False
 
 
 class EncerrarTentativaRequest(BaseModel):
@@ -95,6 +123,11 @@ class Falha(BaseModel):
     momento_falha: datetime
 
 
+def _arredondar_velocidade(valor: float | None) -> float | None:
+    """Velocidade média em m/s com três casas (mm/s): a tela mostra o que a API manda."""
+    return None if valor is None else round(valor, 3)
+
+
 class Tentativa(BaseModel):
     tentativa_id: UUID
     attempt_index: int = Field(ge=1, le=3)
@@ -111,6 +144,8 @@ class Tentativa(BaseModel):
     consumo_bateria_pct: float | None = None
     health_check: list[ItemHealthCheck] = Field(default_factory=list)
     falha: Falha | None = None
+
+    _velocidade = field_validator("velocidade_media")(_arredondar_velocidade)
 
 
 class PassoTrajeto(BaseModel):
@@ -135,6 +170,7 @@ class LeituraTelemetria(BaseModel):
 
 class ResumoExecucao(BaseModel):
     execucao_id: UUID
+    numero: int = Field(ge=1)
     tipo_labirinto: Labirinto
     status: StatusExecucao
     tentativas_usadas: int = Field(ge=0, le=3)
@@ -143,22 +179,52 @@ class ResumoExecucao(BaseModel):
     tempo_total_s: float | None = None
     velocidade_media: float | None = None
     consumo_bateria: float | None = None
+    configuracao: str | None = None
+    observacao: str | None = None
+
+    _velocidade = field_validator("velocidade_media")(_arredondar_velocidade)
 
 
 class ExecucaoDetalhe(BaseModel):
     execucao_id: UUID
+    numero: int = Field(ge=1)
     tipo_labirinto: Labirinto
     status: StatusExecucao
     tentativas_usadas: int = Field(ge=0, le=3)
     iniciada_em: datetime
     encerrada_em: datetime | None = None
     tempo_total_s: float | None = None
+    configuracao: str | None = None
+    observacao: str | None = None
     variacao_melhor_tempo_pct: float | None = None
     eixo_longo: EixoLongo | None = None
     ultima_mensagem_em: datetime | None = None
     tentativas: list[Tentativa] = Field(default_factory=list)
     trajeto: list[PassoTrajeto] = Field(default_factory=list)
     leituras: list[LeituraTelemetria] = Field(default_factory=list)
+
+
+class ResumoConfiguracao(BaseModel):
+    configuracao: str | None = None
+    total: int = Field(ge=0)
+    concluidas: int = Field(ge=0)
+    taxa_sucesso_pct: float | None = None
+    tempo_medio_s: float | None = None
+    tempo_maximo_s: float | None = None
+
+
+class ResumoCampanha(BaseModel):
+    """Resumo das execuções encerradas: o que a FIRM-13 pede (8 de 10, todas abaixo de 10 min)."""
+
+    total: int = Field(ge=0)
+    concluidas: int = Field(ge=0)
+    canceladas: int = Field(ge=0)
+    em_andamento: int = Field(ge=0)
+    taxa_sucesso_pct: float | None = None
+    tempo_medio_s: float | None = None
+    tempo_maximo_s: float | None = None
+    concluidas_abaixo_de_10_min: int = Field(ge=0)
+    por_configuracao: list[ResumoConfiguracao] = Field(default_factory=list)
 
 
 class RetornoNovaExecucao(BaseModel):

@@ -11,6 +11,9 @@ export const LIMITE_EXECUCAO_S = 600
 
 export const LIMITE_TENTATIVAS = 3
 
+/** Corte por subtensão da LiPo 2S (3,5 V por célula): abaixo disso o health-check reprova a bateria. */
+export const BATERIA_CORTE_MV = 7000
+
 /** A partir deste intervalo sem mensagem, a tela mostra "Sem comunicação". */
 export const ALERTA_SEM_DADOS_S = 5
 

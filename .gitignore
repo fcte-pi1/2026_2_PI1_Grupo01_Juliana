@@ -383,3 +383,5 @@ src/firmware/**/build/
 
 # Ponte serial (log de auditoria)
 **/logs/ponte/
+
+.ambiente/

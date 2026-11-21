@@ -134,6 +134,16 @@ uint32_t telemetria_descartados(void);
  */
 bool telemetria_consumir_interrupcao(void);
 
+/* Largada pedida: normal, ou forçada quando o operador confirmou largar com a bateria baixa. */
+typedef enum {
+    TELEMETRIA_LARGADA_NENHUMA = 0,
+    TELEMETRIA_LARGADA_NORMAL = 1,
+    TELEMETRIA_LARGADA_FORCADA = 2
+} telemetria_largada_t;
+
+/* Consome o pedido de largada, dizendo se veio com a confirmação da bateria. */
+telemetria_largada_t telemetria_consumir_largada_modo(void);
+
 bool telemetria_consumir_largada(void);
 
 bool telemetria_consumir_health_check(void);

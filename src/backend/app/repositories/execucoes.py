@@ -39,9 +39,7 @@ class ExecucaoRepository(Repositorio):
     ) -> tuple[list[ExecucaoLogica], int]:
         """Página do histórico: em andamento primeiro, depois da mais recente à mais antiga."""
         filtro = filtro or FiltroExecucoes()
-        base = select(ExecucaoLogica)
-        if filtro.tipo_labirinto is not None:
-            base = base.join(Labirinto).where(Labirinto.tipo == filtro.tipo_labirinto)
+        base = self._filtrar(select(ExecucaoLogica), filtro)
 
         total = self._session.scalar(select(func.count()).select_from(base.subquery())) or 0
 
@@ -60,6 +58,31 @@ class ExecucaoRepository(Repositorio):
             .offset(offset)
         )
         return list(self._session.scalars(stmt).unique().all()), total
+
+    @staticmethod
+    def _filtrar(consulta, filtro: FiltroExecucoes):
+        if filtro.tipo_labirinto is not None:
+            consulta = consulta.join(Labirinto).where(Labirinto.tipo == filtro.tipo_labirinto)
+        if filtro.configuracao is not None:
+            consulta = consulta.where(ExecucaoLogica.configuracao == filtro.configuracao)
+        return consulta
+
+    def listar_todas(self, filtro: FiltroExecucoes | None = None) -> list[ExecucaoLogica]:
+        """Execuções do filtro, da mais antiga à mais recente, com tentativas, falhas e passos."""
+        filtro = filtro or FiltroExecucoes()
+        stmt = (
+            self._filtrar(select(ExecucaoLogica), filtro)
+            .options(
+                joinedload(ExecucaoLogica.labirinto),
+                selectinload(ExecucaoLogica.tentativas).selectinload(Tentativa.falha),
+                selectinload(ExecucaoLogica.passos_trajeto),
+            )
+            .order_by(ExecucaoLogica.iniciada_em, ExecucaoLogica.execucao_id)
+        )
+        execucoes = list(self._session.scalars(stmt).unique().all())
+        for execucao in execucoes:
+            execucao.tentativas.sort(key=lambda t: t.attempt_index)
+        return execucoes
 
     def buscar_detalhe(self, execucao_id: UUID) -> ExecucaoLogica | None:
         """Execução com tentativas, health-check, falha, trajeto e paredes já carregados."""

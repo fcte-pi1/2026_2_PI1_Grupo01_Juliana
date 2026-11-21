@@ -35,6 +35,8 @@ def montar(tmp_path, caminho, abrir):
     chegou = threading.Event()
 
     def responder(pedido):
+        if pedido.url.path == "/robo/ponte":
+            return httpx.Response(200, json={"reconectar": False})
         pedidos.append(json.loads(pedido.content))
         if len(pedidos) == len(LINHAS):
             chegou.set()

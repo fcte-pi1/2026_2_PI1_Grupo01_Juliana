@@ -77,7 +77,7 @@ def _tel(seq: int, estado: str = "running") -> str:
 
 
 def test_tempo_conta_da_largada_e_nao_do_health_check(client, db_session: Session):
-    # health-check 5 min antes da largada, dentro dos 7 min de validade
+    # health-check 5 min antes da largada, dentro dos 10 min de validade
     gravar_health_check(db_session, "4x4", concluido_em=datetime.now(UTC) - timedelta(minutes=5))
     criado = client.post("/execucoes", json={"tipo_labirinto": "4x4"}).json()
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])

@@ -618,7 +618,6 @@ async function prepararLargada(page: Page, boot: number) {
   const iniciar = page.getByRole('button', { name: /Nova execução/ })
   await expect(iniciar).toBeEnabled()
   await expect(page.getByText('Health-check aprovado e válido para abrir a tentativa.')).toBeVisible()
-  await page.getByText('Ver componentes do health-check').click()
   await expect(page.getByText('8 de 8 OK')).toBeVisible()
   await expect(page.getByRole('listitem').filter({ hasText: 'ToF frontal' })).toContainText('OK')
 

@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import type { ResumoExecucao } from '../../api/tipos'
 import { formatarDataHora, formatarMedicao, formatarNumeroExecucao, formatarTempo, LIMITE_TENTATIVAS } from '../../utils/formatacao'
 import { PilulaResultado } from '../execucao/PilulaResultado'
@@ -9,15 +9,17 @@ interface TabelaExecucoesProps {
 }
 
 export function TabelaExecucoes({ execucoes }: TabelaExecucoesProps) {
+  const navegar = useNavigate()
   if (execucoes.length === 0) return <p className="estado-vazio">Nenhuma execução registrada.</p>
 
   return (
     <div className="rolagem-horizontal">
-      <table className="tabela tabela--sem-destaque">
+      <table className="tabela tabela--sem-destaque tabela--clicavel">
         <thead>
           <tr>
             <th>Execução</th>
             <th>Labirinto</th>
+            <th>Configuração</th>
             <th>Data</th>
             <th>Resultado</th>
             <th>Tentativas</th>
@@ -27,11 +29,15 @@ export function TabelaExecucoes({ execucoes }: TabelaExecucoesProps) {
         </thead>
         <tbody>
           {execucoes.map((e) => (
-            <tr key={e.execucao_id}>
+            <tr key={e.execucao_id} onClick={(evento) => {
+              if ((evento.target as HTMLElement).closest('a') || window.getSelection()?.toString()) return
+              void navegar(`/execucoes/${e.execucao_id}`)
+            }}>
               <td>
-                <Link to={`/execucoes/${e.execucao_id}`}>{formatarNumeroExecucao(e.numero, e.execucao_id)}</Link>
+                <Link className="tabela__id" to={`/execucoes/${e.execucao_id}`}>{formatarNumeroExecucao(e.numero, e.execucao_id)}</Link>
               </td>
               <td>{e.labirinto}</td>
+              <td title={e.observacao ?? undefined}>{e.configuracao ?? <span className="texto-suave">sem rótulo</span>}</td>
               <td>{formatarDataHora(e.iniciada_em)}</td>
               <td>
                 <PilulaResultado resultado={e.resultado ?? e.status} />

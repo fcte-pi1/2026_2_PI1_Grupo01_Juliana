@@ -142,6 +142,15 @@ def test_comando_interromper():
     assert RespostaPonte().model_dump_json() == '{"comandos":[]}'
 
 
+def test_largar_com_bateria_forcada_leva_o_campo_e_o_de_sempre_nao():
+    assert Comando(cmd="largar").model_dump_json() == '{"v":1,"cmd":"largar"}'
+    forcado = Comando(cmd="largar", forcar_bateria=True)
+    assert forcado.model_dump_json() == '{"v":1,"cmd":"largar","forcar_bateria":true}'
+    assert Comando.model_validate_json(forcado.model_dump_json(), strict=True) == forcado
+    with pytest.raises(ValueError):
+        Comando(cmd="largar", forcar_bateria=False)
+
+
 def test_entrada_da_ponte_exige_fuso_no_recebido_em():
     entrada = EntradaPonte.model_validate_json(
         '{"linha":"{}","recebido_em":"2026-10-05T14:03:21.512-03:00"}'

@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 
 interface ModalProps {
   titulo: ReactNode
@@ -9,6 +9,7 @@ interface ModalProps {
 
 /** Base dos modais de Encerrar e Retomar tentativa: fundo escuro, Esc fecha. */
 export function Modal({ titulo, aoFechar, children, rodape }: ModalProps) {
+  const idTitulo = useId()
   useEffect(() => {
     const aoTeclar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') aoFechar()
@@ -19,8 +20,8 @@ export function Modal({ titulo, aoFechar, children, rodape }: ModalProps) {
 
   return (
     <div className="modal__fundo" onClick={aoFechar}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" onClick={(e) => e.stopPropagation()}>
-        <h2 id="modal-titulo" className="modal__titulo">
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={idTitulo} onClick={(e) => e.stopPropagation()}>
+        <h2 id={idTitulo} className="modal__titulo">
           {titulo}
         </h2>
         <div className="modal__corpo">{children}</div>

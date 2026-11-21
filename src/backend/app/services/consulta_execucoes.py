@@ -36,12 +36,15 @@ def buscar_detalhe(repo: ExecucaoRepository, execucao_id: UUID) -> api.ExecucaoD
 
     return api.ExecucaoDetalhe(
         execucao_id=execucao.execucao_id,
+        numero=execucao.numero,
         tipo_labirinto=execucao.labirinto.tipo,
         status=execucao.status,
         tentativas_usadas=execucao.tentativas_usadas,
         iniciada_em=execucao.iniciada_em,
         encerrada_em=execucao.encerrada_em,
         tempo_total_s=execucao.tempo_total_s,
+        configuracao=execucao.configuracao,
+        observacao=execucao.observacao,
         variacao_melhor_tempo_pct=_variacao_melhor_tempo(repo, execucao),
         eixo_longo=_eixo_longo(execucao),
         ultima_mensagem_em=repo.ultima_mensagem_em(execucao.execucao_id),
@@ -56,6 +59,7 @@ def _resumo(execucao: models.ExecucaoLogica) -> api.ResumoExecucao:
     ultima = tentativas[-1] if tentativas else None
     return api.ResumoExecucao(
         execucao_id=execucao.execucao_id,
+        numero=execucao.numero,
         tipo_labirinto=execucao.labirinto.tipo,
         status=execucao.status,
         tentativas_usadas=execucao.tentativas_usadas,
@@ -64,6 +68,8 @@ def _resumo(execucao: models.ExecucaoLogica) -> api.ResumoExecucao:
         tempo_total_s=execucao.tempo_total_s,
         velocidade_media=ultima.velocidade_media if ultima else None,
         consumo_bateria=_consumo_geral(tentativas),
+        configuracao=execucao.configuracao,
+        observacao=execucao.observacao,
     )
 
 

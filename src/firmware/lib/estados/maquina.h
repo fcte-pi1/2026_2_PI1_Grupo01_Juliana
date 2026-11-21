@@ -42,6 +42,7 @@ typedef enum {
     MAQ_EV_HC_APROVADO,      /* o health-check terminou sem reprovação */
     MAQ_EV_HC_REPROVADO,
     MAQ_EV_CMD_LARGAR,
+    MAQ_EV_CMD_LARGAR_FORCADO, /* o operador confirmou largar com a bateria abaixo do corte */
     MAQ_EV_CMD_HEALTH_CHECK,
     MAQ_EV_CMD_INTERROMPER,
     MAQ_EV_BOOT_TOQUE,       /* qualquer toque no BOOT; só age na corrida */
@@ -65,6 +66,7 @@ typedef enum {
 typedef struct {
     maq_estado_t estado;
     bool hc_aprovado; /* resultado do último health-check concluído, enquanto ainda vale */
+    bool hc_concluido; /* algum health-check terminou desde o boot ou o último pedido */
     uint32_t agora_ms; /* o relógio que maq_tempo recebeu por último */
     uint32_t hc_em_ms; /* quando o último health-check foi aprovado */
 } maq_t;

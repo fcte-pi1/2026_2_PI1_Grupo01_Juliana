@@ -155,6 +155,16 @@ int main(int argc, char **argv)
         printf("ok       comandos largar e health_check\n");
     }
 
+    if (!contrato_largar_forcado("{\"v\":1,\"cmd\":\"largar\",\"forcar_bateria\":true}\n") ||
+        contrato_largar_forcado("{\"v\":1,\"cmd\":\"largar\"}\n") ||
+        contrato_largar_forcado("{\"v\":1,\"cmd\":\"largar\",\"forcar_bateria\":false}\n") ||
+        contrato_largar_forcado("{\"v\":1,\"cmd\":\"health_check\",\"forcar_bateria\":true}\n")) {
+        falhas++;
+        printf("FALHOU: reconhecimento do largar com forcar_bateria\n");
+    } else {
+        printf("ok       largar com forcar_bateria\n");
+    }
+
     printf("%s (%d falha(s))\n", falhas ? "FALHOU" : "OK", falhas);
     return falhas ? 1 : 0;
 }

@@ -13,6 +13,7 @@ from ponte.config import ConfigPonte
 from ponte.enviadora import Enviadora, criar_cliente
 from ponte.fila import Fila
 from ponte.leitora import Leitora, Porta, abrir_serial
+from ponte.relatora import Relatora
 
 ESPERA_DAS_THREADS = 2.0
 
@@ -64,9 +65,18 @@ class Ponte:
         self.enviadora = Enviadora(
             self._cliente, self.fila, self.auditoria, self.leitora.escrever, dormir=self._parar.wait
         )
+        self.relatora = Relatora(
+            self._cliente,
+            config.porta_serial,
+            lambda: self.leitora.aberta,
+            self.leitora.reconectar,
+            self.auditoria,
+            dormir=self._parar.wait,
+        )
         self.threads = [
             threading.Thread(target=self.leitora.rodar, args=(self._parar,), daemon=True),
             threading.Thread(target=self.enviadora.rodar, args=(self._parar,), daemon=True),
+            threading.Thread(target=self.relatora.rodar, args=(self._parar,), daemon=True),
         ]
 
     def iniciar(self) -> None:

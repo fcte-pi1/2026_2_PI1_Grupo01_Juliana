@@ -7,7 +7,7 @@ import type { EncerrarPedido, Execucao, Labirinto, Recusa, RetornoNovaExecucao, 
 import { CartaoUltimaExecucao } from '../../components/execucao/CartaoUltimaExecucao'
 import { ComoFunciona } from '../../components/execucao/ComoFunciona'
 import { EtapasExecucao } from '../../components/execucao/EtapasExecucao'
-import { FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/FormNovaExecucao'
+import { CamposRotulo, FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/FormNovaExecucao'
 import { PilulaStatusTentativa } from '../../components/execucao/PilulaResultado'
 import { ResumoExecucao } from '../../components/execucao/ResumoExecucao'
 import { Cabecalho } from '../../components/layout/Cabecalho'
@@ -20,6 +20,7 @@ import { ContadorTentativas } from '../../components/tentativas/ContadorTentativ
 import { Modal } from '../../components/tentativas/Modal'
 import { ModalEncerrar } from '../../components/tentativas/ModalEncerrar'
 import { ModalEncerrarExecucao } from '../../components/tentativas/ModalEncerrarExecucao'
+import { ModalBateriaBaixa } from '../../components/tentativas/ModalBateriaBaixa'
 import { ModalRetomar } from '../../components/tentativas/ModalRetomar'
 import { useAgora } from '../../hooks/useAgora'
 import { useExecucaoAtual } from '../../hooks/useExecucaoAtual'
@@ -65,10 +66,13 @@ export function Inicio() {
   const labirintos = useLabirintos()
   const agora = useAgora()
   const [selecionado, setSelecionado] = useState<TipoLabirinto>('4x4')
+  const [avisoBateria, setAvisoBateria] = useState<'nova' | 'retomar' | null>(null)
+  const [rotulo, setRotulo] = useState({ configuracao: '', observacao: '' })
   const [recusaLocal, setRecusaLocal] = useState<Recusa | null>(null)
   const [enviando, setEnviando] = useState(false)
   const envioEmAndamento = useRef(false)
-  const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [erroRegistrado, setErroRegistrado] = useState<{ texto: string; situacao: string } | null>(null)
+  const situacaoAtual = useRef('')
   const [criacaoPendente, setCriacaoPendente] = useState<RetornoNovaExecucao | null>(null)
   const [retomadaPendente, setRetomadaPendente] = useState<RetornoNovaExecucao | null>(null)
   const [tentativaCriada, setTentativaCriada] = useState<RetornoNovaExecucao | null>(null)
@@ -81,7 +85,8 @@ export function Inicio() {
   }, [atual.carregando, encerradaId, parametros, setParametros])
 
   const modal = (parametros.get('modal') as TipoModal) ?? null
-  const abrirModal = (novo: TipoModal) =>
+  const abrirModal = (novo: TipoModal) => {
+    setErroAcao(null)
     setParametros(
       (p) => {
         if (novo) p.set('modal', novo)
@@ -90,8 +95,16 @@ export function Inicio() {
       },
       { replace: true },
     )
+  }
 
   const recebida = atual.dados?.execucao
+  const situacaoDaExecucao = recebida
+    ? `${recebida.execucao_id}|${recebida.status}|${recebida.tentativas.map((t) => t.status).join(',')}` : ''
+  useEffect(() => { situacaoAtual.current = situacaoDaExecucao }, [situacaoDaExecucao])
+  // O aviso de uma ação recusada vale só para a situação em que ela foi pedida.
+  const erroAcao = erroRegistrado?.situacao === situacaoDaExecucao ? erroRegistrado.texto : null
+  const setErroAcao = (texto: string | null) =>
+    setErroRegistrado(texto ? { texto, situacao: situacaoAtual.current } : null)
   const temTentativaAberta = !!recebida && tentativaAberta(recebida) !== null
   const tipoVerificado = modal === 'nova' || !recebida ? selecionado : recebida.labirinto
   const healthCheck = useHealthCheck(tipoVerificado, !temTentativaAberta || modal === 'nova')
@@ -146,10 +159,10 @@ export function Inicio() {
     atualizarExecucao(await encerrarTentativa(id, pedido))
   }
 
-  async function registrarRetomada(id: string) {
+  async function registrarRetomada(id: string, ignorarBateria = false) {
     let registrada = retomadaPendente
     if (!registrada) {
-      registrada = await retomarTentativa(id)
+      registrada = await retomarTentativa(id, ignorarBateria)
       setRetomadaPendente(registrada)
     }
     let retrato: Execucao
@@ -165,10 +178,15 @@ export function Inicio() {
     setRetomadaPendente(null)
   }
 
-  async function iniciarNovaExecucao() {
+  async function iniciarNovaExecucao(ignorarBateria = false) {
     let criada = criacaoPendente
     if (!criada) {
-      criada = await criarExecucao({ tipo_labirinto: selecionado })
+      criada = await criarExecucao({
+        tipo_labirinto: selecionado,
+        ...(ignorarBateria && { ignorar_bateria: true }),
+        ...(rotulo.configuracao.trim() && { configuracao: rotulo.configuracao.trim() }),
+        ...(rotulo.observacao.trim() && { observacao: rotulo.observacao.trim() }),
+      })
       setCriacaoPendente(criada)
       setTentativaCriada(criada)
     }
@@ -188,11 +206,16 @@ export function Inicio() {
       <>
         <Cabecalho trilha="Início" titulo={retomadaPendente ? 'Retomada registrada' : 'Nova execução registrada'} acoes={
           <button type="button" className="botao botao--primario" disabled={enviando}
-            onClick={() => retomadaPendente ? enviar(() => registrarRetomada(retomadaPendente.execucao_id)) : enviar(iniciarNovaExecucao, true)}>
+            onClick={() => retomadaPendente ? enviar(() => registrarRetomada(retomadaPendente.execucao_id)) : enviar(() => iniciarNovaExecucao(), true)}>
             {retomadaPendente ? 'Carregar dados da tentativa' : 'Carregar dados da execução'}
           </button>
         } />
-        {erroAcao && <div className="faixa faixa--perigo" role="alert">{erroAcao}</div>}
+        {erroAcao && (
+          <div className="faixa faixa--perigo" role="alert">
+            {erroAcao}
+            <button type="button" className="botao faixa__acao" onClick={() => setErroAcao(null)}>Fechar</button>
+          </div>
+        )}
         <div className="conteudo">
           <ContadorTentativas atual={registroPendente.attempt_index} />
           <p className="estado-vazio">Aguardando os dados da execução {registroPendente.execucao_id}.</p>
@@ -218,6 +241,7 @@ export function Inicio() {
   const faixaErro = erroAcao && (
     <div className="faixa faixa--perigo" role="alert">
       Não foi possível concluir a ação: {erroAcao}
+      <button type="button" className="botao faixa__acao" onClick={() => setErroAcao(null)}>Fechar</button>
     </div>
   )
   const faixaSincronizacao = atual.erroSincronizacao && (
@@ -226,12 +250,30 @@ export function Inicio() {
       <button type="button" className="botao faixa__acao" onClick={atual.sincronizar}>Atualizar dados</button>
     </div>
   )
+  const modalBateria = avisoBateria && healthCheck.bateriaBaixa && (
+    <ModalBateriaBaixa
+      valorMv={healthCheck.bateriaBaixa.valorMv}
+      retomada={avisoBateria === 'retomar'}
+      enviando={enviando}
+      aoCancelar={() => setAvisoBateria(null)}
+      aoContinuar={() => {
+        const quem = avisoBateria
+        setAvisoBateria(null)
+        if (quem === 'retomar' && execucao) void enviar(() => registrarRetomada(execucao.execucao_id, true))
+        else void enviar(() => iniciarNovaExecucao(true), true)
+      }}
+    />
+  )
   const novaExecucao = (
     <button
       type="button"
       className="botao botao--primario"
-      disabled={enviando || (!execucao && !healthCheck.apto)}
-      onClick={() => execucao ? abrirModal('nova') : enviar(iniciarNovaExecucao, true)}
+      disabled={enviando || (!execucao && !healthCheck.apto && !healthCheck.bateriaBaixa)}
+      onClick={() => {
+        if (execucao) abrirModal('nova')
+        else if (healthCheck.bateriaBaixa && !healthCheck.apto) setAvisoBateria('nova')
+        else void enviar(() => iniciarNovaExecucao(), true)
+      }}
     >
       + Nova execução
     </button>
@@ -242,6 +284,7 @@ export function Inicio() {
       <>
         <Cabecalho trilha="Início" titulo={titulo} acoes={novaExecucao} />
         {faixaErro}
+        {modalBateria}
         {recusa && <AvisoRecusa motivo={recusa.motivo} titulo="Nova execução recusada" aoFechar={fecharRecusa} />}
         <div className="conteudo pagina-duas-colunas">
           <FormNovaExecucao
@@ -251,6 +294,9 @@ export function Inicio() {
             aoSelecionar={setSelecionado}
             desabilitado={enviando}
             verificacao={verificacao}
+            configuracao={rotulo.configuracao}
+            observacao={rotulo.observacao}
+            aoMudarRotulo={(campos) => setRotulo((atual) => ({ ...atual, ...campos }))}
           />
           <div className="coluna">
             <ComoFunciona />
@@ -269,7 +315,8 @@ export function Inicio() {
       rodape={
         <>
           <button type="button" className="botao" disabled={enviando} onClick={() => abrirModal(null)}>Cancelar</button>
-          <button type="button" className="botao botao--primario" disabled={enviando || !healthCheck.apto} onClick={() => enviar(iniciarNovaExecucao, true)}>
+          <button type="button" className="botao botao--primario" disabled={enviando || !(healthCheck.apto || healthCheck.bateriaBaixa)}
+            onClick={() => healthCheck.apto ? enviar(() => iniciarNovaExecucao(), true) : setAvisoBateria('nova')}>
             {enviando ? 'Iniciando…' : 'Confirmar nova execução'}
           </button>
         </>
@@ -279,6 +326,12 @@ export function Inicio() {
         ? <p>A execução <strong>{numero}</strong> está em andamento. Ao confirmar, ela será <strong>cancelada</strong> e uma nova execução começará na <strong>Tentativa 1/3</strong>. Se o robô ainda estiver andando, pare-o pelo botão BOOT.</p>
         : <p>Escolha o labirinto. A nova execução começará na <strong>Tentativa 1/3</strong>.</p>}
       <SeletorLabirinto labirintos={labirintos.dados ?? []} selecionado={selecionado} aoSelecionar={setSelecionado} desabilitado={enviando} />
+      <CamposRotulo
+        configuracao={rotulo.configuracao}
+        observacao={rotulo.observacao}
+        aoMudarRotulo={(campos) => setRotulo((atual) => ({ ...atual, ...campos }))}
+        desabilitado={enviando}
+      />
       {verificacao}
       {recusaLocal && <AvisoRecusa motivo={recusaLocal.motivo} titulo="Nova execução recusada" aoFechar={fecharRecusa} />}
       {faixaErro}
@@ -311,6 +364,7 @@ export function Inicio() {
           <p className="estado-vazio">Aguardando os dados da tentativa enviados pelo backend.</p>
         </div>
         {modalNovaExecucao}
+{modalBateria}
         {modalEncerrarExecucao}
       </>
     )
@@ -385,6 +439,7 @@ export function Inicio() {
       </div>
 
       {modalNovaExecucao}
+{modalBateria}
       {modalEncerrarExecucao}
       {modal === 'encerrar' && aberta && (
         <ModalEncerrar
@@ -403,10 +458,13 @@ export function Inicio() {
           proxima={tentativa.attempt_index + 1}
           celulaFalha={nomeCelula(celulaFalha)}
           enviando={enviando}
-          liberado={healthCheck.apto}
+          liberado={healthCheck.apto || !!healthCheck.bateriaBaixa}
+          bateriaBaixa={!healthCheck.apto && !!healthCheck.bateriaBaixa}
           verificacao={verificacao}
           aoCancelar={() => abrirModal(null)}
-          aoConfirmar={() => enviar(() => registrarRetomada(execucao.execucao_id))}
+          aoConfirmar={() => healthCheck.apto
+            ? enviar(() => registrarRetomada(execucao.execucao_id))
+            : setAvisoBateria('retomar')}
         />
       )}
     </>

@@ -41,7 +41,13 @@ export type OrigemFalha = 'automatica' | 'encerrado_operador'
 
 export type MotivoRecusa = components['schemas']['MotivoRecusa']
 
+export type EstadoRobo = components['schemas']['EstadoRobo'] & { ponte: 'conectada' | 'reconectando' | 'desligada' }
+
 export type UltimoHealthCheck = components['schemas']['UltimoHealthCheck']
+
+export type ResumoCampanha = components['schemas']['ResumoCampanha']
+
+export type ResumoConfiguracao = components['schemas']['ResumoConfiguracao']
 
 export interface Celula {
   x: number
@@ -135,6 +141,8 @@ export interface Execucao {
   encerrada_em: string | null
   tempo_total_s: number | null
   variacao_melhor_tempo_pct?: number | null
+  configuracao?: string | null
+  observacao?: string | null
   tentativas: Tentativa[]
   trajeto: PassoTrajeto[]
   leituras: LeituraTelemetria[]
@@ -155,6 +163,9 @@ export interface ResumoExecucao {
   tempo_total_s: number | null
   velocidade_media: number | null
   consumo_bateria: number | null
+  /** Rótulo de configuração de paredes informado ao abrir a execução. */
+  configuracao?: string | null
+  observacao?: string | null
 }
 
 /** Estado da View montado com GET /execucoes/em-andamento e GET /execucoes. */
@@ -167,7 +178,7 @@ export interface ExecucaoAtualResposta {
   proximo_numero?: number
 }
 
-export type NovaExecucaoPedido = components['schemas']['NovaExecucao']
+export type NovaExecucaoPedido = Omit<components['schemas']['NovaExecucao'], 'ignorar_bateria'> & { ignorar_bateria?: boolean }
 
 export type RetornoNovaExecucao = components['schemas']['RetornoNovaExecucao']
 

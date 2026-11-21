@@ -25,6 +25,8 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [019](019-robo-anda-e-para-leitura-lateral-ao-entrar.md) | O robô anda e para, a parede lateral é lida ao entrar na célula e o laço mantém o controle de posição | Firmware, Testes |
 | [020](020-bluetooth-real-spp-ambientes-bt.md) | Bluetooth real (SPP) com o mesmo contrato, em ambientes à parte do USB | Firmware, Back-end, Testes |
 | [021](021-health-check-so-por-comando.md) | O health-check só roda por comando, não ao ligar | Firmware, Testes |
+| [022](022-health-check-vale-10-minutos.md) | O health-check vale por 10 minutos, no contrato, no back-end e no firmware | Firmware, Back-end, Front-end, Docs |
+| [023](023-largar-com-bateria-abaixo-do-corte.md) | O operador pode largar com a bateria abaixo do corte, só quando ela é o único item reprovado | Firmware, Back-end, Front-end, Docs |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 

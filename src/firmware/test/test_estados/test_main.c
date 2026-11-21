@@ -103,6 +103,58 @@ void test_largar_com_health_check_aprovado_parte(void)
     TEST_ASSERT_TRUE(maq_andando(&m));
 }
 
+void test_largar_forcado_parte_mesmo_com_health_check_reprovado(void)
+{
+    maq_tempo(&m, 1000);
+    maq_evento(&m, MAQ_EV_HC_REPROVADO);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+    TEST_ASSERT_EQUAL(MAQ_RUNNING, m.estado);
+}
+
+void test_largar_forcado_sem_health_check_concluido_e_ignorado(void)
+{
+    maq_iniciar(&m);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
+    maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+    TEST_ASSERT_EQUAL(MAQ_HEALTH_CHECK, m.estado);
+}
+
+void test_largar_forcado_vencido_exige_novo_health_check(void)
+{
+    maq_tempo(&m, 1000);
+    maq_evento(&m, MAQ_EV_HC_REPROVADO);
+    maq_tempo(&m, 1000 + MAQ_HC_VALIDADE_MS - 1);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+
+    reiniciar();
+    maq_tempo(&m, 1000);
+    maq_evento(&m, MAQ_EV_HC_REPROVADO);
+    maq_tempo(&m, 1000 + MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+    TEST_ASSERT_EQUAL(MAQ_REPROVADO, m.estado);
+}
+
+void test_largar_forcado_retoma_depois_de_failed_com_health_check_reprovado(void)
+{
+    maq_tempo(&m, 1000);
+    maq_evento(&m, MAQ_EV_HC_REPROVADO);
+    maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO);
+    maq_evento(&m, MAQ_EV_CORRIDA_FALHA);
+    TEST_ASSERT_EQUAL(MAQ_FAILED, m.estado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+}
+
+void test_largar_forcado_na_corrida_nao_faz_nada(void)
+{
+    ate_running();
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR_FORCADO));
+    TEST_ASSERT_EQUAL(MAQ_RUNNING, m.estado);
+}
+
 void test_largar_na_corrida_nao_faz_nada(void)
 {
     ate_running();
@@ -395,6 +447,11 @@ int main(void)
     RUN_TEST(test_health_check_reprovado_nao_parte_com_largar);
     RUN_TEST(test_largar_antes_do_resultado_do_health_check_e_ignorado);
     RUN_TEST(test_largar_com_health_check_aprovado_parte);
+    RUN_TEST(test_largar_forcado_parte_mesmo_com_health_check_reprovado);
+    RUN_TEST(test_largar_forcado_sem_health_check_concluido_e_ignorado);
+    RUN_TEST(test_largar_forcado_vencido_exige_novo_health_check);
+    RUN_TEST(test_largar_forcado_retoma_depois_de_failed_com_health_check_reprovado);
+    RUN_TEST(test_largar_forcado_na_corrida_nao_faz_nada);
     RUN_TEST(test_largar_na_corrida_nao_faz_nada);
     RUN_TEST(test_health_check_pedido_parado_roda_de_novo);
     RUN_TEST(test_health_check_pedido_depois_de_reprovado_pode_aprovar);

@@ -417,7 +417,7 @@ class TestHealthCheckPreRequisito:
         self, client: TestClient, db_session: Session, health_check_aprovado
     ):
         anterior = self._nova(client).json()
-        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=8)
+        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=11)
         db_session.flush()
 
         r = self._nova(client)
@@ -427,8 +427,8 @@ class TestHealthCheckPreRequisito:
         execucao = db_session.get(ExecucaoLogica, uuid.UUID(anterior["execucao_id"]))
         assert execucao.status == "em_andamento"
 
-    @pytest.mark.parametrize(("idade_s", "status"), [(415, 201), (421, 409)], ids=["415s", "421s"])
-    def test_validade_de_7_minutos(
+    @pytest.mark.parametrize(("idade_s", "status"), [(595, 201), (601, 409)], ids=["595s", "601s"])
+    def test_validade_de_10_minutos(
         self, client: TestClient, db_session: Session, health_check_aprovado, idade_s, status
     ):
         health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(seconds=idade_s)
@@ -459,7 +459,7 @@ class TestHealthCheckPreRequisito:
         ret = gerenciador.nova_execucao(db_session, "4x4")
         tentativa = db_session.get(Tentativa, ret.tentativa_id)
         gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
-        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=8)
+        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=11)
         db_session.commit()
 
         r = client.post(f"/execucoes/{ret.execucao_id}/retomar")
@@ -479,7 +479,7 @@ class TestHealthCheckPreRequisito:
         ret = gerenciador.nova_execucao(db_session, "4x4")
         tentativa = db_session.get(Tentativa, ret.tentativa_id)
         gerenciador.aplicar_evento(db_session, tentativa, _falha_auto())
-        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=8)
+        health_check_aprovado.concluido_em = datetime.now(UTC) - timedelta(minutes=11)
         novo = gravar_health_check(db_session, "4x4")
 
         ret = gerenciador.retomar(db_session, ret.execucao_id)
