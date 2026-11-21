@@ -1,0 +1,616 @@
+Teste 5.28 - Avanco de uma celula (tecla a), bancada esp32_calibracao_bt
+Logs completos enviados pela Amanda, na ordem em que foram feitos. Cada bloco comeca com um titulo [Log N].
+Os logs de a que vieram junto com g, G ou A estao inteiros aqui e sao citados nos testes 5.29 e 5.30.
+
+[Log 1] Rodas no ar, primeira versao do controle (so proporcional), 840 pulsos por volta. Da sessao anterior so resta o resumo:
+avanco: FALHOU esq=1398 dir=1393 pulsos (esperado 1416)
+avanco: FALHOU esq=1397 dir=1396 pulsos (esperado 1416)
+
+[Log 2] USB, depois de acrescentar a parcela integral sobre a trajetoria toda (a roda direita parecia nao andar):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+␛�;␃�$�8␃�$␄�␄$$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2376][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3640][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4904][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+# comando: a
+avanco: FALHOU esq=1449 dir=1443 pulsos (esperado 1416) = 183.9 mm pelos pulsos
+# comando: a
+avanco: FALHOU esq=1410 dir=1413 pulsos (esperado 1416) = 179.5 mm pelos pulsos
+# comando: a
+avanco: FALHOU esq=1428 dir=1428 pulsos (esperado 1416) = 181.6 mm pelos pulsos
+# comando: g
+giro: FALHOU esq=-578 dir=602 pulsos (esperado 571) = 1.5 mm pelos pulsos
+# comando: A
+avanco 1: FALHOU esq=1428 dir=1409
+# comando: p
+
+[Log 3] Bancada dos drivers (esp32_drivers, rodas no ar): cada motor sozinho, para separar hardware de software
+(pio device monitor --port /dev/ttyACM0 --baud 115200 --echo). Enter depois de cada tecla.
+bancada dos drivers: e E d D p n
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7688 mV ponte=7338 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+enc_e=0 enc_d=0 bat=7694 mV ponte=7344 mV
+enc_e=0 enc_d=0 bat=7695 mV ponte=7345 mV
+enc_e=0 enc_d=0 bat=7694 mV ponte=7344 mV
+enc_e=0 enc_d=0 bat=7694 mV ponte=7344 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+a# comando: a
+enc_e=0 enc_d=0 bat=7693 mV ponte=7343 mV
+
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+a# comando: a
+enc_e=0 enc_d=0 bat=7692 mV ponte=7342 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7691 mV ponte=7341 mV
+enc_e=0 enc_d=0 bat=7690 mV ponte=7340 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=0 bat=7688 mV ponte=7338 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=0 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=0 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=0 bat=7684 mV ponte=7334 mV
+enc_e=0 enc_d=0 bat=7685 mV ponte=7335 mV
+enc_e=0 enc_d=0 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=0 bat=7688 mV ponte=7338 mV
+enc_e=0 enc_d=0 bat=7688 mV ponte=7338 mV
+enc_e=0 enc_d=0 bat=7688 mV ponte=7338 mV
+d# comando: d
+enc_e=0 enc_d=0 bat=7689 mV ponte=7339 mV
+enc_e=0 enc_d=332 bat=7687 mV ponte=7337 mV
+enc_e=0 enc_d=740 bat=7684 mV ponte=7334 mV
+enc_e=0 enc_d=1148 bat=7683 mV ponte=7333 mV
+enc_e=0 enc_d=1557 bat=7683 mV ponte=7333 mV
+enc_e=0 enc_d=1966 bat=7682 mV ponte=7332 mV
+enc_e=0 enc_d=2375 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=2783 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=3192 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=3601 bat=7677 mV ponte=7327 mV
+enc_e=0 enc_d=4009 bat=7674 mV ponte=7324 mV
+enc_e=0 enc_d=4418 bat=7673 mV ponte=7323 mV
+enc_e=0 enc_d=4827 bat=7671 mV ponte=7321 mV
+enc_e=0 enc_d=5238 bat=7670 mV ponte=7320 mV
+enc_e=0 enc_d=5649 bat=7667 mV ponte=7317 mV
+enc_e=0 enc_d=6059 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=6471 bat=7663 mV ponte=7313 mV
+enc_e=0 enc_d=6881 bat=7664 mV ponte=7314 mV
+enc_e=0 enc_d=7293 bat=7664 mV ponte=7314 mV
+enc_e=0 enc_d=7703 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=8114 bat=7666 mV ponte=7316 mV
+enc_e=0 enc_d=8525 bat=7666 mV ponte=7316 mV
+enc_e=0 enc_d=8936 bat=7665 mV ponte=7315 mV
+p# comando: p
+enc_e=0 enc_d=9347 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=9588 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=9601 bat=7666 mV ponte=7316 mV
+enc_e=0 enc_d=9601 bat=7667 mV ponte=7317 mV
+enc_e=0 enc_d=9601 bat=7669 mV ponte=7319 mV
+enc_e=0 enc_d=9601 bat=7671 mV ponte=7321 mV
+enc_e=0 enc_d=9601 bat=7672 mV ponte=7322 mV
+enc_e=0 enc_d=9601 bat=7675 mV ponte=7325 mV
+enc_e=0 enc_d=9601 bat=7679 mV ponte=7329 mV
+enc_e=0 enc_d=9601 bat=7681 mV ponte=7331 mV
+D# comando: D
+enc_e=0 enc_d=9601 bat=7682 mV ponte=7332 mV
+enc_e=0 enc_d=9267 bat=7683 mV ponte=7333 mV
+enc_e=0 enc_d=8857 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=8447 bat=7679 mV ponte=7329 mV
+enc_e=0 enc_d=8037 bat=7679 mV ponte=7329 mV
+enc_e=0 enc_d=7627 bat=7679 mV ponte=7329 mV
+enc_e=0 enc_d=7216 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=6806 bat=7678 mV ponte=7328 mV
+enc_e=0 enc_d=6395 bat=7677 mV ponte=7327 mV
+enc_e=0 enc_d=5985 bat=7675 mV ponte=7325 mV
+enc_e=0 enc_d=5575 bat=7673 mV ponte=7323 mV
+enc_e=0 enc_d=5164 bat=7672 mV ponte=7322 mV
+enc_e=0 enc_d=4753 bat=7671 mV ponte=7321 mV
+enc_e=0 enc_d=4341 bat=7671 mV ponte=7321 mV
+enc_e=0 enc_d=3929 bat=7667 mV ponte=7317 mV
+P# comando: P
+enc_e=0 enc_d=3516 bat=7664 mV ponte=7314 mV
+enc_e=0 enc_d=3277 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=3265 bat=7664 mV ponte=7314 mV
+enc_e=0 enc_d=3265 bat=7665 mV ponte=7315 mV
+enc_e=0 enc_d=3265 bat=7667 mV ponte=7317 mV
+enc_e=0 enc_d=3265 bat=7670 mV ponte=7320 mV
+enc_e=0 enc_d=3265 bat=7672 mV ponte=7322 mV
+enc_e=0 enc_d=3265 bat=7673 mV ponte=7323 mV
+enc_e=0 enc_d=3265 bat=7675 mV ponte=7325 mV
+enc_e=0 enc_d=3265 bat=7676 mV ponte=7326 mV
+enc_e=0 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=0 enc_d=3265 bat=7679 mV ponte=7329 mV
+enc_e=0 enc_d=3265 bat=7680 mV ponte=7330 mV
+enc_e=0 enc_d=3265 bat=7682 mV ponte=7332 mV
+enc_e=0 enc_d=3265 bat=7683 mV ponte=7333 mV
+e# comando: e
+enc_e=0 enc_d=3265 bat=7684 mV ponte=7334 mV
+enc_e=319 enc_d=3265 bat=7685 mV ponte=7335 mV
+enc_e=722 enc_d=3265 bat=7682 mV ponte=7332 mV
+enc_e=1125 enc_d=3265 bat=7682 mV ponte=7332 mV
+enc_e=1528 enc_d=3265 bat=7682 mV ponte=7332 mV
+enc_e=1931 enc_d=3265 bat=7681 mV ponte=7331 mV
+enc_e=2333 enc_d=3265 bat=7680 mV ponte=7330 mV
+enc_e=2736 enc_d=3265 bat=7680 mV ponte=7330 mV
+enc_e=3138 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=3541 enc_d=3265 bat=7676 mV ponte=7326 mV
+enc_e=3943 enc_d=3265 bat=7675 mV ponte=7325 mV
+enc_e=4344 enc_d=3265 bat=7673 mV ponte=7323 mV
+enc_e=4747 enc_d=3265 bat=7671 mV ponte=7321 mV
+enc_e=5150 enc_d=3265 bat=7672 mV ponte=7322 mV
+enc_e=5552 enc_d=3265 bat=7671 mV ponte=7321 mV
+enc_e=5956 enc_d=3265 bat=7669 mV ponte=7319 mV
+enc_e=6360 enc_d=3265 bat=7670 mV ponte=7320 mV
+enc_e=6763 enc_d=3265 bat=7669 mV ponte=7319 mV
+enc_e=7167 enc_d=3265 bat=7670 mV ponte=7320 mV
+p# comando: p
+enc_e=7571 enc_d=3265 bat=7669 mV ponte=7319 mV
+enc_e=7807 enc_d=3265 bat=7671 mV ponte=7321 mV
+enc_e=7820 enc_d=3265 bat=7672 mV ponte=7322 mV
+enc_e=7820 enc_d=3265 bat=7672 mV ponte=7322 mV
+enc_e=7820 enc_d=3265 bat=7673 mV ponte=7323 mV
+enc_e=7820 enc_d=3265 bat=7674 mV ponte=7324 mV
+enc_e=7820 enc_d=3265 bat=7675 mV ponte=7325 mV
+enc_e=7820 enc_d=3265 bat=7677 mV ponte=7327 mV
+enc_e=7820 enc_d=3265 bat=7679 mV ponte=7329 mV
+E# comando: E
+enc_e=7820 enc_d=3265 bat=7680 mV ponte=7330 mV
+enc_e=7497 enc_d=3265 bat=7680 mV ponte=7330 mV
+enc_e=7096 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=6694 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=6292 enc_d=3265 bat=7676 mV ponte=7326 mV
+enc_e=5891 enc_d=3265 bat=7677 mV ponte=7327 mV
+enc_e=5489 enc_d=3265 bat=7677 mV ponte=7327 mV
+enc_e=5088 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=4687 enc_d=3265 bat=7675 mV ponte=7325 mV
+enc_e=4287 enc_d=3265 bat=7675 mV ponte=7325 mV
+enc_e=3886 enc_d=3265 bat=7673 mV ponte=7323 mV
+enc_e=3486 enc_d=3265 bat=7671 mV ponte=7321 mV
+enc_e=3084 enc_d=3265 bat=7669 mV ponte=7319 mV
+enc_e=2682 enc_d=3265 bat=7667 mV ponte=7317 mV
+enc_e=2279 enc_d=3265 bat=7666 mV ponte=7316 mV
+enc_e=1877 enc_d=3265 bat=7664 mV ponte=7314 mV
+enc_e=1476 enc_d=3265 bat=7662 mV ponte=7312 mV
+enc_e=1073 enc_d=3265 bat=7662 mV ponte=7312 mV
+enc_e=671 enc_d=3265 bat=7661 mV ponte=7311 mV
+enc_e=270 enc_d=3265 bat=7662 mV ponte=7312 mV
+enc_e=-133 enc_d=3265 bat=7663 mV ponte=7313 mV
+P# comando: P
+enc_e=-535 enc_d=3265 bat=7662 mV ponte=7312 mV
+enc_e=-769 enc_d=3265 bat=7664 mV ponte=7314 mV
+enc_e=-781 enc_d=3265 bat=7666 mV ponte=7316 mV
+enc_e=-781 enc_d=3265 bat=7668 mV ponte=7318 mV
+enc_e=-781 enc_d=3265 bat=7669 mV ponte=7319 mV
+enc_e=-781 enc_d=3265 bat=7671 mV ponte=7321 mV
+enc_e=-781 enc_d=3265 bat=7673 mV ponte=7323 mV
+enc_e=-781 enc_d=3265 bat=7676 mV ponte=7326 mV
+enc_e=-781 enc_d=3265 bat=7678 mV ponte=7328 mV
+enc_e=-781 enc_d=3265 bat=7679 mV ponte=7329 mV
+enc_e=-781 enc_d=3265 bat=7681 mV ponte=7331 mV
+enc_e=-781 enc_d=3265 bat=7684 mV ponte=7334 mV
+enc_e=-781 enc_d=3265 bat=7685 mV ponte=7335 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7689 mV ponte=7339 mV
+enc_e=-781 enc_d=3265 bat=7691 mV ponte=7341 mV
+enc_e=-781 enc_d=3265 bat=7692 mV ponte=7342 mV
+enc_e=-781 enc_d=3265 bat=7691 mV ponte=7341 mV
+enc_e=-781 enc_d=3265 bat=7691 mV ponte=7341 mV
+enc_e=-781 enc_d=3265 bat=7690 mV ponte=7340 mV
+enc_e=-781 enc_d=3265 bat=7689 mV ponte=7339 mV
+enc_e=-781 enc_d=3265 bat=7689 mV ponte=7339 mV
+enc_e=-781 enc_d=3265 bat=7689 mV ponte=7339 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7686 mV ponte=7336 mV
+P# comando: P
+enc_e=-781 enc_d=3265 bat=7683 mV ponte=7333 mV
+enc_e=-781 enc_d=3265 bat=7684 mV ponte=7334 mV
+enc_e=-781 enc_d=3265 bat=7684 mV ponte=7334 mV
+enc_e=-781 enc_d=3265 bat=7685 mV ponte=7335 mV
+enc_e=-781 enc_d=3265 bat=7685 mV ponte=7335 mV
+enc_e=-781 enc_d=3265 bat=7686 mV ponte=7336 mV
+enc_e=-781 enc_d=3265 bat=7687 mV ponte=7337 mV
+enc_e=-781 enc_d=3265 bat=7687 mV ponte=7337 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7687 mV ponte=7337 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7688 mV ponte=7338 mV
+enc_e=-781 enc_d=3265 bat=7689 mV ponte=7339 mV
+enc_e=-781 enc_d=3265 bat=7690 mV ponte=7340 mV
+enc_e=-781 enc_d=3265 bat=7690 mV ponte=7340 mV
+enc_e=-781 enc_d=3265 bat=7693 mV ponte=7343 mV
+enc_e=-781 enc_d=3265 bat=7694 mV ponte=7344 mV
+
+[Log 4] USB, integral so no fim da trajetoria, tolerancia de 2 pulsos (oscilava no fim; "so no quarto a as rodas andaram juntas"):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200 --echo
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+␃�$�8␃�$␄�␄$$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2358][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3621][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4885][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+a
+a
+# comando: a
+avanco: FALHOU esq=1433 dir=1448 pulsos (esperado 1416) = 183.2 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1431 dir=1410 pulsos (esperado 1416) = 180.6 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1409 dir=1411 pulsos (esperado 1416) = 179.3 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1386 dir=1423 pulsos (esperado 1416) = 178.6 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1411 dir=1380 pulsos (esperado 1416) = 177.5 mm pelos pulsos
+a
+# comando: a
+aavanco: FALHOU esq=1426 dir=1414 pulsos (esperado 1416) = 180.6 mm pelos pulsos
+
+# comando: a
+avanco: FALHOU esq=1413 dir=1412 pulsos (esperado 1416) = 179.6 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1430 dir=1416 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1447 dir=1414 pulsos (esperado 1416) = 181.9 mm pelos pulsos
+p
+# comando: p
+
+[Log 5] USB, tolerancia de avanco de 8 pulsos (a primeira linha de a depois do reset ficou com o eco "a"; o giro g dessa mesma sessao esta no teste 5.29):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200 --echo
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+␛�;␃�$�8␃�$␄�␄$$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2357][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3621][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4885][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x17 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# bt: aguardando conexao como "Ratatouille"
+[  2363][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3627][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4891][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+a
+# comando: a
+avanco: FALHOU esq=1411 dir=1413 pulsos (esperado 1416) = 179.5 mm pelos pulsos
+a
+# comando: a
+a
+# parado por tecla
+avanco: interrompido esq=1421 dir=1415 pulsos (esperado 1416) = 180.3 mm pelos pulsos
+a
+# comando: a
+avanco: FALHOU esq=1419 dir=1421 pulsos (esperado 1416) = 180.6 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1412 dir=1414 pulsos (esperado 1416) = 179.7 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1420 dir=1416 pulsos (esperado 1416) = 180.3 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1419 dir=1414 pulsos (esperado 1416) = 180.1 mm pelos pulsos
+g
+# comando: g
+giro: concluido esq=-570 dir=567 pulsos (esperado 571) = -0.2 mm pelos pulsos
+g
+# comando: g
+ggiro: concluido esq=-574 dir=570 pulsos (esperado 571) = -0.3 mm pelos pulsos
+
+# comando: g
+giro: concluido esq=-571 dir=575 pulsos (esperado 571) = 0.3 mm pelos pulsos
+
+[Log 6] Bluetooth, robo no chao, 840 pulsos por volta (tolerancia de avanco de 8 pulsos); depois dos tres a, a Amanda mediu 23 a 25 cm com a regua:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+#aa
+#avanco: concluido esq=1424 dir=1423 pulsos (esperado 1416) = 181.0 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1422 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1422 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+
+[Log 7] Bluetooth, depois de trocar ENCODER_PULSOS_POR_VOLTA de 840 para 640 (esperado 1079 no avanco, +-435 no giro). Log inteiro, com a, g, G e A
+(os giros deste log sao citados no 5.29 e os dez avancos no 5.30):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+a
+a
+# comando: a
+# frontal ao partir: 194 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 202 202 175 175 162 176 164 176 188 200 200198 183 183 194 199 199 199
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1078 dir=1082 pulsos (esperado 1079) = 180.2 mm pelos pulsos
+# frontal ao parar: 199 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 182 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 182 184 184 166 166 184 185 194 186 191 191213 213 191 191 210 215 215 215
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1077 dir=1080 pulsos (esperado 1079) = 180.0 mm pelos pulsos
+# frontal ao parar: 215 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 174 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 174 181 184 186 186 178 178 181 212 212 209208 206 203 196 190 196 184 185
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1079 dir=1082 pulsos (esperado 1079) = 180.3 mm pelos pulsos
+# frontal ao parar: 185 mm (a parada garante pelo menos 17 mm ate a parede)
+g
+# comando: g
+# frontal a cada 50 ms (0 = sem leitura): 185 187 187 151 151 162 472 472 461 456 455455 455 463 463 463 458 458 462 466 463 463 459 459 459 457 454 454 460 463 463 462 462
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+giro: concluido esq=-438 dir=439 pulsos (esperado +-435) = 90.7 graus (pedido 90)
+G
+# comando: G
+# frontal a cada 50 ms (0 = sem leitura): 461 189 182 167 164 164 172 256 259 256 259262 264 264 270 276 282 283 283 284 284 284
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+giro: concluido esq=441 dir=-433 pulsos (esperado +-435) = -90.4 graus (pedido -90)
+A
+# comando: A
+# frontal a cada 50 ms (0 = sem leitura): 210 210 219 227 225 225 224 200 200 206 206204 204 212 212 197 197 192 201
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 1: concluido esq=1072 dir=1079
+# frontal a cada 50 ms (0 = sem leitura): 201 197 197 201 204 201 187 187 186 204 186196 179 179 178 178 183 183 176
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 2: concluido esq=1073 dir=1081
+# frontal a cada 50 ms (0 = sem leitura): 177 177 177 193 193 177 162 162 162 162 159138 138 134 146 146 146 159 166 166
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 3: concluido esq=1074 dir=1080
+# frontal a cada 50 ms (0 = sem leitura): 156 162 162 155 155 155 155 154 147 145 144144 141 150 154 154 136 136 136
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 4: concluido esq=1072 dir=1082
+# frontal a cada 50 ms (0 = sem leitura): 153 153 151 140 140 140 146 168 146 168 161161 125 125 123 123 121 121 122
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 5: concluido esq=1077 dir=1078
+# frontal a cada 50 ms (0 = sem leitura): 134 145 134 145 140 158 140 136 136 177 1200 1200 1200 1200 1200 1200 1200 172 172
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 6: concluido esq=1078 dir=1082
+# frontal a cada 50 ms (0 = sem leitura): 167 167 201 201 164 164 186 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 7: concluido esq=1080 dir=1079
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 8: concluido esq=1078 dir=1086
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 582 601 601 601 665 749 749 749
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 9: concluido esq=1077 dir=1080
+# frontal a cada 50 ms (0 = sem leitura): 665 665 657 638 638 679 711 727 733 733 733731 724 713 703 703 730 730 711 711 713
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 10: concluido esq=1080 dir=1083
+10 avancos: esq=10761 dir=10810 pulsos (esperado 10790) = 1800.1 mm pelos pulsos; meça na pista: esperado 1800 mm, erro final de ate 10 mm
+
+[Log 8] Bluetooth, 640 pulsos por volta, depois de tirar a re do fim do avanco (cinco a e varias tentativas de A que cairam):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+#a
+a
+## frontal ao partir: 184 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 193 193 183 183 182 194 182 196 211 211 222227 238 238 238 246 229 202
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1076 dir=1080 pulsos (esperado 1079) = 179.9 mm pelos pulsos
+# frontal ao parar: 202 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 226 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 213 209 205 203 203 203 196 196 217 232 233244 244 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1074 dir=1079 pulsos (esperado 1079) = 179.7 mm pelos pulsos
+# frontal ao parar: 1200 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 1200 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 589 589 1200 1200 1200 1200 1200 1200 1200 1200 445 465 465 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1086 dir=1086 pulsos (esperado 1079) = 181.3 mm pelos pulsos
+# frontal ao parar: 1200 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 397 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 397 388 385 370 385 392 392 364 364 390 393393 403 389 404 420 420 435
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1071 dir=1082 pulsos (esperado 1079) = 179.7 mm pelos pulsos
+# frontal ao parar: 435 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 502 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 501 470 470 487 488 545 644 676 693 696 693680 658 652 652 679 696 718 742 773 780 780 780 780 806 770 796 769 776 776 797 797 793 776 773 773
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1071 dir=1083 pulsos (esperado 1079) = 179.7 mm pelos pulsos
+# frontal ao parar: 773 mm (a parada garante pelo menos 17 mm ate a parede)
+A
+A
+
+A
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0 
+         Connected!
+
+A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A
+
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+
+A
+
+[Log 9] Bluetooth, 640 pulsos por volta, com a bateria encostando na roda esquerda (tres a):
+.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+### 187 174 174 163 163 154 138 136 138 140 140 140 125 125 108 108 116 120 129 137 139 139 139 159 164 164 146
+a
+a
+# comando: a
+# frontal ao partir: 185 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 192 192 192 183 180 180 180 167 167 187 187187 187 187 187 188 188 184
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1070 dir=1075 pulsos (esperado 1079) = 179.0 mm pelos pulsos
+# frontal ao parar: 184 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 185 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 185 185 188 188 183 183 183 189 197 197 197224 236 236 214 214 230 233 230 229 229 212
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1087 dir=1073 pulsos (esperado 1079) = 180.2 mm pelos pulsos
+# frontal ao parar: 212 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 204 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 204 204 206 204 185 170 168 163 157 163 1200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1078 dir=1080 pulsos (esperado 1079) = 180.1 mm pelos pulsos
+# frontal ao parar: 1200 mm (a parada garante pelo menos 17 mm ate a parede)
+
+[Log 10] Bluetooth, 640 pulsos por volta, versao mais recente (com o erro de cada avanco levado ao seguinte e o radio em potencia maxima); tres a:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+# comando: a
+# frontal ao partir: 167 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 189 189 169 164 164 164 167 167 176 211 204 204 174 174 187 189 200 208 208
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1072 dir=1078 pulsos (esperado 1079) = 179.4 mm pelos pulsos
+# frontal ao parar: 208 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 195 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 195 195 190 190 195 195 195 208 209 209 209 218 242 221 223 221 223 220 236
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1076 dir=1079 pulsos (esperado 1079) = 179.8 mm pelos pulsos
+# frontal ao parar: 236 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 222 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 222 228 233 240 234 234 223 223 223 229 229 248 248 265 240 249 249 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1080 dir=1082 pulsos (esperado 1079) = 180.4 mm pelos pulsos
+# frontal ao parar: 1200 mm (a parada garante pelo menos 17 mm ate a parede)
+A
+# comando: A
+# frontal a cada 50 ms (0 = sem leitura): 180 180 179 184 179 191 176 186 158 186 191 192 193 200 200 200 169 177 169
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 1: concluido esq=1071 dir=1080
+# frontal a cada 50 ms (0 = sem leitura): 155 166 166 176 176 184 162 176 176 176 190 180 210 182 191 191 191 193 193
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 2: concluido esq=1075 dir=1081
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 177 173 175 175 1200 1200 1200 210 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 3: concluido esq=1071 dir=1087
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 12001200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 4: FALHOU esq=1086 dir=1088
+
+Relato da Amanda sobre o avanco 4: falhou por conta da bateria entre a roda boba e a roda esquerda.

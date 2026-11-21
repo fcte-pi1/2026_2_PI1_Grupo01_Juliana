@@ -32,9 +32,12 @@ static struct {
     uint32_t tempo_ms;
     bool motores_habilitados;
     int16_t potencia[2];
+    int16_t zona_morta;
+    float escala_roda[2]; /* 0 = 1: quanto a roda realmente anda por pulso contado */
     float velocidade_mm_s[2];
     float pulsos[2];
     bool encoder_travado[2];
+    bool rodas_no_ar;
     double bateria_mv; /* double: a descarga de 1 ms some na precisão de um float */
     bool tof_ausente[SIM_TOF_QTD];
     uint16_t tof_ruido_mm;
@@ -105,21 +108,34 @@ static void passo_1ms(void)
     float deslocamento[2];
 
     for (int i = 0; i < 2; i++) {
-        float alvo = m.motores_habilitados
+        bool abaixo_da_zona = m.potencia[i] > -m.zona_morta && m.potencia[i] < m.zona_morta;
+        float alvo = m.motores_habilitados && !abaixo_da_zona
                          ? VELOCIDADE_MAX_MM_S * m.potencia[i] / 1000.0f
                          : 0.0f;
         m.velocidade_mm_s[i] += (alvo - m.velocidade_mm_s[i]) * dt / CONSTANTE_TEMPO_MOTOR_S;
         deslocamento[i] = m.velocidade_mm_s[i] * dt;
     }
+    float fisico[2];
+    for (int i = 0; i < 2; i++) {
+        fisico[i] = deslocamento[i] * (m.escala_roda[i] > 0.0f ? m.escala_roda[i] : 1.0f);
+    }
 
     /* Cinemática da tração diferencial: média das rodas avança, diferença gira. */
-    float avanco = (deslocamento[0] + deslocamento[1]) / 2.0f;
-    float giro = (deslocamento[1] - deslocamento[0]) / BITOLA_MM;
+    float avanco = (fisico[0] + fisico[1]) / 2.0f;
+    float giro = (fisico[1] - fisico[0]) / BITOLA_MM;
     float theta_medio = m.pose.theta_rad + giro / 2.0f;
     float novo_x = m.pose.x_mm + avanco * cosf(theta_medio);
     float novo_y = m.pose.y_mm + avanco * sinf(theta_medio);
 
-    if (robo_encosta_em_parede(novo_x, novo_y)) {
+    if (m.rodas_no_ar) {
+        /* Rodas no ar (autoteste do health-check): giram e contam, mas o robô não sai do lugar. */
+        m.pose.colidiu = false;
+        for (int i = 0; i < 2; i++) {
+            if (!m.encoder_travado[i]) {
+                m.pulsos[i] += deslocamento[i] / MM_POR_PULSO;
+            }
+        }
+    } else if (robo_encosta_em_parede(novo_x, novo_y)) {
         /* Bateu: o robô não sai do lugar e as rodas (e os encoders) param. */
         m.pose.colidiu = true;
         m.velocidade_mm_s[0] = m.velocidade_mm_s[1] = 0.0f;
@@ -156,7 +172,18 @@ void sim_mundo_avancar(uint32_t dt_ms)
 
 uint32_t sim_tempo_ms(void) { return m.tempo_ms; }
 
+void sim_definir_rodas_no_ar(bool no_ar) { m.rodas_no_ar = no_ar; }
+
 void sim_motor_habilitar(bool habilitar) { m.motores_habilitados = habilitar; }
+
+void sim_definir_zona_morta(int16_t potencia) { m.zona_morta = potencia; }
+
+void sim_definir_escala_roda(int motor, float fator)
+{
+    if (motor >= 0 && motor < 2) {
+        m.escala_roda[motor] = fator;
+    }
+}
 
 void sim_motor_definir(int motor, int16_t potencia)
 {
@@ -278,6 +305,14 @@ void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
         break;
     }
     sim_definir_pose(x, y, theta);
+}
+
+void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao)
+{
+    static const float THETA[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
+    sim_definir_pose(((float)celula_x + 0.5f) * (float)CELULA_MM,
+                     ((float)celula_y + 0.5f) * (float)CELULA_MM,
+                     THETA[direcao >= 0 && direcao < 4 ? direcao : 0]);
 }
 
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)

@@ -483,6 +483,65 @@ static void test_consumir_duas_vezes_devolve_true_e_depois_false(void)
     TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
 }
 
+#define LARGAR "{\"v\":1,\"cmd\":\"largar\"}"
+#define HEALTH_CHECK "{\"v\":1,\"cmd\":\"health_check\"}"
+
+static void test_comando_largar_liga_so_a_flag_da_largada(void)
+{
+    hal_bt_sim_injetar(LARGAR "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+    TEST_ASSERT_FALSE(telemetria_consumir_health_check());
+    TEST_ASSERT_TRUE(telemetria_consumir_largada());
+    TEST_ASSERT_FALSE(telemetria_consumir_largada());
+}
+
+static void test_comando_health_check_liga_so_a_flag_do_health_check(void)
+{
+    hal_bt_sim_injetar(HEALTH_CHECK "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_interrupcao());
+    TEST_ASSERT_FALSE(telemetria_consumir_largada());
+    TEST_ASSERT_TRUE(telemetria_consumir_health_check());
+    TEST_ASSERT_FALSE(telemetria_consumir_health_check());
+}
+
+static void test_tres_comandos_na_mesma_volta_ligam_as_tres_flags(void)
+{
+    hal_bt_sim_injetar(LARGAR "\n" HEALTH_CHECK "\n" INTERROMPER "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_largada());
+    TEST_ASSERT_TRUE(telemetria_consumir_health_check());
+    TEST_ASSERT_TRUE(telemetria_consumir_interrupcao());
+}
+
+static void test_comando_repetido_pela_ponte_liga_a_flag_de_novo(void)
+{
+    hal_bt_sim_injetar(LARGAR "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_largada());
+    hal_bt_sim_injetar(LARGAR "\n");
+    telemetria_passo(200, NULL);
+    TEST_ASSERT_TRUE(telemetria_consumir_largada());
+}
+
+static void test_comando_invalido_nao_liga_flag_de_largada_nem_health_check(void)
+{
+    hal_bt_sim_injetar("{\"v\":2,\"cmd\":\"largar\"}\n{\"v\":1,\"cmd\":\"health-check\"}\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_FALSE(telemetria_consumir_largada());
+    TEST_ASSERT_FALSE(telemetria_consumir_health_check());
+}
+
+static void test_iniciar_zera_as_flags_dos_comandos(void)
+{
+    hal_bt_sim_injetar(LARGAR "\n" HEALTH_CHECK "\n");
+    telemetria_passo(0, NULL);
+    telemetria_iniciar(1);
+    TEST_ASSERT_FALSE(telemetria_consumir_largada());
+    TEST_ASSERT_FALSE(telemetria_consumir_health_check());
+}
+
 static void test_boot_sobe_a_cada_chamada_e_volta_a_1_sem_a_nvs(void)
 {
     hal_nvs_sim_apagar_tudo();
@@ -537,6 +596,12 @@ int main(void)
     RUN_TEST(test_lixo_nao_liga_a_flag);
     RUN_TEST(test_linha_longa_e_descartada_e_a_seguinte_e_lida);
     RUN_TEST(test_consumir_duas_vezes_devolve_true_e_depois_false);
+    RUN_TEST(test_comando_largar_liga_so_a_flag_da_largada);
+    RUN_TEST(test_comando_health_check_liga_so_a_flag_do_health_check);
+    RUN_TEST(test_tres_comandos_na_mesma_volta_ligam_as_tres_flags);
+    RUN_TEST(test_comando_repetido_pela_ponte_liga_a_flag_de_novo);
+    RUN_TEST(test_comando_invalido_nao_liga_flag_de_largada_nem_health_check);
+    RUN_TEST(test_iniciar_zera_as_flags_dos_comandos);
     RUN_TEST(test_boot_sobe_a_cada_chamada_e_volta_a_1_sem_a_nvs);
     RUN_TEST(test_boot_com_gravacao_falhando_devolve_o_valor_somado);
     return UNITY_END();

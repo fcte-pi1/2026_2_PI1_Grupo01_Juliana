@@ -1,0 +1,39 @@
+# Teste 5.18. Corrida simulada com a memória depois do limite de gravações: retomada depois de reset, 21/11/2026.
+# Roteiro: pio run -e esp32_sim_boot -t upload; python tools/monitor_comandos.py; l, h, l, i, EN (reset), l.
+# HAL simulada, BOOT real, navegação a 1 Hz. Transcrição do monitor serial (linhas do bootloader omitidas).
+# O primeiro boot saiu como "retomada" porque o test_corrida (5.17) deixou o mapa gravado na flash.
+
+# Boot 4: retomada, largar até o sucesso
+{"v":1,"boot":4,"seq":8,"t_ms":1206,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":4,"seq":13,"t_ms":5800,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":4,"seq":14,"t_ms":5800,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":4,"seq":20,"t_ms":6800,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":4,"seq":26,"t_ms":7800,"tipo":"passo","x":0,"y":3,"paredes":8}
+{"v":1,"boot":4,"seq":32,"t_ms":8800,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":4,"seq":38,"t_ms":9800,"tipo":"passo","x":2,"y":3,"paredes":1}
+{"v":1,"boot":4,"seq":44,"t_ms":10800,"tipo":"passo","x":3,"y":3,"paredes":1}
+{"v":1,"boot":4,"seq":45,"t_ms":10850,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":4,"seq":46,"t_ms":11800,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+# h parado: roda o health-check
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":4,"seq":60,"t_ms":17150,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# largar de novo e interromper no meio da corrida
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":4,"seq":68,"t_ms":24600,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8397,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":4,"seq":69,"t_ms":24600,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":4,"seq":75,"t_ms":25650,"tipo":"passo","x":0,"y":1,"paredes":12}
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":4,"seq":79,"t_ms":26300,"tipo":"falha","motivo":null,"origem":"web","x":0,"y":2,"componente":null}
+{"v":1,"boot":4,"seq":81,"t_ms":27400,"tipo":"tel","estado":"failed","x":0,"y":2,"rumo":"N","bat_mv":8396,"vel_mm_s":0,"eixo_longo":null}
+
+# EN (reset). Boot 5: retomada na célula da falha, (0,2)
+{"v":1,"boot":5,"seq":8,"t_ms":1206,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+{"v":1,"boot":5,"seq":9,"t_ms":1806,"tipo":"tel","estado":"health-check","x":0,"y":2,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":5,"seq":38,"t_ms":30800,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8396,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":5,"seq":39,"t_ms":30800,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":5,"seq":45,"t_ms":31800,"tipo":"passo","x":0,"y":3,"paredes":8}
+[... passos até o objetivo ...]
+{"v":1,"boot":5,"seq":64,"t_ms":34900,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":5,"seq":65,"t_ms":35800,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}

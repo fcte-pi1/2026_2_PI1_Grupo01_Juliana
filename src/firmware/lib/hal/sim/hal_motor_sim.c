@@ -21,6 +21,9 @@ void hal_motor_definir(motor_id_t motor, int16_t potencia)
     }
 }
 
+/* No mundo simulado a potência 0 já leva a roda à velocidade zero: serve de freio. */
+void hal_motor_frear(motor_id_t motor) { hal_motor_definir(motor, 0); }
+
 /* O mundo simulado já trata 1000 como VELOCIDADE_MAX_MM_S, sem bateria. */
 void hal_motor_definir_tensao(uint16_t ponte_mv) { (void)ponte_mv; }
 

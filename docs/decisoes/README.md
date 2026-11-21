@@ -21,6 +21,10 @@ Decisões que alinham **TAP** (baseline V1), **EAP**, **4.3**, **4.4** e **Requi
 | [015](015-rumo-persistido-leitura-telemetria.md) | `rumo` da `tel` persistido em leituras (commit à parte) | Backend, Front |
 | [016](016-bateria-mv-e-porcentagem.md) | Bateria em mV no contrato, porcentagem no backend | Backend, Front, Energia |
 | [017](017-downlink-tres-comandos.md) | Downlink: três comandos do contrato | Backend, Front, Firmware |
+| [018](018-firmware-hal-real-com-tof-mockado.md) | Firmware com a HAL real (`esp32_real`), ToF mockado em ambiente à parte | Firmware, Testes, Eletrônica |
+| [019](019-robo-anda-e-para-leitura-lateral-ao-entrar.md) | O robô anda e para, a parede lateral é lida ao entrar na célula e o laço mantém o controle de posição | Firmware, Testes |
+| [020](020-bluetooth-real-spp-ambientes-bt.md) | Bluetooth real (SPP) com o mesmo contrato, em ambientes à parte do USB | Firmware, Back-end, Testes |
+| [021](021-health-check-so-por-comando.md) | O health-check só roda por comando, não ao ligar | Firmware, Testes |
 
 **Oráculo de testes (backend):** [transicoes-execucao.md](transicoes-execucao.md) — tabelas de transição da **execução lógica** e da **tentativa**.
 

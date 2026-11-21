@@ -1,0 +1,22 @@
+Teste 5.26 - Bluetooth real (SPP) no robo, ambiente esp32_calibracao_bt
+Notebook: bluetoothctl (pair, trust), sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1,
+pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+
+Trecho do monitor (cada tecla seguida de Enter), robo no chao, sem cabo USB:
+
+a
+#aa
+#avanco: concluido esq=1424 dir=1423 pulsos (esperado 1416) = 181.0 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1422 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1422 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+
+Banner da bancada pelo enlace, com o cliente conectado:
+# bt: aguardando conexao como "Ratatouille"
+# bt: cliente conectado
+
+Observacoes: no inicio houve ciclos curtos de "cliente conectado" e "desconectado (status 0)" antes de o enlace
+estabilizar. A primeira linha do trecho acima saiu com o eco do terminal misturado ("#aa").

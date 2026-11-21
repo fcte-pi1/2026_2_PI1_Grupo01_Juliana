@@ -1,0 +1,197 @@
+# Teste 5.21. Sentido das rodas e comando de parada na bancada dos drivers (HAL real), 21/11/2026.
+# Correção: invertido = true só no motor e no encoder esquerdos; o direito já estava certo (ver 5.19).
+# Bancada esp32_drivers com a repetição de cada tecla (# comando: x), rodas no ar, interruptor ligado (bat ~7,7 V), motor a 30%.
+# Resultado: as duas rodas giram para a frente com e / d e para trás com E / D, e o encoder acompanha; o p para a roda todas as vezes.
+# A placa ficou muda depois do upload até o EN ser apertado (o monitor abriu, mas o boot só apareceu com o reset).
+# Log completo do monitor serial desde o boot (a saída do upload foi omitida):
+
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+bancada dos drivers: e E d D p n
+enc_e=0 enc_d=0 bat=7771 mV ponte=7421 mV
+enc_e=0 enc_d=0 bat=7768 mV ponte=7418 mV
+enc_e=0 enc_d=0 bat=7767 mV ponte=7417 mV
+enc_e=0 enc_d=0 bat=7771 mV ponte=7421 mV
+enc_e=0 enc_d=0 bat=7764 mV ponte=7414 mV
+enc_e=0 enc_d=0 bat=7763 mV ponte=7413 mV
+enc_e=0 enc_d=0 bat=7760 mV ponte=7410 mV
+enc_e=0 enc_d=0 bat=7757 mV ponte=7407 mV
+enc_e=0 enc_d=0 bat=7758 mV ponte=7408 mV
+enc_e=0 enc_d=0 bat=7756 mV ponte=7406 mV
+enc_e=0 enc_d=0 bat=7756 mV ponte=7406 mV
+enc_e=0 enc_d=0 bat=7756 mV ponte=7406 mV
+enc_e=0 enc_d=0 bat=7755 mV ponte=7405 mV
+# comando: e
+enc_e=0 enc_d=0 bat=7754 mV ponte=7404 mV
+enc_e=293 enc_d=0 bat=7753 mV ponte=7403 mV
+enc_e=659 enc_d=0 bat=7752 mV ponte=7402 mV
+enc_e=1055 enc_d=0 bat=7751 mV ponte=7401 mV
+enc_e=1459 enc_d=0 bat=7750 mV ponte=7400 mV
+enc_e=1861 enc_d=0 bat=7748 mV ponte=7398 mV
+enc_e=2265 enc_d=0 bat=7744 mV ponte=7394 mV
+enc_e=2668 enc_d=0 bat=7743 mV ponte=7393 mV
+enc_e=3071 enc_d=0 bat=7740 mV ponte=7390 mV
+enc_e=3473 enc_d=0 bat=7740 mV ponte=7390 mV
+enc_e=3875 enc_d=0 bat=7740 mV ponte=7390 mV
+enc_e=4278 enc_d=0 bat=7737 mV ponte=7387 mV
+enc_e=4680 enc_d=0 bat=7736 mV ponte=7386 mV
+enc_e=5082 enc_d=0 bat=7735 mV ponte=7385 mV
+enc_e=5485 enc_d=0 bat=7734 mV ponte=7384 mV
+enc_e=5887 enc_d=0 bat=7734 mV ponte=7384 mV
+enc_e=6289 enc_d=0 bat=7735 mV ponte=7385 mV
+# comando: p
+enc_e=6691 enc_d=0 bat=7734 mV ponte=7384 mV
+enc_e=6928 enc_d=0 bat=7735 mV ponte=7385 mV
+enc_e=6941 enc_d=0 bat=7735 mV ponte=7385 mV
+enc_e=6941 enc_d=0 bat=7736 mV ponte=7386 mV
+enc_e=6941 enc_d=0 bat=7737 mV ponte=7387 mV
+enc_e=6941 enc_d=0 bat=7739 mV ponte=7389 mV
+enc_e=6941 enc_d=0 bat=7740 mV ponte=7390 mV
+enc_e=6941 enc_d=0 bat=7743 mV ponte=7393 mV
+enc_e=6941 enc_d=0 bat=7745 mV ponte=7395 mV
+enc_e=6941 enc_d=0 bat=7746 mV ponte=7396 mV
+# comando: E
+enc_e=6941 enc_d=0 bat=7747 mV ponte=7397 mV
+enc_e=6621 enc_d=0 bat=7747 mV ponte=7397 mV
+enc_e=6219 enc_d=0 bat=7747 mV ponte=7397 mV
+enc_e=5816 enc_d=0 bat=7745 mV ponte=7395 mV
+enc_e=5413 enc_d=0 bat=7744 mV ponte=7394 mV
+enc_e=5011 enc_d=0 bat=7742 mV ponte=7392 mV
+enc_e=4608 enc_d=0 bat=7744 mV ponte=7394 mV
+enc_e=4206 enc_d=0 bat=7742 mV ponte=7392 mV
+enc_e=3805 enc_d=0 bat=7739 mV ponte=7389 mV
+enc_e=3404 enc_d=0 bat=7737 mV ponte=7387 mV
+enc_e=3003 enc_d=0 bat=7734 mV ponte=7384 mV
+enc_e=2602 enc_d=0 bat=7734 mV ponte=7384 mV
+enc_e=2201 enc_d=0 bat=7733 mV ponte=7383 mV
+enc_e=1801 enc_d=0 bat=7730 mV ponte=7380 mV
+enc_e=1399 enc_d=0 bat=7727 mV ponte=7377 mV
+enc_e=997 enc_d=0 bat=7727 mV ponte=7377 mV
+enc_e=595 enc_d=0 bat=7727 mV ponte=7377 mV
+enc_e=194 enc_d=0 bat=7728 mV ponte=7378 mV
+enc_e=-207 enc_d=0 bat=7728 mV ponte=7378 mV
+enc_e=-609 enc_d=0 bat=7730 mV ponte=7380 mV
+enc_e=-1010 enc_d=0 bat=7731 mV ponte=7381 mV
+enc_e=-1410 enc_d=0 bat=7730 mV ponte=7380 mV
+# comando: p
+enc_e=-1811 enc_d=0 bat=7728 mV ponte=7378 mV
+enc_e=-2049 enc_d=0 bat=7730 mV ponte=7380 mV
+enc_e=-2062 enc_d=0 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=0 bat=7735 mV ponte=7385 mV
+enc_e=-2062 enc_d=0 bat=7737 mV ponte=7387 mV
+enc_e=-2062 enc_d=0 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=0 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=0 bat=7742 mV ponte=7392 mV
+enc_e=-2062 enc_d=0 bat=7742 mV ponte=7392 mV
+# comando: d
+enc_e=-2062 enc_d=0 bat=7742 mV ponte=7392 mV
+enc_e=-2062 enc_d=331 bat=7741 mV ponte=7391 mV
+enc_e=-2062 enc_d=739 bat=7741 mV ponte=7391 mV
+enc_e=-2062 enc_d=1147 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=1556 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=1964 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=2373 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=2781 bat=7742 mV ponte=7392 mV
+enc_e=-2062 enc_d=3189 bat=7741 mV ponte=7391 mV
+enc_e=-2062 enc_d=3596 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=4004 bat=7737 mV ponte=7387 mV
+enc_e=-2062 enc_d=4411 bat=7736 mV ponte=7386 mV
+enc_e=-2062 enc_d=4819 bat=7735 mV ponte=7385 mV
+enc_e=-2062 enc_d=5225 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=5632 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=6039 bat=7731 mV ponte=7381 mV
+enc_e=-2062 enc_d=6447 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=6855 bat=7731 mV ponte=7381 mV
+enc_e=-2062 enc_d=7263 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=7670 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=8078 bat=7733 mV ponte=7383 mV
+enc_e=-2062 enc_d=8485 bat=7731 mV ponte=7381 mV
+enc_e=-2062 enc_d=8893 bat=7729 mV ponte=7379 mV
+enc_e=-2062 enc_d=9301 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=9711 bat=7730 mV ponte=7380 mV
+# comando: p
+enc_e=-2062 enc_d=10120 bat=7729 mV ponte=7379 mV
+enc_e=-2062 enc_d=10361 bat=7730 mV ponte=7380 mV
+enc_e=-2062 enc_d=10374 bat=7731 mV ponte=7381 mV
+enc_e=-2062 enc_d=10374 bat=7733 mV ponte=7383 mV
+enc_e=-2062 enc_d=10374 bat=7734 mV ponte=7384 mV
+enc_e=-2062 enc_d=10374 bat=7736 mV ponte=7386 mV
+enc_e=-2062 enc_d=10374 bat=7737 mV ponte=7387 mV
+enc_e=-2062 enc_d=10374 bat=7736 mV ponte=7386 mV
+enc_e=-2062 enc_d=10374 bat=7737 mV ponte=7387 mV
+# comando: D
+enc_e=-2062 enc_d=10374 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=10043 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=9634 bat=7737 mV ponte=7387 mV
+enc_e=-2062 enc_d=9223 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=8812 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=8402 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=7991 bat=7739 mV ponte=7389 mV
+enc_e=-2062 enc_d=7581 bat=7739 mV ponte=7389 mV
+enc_e=-2062 enc_d=7171 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=6761 bat=7736 mV ponte=7386 mV
+enc_e=-2062 enc_d=6351 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=5941 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=5531 bat=7729 mV ponte=7379 mV
+enc_e=-2062 enc_d=5120 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=4708 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=4296 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=3884 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=3473 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=3061 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=2649 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=2237 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=1825 bat=7724 mV ponte=7374 mV
+enc_e=-2062 enc_d=1413 bat=7724 mV ponte=7374 mV
+enc_e=-2062 enc_d=1001 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=589 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=177 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=-235 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=-647 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=-1059 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=-1471 bat=7725 mV ponte=7375 mV
+enc_e=-2062 enc_d=-1883 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=-2294 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=-2707 bat=7726 mV ponte=7376 mV
+enc_e=-2062 enc_d=-3119 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=-3531 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=-3943 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=-4355 bat=7727 mV ponte=7377 mV
+enc_e=-2062 enc_d=-4767 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=-5179 bat=7730 mV ponte=7380 mV
+# comando: p
+enc_e=-2062 enc_d=-5592 bat=7730 mV ponte=7380 mV
+enc_e=-2062 enc_d=-5835 bat=7728 mV ponte=7378 mV
+enc_e=-2062 enc_d=-5847 bat=7730 mV ponte=7380 mV
+enc_e=-2062 enc_d=-5847 bat=7732 mV ponte=7382 mV
+enc_e=-2062 enc_d=-5847 bat=7734 mV ponte=7384 mV
+enc_e=-2062 enc_d=-5847 bat=7736 mV ponte=7386 mV
+enc_e=-2062 enc_d=-5847 bat=7737 mV ponte=7387 mV
+enc_e=-2062 enc_d=-5847 bat=7738 mV ponte=7388 mV
+enc_e=-2062 enc_d=-5847 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=-5847 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=-5847 bat=7740 mV ponte=7390 mV
+enc_e=-2062 enc_d=-5847 bat=7741 mV ponte=7391 mV
+enc_e=-2062 enc_d=-5847 bat=7742 mV ponte=7392 mV
+enc_e=-2062 enc_d=-5847 bat=7744 mV ponte=7394 mV
+enc_e=-2062 enc_d=-5847 bat=7746 mV ponte=7396 mV
+enc_e=-2062 enc_d=-5847 bat=7746 mV ponte=7396 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV
+enc_e=-2062 enc_d=-5847 bat=7749 mV ponte=7399 mV
+enc_e=-2062 enc_d=-5847 bat=7749 mV ponte=7399 mV
+enc_e=-2062 enc_d=-5847 bat=7749 mV ponte=7399 mV
+enc_e=-2062 enc_d=-5847 bat=7748 mV ponte=7398 mV
+enc_e=-2062 enc_d=-5847 bat=7747 mV ponte=7397 mV

@@ -1,0 +1,94 @@
+Teste 5.40 - Robo liga ocioso, health-check so por comando e corridas repetidas pelo Bluetooth (monitor_comandos.py no /dev/rfcomm0)
+Log completo enviado pela Amanda. Firmware esp32_real_bt_tof_mock com o estado ocioso (o health-check nao roda ao ligar), ToF mockado
+(frontal 300 mm, laterais 120 mm), interruptor ligado, USB fora, rodas no ar.
+O monitor so mostra a tel quando o estado muda; os buracos de seq entre as linhas abaixo sao tel que ele nao imprime.
+Sequencia de teclas: h, l, l, l, i, l, l, l, l, l.
+Tempos: o health-check aprovado saiu em t_ms=7754; a ultima largada foi em t_ms=581867, 574 s (9 min 34 s) depois, ainda dentro de 10 min.
+
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/monitor_comandos.py /dev/rfcomm0
+# /dev/rfcomm0: l=largar i=interromper h=health_check t=tel q=sair
+{"v":1,"boot":28,"seq":0,"t_ms":4473,"tipo":"tel","estado":"health-check","x":0,"y":2,"rumo":"N","bat_mv":7386,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":28,"seq":3,"t_ms":7331,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7340}
+{"v":1,"boot":28,"seq":4,"t_ms":7384,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":28,"seq":5,"t_ms":7437,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":28,"seq":7,"t_ms":7490,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":28,"seq":8,"t_ms":7542,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":28,"seq":9,"t_ms":7595,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":28,"seq":10,"t_ms":7648,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":515}
+{"v":1,"boot":28,"seq":11,"t_ms":7701,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":538}
+{"v":1,"boot":28,"seq":12,"t_ms":7754,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":19,"t_ms":13693,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":20,"t_ms":13746,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":7345,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":25,"t_ms":14573,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":28,"seq":36,"t_ms":16728,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":42,"t_ms":17583,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":47,"t_ms":18472,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":48,"t_ms":18524,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":49,"t_ms":19348,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7336,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":56,"t_ms":26348,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":7343,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":57,"t_ms":26474,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":28,"seq":62,"t_ms":27303,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":28,"seq":68,"t_ms":28188,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":75,"t_ms":29428,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":28,"seq":85,"t_ms":31367,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":91,"t_ms":32207,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":96,"t_ms":33087,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":97,"t_ms":33140,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":98,"t_ms":33980,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7337,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":117,"t_ms":52989,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":7336,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":118,"t_ms":53000,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":28,"seq":123,"t_ms":53832,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":28,"seq":128,"t_ms":54722,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":134,"t_ms":55654,"tipo":"passo","x":0,"y":3,"paredes":12}
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":28,"seq":137,"t_ms":56157,"tipo":"falha","motivo":null,"origem":"web","x":1,"y":3,"componente":null}
+{"v":1,"boot":28,"seq":138,"t_ms":56989,"tipo":"tel","estado":"failed","x":1,"y":3,"rumo":"L","bat_mv":7332,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":143,"t_ms":61762,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":144,"t_ms":61815,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":7333,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":149,"t_ms":62680,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":154,"t_ms":63527,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":155,"t_ms":63579,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":156,"t_ms":64415,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7332,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":163,"t_ms":70892,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":28,"seq":164,"t_ms":70945,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7334,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":171,"t_ms":72291,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":28,"seq":179,"t_ms":73647,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":185,"t_ms":74557,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":28,"seq":194,"t_ms":76276,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":199,"t_ms":77112,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":215,"t_ms":80112,"tipo":"falha","motivo":"stuck","origem":"automatica","x":3,"y":3,"componente":null}
+{"v":1,"boot":28,"seq":216,"t_ms":80953,"tipo":"tel","estado":"failed","x":3,"y":3,"rumo":"L","bat_mv":7329,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":222,"t_ms":86517,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":223,"t_ms":86570,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":224,"t_ms":86953,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7331,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":596,"t_ms":458633,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":28,"seq":597,"t_ms":458786,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7314,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":601,"t_ms":459507,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":28,"seq":607,"t_ms":460455,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":612,"t_ms":461298,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":28,"seq":620,"t_ms":462647,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":625,"t_ms":463566,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":631,"t_ms":464407,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":632,"t_ms":464459,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":633,"t_ms":465389,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7315,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":28,"seq":750,"t_ms":581867,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":28,"seq":751,"t_ms":581970,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7311,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":28,"seq":756,"t_ms":582788,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":28,"seq":761,"t_ms":583622,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":28,"seq":767,"t_ms":584613,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":28,"seq":777,"t_ms":586441,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":782,"t_ms":587277,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":787,"t_ms":588167,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":28,"seq":789,"t_ms":588220,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":28,"seq":790,"t_ms":589180,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7305,"vel_mm_s":0,"eixo_longo":null}
+
+Observacao da Amanda sobre este log: o firmware nao reflete que, em um novo inicio, nao se pode largar se o ultimo health-check tiver mais de 10 min.

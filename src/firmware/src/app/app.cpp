@@ -6,6 +6,7 @@
 #include "eventos.h"
 #include "hal_bateria.h"
 #include "hal_boot.h"
+#include "hal_dip.h"
 #include "hal_bt.h"
 #include "hal_led.h"
 #include "hal_nvs.h"
@@ -62,6 +63,7 @@ void app_iniciar(void)
     mov_iniciar();
     hal_led_iniciar();
     hal_boot_iniciar();
+    hal_dip_iniciar();
     hal_bateria_iniciar();
     hal_nvs_iniciar();
     app_boot = telemetria_proximo_boot();

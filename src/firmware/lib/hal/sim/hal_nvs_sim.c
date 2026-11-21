@@ -90,4 +90,6 @@ size_t hal_nvs_sim_ler_bruto(const char *chave, void *dados, size_t capacidade)
     return r->tamanho;
 }
 
+bool hal_nvs_existe(const char *chave) { return buscar(chave) != NULL; }
+
 #endif /* HAL_SIMULADA && !ARDUINO */
