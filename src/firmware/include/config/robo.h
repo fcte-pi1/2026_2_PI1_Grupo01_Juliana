@@ -42,16 +42,22 @@
 #define MOV_VELOCIDADE_GIRO_MM_S    250.0f  /* velocidade de cada roda no giro */
 #define MOV_ATRASO_MOTOR_S          0.05f   /* constante de tempo da roda; medir na bancada (FIRM-04) */
 #define MOV_KP_POSICAO              1.5f    /* potência por pulso de erro de cada roda */
-#define MOV_TOLERANCIA_PULSOS       2       /* erro aceito no fim, por roda (~0,25 mm) */
+#define MOV_TOLERANCIA_PULSOS       6       /* erro aceito no fim do giro, por roda (~1°) */
+#define MOV_TOLERANCIA_AVANCO_PULSOS 8      /* no avanço o atrito do motor deixa a roda oscilar: ~1 mm */
+#define MOV_KI_POSICAO              8.0f    /* potência por pulso de erro e por segundo: vence o atrito parado no fim do movimento */
+#define MOV_INTEGRAL_MAX            200.0f  /* limite da parcela integral, em potência (anti-windup) */
 #define MOV_ASSENTAR_MS             50      /* tempo dentro da tolerância para concluir */
 #define MOV_TEMPO_LIMITE_MS         3000    /* sem concluir nesse tempo, o movimento falha */
+#define MOV_FREIO_MS                250     /* tempo que as rodas ficam freadas na parada de emergência, antes de soltar a ponte H */
 #define MOV_TRAVADO_MS              200     /* roda sem contar pulsos com potência alta: o movimento falha */
 #define MOV_TRAVADO_POTENCIA        600     /* potência a partir da qual a roda parada conta como travada */
 /* Correções pelos ToF: prontas no código e desligadas (ganho 0) até o FIRM-10. */
 #define MOV_KP_CENTRO               0.0f    /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo */
 #define MOV_LADO_CENTRADO_MM        77      /* lateral com parede e o robô centrado (ver a detecção de parede) */
 #define MOV_GANHO_FRONTAL           0.0f    /* 0 a 1: quanto o fim do avanço segue a parede da frente */
-#define MOV_FRENTE_ALVO_MM          44      /* frontal com o robô centrado e parede à frente */
+#define MOV_FRENTE_SOBRA_MM         17      /* distância mínima até a parede à frente que a parada de emergência garante (1,7 cm) */
+#define MOV_TOF_ATRASO_S            0.075f  /* atraso do ToF frontal até o movimento: meia amostra de 50 ms mais a mediana de 3 a 20 Hz */
+#define MOV_FRENTE_ALVO_MM          (CELULA_MM / 2 - PAREDE_ESPESSURA_MM / 2 - 40) /* frontal com o robô centrado e parede à frente: 44 (40 = TOF_F_X_MM) */
 
 /* NVS: a flash aguenta cerca de 100 mil apagamentos por setor. */
 #define MEM_GRAVACOES_MAX           600     /* gravações do mapa por inicialização; um robô que oscila entre células não gasta a flash */
@@ -64,7 +70,7 @@
 #define EXEC_LEITURA_LATERAL_MM     (CELULA_MM / 2 + 10)
 
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
-#define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
+#define ENCODER_PULSOS_POR_VOLTA    640     /* [EST] provisório: o robô andou 23 a 25 cm por 18 cm calculados com 840; a volta à mão deu 588 e 633 */
 
 /* Derivadas: o controle, o mundo simulado e os testes usam as mesmas. */
 #define PI_F                        3.14159265f

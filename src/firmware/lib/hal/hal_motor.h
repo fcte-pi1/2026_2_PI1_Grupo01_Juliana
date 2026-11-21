@@ -31,6 +31,12 @@ void hal_motor_habilitar(bool habilitar);
 void hal_motor_definir(motor_id_t motor, int16_t potencia);
 
 /*
+ * Freia a roda em curto (IN1 e IN2 em nível alto, como a TB6612 pede): para bem mais rápido que a potência 0,
+ * que só solta o motor. Vale até o próximo hal_motor_definir().
+ */
+void hal_motor_frear(motor_id_t motor);
+
+/*
  * Tensão na ponte H em mV (bateria_ponte_mv), usada no limite de PWM.
  * Até a primeira chamada vale a LiPo cheia. 0 é ignorado.
  */

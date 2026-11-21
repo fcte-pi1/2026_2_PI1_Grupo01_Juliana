@@ -61,6 +61,8 @@ void sim_definir_tof_ausente(int tof, bool ausente);
 void sim_travar_encoder(int motor, bool travado);
 /* Rodas no ar: as rodas giram e os encoders contam, mas a pose não muda e não há colisão. */
 void sim_definir_rodas_no_ar(bool no_ar);
+/* Zona morta do motor: com potência abaixo disto (em módulo) a roda não anda, como o atrito de um motor real. 0 desliga. */
+void sim_definir_zona_morta(int16_t potencia);
 void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);

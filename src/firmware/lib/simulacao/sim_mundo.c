@@ -32,6 +32,7 @@ static struct {
     uint32_t tempo_ms;
     bool motores_habilitados;
     int16_t potencia[2];
+    int16_t zona_morta;
     float velocidade_mm_s[2];
     float pulsos[2];
     bool encoder_travado[2];
@@ -106,7 +107,8 @@ static void passo_1ms(void)
     float deslocamento[2];
 
     for (int i = 0; i < 2; i++) {
-        float alvo = m.motores_habilitados
+        bool abaixo_da_zona = m.potencia[i] > -m.zona_morta && m.potencia[i] < m.zona_morta;
+        float alvo = m.motores_habilitados && !abaixo_da_zona
                          ? VELOCIDADE_MAX_MM_S * m.potencia[i] / 1000.0f
                          : 0.0f;
         m.velocidade_mm_s[i] += (alvo - m.velocidade_mm_s[i]) * dt / CONSTANTE_TEMPO_MOTOR_S;
@@ -168,6 +170,8 @@ uint32_t sim_tempo_ms(void) { return m.tempo_ms; }
 void sim_definir_rodas_no_ar(bool no_ar) { m.rodas_no_ar = no_ar; }
 
 void sim_motor_habilitar(bool habilitar) { m.motores_habilitados = habilitar; }
+
+void sim_definir_zona_morta(int16_t potencia) { m.zona_morta = potencia; }
 
 void sim_motor_definir(int motor, int16_t potencia)
 {

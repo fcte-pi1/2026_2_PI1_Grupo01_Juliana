@@ -89,6 +89,21 @@ void hal_motor_definir(motor_id_t motor, int16_t potencia)
     }
 }
 
+void hal_motor_frear(motor_id_t motor)
+{
+    if (!iniciado || motor < 0 || motor >= MOTOR_QTD) {
+        return;
+    }
+    const motor_pinos_t *m = &MOTORES[motor];
+    if (m->in1 >= 0) {
+        digitalWrite(m->in1, HIGH);
+    }
+    if (m->in2 >= 0) {
+        digitalWrite(m->in2, HIGH);
+    }
+    ledcWrite(m->canal, PONTE_H_DUTY_MAX);
+}
+
 /* Entra no próximo hal_motor_definir (a malha chama a 200 Hz). */
 void hal_motor_definir_tensao(uint16_t mv)
 {

@@ -29,6 +29,10 @@ static struct {
     float velocidade_max;
     float desvio;              /* pulsos que a roda direita vai à frente da esquerda */
     float andado;              /* pulsos já andados no avanço, média das rodas */
+    uint32_t freando_ms;       /* parada de emergência: tempo de freio já passado; 0 = sem freio */
+    bool freando;
+    float andado_na_leitura;   /* o andado na última leitura do ToF: o robô seguiu andando desde então */
+    float integral[MOTOR_QTD]; /* parcela integral da potência de cada roda */
     uint32_t decorrido_ms;
     uint32_t assentado_ms;
     int32_t ultimo[MOTOR_QTD];      /* última leitura do encoder, para ver a roda travada */
@@ -99,6 +103,11 @@ static void iniciar(tipo_t tipo, int32_t pulsos, float velocidade_max)
     mov.velocidade_max = velocidade_max;
     mov.desvio = 0.0f;
     mov.andado = 0.0f;
+    mov.andado_na_leitura = 0.0f;
+    mov.freando = false;
+    mov.freando_ms = 0;
+    mov.integral[MOTOR_ESQ] = 0.0f;
+    mov.integral[MOTOR_DIR] = 0.0f;
     mov.decorrido_ms = 0;
     mov.assentado_ms = 0;
     for (int i = 0; i < MOTOR_QTD; i++) {
@@ -158,6 +167,7 @@ void mov_informar_tof(const mov_tof_t *tof)
 {
     if (tof != NULL) {
         mov.tof = *tof;
+        mov.andado_na_leitura = mov.andado;
     }
 }
 
@@ -199,6 +209,22 @@ static void corrigir_pela_frente(float andado)
     }
 }
 
+/*
+ * Parada de emergência: a distância até a parede da frente agora (a leitura, menos o que o robô andou desde ela e
+ * menos o atraso do filtro do ToF) menos o que o robô ainda anda até parar tem que ser pelo menos
+ * MOV_FRENTE_SOBRA_MM. Senão o avanço para, a tempo de sobrar essa distância.
+ */
+static bool obstaculo_a_frente(float andado_pulsos)
+{
+    if (mov.tof.frente_mm == 0) {
+        return false;
+    }
+    float desde_a_leitura_mm = (andado_pulsos - mov.andado_na_leitura) * MM_POR_PULSO;
+    float distancia_mm = (float)mov.tof.frente_mm - desde_a_leitura_mm - mov.velocidade * MOV_TOF_ATRASO_S;
+    float frenagem_mm = mov.velocidade * mov.velocidade / (2.0f * MOV_ACELERACAO_MM_S2);
+    return distancia_mm - frenagem_mm < (float)MOV_FRENTE_SOBRA_MM;
+}
+
 /* Avança a referência pela rampa: acelera, segue na máxima e freia para parar no total. */
 static void avancar_referencia(float total)
 {
@@ -233,6 +259,17 @@ mov_estado_t mov_atualizar(void)
         return mov.estado;
     }
 
+    if (mov.freando) {
+        /* Freio em curto até as rodas pararem; só então solta a ponte H e conta como falha. */
+        hal_motor_frear(MOTOR_ESQ);
+        hal_motor_frear(MOTOR_DIR);
+        mov.freando_ms += MOV_PERIODO_MS;
+        if (mov.freando_ms >= MOV_FREIO_MS) {
+            desligar(MOV_FALHOU);
+        }
+        return mov.estado;
+    }
+
     float sinal_esq = mov.tipo == TIPO_GIRO ? -1.0f : 1.0f;
     float sinal_dir = 1.0f;
     float total = mov.total;
@@ -248,6 +285,12 @@ mov_estado_t mov_atualizar(void)
 
     if (mov.tipo == TIPO_AVANCO) {
         mov.andado = (esquerda + direita) / 2.0f;
+        if (obstaculo_a_frente(mov.andado)) {
+            mov.freando = true;
+            hal_motor_frear(MOTOR_ESQ);
+            hal_motor_frear(MOTOR_DIR);
+            return mov.estado;
+        }
         if (MOV_KP_CENTRO != 0.0f) {
             mov.desvio += MOV_KP_CENTRO * erro_lateral_mm();
         }
@@ -271,8 +314,34 @@ mov_estado_t mov_atualizar(void)
      */
     float alimentacao = (mov.velocidade + MOV_ATRASO_MOTOR_S * mov.aceleracao) /
                         VELOCIDADE_MAX_MM_S * MOTOR_POTENCIA_MAX;
-    float potencia_esq = sinal_esq * (alimentacao + MOV_KP_POSICAO * erro_esq);
-    float potencia_dir = sinal_dir * (alimentacao + MOV_KP_POSICAO * erro_dir);
+    /*
+     * A parcela integral vence o atrito do motor parado: sem ela, um erro pequeno no fim do movimento dá uma
+     * potência menor que a zona morta do motor, e a roda para antes de chegar. Só acumula depois que a
+     * trajetória terminou; durante o trajeto o erro é só o atraso da rampa e a integral passaria do ponto.
+     */
+    if (mov.referencia >= total) {
+        mov.integral[MOTOR_ESQ] = fmaxf(-MOV_INTEGRAL_MAX,
+                                        fminf(MOV_INTEGRAL_MAX, mov.integral[MOTOR_ESQ] + MOV_KI_POSICAO * erro_esq * DT_S));
+        mov.integral[MOTOR_DIR] = fmaxf(-MOV_INTEGRAL_MAX,
+                                        fminf(MOV_INTEGRAL_MAX, mov.integral[MOTOR_DIR] + MOV_KI_POSICAO * erro_dir * DT_S));
+    }
+    /* Dentro da tolerância a roda é solta: insistir contra o atrito a faz passar do ponto e oscilar. */
+    bool trajetoria_fim = mov.referencia >= total;
+    float tolerancia = mov.tipo == TIPO_AVANCO ? MOV_TOLERANCIA_AVANCO_PULSOS : MOV_TOLERANCIA_PULSOS;
+    if (trajetoria_fim && fabsf(erro_esq) <= tolerancia) {
+        mov.integral[MOTOR_ESQ] = 0.0f;
+    }
+    if (trajetoria_fim && fabsf(erro_dir) <= tolerancia) {
+        mov.integral[MOTOR_DIR] = 0.0f;
+    }
+    float potencia_esq = sinal_esq * (alimentacao + MOV_KP_POSICAO * erro_esq + mov.integral[MOTOR_ESQ]);
+    float potencia_dir = sinal_dir * (alimentacao + MOV_KP_POSICAO * erro_dir + mov.integral[MOTOR_DIR]);
+    if (trajetoria_fim && fabsf(erro_esq) <= tolerancia) {
+        potencia_esq = 0.0f;
+    }
+    if (trajetoria_fim && fabsf(erro_dir) <= tolerancia) {
+        potencia_dir = 0.0f;
+    }
     definir_potencia(potencia_esq, potencia_dir);
     if (roda_travada(potencia_esq, potencia_dir)) {
         desligar(MOV_FALHOU);
@@ -280,8 +349,8 @@ mov_estado_t mov_atualizar(void)
     }
 
     mov.decorrido_ms += MOV_PERIODO_MS;
-    bool no_alvo = mov.referencia >= total && fabsf(erro_esq) <= MOV_TOLERANCIA_PULSOS &&
-                   fabsf(erro_dir) <= MOV_TOLERANCIA_PULSOS;
+    bool no_alvo = mov.referencia >= total && fabsf(erro_esq) <= tolerancia &&
+                   fabsf(erro_dir) <= tolerancia;
     mov.assentado_ms = no_alvo ? mov.assentado_ms + MOV_PERIODO_MS : 0;
 
     if (mov.assentado_ms >= MOV_ASSENTAR_MS) {
