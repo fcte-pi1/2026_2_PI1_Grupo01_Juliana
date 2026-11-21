@@ -178,7 +178,7 @@ export interface ExecucaoAtualResposta {
   proximo_numero?: number
 }
 
-export type NovaExecucaoPedido = components['schemas']['NovaExecucao']
+export type NovaExecucaoPedido = Omit<components['schemas']['NovaExecucao'], 'ignorar_bateria'> & { ignorar_bateria?: boolean }
 
 export type RetornoNovaExecucao = components['schemas']['RetornoNovaExecucao']
 

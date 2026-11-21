@@ -279,7 +279,7 @@ export interface paths {
         put?: never;
         /**
          * Abrir a tentativa seguinte depois de uma falha
-         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
+         * @description O corpo é opcional (ignorar_bateria). Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
          */
         post: operations["retomarTentativa"];
         delete?: never;
@@ -377,6 +377,18 @@ export interface components {
             configuracao?: string | null;
             /** @description Anotação livre do operador, por exemplo o caso de teste. Opcional. */
             observacao?: string | null;
+            /**
+             * @description O operador confirmou largar com a bateria abaixo do corte seguro. Só vale quando a bateria é o único item reprovado do health-check, com os 8 itens recebidos; qualquer outro item reprovado ou ausente continua recusando com health_check_reprovado.
+             * @default false
+             */
+            ignorar_bateria: boolean;
+        };
+        RetomarTentativa: {
+            /**
+             * @description Mesma confirmação de Nova execução, para a retomada.
+             * @default false
+             */
+            ignorar_bateria: boolean;
         };
         /** @description Retorno ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1. Em POST /execucoes/{id}/retomar, é 2 ou 3. */
         RetornoNovaExecucao: {
@@ -659,6 +671,11 @@ export interface components {
              * @enum {string}
              */
             cmd: "interromper" | "largar" | "health_check";
+            /**
+             * @description Só no largar: o operador confirmou largar com a bateria abaixo do corte. O campo não vem nos demais comandos.
+             * @enum {boolean}
+             */
+            forcar_bateria?: true;
         };
         EntradaPonte: {
             /** @description Linha lida da serial, sem o \\n, sem alteração. */
@@ -1173,7 +1190,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetomarTentativa"];
+            };
+        };
         responses: {
             /** @description Nova tentativa aberta. attempt_index é 2 ou 3. */
             201: {

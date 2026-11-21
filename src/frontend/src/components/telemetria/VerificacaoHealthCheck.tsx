@@ -15,7 +15,9 @@ export function VerificacaoHealthCheck({ verificacao: hc, tipo, bloqueado = fals
     : hc.tempoEsgotado ? 'A verificação não foi concluída. Solicite um novo health-check.'
       : hc.verificando ? 'Aguardando o health-check do robô. Nenhuma tentativa foi aberta.'
         : !hc.dados ? 'Realize o health-check antes de iniciar ou retomar.'
-          : hc.dados.aprovado === false ? 'Health-check reprovado. Corrija a falha e solicite outra verificação.'
+          : hc.dados.aprovado === false ? (hc.bateriaBaixa
+            ? 'Só a bateria reprovou, abaixo do corte seguro. Você pode carregá-la e solicitar outra verificação, ou continuar mesmo assim com confirmação.'
+            : 'Health-check reprovado. Corrija a falha e solicite outra verificação.')
             : !hc.valido ? 'Health-check sem validade vigente. Solicite uma nova verificação.'
               : hc.dados.tipo_dip !== tipo ? `O robô informou ${hc.dados.tipo_dip ?? 'tipo pendente'}; o labirinto selecionado é ${tipo}. ${hc.dados.tipo_dip && hc.dados.tipo_dip !== 'invalido' ? `Escolha ${hc.dados.tipo_dip} ou ajuste o DIP do robô para ${tipo} e solicite um novo health-check.` : 'Ajuste o DIP do robô e solicite um novo health-check.'}`
                 : 'Health-check aprovado e válido para abrir a tentativa.'

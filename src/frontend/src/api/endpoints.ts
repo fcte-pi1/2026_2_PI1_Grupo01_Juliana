@@ -136,8 +136,10 @@ export const encerrarTentativa = async (id: string, pedido: EncerrarPedido) =>
 export const encerrarExecucao = async (id: string) =>
   normalizarExecucao(await api.post<DetalheAPI>(`/execucoes/${id}/encerrar`))
 
-export const retomarTentativa = (id: string) =>
-  api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`)
+export const retomarTentativa = (id: string, ignorarBateria = false) =>
+  ignorarBateria
+    ? api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`, { ignorar_bateria: true })
+    : api.post<RetornoNovaExecucao>(`/execucoes/${id}/retomar`)
 
 export const buscarUltimoHealthCheck = (sinal?: AbortSignal) =>
   api.get<UltimoHealthCheck | null>('/health-check/ultimo', sinal)
