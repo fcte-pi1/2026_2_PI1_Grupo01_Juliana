@@ -7,7 +7,7 @@ import type { EncerrarPedido, Execucao, Labirinto, Recusa, RetornoNovaExecucao, 
 import { CartaoUltimaExecucao } from '../../components/execucao/CartaoUltimaExecucao'
 import { ComoFunciona } from '../../components/execucao/ComoFunciona'
 import { EtapasExecucao } from '../../components/execucao/EtapasExecucao'
-import { FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/FormNovaExecucao'
+import { CamposRotulo, FormNovaExecucao, SeletorLabirinto } from '../../components/execucao/FormNovaExecucao'
 import { PilulaStatusTentativa } from '../../components/execucao/PilulaResultado'
 import { ResumoExecucao } from '../../components/execucao/ResumoExecucao'
 import { Cabecalho } from '../../components/layout/Cabecalho'
@@ -65,10 +65,12 @@ export function Inicio() {
   const labirintos = useLabirintos()
   const agora = useAgora()
   const [selecionado, setSelecionado] = useState<TipoLabirinto>('4x4')
+  const [rotulo, setRotulo] = useState({ configuracao: '', observacao: '' })
   const [recusaLocal, setRecusaLocal] = useState<Recusa | null>(null)
   const [enviando, setEnviando] = useState(false)
   const envioEmAndamento = useRef(false)
-  const [erroAcao, setErroAcao] = useState<string | null>(null)
+  const [erroRegistrado, setErroRegistrado] = useState<{ texto: string; situacao: string } | null>(null)
+  const situacaoAtual = useRef('')
   const [criacaoPendente, setCriacaoPendente] = useState<RetornoNovaExecucao | null>(null)
   const [retomadaPendente, setRetomadaPendente] = useState<RetornoNovaExecucao | null>(null)
   const [tentativaCriada, setTentativaCriada] = useState<RetornoNovaExecucao | null>(null)
@@ -81,7 +83,8 @@ export function Inicio() {
   }, [atual.carregando, encerradaId, parametros, setParametros])
 
   const modal = (parametros.get('modal') as TipoModal) ?? null
-  const abrirModal = (novo: TipoModal) =>
+  const abrirModal = (novo: TipoModal) => {
+    setErroAcao(null)
     setParametros(
       (p) => {
         if (novo) p.set('modal', novo)
@@ -90,8 +93,16 @@ export function Inicio() {
       },
       { replace: true },
     )
+  }
 
   const recebida = atual.dados?.execucao
+  const situacaoDaExecucao = recebida
+    ? `${recebida.execucao_id}|${recebida.status}|${recebida.tentativas.map((t) => t.status).join(',')}` : ''
+  useEffect(() => { situacaoAtual.current = situacaoDaExecucao }, [situacaoDaExecucao])
+  // O aviso de uma ação recusada vale só para a situação em que ela foi pedida.
+  const erroAcao = erroRegistrado?.situacao === situacaoDaExecucao ? erroRegistrado.texto : null
+  const setErroAcao = (texto: string | null) =>
+    setErroRegistrado(texto ? { texto, situacao: situacaoAtual.current } : null)
   const temTentativaAberta = !!recebida && tentativaAberta(recebida) !== null
   const tipoVerificado = modal === 'nova' || !recebida ? selecionado : recebida.labirinto
   const healthCheck = useHealthCheck(tipoVerificado, !temTentativaAberta || modal === 'nova')
@@ -168,7 +179,11 @@ export function Inicio() {
   async function iniciarNovaExecucao() {
     let criada = criacaoPendente
     if (!criada) {
-      criada = await criarExecucao({ tipo_labirinto: selecionado })
+      criada = await criarExecucao({
+        tipo_labirinto: selecionado,
+        ...(rotulo.configuracao.trim() && { configuracao: rotulo.configuracao.trim() }),
+        ...(rotulo.observacao.trim() && { observacao: rotulo.observacao.trim() }),
+      })
       setCriacaoPendente(criada)
       setTentativaCriada(criada)
     }
@@ -192,7 +207,12 @@ export function Inicio() {
             {retomadaPendente ? 'Carregar dados da tentativa' : 'Carregar dados da execução'}
           </button>
         } />
-        {erroAcao && <div className="faixa faixa--perigo" role="alert">{erroAcao}</div>}
+        {erroAcao && (
+          <div className="faixa faixa--perigo" role="alert">
+            {erroAcao}
+            <button type="button" className="botao faixa__acao" onClick={() => setErroAcao(null)}>Fechar</button>
+          </div>
+        )}
         <div className="conteudo">
           <ContadorTentativas atual={registroPendente.attempt_index} />
           <p className="estado-vazio">Aguardando os dados da execução {registroPendente.execucao_id}.</p>
@@ -218,6 +238,7 @@ export function Inicio() {
   const faixaErro = erroAcao && (
     <div className="faixa faixa--perigo" role="alert">
       Não foi possível concluir a ação: {erroAcao}
+      <button type="button" className="botao faixa__acao" onClick={() => setErroAcao(null)}>Fechar</button>
     </div>
   )
   const faixaSincronizacao = atual.erroSincronizacao && (
@@ -251,6 +272,9 @@ export function Inicio() {
             aoSelecionar={setSelecionado}
             desabilitado={enviando}
             verificacao={verificacao}
+            configuracao={rotulo.configuracao}
+            observacao={rotulo.observacao}
+            aoMudarRotulo={(campos) => setRotulo((atual) => ({ ...atual, ...campos }))}
           />
           <div className="coluna">
             <ComoFunciona />
@@ -279,6 +303,12 @@ export function Inicio() {
         ? <p>A execução <strong>{numero}</strong> está em andamento. Ao confirmar, ela será <strong>cancelada</strong> e uma nova execução começará na <strong>Tentativa 1/3</strong>. Se o robô ainda estiver andando, pare-o pelo botão BOOT.</p>
         : <p>Escolha o labirinto. A nova execução começará na <strong>Tentativa 1/3</strong>.</p>}
       <SeletorLabirinto labirintos={labirintos.dados ?? []} selecionado={selecionado} aoSelecionar={setSelecionado} desabilitado={enviando} />
+      <CamposRotulo
+        configuracao={rotulo.configuracao}
+        observacao={rotulo.observacao}
+        aoMudarRotulo={(campos) => setRotulo((atual) => ({ ...atual, ...campos }))}
+        desabilitado={enviando}
+      />
       {verificacao}
       {recusaLocal && <AvisoRecusa motivo={recusaLocal.motivo} titulo="Nova execução recusada" aoFechar={fecharRecusa} />}
       {faixaErro}

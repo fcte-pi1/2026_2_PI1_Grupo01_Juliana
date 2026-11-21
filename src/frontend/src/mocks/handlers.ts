@@ -47,7 +47,16 @@ function execucaoDoHistorico(id: string): Execucao | null {
   })
 }
 
+function historicoCompleto() {
+  const registradas = listarExecucoesRegistradas().map((item) => ({ ...item, resultado: item.status }))
+  return [...registradas, ...HISTORICO.filter((item) => !registradas.some((registrada) => registrada.execucao_id === item.execucao_id))]
+}
+
 export const handlers = [
+  http.get(`${API}/robo/estado`, () => HttpResponse.json({
+    ultimo_sinal_em: null, segundos_sem_sinal: null, ponte: 'conectada', porta: '/dev/rfcomm0', reconexao_pedida: false,
+  })),
+  http.post(`${API}/robo/reconectar`, () => HttpResponse.json({ aceito: true }, { status: 202 })),
   http.get(`${API}/health-check/ultimo`, () => HttpResponse.json(ultimoHealthCheckMock(Date.now(), cenarioAtual().id))),
   http.post(`${API}/health-check/solicitar`, () => {
     if (dadosAtuais().execucao?.tentativas.some((tentativa) => tentativa.status === 'running')) {
@@ -58,6 +67,47 @@ export const handlers = [
   http.get(`${API}/execucoes/em-andamento`, () => {
     const atual = dadosAtuais(Date.now()).execucao
     return atual?.status === 'em_andamento' ? HttpResponse.json(detalheAPI(atual)) : new HttpResponse(null, { status: 204 })
+  }),
+
+  // Campanha e exportação: o mock devolve os mesmos números que o back-end calcula do histórico.
+  http.get(`${API}/execucoes/campanha`, ({ request }) => {
+    const labirinto = new URL(request.url).searchParams.get('tipo_labirinto') as TipoLabirinto | null
+    const lista = historicoCompleto().filter((e) => !labirinto || e.labirinto === labirinto)
+    const concluidas = lista.filter((e) => e.status === 'concluida')
+    const canceladas = lista.filter((e) => e.status === 'cancelada')
+    const tempos = concluidas.map((e) => e.tempo_total_s).filter((t): t is number => t !== null)
+    const media = (valores: number[]) => (valores.length ? Math.round((valores.reduce((a, b) => a + b, 0) / valores.length) * 100) / 100 : null)
+    const taxa = (c: number, e: number) => (e ? Math.round((1000 * c) / e) / 10 : null)
+    return HttpResponse.json({
+      total: lista.length,
+      concluidas: concluidas.length,
+      canceladas: canceladas.length,
+      em_andamento: lista.filter((e) => e.status === 'em_andamento').length,
+      taxa_sucesso_pct: taxa(concluidas.length, concluidas.length + canceladas.length),
+      tempo_medio_s: media(tempos),
+      tempo_maximo_s: tempos.length ? Math.max(...tempos) : null,
+      concluidas_abaixo_de_10_min: tempos.filter((t) => t < 600).length,
+      por_configuracao: [{
+        configuracao: null,
+        total: lista.length,
+        concluidas: concluidas.length,
+        taxa_sucesso_pct: taxa(concluidas.length, concluidas.length + canceladas.length),
+        tempo_medio_s: media(tempos),
+        tempo_maximo_s: tempos.length ? Math.max(...tempos) : null,
+      }],
+    })
+  }),
+
+  http.get(`${API}/execucoes/exportar`, ({ request }) => {
+    const busca = new URL(request.url).searchParams
+    const labirinto = busca.get('tipo_labirinto') as TipoLabirinto | null
+    const linhas = historicoCompleto().filter((e) => !labirinto || e.labirinto === labirinto)
+      .map((e) => ({ execucao_id: e.execucao_id, tipo_labirinto: e.labirinto, configuracao: e.configuracao ?? null,
+        status_execucao: e.status, tentativas_usadas: e.tentativas_usadas, iniciada_em: e.iniciada_em, tempo_total_s: e.tempo_total_s }))
+    if (busca.get('formato') === 'json') return HttpResponse.json(linhas)
+    const colunas = Object.keys(linhas[0] ?? { execucao_id: '' })
+    const csv = [colunas.join(','), ...linhas.map((l) => colunas.map((c) => String((l as Record<string, unknown>)[c] ?? '')).join(','))].join('\n')
+    return new HttpResponse(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8' } })
   }),
 
   http.get(`${API}/execucoes`, ({ request }) => {

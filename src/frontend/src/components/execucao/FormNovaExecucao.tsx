@@ -10,9 +10,46 @@ interface SeletorLabirintoProps {
   desabilitado?: boolean
 }
 
-interface FormNovaExecucaoProps extends SeletorLabirintoProps {
+interface RotuloProps {
+  configuracao: string
+  observacao: string
+  aoMudarRotulo: (campos: { configuracao?: string; observacao?: string }) => void
+  desabilitado?: boolean
+}
+
+interface FormNovaExecucaoProps extends SeletorLabirintoProps, Partial<RotuloProps> {
   proximoNumero?: number
   verificacao?: ReactNode
+}
+
+/** Rótulo opcional da execução: a configuração de paredes agrupa as corridas da campanha. */
+export function CamposRotulo({ configuracao, observacao, aoMudarRotulo, desabilitado }: RotuloProps) {
+  return (
+    <div className="campos-rotulo">
+      <label className="campo">
+        <span className="rotulo">Configuração de paredes (opcional)</span>
+        <input
+          type="text"
+          maxLength={60}
+          value={configuracao}
+          disabled={desabilitado}
+          placeholder="ex.: paredes A"
+          onChange={(e) => aoMudarRotulo({ configuracao: e.target.value })}
+        />
+      </label>
+      <label className="campo">
+        <span className="rotulo">Observação (opcional)</span>
+        <input
+          type="text"
+          maxLength={200}
+          value={observacao}
+          disabled={desabilitado}
+          placeholder="ex.: caso de teste"
+          onChange={(e) => aoMudarRotulo({ observacao: e.target.value })}
+        />
+      </label>
+    </div>
+  )
 }
 
 export function SeletorLabirinto({ labirintos, selecionado, aoSelecionar, desabilitado }: SeletorLabirintoProps) {
@@ -47,7 +84,7 @@ export function SeletorLabirinto({ labirintos, selecionado, aoSelecionar, desabi
 }
 
 /** Escolha do tipo de labirinto em Nova execução (US12). O tipo fica só no backend (RF27). */
-export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSelecionar, desabilitado, verificacao }: FormNovaExecucaoProps) {
+export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSelecionar, desabilitado, verificacao, configuracao, observacao, aoMudarRotulo }: FormNovaExecucaoProps) {
   const atual = labirintos.find((l) => l.tipo === selecionado)
 
   return (
@@ -62,6 +99,14 @@ export function FormNovaExecucao({ labirintos, selecionado, proximoNumero, aoSel
 
       <span className="rotulo">Labirinto</span>
       <SeletorLabirinto labirintos={labirintos} selecionado={selecionado} aoSelecionar={aoSelecionar} desabilitado={desabilitado} />
+      {aoMudarRotulo && (
+        <CamposRotulo
+          configuracao={configuracao ?? ''}
+          observacao={observacao ?? ''}
+          aoMudarRotulo={aoMudarRotulo}
+          desabilitado={desabilitado}
+        />
+      )}
       {verificacao}
 
       {atual && (

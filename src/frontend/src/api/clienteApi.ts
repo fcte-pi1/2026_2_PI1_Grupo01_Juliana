@@ -94,6 +94,11 @@ export class ClienteAPI {
     return () => eventos.close()
   }
 
+  /** Endereço completo de um caminho da API, para links de download. */
+  endereco(caminho: string): string {
+    return this.url(caminho)
+  }
+
   private url(caminho: string): string {
     const base = this.baseUrl.startsWith('http') ? this.baseUrl : `${window.location.origin}${this.baseUrl}`
     return `${base}${caminho}`

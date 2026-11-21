@@ -30,6 +30,7 @@ function detalheDoContrato(): components['schemas']['ExecucaoDetalhe'] {
   const iniciada_em = new Date().toISOString()
   return {
     execucao_id: '123e4567-e89b-12d3-a456-426614174000',
+    numero: 43,
     tipo_labirinto: '8x4',
     status: 'em_andamento',
     tentativas_usadas: 1,
@@ -112,7 +113,7 @@ describe('FRONT-02: nova execução', () => {
     expect(consultasAtuais()).toBe(1)
   })
 
-  it('renderiza o formato do OpenAPI sem número sequencial nem métricas opcionais', async () => {
+  it('renderiza o formato do OpenAPI com o número sequencial e sem métricas opcionais', async () => {
     informarDip('8x4')
     const nova = detalheDoContrato()
     servidor.use(
@@ -123,7 +124,7 @@ describe('FRONT-02: nova execução', () => {
     await userEvent.click(await screen.findByRole('radio', { name: /^8x4/ }))
     expect(screen.queryByText(/próximo ID/)).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Nova execução/ }))
-    expect(await screen.findByRole('heading', { name: `Execução ativa ${nova.execucao_id}` })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toBeInTheDocument()
     expect(screen.getByText('Labirinto 8x4')).toBeInTheDocument()
     expect(screen.queryByText(/#undefined|#0000/)).not.toBeInTheDocument()
@@ -191,7 +192,7 @@ describe('FRONT-02: nova execução', () => {
       tentativas: [{ ...atual.tentativas[0], status }],
     })))
     renderizarRota('/')
-    expect(await screen.findByRole('heading', { name: `Execução ativa ${atual.execucao_id}` })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Execução concluída|Execução cancelada|Execução encerrada/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/concluída na tentativa/)).not.toBeInTheDocument()
   })
@@ -209,7 +210,7 @@ describe('FRONT-02: nova execução', () => {
     expect(screen.getByRole('heading', { name: 'Nova execução registrada' })).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Carregar dados da execução' }))
-    expect(await screen.findByRole('heading', { name: `Execução ativa ${nova.execucao_id}` })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(criacoes()).toHaveLength(1)
     expect(consultas).toBe(2)
   })
@@ -222,7 +223,7 @@ describe('FRONT-02: nova execução', () => {
     )
     renderizarRota('/')
     await userEvent.click(await screen.findByRole('button', { name: /Nova execução/ }))
-    expect(await screen.findByRole('heading', { name: `Execução ativa ${nova.execucao_id}` })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Execução ativa #0043' })).toBeInTheDocument()
     expect(screen.getByLabelText('Tentativa 1 de 3')).toBeInTheDocument()
     expect(screen.getByText('Aguardando os dados da tentativa enviados pelo backend.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Encerrar tentativa' })).not.toBeInTheDocument()

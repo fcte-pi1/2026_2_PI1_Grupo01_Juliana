@@ -3,7 +3,7 @@ import { api } from './clienteApi'
 import type { components } from './schema'
 import type {
   ComponenteHealthCheck, EncerrarPedido, Execucao, ExecucaoAtualResposta,
-  Labirinto, NovaExecucaoPedido, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto, UltimoHealthCheck,
+  Labirinto, NovaExecucaoPedido, ResumoCampanha, EstadoRobo, ResumoExecucao, RetornoNovaExecucao, TipoLabirinto, UltimoHealthCheck,
 } from './tipos'
 
 type DetalheAPI = components['schemas']['ExecucaoDetalhe'] & { numero?: number }
@@ -61,6 +61,8 @@ const paraResumo = (resumo: ResumoAPI): ResumoExecucao => ({
   tempo_total_s: resumo.tempo_total_s ?? null,
   velocidade_media: resumo.velocidade_media ?? null,
   consumo_bateria: resumo.consumo_bateria ?? null,
+  configuracao: resumo.configuracao ?? null,
+  observacao: resumo.observacao ?? null,
 })
 
 /** Primeira página do histórico, num pedido só: o painel ao vivo não espera o histórico inteiro. */
@@ -70,15 +72,32 @@ export const listarExecucoes = async (labirinto: TipoLabirinto | null, sinal?: A
 }
 
 /** Histórico completo (RF03). O backend pagina, então percorre todas as páginas; só a tela de histórico usa. */
-export const listarTodasExecucoes = async (labirinto: TipoLabirinto | null, sinal?: AbortSignal): Promise<ResumoExecucao[]> => {
+export const listarTodasExecucoes = async (
+  labirinto: TipoLabirinto | null, sinal?: AbortSignal, configuracao: string | null = null,
+): Promise<ResumoExecucao[]> => {
   const dados: ResumoAPI[] = []
   for (let offset = 0; ; offset += LIMITE_PAGINA) {
-    const filtro = labirinto ? `tipo_labirinto=${labirinto}&` : ''
+    const filtro = `${labirinto ? `tipo_labirinto=${labirinto}&` : ''}${configuracao ? `configuracao=${encodeURIComponent(configuracao)}&` : ''}`
     const pagina = await api.get<ResumoAPI[]>(`/execucoes?${filtro}limite=${LIMITE_PAGINA}&offset=${offset}`, sinal)
     dados.push(...pagina)
     if (pagina.length < LIMITE_PAGINA) break
   }
   return dados.map(paraResumo)
+}
+
+/** Resumo da campanha (taxa de sucesso, tempos e abaixo de 10 min), com o mesmo filtro do histórico. */
+const filtroDaCampanha = (labirinto: TipoLabirinto | null, configuracao: string | null) =>
+  [labirinto && `tipo_labirinto=${labirinto}`, configuracao && `configuracao=${encodeURIComponent(configuracao)}`].filter(Boolean).join('&')
+
+export const buscarCampanha = (labirinto: TipoLabirinto | null, sinal?: AbortSignal, configuracao: string | null = null) => {
+  const filtro = filtroDaCampanha(labirinto, configuracao)
+  return api.get<ResumoCampanha>(`/execucoes/campanha${filtro ? `?${filtro}` : ''}`, sinal)
+}
+
+/** Link do arquivo com as execuções: uma linha por tentativa, para planilha (csv) ou análise (json). */
+export const enderecoExportacao = (formato: 'csv' | 'json', labirinto: TipoLabirinto | null, configuracao: string | null = null) => {
+  const filtro = filtroDaCampanha(labirinto, configuracao)
+  return api.endereco(`/execucoes/exportar?formato=${formato}${filtro ? `&${filtro}` : ''}`)
 }
 
 export const buscarExecucaoAtual = async (sinal?: AbortSignal): Promise<ExecucaoAtualResposta> => {
@@ -122,6 +141,12 @@ export const retomarTentativa = (id: string) =>
 
 export const buscarUltimoHealthCheck = (sinal?: AbortSignal) =>
   api.get<UltimoHealthCheck | null>('/health-check/ultimo', sinal)
+
+export const buscarEstadoRobo = (sinal?: AbortSignal) =>
+  api.get<EstadoRobo>('/robo/estado', sinal)
+
+export const pedirReconexao = () =>
+  api.post<components['schemas']['PedidoReconexao']>('/robo/reconectar')
 
 export const solicitarHealthCheck = () =>
   api.post<components['schemas']['SolicitacaoHealthCheck']>('/health-check/solicitar')

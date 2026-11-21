@@ -22,13 +22,16 @@ export function resumoAPI(dados: ResumoExecucao): components['schemas']['ResumoE
     tempo_total_s: dados.tempo_total_s,
     velocidade_media: dados.velocidade_media,
     consumo_bateria: dados.consumo_bateria,
+    configuracao: dados.configuracao ?? null,
+    observacao: dados.observacao ?? null,
   }
 }
 
-export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDetalhe'] & { numero?: number } {
+export function detalheAPI(dados: Execucao): components['schemas']['ExecucaoDetalhe'] {
   const { labirinto, ...restante } = dados
   return {
     ...restante,
+    numero: dados.numero ?? 1,
     tipo_labirinto: labirinto,
     trajeto: dados.trajeto.map((passo) => ({ ...passo, passo_id: passo.passo_id ?? passo.seq })),
     tentativas: dados.tentativas.map((tentativa) => {
