@@ -30,8 +30,10 @@ def main():
     enlace.port = porta
     enlace.baudrate = 115200
     enlace.timeout = 0
-    enlace.dtr = False  # não reinicia a placa ao abrir
-    enlace.rts = False
+    if "rfcomm" not in porta:
+        # No USB, DTR e RTS em baixa não reiniciam a placa ao abrir; no rfcomm o DTR baixo derruba a conexão.
+        enlace.dtr = False
+        enlace.rts = False
     enlace.open()
 
     antigos = termios.tcgetattr(sys.stdin)
