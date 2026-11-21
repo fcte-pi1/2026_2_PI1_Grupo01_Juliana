@@ -485,6 +485,7 @@ static void test_consumir_duas_vezes_devolve_true_e_depois_false(void)
 
 #define LARGAR "{\"v\":1,\"cmd\":\"largar\"}"
 #define HEALTH_CHECK "{\"v\":1,\"cmd\":\"health_check\"}"
+#define LARGAR_FORCADO "{\"v\":1,\"cmd\":\"largar\",\"forcar_bateria\":true}"
 
 static void test_comando_largar_liga_so_a_flag_da_largada(void)
 {
@@ -494,6 +495,30 @@ static void test_comando_largar_liga_so_a_flag_da_largada(void)
     TEST_ASSERT_FALSE(telemetria_consumir_health_check());
     TEST_ASSERT_TRUE(telemetria_consumir_largada());
     TEST_ASSERT_FALSE(telemetria_consumir_largada());
+}
+
+static void test_largar_forcado_chega_como_forcado_e_o_normal_nao(void)
+{
+    hal_bt_sim_injetar(LARGAR_FORCADO "\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_EQUAL(TELEMETRIA_LARGADA_FORCADA, telemetria_consumir_largada_modo());
+    TEST_ASSERT_EQUAL(TELEMETRIA_LARGADA_NENHUMA, telemetria_consumir_largada_modo());
+
+    hal_bt_sim_injetar(LARGAR "\n");
+    telemetria_passo(200, NULL);
+    TEST_ASSERT_EQUAL(TELEMETRIA_LARGADA_NORMAL, telemetria_consumir_largada_modo());
+}
+
+static void test_forcar_bateria_falso_ou_sozinho_nao_forca(void)
+{
+    hal_bt_sim_injetar("{\"v\":1,\"cmd\":\"largar\",\"forcar_bateria\":false}\n");
+    telemetria_passo(0, NULL);
+    TEST_ASSERT_EQUAL(TELEMETRIA_LARGADA_NORMAL, telemetria_consumir_largada_modo());
+
+    hal_bt_sim_injetar("{\"v\":1,\"cmd\":\"health_check\",\"forcar_bateria\":true}\n");
+    telemetria_passo(200, NULL);
+    TEST_ASSERT_EQUAL(TELEMETRIA_LARGADA_NENHUMA, telemetria_consumir_largada_modo());
+    TEST_ASSERT_TRUE(telemetria_consumir_health_check());
 }
 
 static void test_comando_health_check_liga_so_a_flag_do_health_check(void)
@@ -597,6 +622,8 @@ int main(void)
     RUN_TEST(test_linha_longa_e_descartada_e_a_seguinte_e_lida);
     RUN_TEST(test_consumir_duas_vezes_devolve_true_e_depois_false);
     RUN_TEST(test_comando_largar_liga_so_a_flag_da_largada);
+    RUN_TEST(test_largar_forcado_chega_como_forcado_e_o_normal_nao);
+    RUN_TEST(test_forcar_bateria_falso_ou_sozinho_nao_forca);
     RUN_TEST(test_comando_health_check_liga_so_a_flag_do_health_check);
     RUN_TEST(test_tres_comandos_na_mesma_volta_ligam_as_tres_flags);
     RUN_TEST(test_comando_repetido_pela_ponte_liga_a_flag_de_novo);

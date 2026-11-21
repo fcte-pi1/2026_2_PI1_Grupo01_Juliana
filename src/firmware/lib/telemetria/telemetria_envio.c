@@ -214,7 +214,7 @@ static void ler_comandos(void)
                 if (contrato_eh_interromper(linha_recebida)) {
                     atomic_store(&interrupcao, 1u);
                 } else if (contrato_eh_largar(linha_recebida)) {
-                    atomic_store(&largada, 1u);
+                    atomic_store(&largada, contrato_largar_forcado(linha_recebida) ? 2u : 1u);
                 } else if (contrato_eh_health_check(linha_recebida)) {
                     atomic_store(&pedido_health_check, 1u);
                 }
@@ -234,9 +234,14 @@ bool telemetria_consumir_interrupcao(void)
     return atomic_exchange(&interrupcao, 0u) != 0u;
 }
 
+telemetria_largada_t telemetria_consumir_largada_modo(void)
+{
+    return (telemetria_largada_t)atomic_exchange(&largada, 0u);
+}
+
 bool telemetria_consumir_largada(void)
 {
-    return atomic_exchange(&largada, 0u) != 0u;
+    return telemetria_consumir_largada_modo() != TELEMETRIA_LARGADA_NENHUMA;
 }
 
 bool telemetria_consumir_health_check(void)

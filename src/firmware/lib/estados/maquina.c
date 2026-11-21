@@ -6,6 +6,7 @@ void maq_iniciar(maq_t *m)
 {
     m->estado = MAQ_OCIOSO;
     m->hc_aprovado = false;
+    m->hc_concluido = false;
     m->agora_ms = 0;
     m->hc_em_ms = 0;
 }
@@ -38,6 +39,7 @@ maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)
             return MAQ_ACAO_NENHUMA;
         }
         m->hc_aprovado = evento == MAQ_EV_HC_APROVADO;
+        m->hc_concluido = true;
         m->hc_em_ms = m->agora_ms;
         m->estado = m->hc_aprovado ? MAQ_AGUARDANDO : MAQ_REPROVADO;
         return MAQ_ACAO_NENHUMA;
@@ -50,12 +52,23 @@ maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)
         m->estado = MAQ_RUNNING;
         return MAQ_ACAO_PARTIR;
 
+    case MAQ_EV_CMD_LARGAR_FORCADO:
+        /* Vale o último health-check, aprovado ou não, enquanto ainda vale (o backend só manda
+         * quando a bateria foi o único item reprovado). Sem health-check concluído, não parte. */
+        if (!m->hc_concluido || !parado_fora_de_tentativa(m->estado) || m->estado == MAQ_OCIOSO ||
+            (uint32_t)(m->agora_ms - m->hc_em_ms) >= MAQ_HC_VALIDADE_MS) {
+            return MAQ_ACAO_NENHUMA;
+        }
+        m->estado = MAQ_RUNNING;
+        return MAQ_ACAO_PARTIR;
+
     case MAQ_EV_CMD_HEALTH_CHECK:
         if (!parado_fora_de_tentativa(m->estado)) {
             return MAQ_ACAO_NENHUMA;
         }
         m->estado = MAQ_HEALTH_CHECK;
         m->hc_aprovado = false; /* só volta a valer com o resultado novo */
+        m->hc_concluido = false;
         return MAQ_ACAO_RODAR_HEALTH_CHECK;
 
     case MAQ_EV_CMD_INTERROMPER:
