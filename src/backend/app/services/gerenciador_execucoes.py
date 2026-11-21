@@ -53,7 +53,7 @@ class ResultadoMonitor:
 class GerenciadorExecucoes:
     limite_tentativas: int = 3
 
-    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 420) -> None:
+    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 600) -> None:
         self.tempo_maximo_execucao_s = tempo_maximo_execucao_s
         self.validade_health_check_s = validade_health_check_s
         self._interrupcao_pendente = False

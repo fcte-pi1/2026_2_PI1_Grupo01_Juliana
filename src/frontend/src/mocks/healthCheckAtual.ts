@@ -2,7 +2,7 @@ import type { TipoLabirinto, UltimoHealthCheck, MotivoRecusa } from '../api/tipo
 import { healthCheck } from './dados'
 
 const CHAVE = 'mock:health-check:v1'
-const VALIDADE_MS = 420_000 // Mesmo padrão da configuração do backend; somente demonstração.
+const VALIDADE_MS = 600_000 // Mesmo padrão da configuração do backend; somente demonstração.
 type Estado = { dados: UltimoHealthCheck; concluido: UltimoHealthCheck | null; base: number; inicio: number }
 let estado: Estado | null = null
 

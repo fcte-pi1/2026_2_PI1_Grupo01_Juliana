@@ -19,7 +19,7 @@ export interface paths {
         put?: never;
         /**
          * Registra uma nova execução, contando 1/3 tentativas.
-         * @description O operador informa o labirinto. Exige um health-check aprovado, concluído há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409 e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1 já em running, com o comando `largar` para o robô. Se já houver execução em andamento, ela é cancelada.
+         * @description O operador informa o labirinto. Exige um health-check aprovado, concluído há no máximo 10 minutos e com o DIP igual ao labirinto; sem ele, responde 409 e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1 já em running, com o comando `largar` para o robô. Se já houver execução em andamento, ela é cancelada.
          */
         post: operations["novaExecucao"];
         delete?: never;
@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * Health-check mais recente, pré-requisito da largada
-         * @description A tela mostra os itens e, quando aprovado, até quando ele libera a largada (valido_ate, 7 minutos depois da conclusão).
+         * @description A tela mostra os itens e, quando aprovado, até quando ele libera a largada (valido_ate, 10 minutos depois da conclusão).
          */
         get: operations["buscarUltimoHealthCheck"];
         put?: never;
@@ -59,7 +59,7 @@ export interface paths {
         put?: never;
         /**
          * Pedir ao robô um novo health-check
-         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
+         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 10 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
          */
         post: operations["solicitarHealthCheck"];
         delete?: never;
@@ -179,7 +179,7 @@ export interface paths {
         put?: never;
         /**
          * Abrir a tentativa seguinte depois de uma falha
-         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
+         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
          */
         post: operations["retomarTentativa"];
         delete?: never;
@@ -263,7 +263,7 @@ export interface components {
          */
         OrigemFalha: "automatica" | "encerrado_operador";
         /**
-         * @description Os motivos health_check_* e dip_divergente valem para Nova execução e Retomar: falta um health-check, o último foi reprovado, foi concluído há mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+         * @description Os motivos health_check_* e dip_divergente valem para Nova execução e Retomar: falta um health-check, o último foi reprovado, foi concluído há mais de 10 minutos ou o DIP lido não é o labirinto escolhido.
          * @enum {string}
          */
         MotivoRecusa: "tentativa_aberta" | "limite_3" | "execucao_cancelada" | "health_check_ausente" | "health_check_reprovado" | "health_check_expirado" | "dip_divergente";
@@ -683,7 +683,7 @@ export interface operations {
                      *       "tipo_dip": "4x4",
                      *       "iniciado_em": "2026-10-07T13:58:00-03:00",
                      *       "concluido_em": "2026-10-07T13:58:02-03:00",
-                     *       "valido_ate": "2026-10-07T14:05:02-03:00",
+                     *       "valido_ate": "2026-10-07T14:08:02-03:00",
                      *       "itens": [
                      *         {
                      *           "componente": "bateria",
