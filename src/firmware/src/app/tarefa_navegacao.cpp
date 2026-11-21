@@ -239,6 +239,7 @@ void tarefa_navegacao(void *parametro)
 #endif
 
     for (;;) {
+        corrida_tempo(&corrida, hal_tempo_ms());
 #ifdef TELEMETRIA_DEPURACAO
         uint32_t inicio_volta = hal_tempo_ms();
         if (inicio_volta - volta_anterior > app_nav_periodo_max_ms) {

@@ -159,6 +159,7 @@ void loop()
 {
     static uint32_t ultima_bateria_ms;
     uint32_t agora = millis();
+    maq_tempo(&maq, agora);
     if (agora - ultima_bateria_ms >= PERIODO_BATERIA_MS) {
         ultima_bateria_ms = agora;
         bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());

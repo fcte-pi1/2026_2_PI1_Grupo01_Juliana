@@ -21,6 +21,11 @@ void corrida_iniciar(corrida_t *c, nav_tipo_t tipo_dip)
     partir_da_pose(c, c->inicio == MEM_RETOMADA);
 }
 
+void corrida_tempo(corrida_t *c, uint32_t agora_ms)
+{
+    maq_tempo(&c->maq, agora_ms);
+}
+
 static void falha_da_acao(corrida_t *c, maq_acao_t acao, corrida_efeitos_t *ef)
 {
     ef->tem_falha = maq_falha_da_acao(acao, (uint8_t)c->nav.x, (uint8_t)c->nav.y, &ef->falha);

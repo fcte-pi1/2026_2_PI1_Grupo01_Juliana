@@ -1,9 +1,13 @@
 #include "maquina.h"
 
+#include "config/robo.h"
+
 void maq_iniciar(maq_t *m)
 {
     m->estado = MAQ_OCIOSO;
     m->hc_aprovado = false;
+    m->agora_ms = 0;
+    m->hc_em_ms = 0;
 }
 
 /* Parado e fora de tentativa: o health-check novo e os toques do BOOT valem aqui. */
@@ -11,6 +15,18 @@ static bool parado_fora_de_tentativa(maq_estado_t e)
 {
     return e == MAQ_OCIOSO || e == MAQ_AGUARDANDO || e == MAQ_REPROVADO || e == MAQ_SUCCESS ||
            e == MAQ_FAILED;
+}
+
+void maq_tempo(maq_t *m, uint32_t agora_ms)
+{
+    m->agora_ms = agora_ms;
+    bool parado = m->estado != MAQ_RUNNING && m->estado != MAQ_HEALTH_CHECK;
+    if (m->hc_aprovado && parado && (uint32_t)(agora_ms - m->hc_em_ms) >= MAQ_HC_VALIDADE_MS) {
+        m->hc_aprovado = false;
+        if (m->estado == MAQ_AGUARDANDO) {
+            m->estado = MAQ_OCIOSO;
+        }
+    }
 }
 
 maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)
@@ -22,6 +38,7 @@ maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)
             return MAQ_ACAO_NENHUMA;
         }
         m->hc_aprovado = evento == MAQ_EV_HC_APROVADO;
+        m->hc_em_ms = m->agora_ms;
         m->estado = m->hc_aprovado ? MAQ_AGUARDANDO : MAQ_REPROVADO;
         return MAQ_ACAO_NENHUMA;
 

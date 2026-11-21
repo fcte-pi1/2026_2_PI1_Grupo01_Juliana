@@ -20,6 +20,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "telemetria.h"
 
@@ -63,13 +64,22 @@ typedef enum {
 
 typedef struct {
     maq_estado_t estado;
-    bool hc_aprovado; /* resultado do último health-check concluído */
+    bool hc_aprovado; /* resultado do último health-check concluído, enquanto ainda vale */
+    uint32_t agora_ms; /* o relógio que maq_tempo recebeu por último */
+    uint32_t hc_em_ms; /* quando o último health-check foi aprovado */
 } maq_t;
 
 /* Começa em MAQ_OCIOSO: o health-check só roda quando chega o comando health_check. */
 void maq_iniciar(maq_t *m);
 
 maq_acao_t maq_evento(maq_t *m, maq_evento_t evento);
+
+/*
+ * Passa o relógio para a máquina (a cada volta da tarefa). O health-check aprovado vale por
+ * MAQ_HC_VALIDADE_MS: depois disso ele deixa de valer e a largada exige um novo; se o robô esperava a
+ * largada, volta a MAQ_OCIOSO. Na corrida o prazo não corta, mas vale na hora de largar de novo.
+ */
+void maq_tempo(maq_t *m, uint32_t agora_ms);
 
 /*
  * A falha que a ação pede, na célula (x, y). Devolve false para as ações que não enviam falha.

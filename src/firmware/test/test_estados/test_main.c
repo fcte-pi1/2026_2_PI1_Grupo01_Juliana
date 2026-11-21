@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#include "config/robo.h"
 #include "maquina.h"
 
 static maq_t m;
@@ -259,6 +260,69 @@ void test_boot_durante_o_health_check_e_ignorado(void)
     TEST_ASSERT_EQUAL(MAQ_HEALTH_CHECK, m.estado);
 }
 
+void test_health_check_aprovado_vale_ate_10_minutos(void)
+{
+    maq_tempo(&m, 1000);
+    ate_aguardando();
+    maq_tempo(&m, 1000 + MAQ_HC_VALIDADE_MS - 1);
+    TEST_ASSERT_EQUAL(MAQ_AGUARDANDO, m.estado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+}
+
+void test_depois_de_10_minutos_a_largada_exige_novo_health_check(void)
+{
+    maq_tempo(&m, 1000);
+    ate_aguardando();
+    maq_tempo(&m, 1000 + MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
+    TEST_ASSERT_FALSE(m.hc_aprovado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_RODAR_HEALTH_CHECK, maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK));
+    maq_evento(&m, MAQ_EV_HC_APROVADO);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+}
+
+void test_depois_de_success_ou_failed_o_health_check_vencido_bloqueia_a_largada(void)
+{
+    maq_tempo(&m, 0);
+    ate_running();
+    maq_evento(&m, MAQ_EV_CORRIDA_SUCESSO);
+    maq_tempo(&m, MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_SUCCESS, m.estado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_RODAR_HEALTH_CHECK, maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK));
+    maq_evento(&m, MAQ_EV_HC_APROVADO);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_PARTIR, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+
+    reiniciar();
+    maq_tempo(&m, 0);
+    ate_running();
+    maq_evento(&m, MAQ_EV_CORRIDA_FALHA);
+    maq_tempo(&m, MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_FAILED, m.estado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+}
+
+void test_o_prazo_nao_corta_a_corrida_em_andamento(void)
+{
+    maq_tempo(&m, 0);
+    ate_running();
+    maq_tempo(&m, 3 * MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_RUNNING, m.estado);
+    TEST_ASSERT_TRUE(maq_andando(&m));
+}
+
+void test_o_prazo_aguenta_a_volta_do_relogio_de_32_bits(void)
+{
+    uint32_t quase_no_fim = 0xFFFFFFFFu - 1000u;
+    maq_tempo(&m, quase_no_fim);
+    ate_aguardando();
+    maq_tempo(&m, quase_no_fim + MAQ_HC_VALIDADE_MS - 1u); /* passou da volta do contador */
+    TEST_ASSERT_EQUAL(MAQ_AGUARDANDO, m.estado);
+    maq_tempo(&m, quase_no_fim + MAQ_HC_VALIDADE_MS);
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
+}
+
 void test_toque_simples_parado_nao_apaga_nada(void)
 {
     ate_aguardando();
@@ -349,6 +413,11 @@ int main(void)
     RUN_TEST(test_boot_longo_parado_apaga_tudo);
     RUN_TEST(test_boot_parado_apaga_tambem_depois_de_reprovado_success_e_failed);
     RUN_TEST(test_boot_durante_o_health_check_e_ignorado);
+    RUN_TEST(test_health_check_aprovado_vale_ate_10_minutos);
+    RUN_TEST(test_depois_de_10_minutos_a_largada_exige_novo_health_check);
+    RUN_TEST(test_depois_de_success_ou_failed_o_health_check_vencido_bloqueia_a_largada);
+    RUN_TEST(test_o_prazo_nao_corta_a_corrida_em_andamento);
+    RUN_TEST(test_o_prazo_aguenta_a_volta_do_relogio_de_32_bits);
     RUN_TEST(test_toque_simples_parado_nao_apaga_nada);
     RUN_TEST(test_falha_da_interrupcao_pela_web_e_a_do_contrato);
     RUN_TEST(test_falha_repetida_da_web_sai_igual_a_primeira);

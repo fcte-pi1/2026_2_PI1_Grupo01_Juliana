@@ -49,6 +49,9 @@ typedef struct {
 void corrida_iniciar(corrida_t *c, nav_tipo_t tipo_dip);
 
 /* Evento da máquina (comando, BOOT, health-check pedido). */
+/* Passa o relógio à máquina de estados: o health-check aprovado vale por MAQ_HC_VALIDADE_MS. */
+void corrida_tempo(corrida_t *c, uint32_t agora_ms);
+
 void corrida_evento(corrida_t *c, maq_evento_t evento, corrida_efeitos_t *efeitos);
 
 /*

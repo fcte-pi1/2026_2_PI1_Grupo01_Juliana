@@ -48,6 +48,7 @@
 #define MOV_INTEGRAL_MAX            200.0f  /* limite da parcela integral, em potência (anti-windup) */
 #define MOV_ASSENTAR_MS             50      /* tempo dentro da tolerância para concluir */
 #define MOV_TEMPO_LIMITE_MS         3000    /* sem concluir nesse tempo, o movimento falha */
+#define MAQ_HC_VALIDADE_MS          600000UL /* o health-check aprovado vale por 10 min: depois disso a largada exige um novo */
 #define MOV_FREIO_MS                250     /* tempo que as rodas ficam freadas na parada de emergência, antes de soltar a ponte H */
 #define MOV_TRAVADO_MS              200     /* roda sem contar pulsos com potência alta: o movimento falha */
 #define MOV_TRAVADO_POTENCIA        600     /* potência a partir da qual a roda parada conta como travada */
