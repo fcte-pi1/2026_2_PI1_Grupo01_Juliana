@@ -31,6 +31,14 @@ paths:
           schema:
             $ref: "#/components/schemas/Labirinto"
           example: "4x4"
+        - name: configuracao
+          in: query
+          required: false
+          description: Filtra pelo rótulo de configuração de paredes que o operador informou ao abrir a execução.
+          schema:
+            type: string
+            maxLength: 60
+          example: "paredes A"
         - name: limite
           in: query
           required: false
@@ -222,6 +230,76 @@ paths:
                     event: health_check
                     data: {"tipo":"health_check","aprovado":null,"tipo_dip":null,"iniciado_em":"2026-10-07T13:58:00-03:00","concluido_em":null,"valido_ate":null,"itens":[{"componente":"bateria","aprovado":true,"valor_lido":7840}]}
 
+  /execucoes/campanha:
+    get:
+      operationId: resumoDaCampanha
+      tags: [execucoes]
+      summary: Resumo das execuções para a campanha de corridas
+      description: >
+        Total, concluídas, canceladas, taxa de sucesso, tempo médio e máximo, quantas concluídas
+        ficaram abaixo de 10 min e o mesmo por configuração de paredes. Aceita os filtros do histórico.
+      parameters:
+        - name: tipo_labirinto
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Labirinto"
+        - name: configuracao
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: Resumo do filtro.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumoCampanha"
+  /execucoes/exportar:
+    get:
+      operationId: exportarExecucoes
+      tags: [execucoes]
+      summary: Exporta as execuções em CSV ou JSON, uma linha por tentativa
+      description: >
+        Colunas: execucao_id, tentativa_id, attempt_index, tipo_labirinto, configuracao, observacao,
+        status_execucao, status_tentativa, tipo_inicio, tipo_dip, iniciada_em, encerrada_em, tempo_s,
+        tempo_total_s, velocidade_media, bateria_inicial, bateria_final, consumo_bateria_pct,
+        motivo_falha, origem_falha, celula_x, celula_y, componente, observacao_falha, passos.
+        Aceita os filtros do histórico. A resposta vem como arquivo para baixar.
+      parameters:
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+        - name: tipo_labirinto
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Labirinto"
+        - name: configuracao
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: Arquivo com as linhas da exportação.
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
   /execucoes/em-andamento:
     get:
       operationId: buscarExecucaoEmAndamento
@@ -1116,6 +1194,18 @@ components:
       properties:
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
+        configuracao:
+          type: string
+          maxLength: 60
+          nullable: true
+          description: >
+            Rótulo livre da configuração de paredes (por exemplo, "paredes A"), para agrupar as corridas
+            de uma campanha. Opcional; espaços nas pontas saem e vazio vira nulo.
+        observacao:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Anotação livre do operador, por exemplo o caso de teste. Opcional.
     RetornoNovaExecucao:
       type: object
       description: >
@@ -1360,6 +1450,7 @@ components:
         linhas novas, não por este POST de criação.
       required:
         - execucao_id
+        - numero
         - tipo_labirinto
         - status
         - tentativas_usadas
@@ -1371,6 +1462,10 @@ components:
         execucao_id:
           type: string
           format: uuid
+        numero:
+          type: integer
+          minimum: 1
+          description: Número sequencial crescente da execução (#0001, #0002...).
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
@@ -1389,6 +1484,14 @@ components:
         tempo_total_s:
           type: number
           nullable: true
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração de paredes informado ao abrir a execução.
+        observacao:
+          type: string
+          nullable: true
+          description: Anotação do operador ao abrir a execução.
         variacao_melhor_tempo_pct:
           type: number
           nullable: true
@@ -1426,11 +1529,15 @@ components:
 
     ResumoExecucao:
       type: object
-      required: [execucao_id, tipo_labirinto, status, tentativas_usadas, iniciada_em]
+      required: [execucao_id, numero, tipo_labirinto, status, tentativas_usadas, iniciada_em]
       properties:
         execucao_id:
           type: string
           format: uuid
+        numero:
+          type: integer
+          minimum: 1
+          description: Número sequencial crescente da execução (#0001, #0002...), mostrado na tela no lugar do UUID.
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
@@ -1452,11 +1559,81 @@ components:
         velocidade_media:
           type: number
           nullable: true
-          description: Velocidade média da última tentativa, em metros por segundo.
+          description: Velocidade média da última tentativa, em metros por segundo, com três casas.
         consumo_bateria:
           type: number
           nullable: true
           description: Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida.
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração de paredes informado ao abrir a execução.
+        observacao:
+          type: string
+          nullable: true
+          description: Anotação do operador ao abrir a execução.
+
+    ResumoConfiguracao:
+      type: object
+      required: [total, concluidas]
+      properties:
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração; nulo agrupa as execuções sem rótulo.
+        total:
+          type: integer
+          minimum: 0
+        concluidas:
+          type: integer
+          minimum: 0
+        taxa_sucesso_pct:
+          type: number
+          nullable: true
+          description: Concluídas sobre as encerradas (concluídas e canceladas), em porcentagem.
+        tempo_medio_s:
+          type: number
+          nullable: true
+        tempo_maximo_s:
+          type: number
+          nullable: true
+
+    ResumoCampanha:
+      type: object
+      description: >
+        Resumo das execuções do filtro, para a campanha de corridas (FIRM-13). Sucesso é a execução
+        concluída; a taxa só conta as já encerradas.
+      required: [total, concluidas, canceladas, em_andamento, concluidas_abaixo_de_10_min, por_configuracao]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        concluidas:
+          type: integer
+          minimum: 0
+        canceladas:
+          type: integer
+          minimum: 0
+        em_andamento:
+          type: integer
+          minimum: 0
+        taxa_sucesso_pct:
+          type: number
+          nullable: true
+        tempo_medio_s:
+          type: number
+          nullable: true
+        tempo_maximo_s:
+          type: number
+          nullable: true
+        concluidas_abaixo_de_10_min:
+          type: integer
+          minimum: 0
+          description: Execuções concluídas com tempo total abaixo de 600 s.
+        por_configuracao:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResumoConfiguracao"
 
     EventoSSE:
       description: >

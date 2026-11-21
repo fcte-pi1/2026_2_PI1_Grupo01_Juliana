@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from app.db import Base
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,12 +22,18 @@ class ExecucaoLogica(Base):
     )
 
     execucao_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    # número sequencial crescente (#0001...), dado pela sequência do banco ao abrir a execução
+    numero: Mapped[int] = mapped_column(
+        Integer, nullable=False, unique=True, server_default=text("nextval('execucao_numero_seq')")
+    )
     labirinto_id: Mapped[int] = mapped_column(ForeignKey("labirinto.labirinto_id"), nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False)
     tentativas_usadas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     iniciada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     tempo_total_s: Mapped[Decimal | None] = mapped_column(Numeric)
+    configuracao: Mapped[str | None] = mapped_column(String(60))
+    observacao: Mapped[str | None] = mapped_column(String(200))
 
     labirinto: Mapped["Labirinto"] = relationship(back_populates="execucoes")
     tentativas: Mapped[list["Tentativa"]] = relationship(back_populates="execucao")

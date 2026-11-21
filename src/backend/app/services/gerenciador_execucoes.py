@@ -37,6 +37,14 @@ ABERTA = ("running",)
 TERMINAL_TENTATIVA = ("success", "failed")
 
 
+def _texto_ou_none(texto: str | None) -> str | None:
+    """Texto livre do operador: sem espaços nas pontas, e vazio vira nulo."""
+    if texto is None:
+        return None
+    texto = texto.strip()
+    return texto or None
+
+
 @dataclass(frozen=True)
 class RetornoTentativa:
     execucao_id: uuid.UUID
@@ -71,7 +79,13 @@ class GerenciadorExecucoes:
         """O robô começou o health-check: o pedido deixa de ir nas respostas."""
         self._health_check_pendente = False
 
-    def nova_execucao(self, sessao: Session, tipo_labirinto: str) -> RetornoTentativa:
+    def nova_execucao(
+        self,
+        sessao: Session,
+        tipo_labirinto: str,
+        configuracao: str | None = None,
+        observacao: str | None = None,
+    ) -> RetornoTentativa:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
         motivo, health_check = self._conferir_health_check(repo, tipo_labirinto, agora)
@@ -93,6 +107,8 @@ class GerenciadorExecucoes:
             status="em_andamento",
             tentativas_usadas=0,
             iniciada_em=agora,
+            configuracao=_texto_ou_none(configuracao),
+            observacao=_texto_ou_none(observacao),
         )
         repo.salvar(execucao)
         tentativa = self._abrir_tentativa(
