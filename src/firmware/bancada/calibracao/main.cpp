@@ -10,7 +10,7 @@
  *
  *   a   avança 1 célula              A   10 avanços seguidos (erro final até 10 mm)
  *   g   gira 90° à esquerda          G   gira 90° à direita          h   gira 180°
- *   Q   20 giros de 90° seguidos (desvio acumulado até 5°)
+ *   Q   10 giros de 90° seguidos (desvio acumulado até 5°)
  *   v   velocidade: as duas rodas a 400 mm/s por 3 s (erro até 5%)
  *   s   stuck: gira o motor esquerdo e mede em quanto tempo a trava é detectada (segure a roda)
  *   t   ToF: 40 leituras com as paredes decididas (calibrar os limiares na pista)
@@ -25,6 +25,7 @@
 
 #ifdef BT_REAL
 #include <BluetoothSerial.h>
+#include <esp_bt.h>
 #endif
 
 #include "bateria.h"
@@ -89,6 +90,9 @@ public:
         bt_.register_callback(evento_spp);
         bt_.onAuthComplete([](boolean ok) { evento_pendente = ok ? 3 : 4; });
         bool ok = bt_.begin("Ratatouille");
+        if (ok) {
+            esp_bredr_tx_power_set(ESP_PWR_LVL_P9, ESP_PWR_LVL_P9);
+        }
         Serial.printf("# bt: %s como \"Ratatouille\"\n", ok ? "aguardando conexao" : "NAO iniciou");
 #endif
     }
@@ -374,10 +378,10 @@ static void girar(int graus)
     imprimir_giro(r, graus);
 }
 
-static void girar_vinte(void)
+static void girar_dez(void)
 {
     long soma_esq = 0, soma_dir = 0;
-    for (int i = 1; i <= 20; i++) {
+    for (int i = 1; i <= 10; i++) {
         resultado_t r;
         mov_girar(90);
         rodar_movimento(&r);
@@ -390,7 +394,7 @@ static void girar_vinte(void)
         }
         delay(PAUSA_ENTRE_MOVIMENTOS_MS);
     }
-    console.printf("20 giros: esq=%ld dir=%ld pulsos; o robô deve voltar à posição inicial (5 voltas); "
+    console.printf("10 giros: esq=%ld dir=%ld pulsos; o robô termina virado 180 graus em relação à partida (2,5 voltas); "
                   "meça o desvio com o transferidor: ate 5 graus\n",
                   soma_esq, soma_dir);
 }
@@ -521,7 +525,7 @@ void loop()
     case 'g': girar(90); break;
     case 'G': girar(-90); break;
     case 'h': girar(180); break;
-    case 'Q': girar_vinte(); break;
+    case 'Q': girar_dez(); break;
     case 'v': velocidade(); break;
     case 's': stuck(); break;
     case 't': mostrar_tof(); break;
