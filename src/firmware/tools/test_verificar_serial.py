@@ -396,3 +396,15 @@ def test_no_usb_a_primeira_linha_continua_sendo_descartada():
     conexao = _Conexao([b"pedaco\n", mensagem(1).encode()], cai=False)
     linhas = list(ler_linhas(conexao, 0.3))
     assert linhas == [mensagem(1).encode()]
+
+
+def test_duracao_e_taxa_so_contam_o_que_chegou_ao_vivo():
+    # dois eventos reenviados de 1000 s antes, depois 10 tel ao vivo a 1 Hz
+    linhas = [_evento(1, 1000), _evento(2, 1050)]
+    linhas += [mensagem(500 + i, t_ms=500000 + i * 1000).encode() for i in range(10)]
+    # a primeira tel chega primeiro; os eventos antigos chegam depois dela
+    linhas = [linhas[2], linhas[0], linhas[1]] + linhas[3:]
+    relogio = iter(float(i) for i in range(len(linhas)))
+    verificacao = verificar(linhas, relogio=lambda: next(relogio))
+    assert verificacao.duracao_s() == 9.0
+    assert abs(verificacao.taxa_tel_hz() - 10 / 9.0) < 1e-9

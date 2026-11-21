@@ -120,16 +120,42 @@ class Verificacao:
         primeiro, _ = self.t_ms.get(boot, (t_ms, t_ms))
         self.t_ms[boot] = (primeiro, t_ms)
 
+    def _ao_vivo(self) -> list[tuple[int, int, str]]:
+        """(boot, t_ms, tipo) das mensagens ao vivo, sem as reenviadas da fila de eventos."""
+        ao_vivo = []
+        for boot in {b for b, _, _, _ in self.chegadas}:
+            fora = self._guardadas_antes_da_conexao(boot, self.chegadas)
+            ao_vivo += [
+                (b, t_ms, tipo)
+                for i, (b, _, t_ms, tipo) in enumerate(self.chegadas)
+                if b == boot and i not in fora
+            ]
+        return ao_vivo
+
     def duracao_s(self) -> float:
-        """Soma, por boot, o intervalo entre o primeiro e o último t_ms."""
+        """Intervalo entre a primeira e a última mensagem, por boot, pelo t_ms.
+
+        No modo porta só conta o que chegou ao vivo: as reenviadas do boot esticariam o intervalo.
+        """
+        if self.chegadas:
+            ao_vivo = self._ao_vivo()
+            total = 0
+            for boot in {b for b, _, _ in ao_vivo}:
+                tempos = [t for b, t, _ in ao_vivo if b == boot]
+                total += max(tempos) - min(tempos)
+            return total / 1000
         return sum(max(ultimo - primeiro, 0) for primeiro, ultimo in self.t_ms.values()) / 1000
 
     def taxa_tel_hz(self) -> float | None:
         """Taxa média da tel pelo t_ms; None se não deu para medir."""
         duracao = self.duracao_s()
-        if duracao <= 0 or not self.tel_por_boot:
+        if self.chegadas:
+            tel = sum(1 for _, _, tipo in self._ao_vivo() if tipo == "tel")
+        else:
+            tel = sum(self.tel_por_boot.values())
+        if duracao <= 0 or not tel:
             return None
-        return sum(self.tel_por_boot.values()) / duracao
+        return tel / duracao
 
     def _guardadas_antes_da_conexao(self, boot: int, chegadas: list) -> set[int]:
         """Índices das mensagens geradas antes da primeira `tel` recebida do boot.
