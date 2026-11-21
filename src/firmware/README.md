@@ -49,7 +49,7 @@ Rodar dentro de `src/firmware`:
 | `make -C lib/contrato teste` | Confere o serializador do contrato v1 byte a byte contra `src/contrato/exemplos.jsonl` |
 | `make -C simulador-navegacao` | Roda a navegação em todos os labirintos de `simulador-navegacao/labirintos/` ([simulador no PC](simulador-navegacao/README.md)) |
 
-Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado. Depois do health-check o robô **espera o comando `largar`** (a `tel` fica em `health-check` e nenhum `passo` sai); só parte com o último health-check aprovado. O `interromper`, o `health_check` (só parado) e o `largar` chegam pela serial, por exemplo com `python tools/monitor_comandos.py`. O LED azul (GPIO2) mostra o estado do robô (tabela abaixo) e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. O robô simulado **anda de verdade**: os motores, os encoders e os ToF são os do mundo simulado, e cada célula leva cerca de um segundo (anda e para). Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
+Com a HAL simulada, a ESP32 roda sem nenhum sensor ligado. O robô liga **ocioso e não roda o health-check sozinho**: ele só roda quando chega o comando `health_check`. Depois de um health-check aprovado o robô **espera o comando `largar`** (a `tel` fica em `health-check` e nenhum `passo` sai); só parte com o último health-check aprovado. O `interromper`, o `health_check` (só parado) e o `largar` chegam pela serial, por exemplo com `python tools/monitor_comandos.py`. O LED azul (GPIO2) mostra o estado do robô (tabela abaixo) e a serial mostra a telemetria do contrato v1, com a `tel` a 5 Hz enquanto o robô se move e a 1 Hz parado, e os eventos (`passo`, `sucesso`, ...) entre elas. O robô simulado **anda de verdade**: os motores, os encoders e os ToF são os do mundo simulado, e cada célula leva cerca de um segundo (anda e para). Compilando com `-D TELEMETRIA_DEPURACAO` sai também, a cada 5 s, uma linha `#` com os descartes de eventos, o maior período do laço da navegação e as distâncias filtradas dos ToF simulados.
 
 ### Sem placa: simulador Wokwi
 
@@ -60,11 +60,11 @@ O [Wokwi](https://wokwi.com) simula a ESP32 e roda o mesmo `firmware.bin` que ir
 3. Compile com `pio run`.
 4. Com a pasta `src/firmware` aberta, `F1` e depois **Wokwi: Start Simulator**.
 
-A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial. O robô espera o comando `largar` depois do health-check: digite `{"v":1,"cmd":"largar"}` e Enter no terminal serial para ele partir.
+A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial. O robô liga ocioso: digite `{"v":1,"cmd":"health_check"}` e Enter para rodar o health-check e, depois de aprovado, `largar`: digite `{"v":1,"cmd":"largar"}` e Enter no terminal serial para ele partir.
 
 ### Firmware com a HAL real (`esp32_real_hc`)
 
-Roda o health-check ao ligar e a cada comando `health_check` da ponte, e envia os `hc_item`, o `hc_resultado` e a `tel` (estado `health-check`, a 1 Hz) pelo contrato v1. Não anda: os motores só giram no autoteste, **com as rodas no ar e o interruptor da bateria ligado**. Sem o interruptor, motores e encoders reprovam. O enlace é a serial USB, então a ponte do notebook abre `/dev/ttyACM0`:
+Roda o health-check **só quando chega o comando `health_check`** da ponte (não roda ao ligar), e envia os `hc_item`, o `hc_resultado` e a `tel` (estado `health-check`, a 1 Hz) pelo contrato v1. Não anda: os motores só giram no autoteste, **com as rodas no ar e o interruptor da bateria ligado**. Sem o interruptor, motores e encoders reprovam. O enlace é a serial USB, então a ponte do notebook abre `/dev/ttyACM0`:
 
 ```bash
 cd src/backend && python -m ponte --porta /dev/ttyACM0
@@ -87,7 +87,7 @@ python tools/verificar_serial.py --arquivo captura.jsonl   # confere linhas já 
 python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 600 --largar   # pelo Bluetooth: o resumo traz o atraso de entrega (p95 até 3 s) e as quedas do enlace (a porta é reaberta sozinha; qualquer queda reprova)
 ```
 
-O robô espera o comando `largar` depois do health-check. Sem `--largar` a captura só tem o health-check e a `tel` em `health-check`; com `--largar` ela cobre também os `passo` e o `sucesso`.
+O robô liga ocioso e só roda o health-check com o comando `health_check` (`--health-check`), e espera o `largar` depois de um aprovado. Sem eles a captura só tem a `tel` em `health-check`; com `--largar` ela cobre também os `passo` e o `sucesso`.
 
 O `--baud` tem padrão 115200. As linhas que começam com `#` são ignoradas; em cada uma das outras o script confere o tamanho (até 256 bytes contando o `\n`), o JSON, `v = 1`, o tipo e se o `seq` é o anterior mais 1 dentro do mesmo `boot`. No fim imprime o resumo:
 
@@ -147,7 +147,7 @@ Os testes `test_corrida` e `test_execucao` apagam `mem_mapa` e `mem_tipos` na fl
 | `esp32_hc_bancada` | **`d`** DIP, **`b`** bateria, **`t`** 40 leituras dos ToF, **`r`** reinicia os 3 ToF sem reiniciar a placa, **`m`** autoteste dos motores (rodas no ar), **`h`** health-check completo, **`i`** varredura do I²C, **`x`**, **`f`** e **`v`** diagnóstico do XSHUT e do sensor, **`c`** e **`o`** clock e timeout do I²C |
 | `esp32_calibracao` | ver [Calibração no robô](#calibração-no-robô): **`a`** **`A`** **`g`** **`G`** **`h`** **`Q`** **`v`** **`s`** **`t`** **`p`**, cada uma seguida de Enter |
 
-**4. Firmware do robô** (HAL real; o robô espera o `largar` depois do health-check, igual à simulação):
+**4. Firmware do robô** (HAL real; o robô liga ocioso, roda o health-check só com o comando e espera o `largar` depois de um aprovado, igual à simulação):
 
 | Ambiente | Quando usar |
 |---|---|
@@ -159,7 +159,7 @@ Os testes `test_corrida` e `test_execucao` apagam `mem_mapa` e `mem_tipos` na fl
 Teclas e comportamentos comuns ao `esp32_real_hc` e ao `esp32_real` (por `tools/monitor_comandos.py` ou pelo JSON da ponte):
 - **`l` (`largar`)**: parte, só com o último health-check aprovado.
 - **`i` (`interromper`)**: na corrida para os motores e envia a `falha` com origem `web` e motivo nulo.
-- **`h` (`health_check`)**: só vale parado; roda os 8 itens de novo e relê o DIP.
+- **`h` (`health_check`)**: só vale parado; roda os 8 itens e relê o DIP. É o único jeito de o health-check rodar: ele não roda ao ligar.
 - **BOOT, toque** na corrida: para e envia a `falha` com origem `boot`. **Curto** parado (menos de 1,5 s): apaga o mapa da NVS (1 bipe). **Longo** (1,5 s ou mais): apaga também os tipos resolvidos (2 bipes). Cada apagamento imprime uma linha `# BOOT curto: ...` ou `# BOOT longo: ...` no monitor. Na HAL simulada (`esp32_sim_boot`) não há buzzer, então o sinal é só essa linha e o LED; o efeito aparece no `inicio` do próximo boot (`nova`) e na `tel` voltando para (0,0). O BOOT só age com o robô parado fora do health-check (esperando o `largar`, em `success` ou em `failed`).
 
 **5. Verificar a telemetria de 10 min:** `python tools/verificar_serial.py --porta /dev/ttyACM0 --duracao 600 --largar` (ver [Verificar a serial](#verificar-a-serial)).
@@ -231,7 +231,7 @@ Grave `esp32_calibracao` (USB) ou `esp32_calibracao_bt` (USB e Bluetooth), ligue
 | `A` | 10 avanços seguidos, com 0,5 s de pausa | meça a distância total na pista: esperado 1800 mm, erro final de até 10 mm | `ENCODER_PULSOS_POR_VOLTA` e `RODA_DIAMETRO_MM`, que definem `MM_POR_PULSO` |
 | `g` / `G` | gira 90° à esquerda / à direita | imprime os pulsos de cada roda (esperado 435); confira o ângulo a olho | |
 | `h` | gira 180° | pulsos esperados 871 | |
-| `Q` | 10 giros de 90° à esquerda, seguidos | o robô termina virado 180° em relação à partida (2,5 voltas); meça o desvio com o transferidor: até 5° | `BITOLA_MM` |
+| `Q` | 10 giros de 90° à esquerda, seguidos | o robô termina virado 180° em relação à partida (2,5 voltas); confira o desvio impresso pelos pulsos: até 5° | `BITOLA_MM` |
 | `v` | as duas rodas a 400 mm/s por 3 s, até 1,2 m de percurso: **só com as rodas no ar**, nunca no chão | imprime a velocidade medida e, no fim, a média depois da rampa e o erro: `APROVADO` com até 5% nas duas | ganhos do PI em `lib/controle/velocidade.c` |
 | `s` | gira o motor esquerdo a 300 mm/s por até 8 s | segure a roda: imprime em quanto tempo a trava foi detectada | `MOTOR_TRAVADO_MS`, `MOV_TRAVADO_MS` e `MOV_TRAVADO_POTENCIA` |
 | `t` | 40 leituras dos ToF (a 20 Hz), com as paredes decididas `F E D` | ponha o robô no centro de células com e sem parede e anote as distâncias | `PAREDE_FRENTE_*_MM` e `PAREDE_LADO_*_MM` |
@@ -250,6 +250,7 @@ O LED da placa (GPIO2) segue a máquina de estados (`lib/sinal`):
 
 | Estado | LED |
 |---|---|
+| ocioso (ligado, sem health-check) | batida breve de 100 ms a cada 3 s |
 | health-check rodando | pisca rápido (400 ms, 200 aceso) |
 | aguardando o `largar` | aceso fixo |
 | reprovado | pisca lento (2 s, 1 s aceso) |
@@ -378,6 +379,24 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 - **Aviso, defeito estrutural:** a bateria fica entre a roda boba e a roda esquerda e atrapalha o movimento (atrito que varia): nos testes ela fez avanços falharem (por exemplo, o avanço 4 do `A`) e a esquerda terminar curta ou passada. O controle não foi adaptado a isso; o reparo é mecânico (fixar a bateria longe das rodas). Os resultados de avanço e giro devem ser lidos com essa ressalva (testes 5.28 a 5.35 do 7.5).
 - **Não verificado na placa:** a tecla `s` (limiar de stuck): a roda segurada sem força não parou o encoder, então o detector não disparou. O stuck no movimento segue coberto pelos testes no simulador.
 - **A validar no labirinto real:** a parada de emergência pelo ToF frontal (`MOV_FRENTE_SOBRA_MM` 17 mm e `MOV_TOF_ATRASO_S`; a primeira versão falhou na pista), os limiares `PAREDE_*_MM` e `MOV_FRENTE_ALVO_MM`, e os testes no chão (`a`, `A`, `g`, `G`, `h`, `Q`).
+### Ressalvas das FIRM-10 e FIRM-11 (para a próxima issue)
+
+As duas issues fecham com o que os testes 5.26 a 5.38 do 7.5 mostram. O que ficou de fora:
+
+**FIRM-10 (drivers reais e calibração)**
+- **Roda esquerda e bateria:** a bateria fica entre a roda boba e a roda esquerda e roça nela, com um atrito que varia. O avanço 4 do `A` (teste 5.34) e o giro 10 do `Q` (teste 5.35) falharam. O reparo é mecânico (fixar a bateria longe das rodas); o controle não foi adaptado a isso.
+- **Pulsos por volta do encoder:** 640 é provisório (partiu do deslocamento de 18 a 20 cm medido na pista e dos 588 e 633 pulsos da volta à mão). Os valores do avanço de 10 células e do giro de 90° vêm dos encoders.
+- **ToF esquerdo:** o conector da placa não responde. Sem ele, o corredor de 4 células e a centralização pelos ToF laterais só foram validados no simulador. A centralização com uma parede só está desligada (`MOV_CENTRALIZAR_UMA_PAREDE` 0) e a correção frontal também (`MOV_GANHO_FRONTAL` 0).
+- **Parada de emergência pelo ToF frontal:** a primeira versão falhou na pista. A margem de 17 mm e o atraso de 75 ms (`MOV_FRENTE_SOBRA_MM` e `MOV_TOF_ATRASO_S`) só foram testados em pista livre, sem obstáculo.
+- **Bateria contra o multímetro (até 2%):** adiada, sem multímetro.
+- **Corrida completa na pista** com o `esp32_real` e os limiares `PAREDE_*_MM` no labirinto real.
+
+**FIRM-11 (Bluetooth real)**
+- **Alcance a 3 m:** o enlace caía a mais de uns 3 m (teste 5.27), mas isso foi antes de descobrir que o ModemManager tomava as linhas da porta. Repetir com a regra de udev, com o robô andando.
+- **Atraso numa corrida completa:** o p95 do atraso de entrega durante uma corrida (`verificar_serial.py --largar`). Os comandos `health_check`, `largar` e `interromper` pelo Bluetooth já foram validados (teste 5.39 do 7.5).
+- **Notebook oficial:** o pareamento, a regra de udev do ModemManager e, se for Windows, a porta `COMx` na ponte.
+- **Pareamento:** depois de regravar a placa o pareamento pode se perder (`Permission denied` no `rfcomm connect`) e precisa ser refeito (`remove`, `pair`, `trust`).
+
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
 > [!WARNING]

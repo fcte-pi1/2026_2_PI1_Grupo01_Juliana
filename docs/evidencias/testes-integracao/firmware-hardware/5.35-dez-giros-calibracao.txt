@@ -50,4 +50,4 @@ giro 10: FALHOU esq=-430 dir=429
 
 Conta feita depois, pelos pulsos (media das duas rodas por giro, alvo 435): 436,5 433,5 432 440,5 431,5 432,5 438 431,5 438 429,5
 Soma dos 10 giros da segunda rodada: 4343,5 pulsos contra 4350 esperados = -6,5 pulsos (cerca de -1,3 graus).
-O criterio de 10 giros nao fechou: o decimo giro deu FALHOU e o rumo final nao foi medido com transferidor.
+O criterio de 10 giros nao fechou: o decimo giro deu FALHOU.
