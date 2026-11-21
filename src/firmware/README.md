@@ -41,7 +41,7 @@ Rodar dentro de `src/firmware`:
 | `pio run -e esp32_real_bt -t upload` | O firmware completo com o **Bluetooth real**: a telemetria e os comandos vão pelo SPP "Ratatouille", sem cabo USB ([Bluetooth real](#bluetooth-real-firm-11)) |
 | `pio run -e esp32_real_bt_tof_mock -t upload` | O mesmo, com o ToF mockado |
 | `pio run -e esp32_calibracao_bt -t upload` | A bancada de calibração com as mesmas teclas pelo USB e pelo Bluetooth, para calibrar na pista sem cabo |
-| `pio run -e esp32_calibracao -t upload` | Bancada de calibração no robô montado: avanço de 1 e de 10 células, giros de 90°, 180° e 20 giros, velocidade, stuck e leitura dos ToF com as paredes decididas ([calibração](#calibração-no-robô)) |
+| `pio run -e esp32_calibracao -t upload` | Bancada de calibração no robô montado: avanço de 1 e de 10 células, giros de 90°, 180° e 10 giros, velocidade, stuck e leitura dos ToF com as paredes decididas ([calibração](#calibração-no-robô)) |
 | `pio run -e esp32_sim_boot -t upload` | Igual ao `esp32_sim`, mas com o botão BOOT físico da placa e a navegação a 1 Hz (uma célula por segundo): dá tempo de apertar o BOOT no meio da corrida simulada |
 | `python tools/monitor_comandos.py` | Monitor serial que manda os comandos do contrato por tecla (`l` largar, `i` interromper, `h` health_check, `t` mostra toda a `tel`, `q` sai) e só imprime a `tel` quando o estado muda |
 | `pio run -e esp32_hc_bancada -t upload` | Bancada interativa por comandos na serial (`d` DIP, `b` bateria, `t` ToF, `r` reinicia os ToF sem reiniciar a placa, `m` motores, `h` health-check, `i` varredura do I²C, `x`, `f` e `v` para diagnosticar o XSHUT dos ToF) |
@@ -84,6 +84,7 @@ source .venv/bin/activate                     # o pyserial vem do requirements.t
 python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600
 python tools/verificar_serial.py --porta /dev/ttyUSB0 --duracao 600 --largar   # manda o largar 5 s depois de abrir a porta
 python tools/verificar_serial.py --arquivo captura.jsonl   # confere linhas já capturadas
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 600 --largar   # pelo Bluetooth: o resumo traz o atraso de entrega (p95 até 3 s) e as quedas do enlace (a porta é reaberta sozinha; qualquer queda reprova)
 ```
 
 O robô espera o comando `largar` depois do health-check. Sem `--largar` a captura só tem o health-check e a `tel` em `health-check`; com `--largar` ela cobre também os `passo` e o `sucesso`.
@@ -201,6 +202,14 @@ O endereço do Bluetooth é o da base (impresso no upload, `MAC:`) mais 2 no úl
 
 **Atenção ao eco do terminal:** o `/dev/rfcomm0` devolve ao robô tudo o que recebe dele, enquanto estiver em modo de terminal comum. Por isso a bancada de calibração só aceita **linhas com uma tecla só** (digite a tecla e Enter) e ignora o resto, e o firmware do robô só aceita os comandos JSON do contrato. Se ainda assim quiser desligar o eco, use `sudo stty -F /dev/rfcomm0 raw -echo` depois do `rfcomm connect`.
 
+**Notebook Linux: ignorar o `rfcomm` no ModemManager.** O ModemManager abre o `/dev/rfcomm0` assim que a porta nasce, sonda por cerca de 20 s e toma as linhas da telemetria: o programa que lê a porta (monitor, verificador ou ponte) perde uns 20 segundos de mensagens no começo de cada conexão e recebe uma linha partida. Teste 5.36 do 7.5. Para ele ignorar essas portas:
+```bash
+echo 'KERNEL=="rfcomm*", ENV{ID_MM_DEVICE_IGNORE}="1"' | sudo tee /etc/udev/rules.d/99-rfcomm-ignorar-modemmanager.rules
+sudo udevadm control --reload-rules
+sudo systemctl restart ModemManager
+```
+Parar o serviço (`sudo systemctl stop ModemManager`) também resolve, mas só até o próximo reinício e desliga o gerenciamento de modems móveis. Se o notebook não usa modem 3G ou 4G, tanto faz.
+
 **Alcance:** a mais de cerca de 3 m do notebook o enlace desconecta com facilidade (teste 5.27 do 7.5, ainda sem medição nem causa identificada). Fique a menos de 3 m; a ponte reabre a porta sozinha se a conexão cair.
 
 Usar o robô pelo Bluetooth, no lugar do USB (os comandos são os mesmos do [guia](#guia-de-comandos-o-que-rodar-em-cada-situação)):
@@ -222,14 +231,15 @@ Grave `esp32_calibracao` (USB) ou `esp32_calibracao_bt` (USB e Bluetooth), ligue
 | `A` | 10 avanços seguidos, com 0,5 s de pausa | meça a distância total na pista: esperado 1800 mm, erro final de até 10 mm | `ENCODER_PULSOS_POR_VOLTA` e `RODA_DIAMETRO_MM`, que definem `MM_POR_PULSO` |
 | `g` / `G` | gira 90° à esquerda / à direita | imprime os pulsos de cada roda (esperado 435); confira o ângulo a olho | |
 | `h` | gira 180° | pulsos esperados 871 | |
-| `Q` | 20 giros de 90° à esquerda, seguidos | o robô deve voltar à posição inicial (5 voltas); meça o desvio com o transferidor: até 5° | `BITOLA_MM` |
+| `Q` | 10 giros de 90° à esquerda, seguidos | o robô termina virado 180° em relação à partida (2,5 voltas); meça o desvio com o transferidor: até 5° | `BITOLA_MM` |
 | `v` | as duas rodas a 400 mm/s por 3 s, até 1,2 m de percurso: **só com as rodas no ar**, nunca no chão | imprime a velocidade medida e, no fim, a média depois da rampa e o erro: `APROVADO` com até 5% nas duas | ganhos do PI em `lib/controle/velocidade.c` |
 | `s` | gira o motor esquerdo a 300 mm/s por até 8 s | segure a roda: imprime em quanto tempo a trava foi detectada | `MOTOR_TRAVADO_MS`, `MOV_TRAVADO_MS` e `MOV_TRAVADO_POTENCIA` |
 | `t` | 40 leituras dos ToF (a 20 Hz), com as paredes decididas `F E D` | ponha o robô no centro de células com e sem parede e anote as distâncias | `PAREDE_FRENTE_*_MM` e `PAREDE_LADO_*_MM` |
 | `p` | para os motores | | |
 
 Os outros critérios da FIRM-10 não têm tecla própria:
-- **Corredor de 4 células sem encostar:** com os ToF laterais funcionando, rode o `esp32_real` e ajuste `MOV_KP_CENTRO` e `MOV_GANHO_FRONTAL` (hoje 0, desligados).
+- **Corredor de 4 células sem encostar:** a centralização pelos ToF laterais está ligada (`MOV_KP_CENTRO` 0,05) e só age com **as duas paredes** lidas; com uma parede só ela fica desligada (`MOV_CENTRALIZAR_UMA_PAREDE` 0), porque `MOV_LADO_CENTRADO_MM` não foi conferido na pista. No simulador, com uma roda andando 3% a mais que os pulsos, o robô atravessa o corredor de 4 células sem encostar (`test_movimento`); falta repetir na pista com os dois ToF laterais funcionando. `MOV_GANHO_FRONTAL` segue 0 (desligado).
+- **Erro que não se soma:** o que faltou ou passou do alvo em um avanço ou giro entra no movimento seguinte (`residuo_avanco` e `residuo_giro` em `movimento.c`), então 10 avanços terminam a até 10 mm e 10 giros de 90° a até 5° (testes `test_dez_avancos_seguidos_erram_ate_10_mm` e `test_dez_giros_de_90_graus_desviam_ate_5_graus`, no simulador).
 - **Bateria com erro de até 2%:** na bancada `esp32_drivers`, compare a tensão impressa com o multímetro e ajuste `BATERIA_DIVISOR` e `BATERIA_QUEDA_DIODO_MV`.
 
 Os valores finais vão para `config/robo.h` e para o roteiro de testes de integração (7.5).
@@ -365,6 +375,7 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 - **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). O esquemático ainda usa as 5 redes do A4988, mas a TB6612 pede 7 sinais: os dois `IN2` foram para os GPIO livres 15 e 18 (o 18 era o XSHUT do segundo frontal) e precisam de fio na placa. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
 - Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura), as curvas de descarga da bateria (Energia, até os testes da 7.2), os limiares de parede dos ToF (`PAREDE_*_MM`), `EXEC_LEITURA_LATERAL_MM` e os ganhos de centralização (`MOV_KP_CENTRO`, `MOV_GANHO_FRONTAL`, desligados): calibrar na pista com a bancada `esp32_calibracao`.
 - **ToF laterais:** não respondem por defeito no conector da placa (teste 5.2 do 7.5); a centralização e o corredor de 4 células dependem do conserto.
+- **Aviso, defeito estrutural:** a bateria fica entre a roda boba e a roda esquerda e atrapalha o movimento (atrito que varia): nos testes ela fez avanços falharem (por exemplo, o avanço 4 do `A`) e a esquerda terminar curta ou passada. O controle não foi adaptado a isso; o reparo é mecânico (fixar a bateria longe das rodas). Os resultados de avanço e giro devem ser lidos com essa ressalva (testes 5.28 a 5.35 do 7.5).
 - **Não verificado na placa:** a tecla `s` (limiar de stuck): a roda segurada sem força não parou o encoder, então o detector não disparou. O stuck no movimento segue coberto pelos testes no simulador.
 - **A validar no labirinto real:** a parada de emergência pelo ToF frontal (`MOV_FRENTE_SOBRA_MM` 17 mm e `MOV_TOF_ATRASO_S`; a primeira versão falhou na pista), os limiares `PAREDE_*_MM` e `MOV_FRENTE_ALVO_MM`, e os testes no chão (`a`, `A`, `g`, `G`, `h`, `Q`).
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.

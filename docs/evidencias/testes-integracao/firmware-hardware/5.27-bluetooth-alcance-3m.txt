@@ -12,3 +12,7 @@ Disconnected ([Errno 5] Input/output error)
 Reconnecting to /dev/rfcomm0     Connected!
 Causa nao identificada: distancia do notebook ou reinicio da placa por queda da bateria; para separar, repetir o A pelo USB
 e procurar "Brownout detector was triggered" ou o banner de boot no meio do movimento.
+
+Logs completos com as quedas, enviados pela Amanda: [Log 8] do 5.28 (varias tentativas de A) e [Log 1] do 5.30 (A com o avanco 7 FALHOU).
+Os dois comecam em "pio device monitor --port /dev/rfcomm0 --baud 115200 --echo" e trazem as linhas
+"Disconnected ([Errno 5] Input/output error)" e "Reconnecting to /dev/rfcomm0     Connected!".

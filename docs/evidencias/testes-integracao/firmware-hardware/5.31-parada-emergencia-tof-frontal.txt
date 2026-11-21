@@ -1,14 +1,155 @@
-Teste 5.31 - Parada de emergencia pelo ToF frontal (teclas a e A, bancada esp32_calibracao_bt)
+Teste 5.31 - Parada de emergencia pelo ToF frontal (teclas a e A, bancada esp32_calibracao_bt), com uma madeira a frente
+Logs completos enviados pela Amanda, na ordem em que foram feitos. Distancias da madeira medidas a olho com a mao.
 
-Versao com margem de 10 mm (MOV_FRENTE_SOBRA_MM = 10), 840 pulsos por volta, madeira a mao a varias distancias:
-# frontal ao partir: 56 mm   -> avanco: FALHOU esq=41 dir=105 pulsos (9.3 mm);  # frontal ao parar: 50 mm
-# frontal ao partir: 105 mm  -> avanco: FALHOU esq=390 dir=388 pulsos (49.5 mm); # frontal ao parar: 30 mm
-# frontal ao partir: 158 mm  -> avanco: FALHOU esq=859 dir=850 pulsos (108.7 mm); # frontal ao parar: 28 mm
-# frontal ao partir: 256 mm  -> avanco: FALHOU esq=1405 dir=1423 pulsos; leituras terminam em 26 a 28 mm
-# frontal ao partir: 263 mm  -> avanco: concluido esq=1414 dir=1423 pulsos
-# frontal ao partir: 269 mm  -> avanco: FALHOU esq=1405 dir=1423 pulsos; leituras ate 41 mm, # frontal ao parar: 61 mm
-Relato da Amanda: a 5 e a 15 cm o robo anda e freia; a 25 cm ia com tudo e batia; na ultima, parou cerca de 1 cm antes do obstaculo.
-A leitura de tempo do ToF levou no maximo 10 ms (o laco do movimento e de 5 ms).
+[Log 1] Bluetooth, 840 pulsos por volta, primeira versao da regra (a parada dispara se a parede ficar mais de 30 mm mais perto que o previsto). Madeira a distancias variadas:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+# comando: a
+avanco: FALHOU esq=9 dir=7 pulsos (esperado 1416) = 1.0 mm pelos pulsos
+# frontal ao parar: 188 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: concluido esq=1424 dir=1423 pulsos (esperado 1416) = 181.0 mm pelos pulsos
+# frontal ao parar: 197 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: concluido esq=1423 dir=1423 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+# frontal ao parar: 170 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: FALHOU esq=9 dir=10 pulsos (esperado 1416) = 1.2 mm pelos pulsos
+# frontal ao parar: 183 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: FALHOU esq=4 dir=8 pulsos (esperado 1416) = 0.8 mm pelos pulsos
+# frontal ao parar: 171 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: concluido esq=1421 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+# frontal ao parar: 309 mm (parada de emergencia se a parede ficar mais de 30 mm maisperto que o previsto)
+a
+# comando: a
+avanco: FALHOU esq=275 dir=627 pulsos (esperado 1416) = 57.3 mm pelos pulsos
+# frontal ao parar: 85 mm (parada de emergencia se a parede ficar mais de 30 mm mais perto que o previsto)
+Relato da Amanda sobre este log: "o freio falhou": havia um obstaculo de madeira na frente a distancia de uma celula e ele foi com tudo e bateu;
+tambem falhava sem necessidade quando nao havia nada muito perto.
 
-Versao com margem de 17 mm (MOV_FRENTE_SOBRA_MM = 17) e 640 pulsos por volta: so testada com a pista livre
-(avanco: concluido nas tres tentativas, # frontal ao parar: 1200 mm); sem obstaculo proximo nao ha parada.
+[Log 2] Bluetooth, 840 pulsos por volta, margem de 10 mm e historico das leituras do ToF a cada 50 ms. Madeira a ~5 cm, ~10 cm, ~15 cm, ~25 cm:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+# comando: a
+# frontal ao partir: 56 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 54 55 52 47 47 47 50
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=41 dir=105 pulsos (esperado 1416) = 9.3 mm pelos pulsos
+# frontal ao parar: 50 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 123 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 123 122 119 114 114 110 116 125 133 136 136151 151 126 126 137 137 143 131 121 121 121 136 133 133 125 125 125 139 144 164 144 147 138 117 117 117 137 132 132 132 125 125 113 111 113 110 136 123 125 125 128 128 128114 133 117 117 117 115
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=1377 dir=1425 pulsos (esperado 1416) = 178.2 mm pelos pulsos
+# frontal ao parar: 115 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 99 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 99 97 101 104 104 102 102 171 189 211
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=332 dir=565 pulsos (esperado 1416) = 57.0 mm pelos pulsos
+# frontal ao parar: 211 mm (a parada garante pelo menos 10 mm ate a parede)
+aa
+a
+# comando: a
+# frontal ao partir: 105 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 105 106 106 100 83 68 54 33 30
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=390 dir=388 pulsos (esperado 1416) = 49.5 mm pelos pulsos
+# frontal ao parar: 30 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 256 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 256 255 255 253 241 220 197 176 121 94 69 44 43 31 31 26 26 26 26 27 27 28 28 28 28 28 26 26 26 28 26 26 26 29 29 29 27 27 26 26 27 27 27 28 28 28 28 27 28 28 29 29 30 29 29 27 26 26 26 27
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=1405 dir=1423 pulsos (esperado 1416) = 179.8 mm pelos pulsos
+# frontal ao parar: 27 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 263 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 263 261 257 257 257 257 219 166 156 156 145138 138 138 130 141 149 149 120 120 121 124 152 152 130 130 121 121 121 121 123
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1414 dir=1423 pulsos (esperado 1416) = 180.4 mm pelos pulsos
+# frontal ao parar: 123 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 158 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 157 159 155 151 139 123 79 57 47 30 29 28
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=859 dir=850 pulsos (esperado 1416) = 108.7 mm pelos pulsos
+# frontal ao parar: 28 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 179 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 179 179 177 163 162 162 167 168 168 176 200195 195 195 192 197 197 197 195 180 151 180 163 163 163 159 159 143
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1421 dir=1422 pulsos (esperado 1416) = 180.8 mm pelos pulsos
+# frontal ao parar: 143 mm (a parada garante pelo menos 10 mm ate a parede)
+Relato da Amanda sobre este log: "ele so freou na distancia de 15 cm e tambem na de 5 ele nem chegou a andar (depois: 'no de 5 cm ele anda mas freia'),
+mas de 25 cm falhou em todas as tentativas".
+
+[Log 3] Bluetooth, 840 pulsos por volta, margem de 10 mm; a madeira nesta rodada ficou na frente e o robo andou 23 a 25 cm ("parou 1 cm antes do obstaculo"):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+a
+###
+aaDisconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+a
+# comando: a
+# frontal ao partir: 209 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# 209 188 188 188 188 182 188 192 192 209 
+␛[CDisconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+[␛[Ba
+a
+### 
+a#a
+# comando: a
+# frontal ao partir: 181 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 181 181 186 199 199 166 151 140 130 120 120138 138 145 146 146 146 129 147 147 147 139 139 148 148 124 124 161 161 157 156 157 156 149 142 142 151 151 149 146 146 146 143 143 143 153 159 159 137 137 150 159 150 150147 147 151 151 150 137
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=1396 dir=1424 pulsos (esperado 1416) = 179.3 mm pelos pulsos
+# frontal ao parar: 137 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 180 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 180 185 185 185 181 174 165 174 174 174 168154 151 154 154 154 154 147 154 174 174 164 156 145 145 145 144 131 131 172 175 175 175 179 179 179 149 149 171 178 178 180 180 177 155 155 170 170 170 170 179 180 180 168168 169 169 169 168 164
+# a leitura dos ToF levou no maximo 8 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=1407 dir=1424 pulsos (esperado 1416) = 180.0 mm pelos pulsos
+# frontal ao parar: 164 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 177 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 177 177 176 176 176 182 182 182 175 175 175177 177 177 174 174 168 184 202 202 196 181 196 181 193 193 193 196 182 196 196
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1423 dir=1423 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+# frontal ao parar: 196 mm (a parada garante pelo menos 10 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 269 mm (a parada de emergencia deixa pelo menos 10 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 272 269 266 263 254 242 205 189 171 163 10882 63 41 41 43 53 51 53 51 55 57 57 55 54 54 47 47 53 55 54 55 55 55 55 56 57 57 56 56 57 59 59 60 60 60 60 61 62 62 62 63 62 62 62 62 61 61 61 61
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: FALHOU esq=1405 dir=1423 pulsos (esperado 1416) = 179.8 mm pelos pulsos
+# frontal ao parar: 61 mm (a parada garante pelo menos 10 mm ate a parede)
+Relatos da Amanda: "ele anda aprox uns 23-25cm" e, no ultimo a, "andou os mesmos 25cm aprox, e parou 1cm antes do obstaculo".
+
+[Log 4] Margem de 17 mm (MOV_FRENTE_SOBRA_MM = 17) e 640 pulsos por volta: so com a pista livre ou sem obstaculo proximo, sem parada de emergencia.
+Esta nos logs [Log 7] e [Log 8] do 5.28 (leituras de 1200 mm e de 160 a 500 mm, todos os avancos concluidos).

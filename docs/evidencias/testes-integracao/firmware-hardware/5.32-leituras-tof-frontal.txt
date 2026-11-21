@@ -1,8 +1,188 @@
-Teste 5.32 - Leituras do ToF frontal com a tecla t, madeira a frente, afastada aos poucos
+Teste 5.32 - Leituras do ToF frontal com a tecla t, com uma madeira (ou a mao) a frente, afastada aos poucos
+Logs completos enviados pela Amanda. Laterais "--": sem resposta (conector do ToF esquerdo com defeito; ver teste 5.2).
 
-Madeira a cerca de 5 a 6 cm: leitura 64, 65, 65, 65, 64, 65, 65, 67, 68, 68, 70, 72, 74, 78, 82, 98, 101, 118, 131 mm
-(paredes decididas F=1 ate cerca de 131 mm); depois 155, 167, 195, 209, 244, 268, 314, 332, 365, ... ate 669 e 991 mm.
-Sem nada a frente: 1200 mm (fora do alcance, TOF_ALCANCE_MAX_MM).
-Mao a cerca de 5 cm (teste anterior): 121 a 143 mm  -> alvo ruim, descartado.
-Laterais: "--" nas duas (conector do ToF esquerdo com defeito; ver teste 5.2).
-Com a madeira parada e o robo andando, a leitura oscilou cerca de 20 a 30 mm (ex.: 123 122 119 114 114 110 116 125 133 136).
+[Log 1] Mao a frente do sensor (a Amanda: "quando estava na casa dos 100 era quando esta a uns 5 cm e na casa dos 1000 quando esta a aproximadamente 44 cm"):
+tof: frontal / esquerdo / direito em mm e paredes (F E D), 40 leituras a 20 Hz
+   489     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+   143     --     --   F=0 E=0 D=0
+   121     --     --   F=0 E=0 D=0
+   121     --     --   F=0 E=0 D=0
+   124     --     --   F=0 E=0 D=0
+   129     --     --   F=0 E=0 D=0
+   129     --     --   F=0 E=0 D=0
+   124     --     --   F=0 E=0 D=0
+   124     --     --   F=0 E=0 D=0
+   131     --     --   F=0 E=0 D=0
+   137     --     --   F=0 E=0 D=0
+   196     --     --   F=0 E=0 D=0
+   252     --     --   F=0 E=0 D=0
+   371     --     --   F=0 E=0 D=0
+   440     --     --   F=0 E=0 D=0
+   509     --     --   F=0 E=0 D=0
+   561     --     --   F=0 E=0 D=0
+   561     --     --   F=0 E=0 D=0
+   561     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+  1200     --     --   F=0 E=0 D=0
+
+[Log 2] Madeira a 5 ou 6 cm, afastada aos poucos (tres execucoes de t):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200 --echo
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2368][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3633][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4898][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+t
+# comando: t
+tof: frontal / esquerdo / direito em mm e paredes (F E D), 40 leituras a 20 Hz
+   242     --     --   F=0 E=0 D=0
+   242     --     --   F=0 E=0 D=0
+   243     --     --   F=0 E=0 D=0
+   244     --     --   F=0 E=0 D=0
+   244     --     --   F=0 E=0 D=0
+   246     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   250     --     --   F=0 E=0 D=0
+   250     --     --   F=0 E=0 D=0
+   249     --     --   F=0 E=0 D=0
+   249     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   244     --     --   F=0 E=0 D=0
+   244     --     --   F=0 E=0 D=0
+   245     --     --   F=0 E=0 D=0
+   246     --     --   F=0 E=0 D=0
+   247     --     --   F=0 E=0 D=0
+   253     --     --   F=0 E=0 D=0
+   259     --     --   F=0 E=0 D=0
+   269     --     --   F=0 E=0 D=0
+   285     --     --   F=0 E=0 D=0
+   295     --     --   F=0 E=0 D=0
+   319     --     --   F=0 E=0 D=0
+   329     --     --   F=0 E=0 D=0
+   353     --     --   F=0 E=0 D=0
+   371     --     --   F=0 E=0 D=0
+   398     --     --   F=0 E=0 D=0
+   416     --     --   F=0 E=0 D=0
+   450     --     --   F=0 E=0 D=0
+   464     --     --   F=0 E=0 D=0
+   503     --     --   F=0 E=0 D=0
+   524     --     --   F=0 E=0 D=0
+   564     --     --   F=0 E=0 D=0
+   587     --     --   F=0 E=0 D=0
+   622     --     --   F=0 E=0 D=0
+   635     --     --   F=0 E=0 D=0
+t
+
+t
+# comando: t
+tof: frontal / esquerdo / direito em mm e paredes (F E D), 40 leituras a 20 Hz
+   635     --     --   F=0 E=0 D=0
+    64     --     --   F=1 E=0 D=0
+    64     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    64     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    67     --     --   F=1 E=0 D=0
+    68     --     --   F=1 E=0 D=0
+    68     --     --   F=1 E=0 D=0
+    70     --     --   F=1 E=0 D=0
+    72     --     --   F=1 E=0 D=0
+    74     --     --   F=1 E=0 D=0
+    78     --     --   F=1 E=0 D=0
+    82     --     --   F=1 E=0 D=0
+    98     --     --   F=1 E=0 D=0
+   101     --     --   F=1 E=0 D=0
+   118     --     --   F=1 E=0 D=0
+   131     --     --   F=1 E=0 D=0
+   155     --     --   F=0 E=0 D=0
+   167     --     --   F=0 E=0 D=0
+   195     --     --   F=0 E=0 D=0
+   209     --     --   F=0 E=0 D=0
+   244     --     --   F=0 E=0 D=0
+   268     --     --   F=0 E=0 D=0
+   314     --     --   F=0 E=0 D=0
+   332     --     --   F=0 E=0 D=0
+   365     --     --   F=0 E=0 D=0
+   378     --     --   F=0 E=0 D=0
+   407     --     --   F=0 E=0 D=0
+   421     --     --   F=0 E=0 D=0
+   471     --     --   F=0 E=0 D=0
+   499     --     --   F=0 E=0 D=0
+   543     --     --   F=0 E=0 D=0
+   569     --     --   F=0 E=0 D=0
+   615     --     --   F=0 E=0 D=0
+   629     --     --   F=0 E=0 D=0
+   669     --     --   F=0 E=0 D=0
+t
+# comando: t
+tof: frontal / esquerdo / direito em mm e paredes (F E D), 40 leituras a 20 Hz
+   669     --     --   F=0 E=0 D=0
+    68     --     --   F=1 E=0 D=0
+    67     --     --   F=1 E=0 D=0
+    67     --     --   F=1 E=0 D=0
+    67     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    65     --     --   F=1 E=0 D=0
+    66     --     --   F=1 E=0 D=0
+    69     --     --   F=1 E=0 D=0
+    70     --     --   F=1 E=0 D=0
+    77     --     --   F=1 E=0 D=0
+    84     --     --   F=1 E=0 D=0
+   100     --     --   F=1 E=0 D=0
+   108     --     --   F=1 E=0 D=0
+   133     --     --   F=1 E=0 D=0
+   147     --     --   F=1 E=0 D=0
+   178     --     --   F=0 E=0 D=0
+   194     --     --   F=0 E=0 D=0
+   236     --     --   F=0 E=0 D=0
+   256     --     --   F=0 E=0 D=0
+   307     --     --   F=0 E=0 D=0
+   333     --     --   F=0 E=0 D=0
+   389     --     --   F=0 E=0 D=0
+   404     --     --   F=0 E=0 D=0
+   462     --     --   F=0 E=0 D=0
+   485     --     --   F=0 E=0 D=0
+   534     --     --   F=0 E=0 D=0
+   562     --     --   F=0 E=0 D=0
+   617     --     --   F=0 E=0 D=0
+   654     --     --   F=0 E=0 D=0
+   666     --     --   F=0 E=0 D=0
+   715     --     --   F=0 E=0 D=0
+   744     --     --   F=0 E=0 D=0
+   790     --     --   F=0 E=0 D=0
+   809     --     --   F=0 E=0 D=0
+   864     --     --   F=0 E=0 D=0
+   874     --     --   F=0 E=0 D=0
+   927     --     --   F=0 E=0 D=0
+   940     --     --   F=0 E=0 D=0
+   991     --     --   F=0 E=0 D=0

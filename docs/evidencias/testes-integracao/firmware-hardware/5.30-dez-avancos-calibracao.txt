@@ -1,23 +1,47 @@
-Teste 5.30 - Dez avancos seguidos (tecla A), bancada esp32_calibracao_bt, pelo Bluetooth
+Teste 5.30 - Dez avancos seguidos (tecla A), bancada esp32_calibracao_bt
+Logs completos enviados pela Amanda. Os logs inteiros com a tecla A estao no 5.28 e sao citados aqui:
+  - [Log 2 do 5.28]: A com avanco 1 FALHOU esq=1428 dir=1409 (840 pulsos por volta, integral sobre a trajetoria toda)
+  - [Log 7 do 5.28]: A com os dez avancos concluidos, esq=10761 dir=10810 pulsos = 1800.1 mm pelos pulsos (640 pulsos por volta)
+  - [Log 8 do 5.28]: varias tentativas de A que cairam com "Disconnected ([Errno 5] Input/output error)"
+  - [Log 10 do 5.28]: A com os avancos 1 a 3 concluidos e o avanco 4 FALHOU esq=1086 dir=1088 (bateria entre a roda boba e a roda esquerda)
 
-A) 640 pulsos por volta, esperado 10790 pulsos (1800 mm), tolerancia de avanco de 8 pulsos:
-avanco 1: concluido esq=1072 dir=1079
-avanco 2: concluido esq=1073 dir=1081
-avanco 3: concluido esq=1074 dir=1080
-avanco 4: concluido esq=1072 dir=1082
-avanco 5: concluido esq=1077 dir=1078
-avanco 6: concluido esq=1078 dir=1082
-avanco 7: concluido esq=1080 dir=1079
-avanco 8: concluido esq=1078 dir=1086
-avanco 9: concluido esq=1077 dir=1080
-avanco 10: concluido esq=1080 dir=1083
-10 avancos: esq=10761 dir=10810 pulsos (esperado 10790) = 1800.1 mm pelos pulsos
+[Log 1] Bluetooth, 640 pulsos por volta, com a bateria encostando na roda esquerda: o avanco 7 do A falhou depois de varias quedas do enlace:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+(trecho anterior, com as mesmas quedas, esta no Log 8 do 5.28)
 
-B) Com a roda esquerda roçando na bateria:
-avanco 7: FALHOU esq=1070 dir=1086   <- esquerda 9 pulsos abaixo do alvo, fora da tolerancia de 8
+A
 
-C) Varias tentativas de enviar A pelo Bluetooth cairam com:
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+A
 Disconnected ([Errno 5] Input/output error)
 Reconnecting to /dev/rfcomm0     Connected!
 
-Resultado adotado: cerca de 1800 mm no total, pela soma dos pulsos (esq 10761, dir 10810).
+A
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+A
+###
+a#
+ a# 
+# # frontal a cada 50 ms (0 = sem leitura): 646 646 646 1200 1200 413 413 1200 1200 1200 1200 1200 1200 1200 636 636 633 633 665 665 665 736 736 725 706 694 694 718 718 743 711 743 738 765 738 732 732 727 758 736 782 758 758 758 747 742 709 742 729 747 729 742 726 742 726 750 759 759 759 746
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 7: FALHOU esq=1070 dir=1086

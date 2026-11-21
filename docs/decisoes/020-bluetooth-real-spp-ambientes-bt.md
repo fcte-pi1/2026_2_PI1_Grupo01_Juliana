@@ -24,5 +24,6 @@ Na pista o robô anda sem o cabo USB, e a calibração da FIRM-10 e a FIRM-11 ([
 
 - O enlace Bluetooth só pode ser validado no robô (latência até 3 s, estabilidade a 3 m); o CI compila os três ambientes `_bt`, mas não os executa.
 - Na pista, a mais de cerca de 3 m do notebook o enlace desconectou com facilidade (teste 5.27 do 7.5, sem medição): a estabilidade a 3 m ainda não está atendida e é a pendência principal da FIRM-11.
+- No notebook Linux, o ModemManager lê o `/dev/rfcomm0` por uns 20 s no começo de cada conexão e toma as linhas da telemetria: é preciso ignorar as portas `rfcomm` por regra de udev (README do firmware, teste 5.36). Depois de regravar a placa, também pode ser preciso refazer o pareamento (`remove`, `pair`, `trust`).
 - O endereço do Bluetooth é o da base mais 2 no último byte, e o pareamento é por notebook. A ponte reabre a porta sozinha se a conexão cair.
 - O `TOF_MOCK` continua proibido no firmware final.
