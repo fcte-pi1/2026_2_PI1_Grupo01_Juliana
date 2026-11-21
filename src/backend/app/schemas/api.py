@@ -46,6 +46,27 @@ Rumo = Literal["N", "S", "L", "O"]
 EixoLongo = Literal["x", "y"]
 
 
+class EstadoRobo(BaseModel):
+    ultimo_sinal_em: datetime | None = None
+    segundos_sem_sinal: float | None = Field(default=None, ge=0)
+    ponte: Literal["conectada", "reconectando", "desligada"] = "desligada"
+    porta: str | None = None
+    reconexao_pedida: bool = False
+
+
+class RelatoPonte(BaseModel):
+    estado: Literal["conectada", "reconectando"]
+    porta: str = Field(min_length=1, max_length=100)
+
+
+class RespostaRelatoPonte(BaseModel):
+    reconectar: bool
+
+
+class PedidoReconexao(BaseModel):
+    aceito: bool
+
+
 class BackHealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     banco_acessivel: bool

@@ -195,3 +195,15 @@ class TestNumeroDaExecucao:
         assert list(linhas[0])[0] == "numero"
         assert linhas[0]["numero"] == str(execucao.numero)
 
+
+def test_estado_do_robo_sem_sinal_vem_nulo(client):
+    corpo = client.get("/robo/estado").json()
+    assert corpo["ultimo_sinal_em"] is None
+    assert corpo["segundos_sem_sinal"] is None
+
+
+def test_estado_do_robo_informa_o_ultimo_sinal(client):
+    client.app.state.monitor_conexao.registrar_mensagem()
+    corpo = client.get("/robo/estado").json()
+    assert corpo["ultimo_sinal_em"] is not None
+    assert 0 <= corpo["segundos_sem_sinal"] < 5

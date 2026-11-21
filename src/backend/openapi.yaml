@@ -230,6 +230,78 @@ paths:
                     event: health_check
                     data: {"tipo":"health_check","aprovado":null,"tipo_dip":null,"iniciado_em":"2026-10-07T13:58:00-03:00","concluido_em":null,"valido_ate":null,"itens":[{"componente":"bateria","aprovado":true,"valor_lido":7840}]}
 
+  /robo/estado:
+    get:
+      operationId: buscarEstadoRobo
+      tags: [robo]
+      summary: Último sinal do robô e estado do enlace da ponte
+      description: >
+        Instante da última linha que a ponte entregou e há quantos segundos foi, mais o
+        estado do enlace que a ponte relata (conectada, reconectando ou desligada, esta
+        última quando não há relato nos últimos 15 s). Sem nenhuma linha desde que a API
+        subiu, os campos do sinal vêm nulos. O robô parado não envia nada, então o
+        silêncio longo não prova desconexão.
+      responses:
+        "200":
+          description: Estado do último sinal e do enlace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstadoRobo"
+              example:
+                ultimo_sinal_em: "2026-10-07T13:58:02-03:00"
+                segundos_sem_sinal: 4.2
+                ponte: conectada
+                porta: /dev/rfcomm0
+                reconexao_pedida: false
+
+  /robo/ponte:
+    post:
+      operationId: relatarPonte
+      tags: [robo]
+      summary: Relato periódico da ponte sobre o enlace
+      description: >
+        A ponte informa a cada poucos segundos se a porta serial está aberta ou sendo
+        reaberta. A resposta traz reconectar verdadeiro uma única vez depois que a tela
+        pediu a reconexão.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RelatoPonte"
+      responses:
+        "200":
+          description: Relato registrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaRelatoPonte"
+
+  /robo/reconectar:
+    post:
+      operationId: pedirReconexao
+      tags: [robo]
+      summary: Pedir que a ponte reabra a porta do robô
+      description: >
+        Registra o pedido; a ponte o recebe no próximo relato e reabre a porta serial.
+        Recusa com 409 quando a ponte não relata há mais de 15 s.
+      responses:
+        "202":
+          description: Pedido registrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoReconexao"
+        "409":
+          description: A ponte não está ligada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErroNaoEncontrado"
+              example:
+                detail: A ponte não está ligada.
+
   /execucoes/campanha:
     get:
       operationId: resumoDaCampanha
@@ -1245,6 +1317,51 @@ components:
         valor_lido:
           type: number
           nullable: true
+    EstadoRobo:
+      type: object
+      properties:
+        ultimo_sinal_em:
+          type: [string, "null"]
+          format: date-time
+        segundos_sem_sinal:
+          type: [number, "null"]
+          minimum: 0
+        ponte:
+          type: string
+          enum: [conectada, reconectando, desligada]
+          default: desligada
+        porta:
+          type: [string, "null"]
+        reconexao_pedida:
+          type: boolean
+          default: false
+
+    RelatoPonte:
+      type: object
+      required: [estado, porta]
+      properties:
+        estado:
+          type: string
+          enum: [conectada, reconectando]
+        porta:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    RespostaRelatoPonte:
+      type: object
+      required: [reconectar]
+      properties:
+        reconectar:
+          type: boolean
+
+    PedidoReconexao:
+      type: object
+      required: [aceito]
+      properties:
+        aceito:
+          type: boolean
+
     UltimoHealthCheck:
       type: object
       description: >

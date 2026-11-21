@@ -54,6 +54,18 @@ class Leitora:
         self._espera = Espera()
         self._trava = threading.Lock()
         self._porta: Porta | None = None
+        self._reabrir_ja = threading.Event()
+
+    @property
+    def aberta(self) -> bool:
+        with self._trava:
+            return self._porta is not None
+
+    def reconectar(self) -> None:
+        """Fecha a porta agora e reabre sem esperar; a leitura em curso cai e o laço reabre."""
+        self._reabrir_ja.set()
+        self._auditoria.registrar("CONEXAO", "reconexao pedida pela tela")
+        self._fechar()
 
     def rodar(self, parar: threading.Event) -> None:
         """Abre, lê e reabre a porta até `parar` ser sinalizado."""
@@ -117,9 +129,14 @@ class Leitora:
             )
 
     def _caiu(self, erro: BaseException, parar: threading.Event) -> None:
-        self._auditoria.registrar("CONEXAO", f"caiu {erro}")
+        pedida = self._reabrir_ja.is_set()
+        self._reabrir_ja.clear()
+        if not pedida:
+            self._auditoria.registrar("CONEXAO", f"caiu {erro}")
         self._fechar()
-        if not parar.is_set():
+        if pedida:
+            self._espera.zerar()
+        elif not parar.is_set():
             self._dormir(self._espera.proxima())
 
     def _fechar(self) -> None:

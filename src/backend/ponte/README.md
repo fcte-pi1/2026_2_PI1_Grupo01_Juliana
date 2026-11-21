@@ -59,6 +59,10 @@ A porta fica em `/dev/rfcomm0`, o padrão da ponte. Para desfazer: `sudo rfcomm 
 
 **Windows.** Pareie o robô nas configurações de Bluetooth. Em "Mais opções de Bluetooth", aba "Portas COM", fica a porta de saída do SPP (por exemplo `COM5`); use-a em `--porta` ou `PONTE_PORTA_SERIAL`.
 
+**Reconexão pela tela.** A ponte reabre a porta sozinha quando ela cai (espera de 0,5 s, 1 s e 2 s). Além disso, a cada 3 s ela relata o estado do enlace à API (`POST /robo/ponte`), e o botão "Reconectar" da barra lateral da tela faz a ponte fechar e reabrir a porta na hora. Com o `rfcomm bind`, abrir a porta religa o Bluetooth com o robô. Se o `/dev/rfcomm0` sumir (por exemplo, depois de reiniciar o notebook), a ponte não consegue recriá-lo: rode o `rfcomm bind` de novo.
+
+**Uma ponte por porta.** Dois processos lendo o mesmo `/dev/rfcomm0` dividem os bytes e as linhas chegam quebradas (a API responde 422). O `scripts/ambiente.sh` recusa subir uma segunda ponte na mesma porta.
+
 ## Fila e descarte
 
 A fila guarda no máximo `PONTE_FILA_MAXIMA` linhas (100 são 10 s a 10 mensagens por segundo). A linha só sai da fila depois que a API responde 2xx ou 4xx; erro de conexão, timeout ou 5xx deixam a linha no início da fila, e ela é reenviada até passar. O envio é sempre em ordem de chegada.
