@@ -76,6 +76,11 @@ class NovaExecucaoRequest(BaseModel):
     tipo_labirinto: Labirinto
     configuracao: str | None = Field(default=None, max_length=60)
     observacao: str | None = Field(default=None, max_length=200)
+    ignorar_bateria: bool = False
+
+
+class RetomarRequest(BaseModel):
+    ignorar_bateria: bool = False
 
 
 class EncerrarTentativaRequest(BaseModel):

@@ -10,6 +10,7 @@ from app.schemas.api import (
     Recusa,
     ResumoCampanha,
     ResumoExecucao,
+    RetomarRequest,
     RetornoNovaExecucao,
     TipoLabirinto,
 )
@@ -54,7 +55,7 @@ def criar_execucao(
 ) -> RetornoNovaExecucao | JSONResponse:
     try:
         retorno = gerenciador.nova_execucao(
-            db, body.tipo_labirinto, body.configuracao, body.observacao
+            db, body.tipo_labirinto, body.configuracao, body.observacao, body.ignorar_bateria
         )
     except RecusaTentativa as recusa:
         return _resposta_recusa(recusa)
@@ -214,11 +215,12 @@ def encerrar_execucao(
 )
 def retomar_execucao(
     execucao_id: UUID,
+    body: RetomarRequest | None = None,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao | JSONResponse:
     try:
-        retorno = gerenciador.retomar(db, execucao_id)
+        retorno = gerenciador.retomar(db, execucao_id, bool(body and body.ignorar_bateria))
     except ExecucaoNaoEncontrada:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."

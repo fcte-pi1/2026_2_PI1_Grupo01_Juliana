@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from app.models import HealthCheck
+from app.models import HealthCheck, HealthCheckItem
 from sqlalchemy.orm import Session
 
 
@@ -13,6 +13,7 @@ def gravar_health_check(
     *,
     aprovado: bool = True,
     concluido_em: datetime | None = None,
+    itens: dict[str, bool] | None = None,
 ) -> HealthCheck:
     concluido_em = concluido_em or datetime.now(UTC)
     health_check = HealthCheck(
@@ -25,4 +26,15 @@ def gravar_health_check(
     )
     session.add(health_check)
     session.flush()
+    for componente, item_aprovado in (itens or {}).items():
+        session.add(
+            HealthCheckItem(
+                hc_id=health_check.hc_id,
+                componente=componente,
+                aprovado=item_aprovado,
+                verificado_em=concluido_em,
+            )
+        )
+    session.flush()
+    session.refresh(health_check)
     return health_check

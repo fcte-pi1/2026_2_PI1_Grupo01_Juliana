@@ -507,13 +507,19 @@ paths:
       tags: [execucoes]
       summary: Abrir a tentativa seguinte depois de uma falha
       description: >
-        O pedido não tem corpo. Em caso de sucesso a resposta é o retorno
+        O corpo é opcional (ignorar_bateria). Em caso de sucesso a resposta é o retorno
         da tentativa 2 ou 3, já em running, com o comando `largar` para o robô.
         Recusa com 409 e não cria tentativa quando já existe tentativa aberta,
         quando as três já foram usadas, quando a execução está cancelada ou
         quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetomarTentativa"
       responses:
         "201":
           description: Nova tentativa aberta. attempt_index é 2 ou 3.
@@ -1278,6 +1284,20 @@ components:
           maxLength: 200
           nullable: true
           description: Anotação livre do operador, por exemplo o caso de teste. Opcional.
+        ignorar_bateria:
+          type: boolean
+          default: false
+          description: >
+            O operador confirmou largar com a bateria abaixo do corte seguro. Só vale quando a
+            bateria é o único item reprovado do health-check, com os 8 itens recebidos; qualquer
+            outro item reprovado ou ausente continua recusando com health_check_reprovado.
+    RetomarTentativa:
+      type: object
+      properties:
+        ignorar_bateria:
+          type: boolean
+          default: false
+          description: Mesma confirmação de Nova execução, para a retomada.
     RetornoNovaExecucao:
       type: object
       description: >
@@ -1926,6 +1946,12 @@ components:
             pelo operador em Nova execução ou Retomar. health_check: o operador
             pediu um novo health-check.
           enum: [interromper, largar, health_check]
+        forcar_bateria:
+          type: boolean
+          enum: [true]
+          description: >
+            Só no largar: o operador confirmou largar com a bateria abaixo do corte. O campo
+            não vem nos demais comandos.
     EntradaPonte:
       type: object
       required: [linha, recebido_em]
