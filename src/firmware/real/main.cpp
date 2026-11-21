@@ -13,8 +13,8 @@
  * O enlace é a serial USB (lib/hal/esp32/hal_bt_serial_esp32.cpp), então a ponte do
  * notebook abre /dev/ttyACM0.
  *
- *   pio run -e esp32_real -t upload             ToF real
- *   pio run -e esp32_real_tof_mock -t upload    ToF mockado (o health-check aprova)
+ *   pio run -e esp32_real_hc -t upload             ToF real
+ *   pio run -e esp32_real_hc_tof_mock -t upload    ToF mockado (o health-check aprova)
  */
 
 #include <Arduino.h>

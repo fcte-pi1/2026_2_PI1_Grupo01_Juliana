@@ -1,4 +1,4 @@
-#if !defined(HAL_SIMULADA) && defined(ARDUINO)
+#if !defined(HAL_SIMULADA) && defined(ARDUINO) && !defined(BT_REAL)
 
 /*
  * Enlace com a ponte pela serial USB, no lugar do Bluetooth: a ponte do notebook abre
