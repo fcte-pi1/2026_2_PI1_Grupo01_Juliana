@@ -17,7 +17,7 @@ O LED dá uma batida breve de 100 ms a cada 3 s nesse estado.
 
 O health-check aprovado **vale por 10 minutos** (`MAQ_HC_VALIDADE_MS`): passado o prazo a largada é ignorada até um novo
 `health_check` aprovado, e o robô que esperava a largada volta ao estado ocioso. Na corrida o prazo não corta; vale para largar de novo
-(depois de `success` ou `failed` também).
+(depois de `success` ou `failed` também). O mesmo prazo vale no contrato e no back-end ([ADR-022](022-health-check-vale-10-minutos.md)).
 
 ## Alternativas descartadas
 
