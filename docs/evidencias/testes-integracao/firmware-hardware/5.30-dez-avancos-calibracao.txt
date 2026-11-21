@@ -1,0 +1,23 @@
+Teste 5.30 - Dez avancos seguidos (tecla A), bancada esp32_calibracao_bt, pelo Bluetooth
+
+A) 640 pulsos por volta, esperado 10790 pulsos (1800 mm), tolerancia de avanco de 8 pulsos:
+avanco 1: concluido esq=1072 dir=1079
+avanco 2: concluido esq=1073 dir=1081
+avanco 3: concluido esq=1074 dir=1080
+avanco 4: concluido esq=1072 dir=1082
+avanco 5: concluido esq=1077 dir=1078
+avanco 6: concluido esq=1078 dir=1082
+avanco 7: concluido esq=1080 dir=1079
+avanco 8: concluido esq=1078 dir=1086
+avanco 9: concluido esq=1077 dir=1080
+avanco 10: concluido esq=1080 dir=1083
+10 avancos: esq=10761 dir=10810 pulsos (esperado 10790) = 1800.1 mm pelos pulsos
+
+B) Com a roda esquerda roçando na bateria:
+avanco 7: FALHOU esq=1070 dir=1086   <- esquerda 9 pulsos abaixo do alvo, fora da tolerancia de 8
+
+C) Varias tentativas de enviar A pelo Bluetooth cairam com:
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+
+Resultado adotado: cerca de 1800 mm no total, pela soma dos pulsos (esq 10761, dir 10810).

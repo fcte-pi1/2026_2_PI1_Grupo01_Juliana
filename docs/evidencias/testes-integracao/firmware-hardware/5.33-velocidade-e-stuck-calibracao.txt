@@ -1,0 +1,5 @@
+Teste 5.33 - PID de velocidade (v) e limiar de stuck (s), bancada esp32_calibracao_bt
+
+v, rodas no ar, pelo Bluetooth: as duas rodas a 407 mm/s (alvo 400), erro de 1,7%, APROVADO (limite 5%).
+v no chao: o robo andou 3 s a 400 mm/s e bateu na parede (a tecla nao usa o freio de emergencia); nao e um teste valido.
+s: com a roda esquerda segurada sem forca, "stuck: nao detectado em 8 s (a roda girou livre)"; nao verificado.

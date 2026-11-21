@@ -3,6 +3,8 @@
 **Status:** Aceito  
 **Data:** 2026-11-20
 
+> **Nota de 21/11/2026:** o `esp32_real` descrito aqui (só o health-check) passou a se chamar `esp32_real_hc`, e o `esp32_real_hc_tof_mock` é o seu par com o ToF mockado. O nome `esp32_real` é agora o firmware completo no robô (navegação e movimento, FIRM-10), com as variantes `esp32_real_tof_mock`, `esp32_real_bt` e `esp32_real_bt_tof_mock`.
+
 ## Contexto
 
 Até aqui o firmware completo só rodava na ESP32 com a **HAL simulada** (`esp32_sim`): ToF, motores, encoders, DIP e bateria saem do mundo simulado. Os drivers reais existem em `lib/hal/esp32/`, mas só eram exercitados por programas de bancada (`esp32_drivers` e `esp32_hc_bancada`), que são interativos e não enviam a telemetria do contrato.

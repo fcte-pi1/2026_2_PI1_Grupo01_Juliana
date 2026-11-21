@@ -1,0 +1,8 @@
+Teste 5.32 - Leituras do ToF frontal com a tecla t, madeira a frente, afastada aos poucos
+
+Madeira a cerca de 5 a 6 cm: leitura 64, 65, 65, 65, 64, 65, 65, 67, 68, 68, 70, 72, 74, 78, 82, 98, 101, 118, 131 mm
+(paredes decididas F=1 ate cerca de 131 mm); depois 155, 167, 195, 209, 244, 268, 314, 332, 365, ... ate 669 e 991 mm.
+Sem nada a frente: 1200 mm (fora do alcance, TOF_ALCANCE_MAX_MM).
+Mao a cerca de 5 cm (teste anterior): 121 a 143 mm  -> alvo ruim, descartado.
+Laterais: "--" nas duas (conector do ToF esquerdo com defeito; ver teste 5.2).
+Com a madeira parada e o robo andando, a leitura oscilou cerca de 20 a 30 mm (ex.: 123 122 119 114 114 110 116 125 133 136).

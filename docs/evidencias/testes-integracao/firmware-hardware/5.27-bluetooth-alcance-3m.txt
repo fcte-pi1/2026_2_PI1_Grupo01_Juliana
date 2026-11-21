@@ -1,0 +1,14 @@
+Teste 5.27 - Alcance do Bluetooth (SPP) em relacao ao notebook
+
+Relato da Amanda, sem medicao de distancia nem log de RSSI: a mais de cerca de 3 m do notebook o enlace
+desconecta com facilidade (o monitor em /dev/rfcomm0 perde a conexao e o robo imprime
+"# bt: desconectado (status 0)").
+
+Nao medido ainda: distancia exata da queda, orientacao da antena da ESP32, obstaculos, repeticao.
+Criterio do projeto: estabilidade a 3 m (FIRM-11).
+
+Quedas durante a tecla A (dez avancos), pelo monitor em /dev/rfcomm0, varias vezes seguidas:
+Disconnected ([Errno 5] Input/output error)
+Reconnecting to /dev/rfcomm0     Connected!
+Causa nao identificada: distancia do notebook ou reinicio da placa por queda da bateria; para separar, repetir o A pelo USB
+e procurar "Brownout detector was triggered" ou o banner de boot no meio do movimento.

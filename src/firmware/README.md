@@ -34,10 +34,13 @@ Rodar dentro de `src/firmware`:
 | `pio run` | Compila para a ESP32 (HAL simulada) |
 | `pio run -t upload` | Compila e grava na ESP32 ligada no USB |
 | `pio run -e esp32_drivers -t upload` | Programa de bancada com os drivers reais: gira cada motor por comando na serial e mostra encoders e bateria ([bancada/drivers](bancada/drivers/main.cpp)) |
-| `pio run -e esp32_real -t upload` | Firmware com a HAL real, **só o health-check**, com os ToF reais. Reprova enquanto os ToF laterais não funcionarem |
-| `pio run -e esp32_real_tof_mock -t upload` | O mesmo, com o ToF mockado (leituras fixas): o health-check aprova e serve para o e2e no cenário ideal |
-| `pio run -e esp32_robo -t upload` | **Firmware completo no robô**: HAL real, navegação, movimento pelos motores, health-check, BOOT e telemetria pela serial USB. Anda e para: decide parado no centro da célula, gira e avança. Só com o interruptor da bateria ligado, robô na pista |
-| `pio run -e esp32_robo_tof_mock -t upload` | O mesmo, com o ToF mockado (frontal 300 mm, laterais 120 mm), para andar com os ToF laterais em falta |
+| `pio run -e esp32_real_hc -t upload` | Firmware com a HAL real, **só o health-check**, com os ToF reais. Reprova enquanto os ToF laterais não funcionarem |
+| `pio run -e esp32_real_hc_tof_mock -t upload` | O mesmo, com o ToF mockado (leituras fixas): o health-check aprova e serve para o e2e no cenário ideal |
+| `pio run -e esp32_real -t upload` | **Firmware completo no robô**: HAL real, navegação, movimento pelos motores, health-check, BOOT e telemetria pela serial USB. Anda e para: decide parado no centro da célula, gira e avança. Só com o interruptor da bateria ligado, robô na pista |
+| `pio run -e esp32_real_tof_mock -t upload` | O mesmo, com o ToF mockado (frontal 300 mm, laterais 120 mm), para andar com os ToF laterais em falta |
+| `pio run -e esp32_real_bt -t upload` | O firmware completo com o **Bluetooth real**: a telemetria e os comandos vão pelo SPP "Ratatouille", sem cabo USB ([Bluetooth real](#bluetooth-real-firm-11)) |
+| `pio run -e esp32_real_bt_tof_mock -t upload` | O mesmo, com o ToF mockado |
+| `pio run -e esp32_calibracao_bt -t upload` | A bancada de calibração com as mesmas teclas pelo USB e pelo Bluetooth, para calibrar na pista sem cabo |
 | `pio run -e esp32_calibracao -t upload` | Bancada de calibração no robô montado: avanço de 1 e de 10 células, giros de 90°, 180° e 20 giros, velocidade, stuck e leitura dos ToF com as paredes decididas ([calibração](#calibração-no-robô)) |
 | `pio run -e esp32_sim_boot -t upload` | Igual ao `esp32_sim`, mas com o botão BOOT físico da placa e a navegação a 1 Hz (uma célula por segundo): dá tempo de apertar o BOOT no meio da corrida simulada |
 | `python tools/monitor_comandos.py` | Monitor serial que manda os comandos do contrato por tecla (`l` largar, `i` interromper, `h` health_check, `t` mostra toda a `tel`, `q` sai) e só imprime a `tel` quando o estado muda |
@@ -59,7 +62,7 @@ O [Wokwi](https://wokwi.com) simula a ESP32 e roda o mesmo `firmware.bin` que ir
 
 A saída serial aparece no terminal do VS Code. O Wokwi não simula Bluetooth, mas com a HAL simulada a telemetria sai pela serial. O robô espera o comando `largar` depois do health-check: digite `{"v":1,"cmd":"largar"}` e Enter no terminal serial para ele partir.
 
-### Firmware com a HAL real (`esp32_real`)
+### Firmware com a HAL real (`esp32_real_hc`)
 
 Roda o health-check ao ligar e a cada comando `health_check` da ponte, e envia os `hc_item`, o `hc_resultado` e a `tel` (estado `health-check`, a 1 Hz) pelo contrato v1. Não anda: os motores só giram no autoteste, **com as rodas no ar e o interruptor da bateria ligado**. Sem o interruptor, motores e encoders reprovam. O enlace é a serial USB, então a ponte do notebook abre `/dev/ttyACM0`:
 
@@ -69,7 +72,7 @@ cd src/backend && python -m ponte --porta /dev/ttyACM0
 
 O botão **BOOT** passa pela máquina de estados (`lib/estados`) e pelo detector de gestos (`lib/boot`): toque curto (soltar antes de 1,5 s) apaga o mapa da NVS; toque longo (segurar 1,5 s, com bipe duplo) apaga também os tipos resolvidos. A serial mostra, em linhas com `#`, quais chaves (`mem_mapa` e `mem_tipos`) existem na NVS antes e depois de cada toque. O LED azul e o buzzer (GPIO2 e GPIO12) dão o retorno; o buzzer é tratado como ativo. Para ter dados reais na NVS, rode antes o `esp32_sim`, que grava o mapa e os tipos ao percorrer o labirinto.
 
-O DIP lido nas vias 1 e 2 vira o `tipo_dip` (`00` = 4x4, `01` = 8x4, `10` = 12x4, `11` = inválido, que reprova). Com `esp32_real_tof_mock` o ToF não mede nada: ele devolve leituras fixas.
+O DIP lido nas vias 1 e 2 vira o `tipo_dip` (`00` = 4x4, `01` = 8x4, `10` = 12x4, `11` = inválido, que reprova). Com `esp32_real_hc_tof_mock` o ToF não mede nada: ele devolve leituras fixas.
 
 ### Verificar a serial
 
@@ -141,18 +144,18 @@ Os testes `test_corrida` e `test_execucao` apagam `mem_mapa` e `mem_tipos` na fl
 |---|---|
 | `esp32_drivers` | **`e`** / **`d`** motor esquerdo / direito para a frente, **`E`** / **`D`** para trás, **`p`** para, **`n`** grava e lê um contador na NVS. Imprime `enc_e`, `enc_d` e a bateria a cada 200 ms; cada tecla é repetida como `# comando: x`; qualquer outra tecla para, e os motores param sozinhos depois de 20 s. Serve para ver o sentido das rodas, os pulsos e o estouro do contador |
 | `esp32_hc_bancada` | **`d`** DIP, **`b`** bateria, **`t`** 40 leituras dos ToF, **`r`** reinicia os 3 ToF sem reiniciar a placa, **`m`** autoteste dos motores (rodas no ar), **`h`** health-check completo, **`i`** varredura do I²C, **`x`**, **`f`** e **`v`** diagnóstico do XSHUT e do sensor, **`c`** e **`o`** clock e timeout do I²C |
-| `esp32_calibracao` | ver [Calibração no robô](#calibração-no-robô): **`a`** **`A`** **`g`** **`G`** **`h`** **`Q`** **`v`** **`s`** **`t`** **`p`** |
+| `esp32_calibracao` | ver [Calibração no robô](#calibração-no-robô): **`a`** **`A`** **`g`** **`G`** **`h`** **`Q`** **`v`** **`s`** **`t`** **`p`**, cada uma seguida de Enter |
 
 **4. Firmware do robô** (HAL real; o robô espera o `largar` depois do health-check, igual à simulação):
 
 | Ambiente | Quando usar |
 |---|---|
-| `esp32_real` | só health-check, telemetria e BOOT (não anda). Reprova enquanto os ToF laterais não funcionarem |
-| `esp32_real_tof_mock` | o mesmo com ToF mockado: o health-check aprova |
-| `esp32_robo` | firmware completo, **anda**. Só depois da calibração, com o robô numa pista. Comece com as rodas no ar |
-| `esp32_robo_tof_mock` | o completo com ToF mockado, para andar com os ToF laterais em falta |
+| `esp32_real_hc` | só health-check, telemetria e BOOT (não anda). Reprova enquanto os ToF laterais não funcionarem |
+| `esp32_real_hc_tof_mock` | o mesmo com ToF mockado: o health-check aprova |
+| `esp32_real` | firmware completo, **anda**. Só depois da calibração, com o robô numa pista. Comece com as rodas no ar |
+| `esp32_real_tof_mock` | o completo com ToF mockado, para andar com os ToF laterais em falta |
 
-Teclas e comportamentos comuns ao `esp32_real` e ao `esp32_robo` (por `tools/monitor_comandos.py` ou pelo JSON da ponte):
+Teclas e comportamentos comuns ao `esp32_real_hc` e ao `esp32_real` (por `tools/monitor_comandos.py` ou pelo JSON da ponte):
 - **`l` (`largar`)**: parte, só com o último health-check aprovado.
 - **`i` (`interromper`)**: na corrida para os motores e envia a `falha` com origem `web` e motivo nulo.
 - **`h` (`health_check`)**: só vale parado; roda os 8 itens de novo e relê o DIP.
@@ -173,24 +176,60 @@ Na simulação isso roda igual, pela física do mundo simulado. O PID de velocid
 
 A NVS é gravada a cada célula nova, e no máximo `MEM_GRAVACOES_MAX` (600) vezes por inicialização, para um robô que oscile entre células não gastar a flash. Só a gravação do fim da corrida e da falha continua depois do limite.
 
+### Bluetooth real (FIRM-11)
+
+Na pista o robô anda sem o cabo USB, então a telemetria e os comandos vão pelo Bluetooth clássico (SPP). O driver é `lib/hal/esp32/hal_bt_esp32.cpp` (BluetoothSerial, nome **Ratatouille**), ligado só com `-D BT_REAL`; sem ele continua valendo o enlace pela serial USB (`hal_bt_serial_esp32.cpp`). Os ambientes com Bluetooth usam a partição `huge_app`, porque o app do Bluetooth clássico passa de 1 MB.
+
+| Ambiente | Para quê |
+|---|---|
+| `esp32_real_bt` | firmware completo; a ponte do backend lê o contrato pelo `/dev/rfcomm0` |
+| `esp32_real_bt_tof_mock` | o mesmo com ToF mockado |
+| `esp32_calibracao_bt` | calibração: as teclas funcionam pelo USB **e** pelo Bluetooth |
+
+Pareamento no notebook (Linux). A gravação é sempre pelo USB; depois você tira o cabo:
+```bash
+bluetoothctl
+  power on
+  agent on
+  scan on                      # espere aparecer "Ratatouille" e anote o endereço
+  pair  XX:XX:XX:XX:XX:XX
+  trust XX:XX:XX:XX:XX:XX
+  exit
+sudo rfcomm bind /dev/rfcomm0 XX:XX:XX:XX:XX:XX 1     # cria a porta; a conexão abre quando um programa a abre
+```
+O endereço do Bluetooth é o da base (impresso no upload, `MAC:`) mais 2 no último byte: com `88:57:21:70:7f:0c` fica `88:57:21:70:7f:0e`. Para liberar a porta: `sudo rfcomm release /dev/rfcomm0`. Não use `rfcomm connect` junto com o monitor: o `connect` segura a porta para ele mesmo (`tty-attached`) e o monitor recebe `Device or resource busy`. Use o `bind` e abra a porta com o monitor, que faz a conexão.
+
+**Atenção ao eco do terminal:** o `/dev/rfcomm0` devolve ao robô tudo o que recebe dele, enquanto estiver em modo de terminal comum. Por isso a bancada de calibração só aceita **linhas com uma tecla só** (digite a tecla e Enter) e ignora o resto, e o firmware do robô só aceita os comandos JSON do contrato. Se ainda assim quiser desligar o eco, use `sudo stty -F /dev/rfcomm0 raw -echo` depois do `rfcomm connect`.
+
+**Alcance:** a mais de cerca de 3 m do notebook o enlace desconecta com facilidade (teste 5.27 do 7.5, ainda sem medição nem causa identificada). Fique a menos de 3 m; a ponte reabre a porta sozinha se a conexão cair.
+
+Usar o robô pelo Bluetooth, no lugar do USB (os comandos são os mesmos do [guia](#guia-de-comandos-o-que-rodar-em-cada-situação)):
+```bash
+python tools/monitor_comandos.py /dev/rfcomm0           # teclas l, i, h
+pio device monitor --port /dev/rfcomm0 --baud 115200    # bancada de calibração: as teclas a, A, g, G, ...
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 600 --largar
+python -m ponte --porta /dev/rfcomm0                    # ponte do backend (src/backend)
+```
+No Windows a porta é a `COMx` que o pareamento cria. Se a conexão cair, a ponte reabre sozinha; com o `rfcomm`, abra a porta de novo.
+
 ### Calibração no robô
 
-Grave `esp32_calibracao`, ligue o interruptor da bateria e abra o monitor serial. Cada tecla imprime o que o robô mediu, para você comparar com a régua, o transferidor e o multímetro. A bancada não grava nada na NVS. Qualquer outra tecla (e o Enter) para os motores. Para testar o movimento, o robô precisa estar **no chão**, com espaço livre à frente: o `A` usa 1,8 m.
+Grave `esp32_calibracao` (USB) ou `esp32_calibracao_bt` (USB e Bluetooth), ligue o interruptor da bateria e abra o monitor serial, ou, para calibrar na pista **sem cabo**, grave a versão `_bt`, tire o USB, pareie e abra o `/dev/rfcomm0` ([Bluetooth real](#bluetooth-real-firm-11)). Cada tecla imprime o que o robô mediu, para você comparar com a régua, o transferidor e o multímetro. A bancada não grava nada na NVS. Um Enter sozinho (linha vazia) ou um `p` para os motores. Para testar o movimento, o robô precisa estar **no chão**, com espaço livre à frente: o `A` usa 1,8 m.
 
 | Tecla | O que faz | O que conferir | O que ajustar em `config/robo.h` |
 |---|---|---|---|
-| `a` | avança 1 célula | imprime os pulsos de cada roda (esperado 1416) e a distância pelos pulsos; meça com a régua (180 mm). **Rode primeiro, com o robô seguro** | |
+| `a` | avança 1 célula, com a parada de emergência pelo ToF frontal ligada (lê o ToF a cada 50 ms, como o firmware completo) | imprime os pulsos de cada roda (esperado 1079), a distância pelos pulsos e a leitura frontal ao parar; meça com a régua (180 mm). O avanço para com `FALHOU` a tempo de sobrar 17 mm até a parede da frente (`MOV_FRENTE_SOBRA_MM`), contando o que o robô ainda anda até parar. **Rode primeiro, com o robô seguro**. Se der `FALHOU` com os pulsos poucas unidades abaixo de 1079, a roda parou antes do fim por causa da zona morta do motor | `MOV_KI_POSICAO` (a parcela integral que vence o atrito no fim; suba se a roda ainda parar antes) e `MOV_KP_POSICAO` |
 | `A` | 10 avanços seguidos, com 0,5 s de pausa | meça a distância total na pista: esperado 1800 mm, erro final de até 10 mm | `ENCODER_PULSOS_POR_VOLTA` e `RODA_DIAMETRO_MM`, que definem `MM_POR_PULSO` |
-| `g` / `G` | gira 90° à esquerda / à direita | imprime os pulsos de cada roda (esperado 571); confira o ângulo a olho | |
-| `h` | gira 180° | pulsos esperados 1143 | |
+| `g` / `G` | gira 90° à esquerda / à direita | imprime os pulsos de cada roda (esperado 435); confira o ângulo a olho | |
+| `h` | gira 180° | pulsos esperados 871 | |
 | `Q` | 20 giros de 90° à esquerda, seguidos | o robô deve voltar à posição inicial (5 voltas); meça o desvio com o transferidor: até 5° | `BITOLA_MM` |
-| `v` | as duas rodas a 400 mm/s por 3 s (aceita rodas no ar) | imprime a velocidade medida e, no fim, a média depois da rampa e o erro: `APROVADO` com até 5% nas duas | ganhos do PI em `lib/controle/velocidade.c` |
+| `v` | as duas rodas a 400 mm/s por 3 s, até 1,2 m de percurso: **só com as rodas no ar**, nunca no chão | imprime a velocidade medida e, no fim, a média depois da rampa e o erro: `APROVADO` com até 5% nas duas | ganhos do PI em `lib/controle/velocidade.c` |
 | `s` | gira o motor esquerdo a 300 mm/s por até 8 s | segure a roda: imprime em quanto tempo a trava foi detectada | `MOTOR_TRAVADO_MS`, `MOV_TRAVADO_MS` e `MOV_TRAVADO_POTENCIA` |
 | `t` | 40 leituras dos ToF (a 20 Hz), com as paredes decididas `F E D` | ponha o robô no centro de células com e sem parede e anote as distâncias | `PAREDE_FRENTE_*_MM` e `PAREDE_LADO_*_MM` |
 | `p` | para os motores | | |
 
 Os outros critérios da FIRM-10 não têm tecla própria:
-- **Corredor de 4 células sem encostar:** com os ToF laterais funcionando, rode o `esp32_robo` e ajuste `MOV_KP_CENTRO` e `MOV_GANHO_FRONTAL` (hoje 0, desligados).
+- **Corredor de 4 células sem encostar:** com os ToF laterais funcionando, rode o `esp32_real` e ajuste `MOV_KP_CENTRO` e `MOV_GANHO_FRONTAL` (hoje 0, desligados).
 - **Bateria com erro de até 2%:** na bancada `esp32_drivers`, compare a tensão impressa com o multímetro e ajuste `BATERIA_DIVISOR` e `BATERIA_QUEDA_DIODO_MV`.
 
 Os valores finais vão para `config/robo.h` e para o roteiro de testes de integração (7.5).
@@ -273,7 +312,7 @@ As camadas só dependem das de baixo: `app` usa `navegacao`, `controle` e `senso
 
 ### HAL real e HAL simulada
 
-Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (bateria, motores, encoders, NVS, DIP, botão BOOT, LED e buzzer, e os ToF) e são compilados no CI pelos programas de bancada e pelo firmware completo `esp32_robo` (FIRM-10, #141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
+Cada arquivo da `hal/` é um contrato: diz **o que** o firmware pode pedir ao hardware. A implementação simulada (`hal/sim/`, compilada com `-D HAL_SIMULADA`) responde a esses contratos a partir do mundo simulado: os ToF medem a distância até as paredes do labirinto, os encoders contam o quanto cada roda andou, a bateria descarrega e as rodas travam se o robô bater. Os drivers reais ficam em `hal/esp32/` (bateria, motores, encoders, NVS, DIP, botão BOOT, LED e buzzer, e os ToF) e são compilados no CI pelos programas de bancada e pelo firmware completo `esp32_real` (FIRM-10, #141). Trocar um pelo outro não muda o resto do código: a lógica acima da HAL (por exemplo, a `lib/sensores/` do FIRM-03) é a mesma nos dois casos.
 
 ### Tarefas
 
@@ -326,6 +365,8 @@ A simulação lê labirintos desenhados assim. No [simulador do PC](simulador-na
 - **Pinos:** `config/pinos.h` segue a folha de Controle do esquemático (ARQ-09). O esquemático ainda usa as 5 redes do A4988, mas a TB6612 pede 7 sinais: os dois `IN2` foram para os GPIO livres 15 e 18 (o 18 era o XSHUT do segundo frontal) e precisam de fio na placa. A decisão é da Eletrônica, que também precisa trocar o pull-up de `MOT_EN` (R1) por pull-down, para a TB6612 não ligar os motores no boot.
 - Ainda provisórios em `config/robo.h`: pulsos por volta do encoder e posição x/y dos ToF (Estrutura), as curvas de descarga da bateria (Energia, até os testes da 7.2), os limiares de parede dos ToF (`PAREDE_*_MM`), `EXEC_LEITURA_LATERAL_MM` e os ganhos de centralização (`MOV_KP_CENTRO`, `MOV_GANHO_FRONTAL`, desligados): calibrar na pista com a bancada `esp32_calibracao`.
 - **ToF laterais:** não respondem por defeito no conector da placa (teste 5.2 do 7.5); a centralização e o corredor de 4 células dependem do conserto.
+- **Não verificado na placa:** a tecla `s` (limiar de stuck): a roda segurada sem força não parou o encoder, então o detector não disparou. O stuck no movimento segue coberto pelos testes no simulador.
+- **A validar no labirinto real:** a parada de emergência pelo ToF frontal (`MOV_FRENTE_SOBRA_MM` 17 mm e `MOV_TOF_ATRASO_S`; a primeira versão falhou na pista), os limiares `PAREDE_*_MM` e `MOV_FRENTE_ALVO_MM`, e os testes no chão (`a`, `A`, `g`, `G`, `h`, `Q`).
 - **Bancada (ARQ-09):** montar ESP32 + ToF + motor com encoder + ponte H quando os componentes chegarem; é nela que se confirmam os valores provisórios acima.
 
 > [!WARNING]

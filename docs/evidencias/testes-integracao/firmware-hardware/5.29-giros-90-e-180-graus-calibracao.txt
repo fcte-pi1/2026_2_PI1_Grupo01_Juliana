@@ -1,0 +1,22 @@
+Teste 5.29 - Giros de 90 e 180 graus (teclas g, G, h), bancada esp32_calibracao_bt
+
+A) 840 pulsos por volta, tolerancia de giro de 4 pulsos, esperado +-571 (rodas no ar):
+giro: concluido esq=-570 dir=567 pulsos (esperado 571)
+giro: concluido esq=-574 dir=570 pulsos
+giro: concluido esq=-571 dir=575 pulsos
+giro: concluido esq=-568 dir=574 pulsos (esperado +-571) = 90.0 graus (pedido 90)
+giro: FALHOU esq=568 dir=-576 pulsos (esperado +--571) = 90.2 graus (pedido -90)   <- 5 pulsos fora da tolerancia
+giro: concluido esq=-1139 dir=1140 pulsos (esperado +-1143) = 179.4 graus (pedido 180)
+giro: FALHOU esq=576 dir=-569 pulsos (esperado +--571) = 90.2 graus (pedido -90)
+
+B) Tolerancia de giro de 6 pulsos (rodas no ar), 840 pulsos por volta:
+giro: concluido esq=574 dir=-575 pulsos (esperado +-571) = -90.6 graus (pedido -90)
+giro: concluido esq=565 dir=-570 pulsos (esperado +-571) = -89.4 graus (pedido -90)
+giro: concluido esq=573 dir=-574 pulsos (esperado +-571) = -90.4 graus (pedido -90)
+
+C) Depois de trocar para 640 pulsos por volta, esperado +-435, pelo Bluetooth:
+giro: concluido esq=-438 dir=439 pulsos (esperado +-435) = 90.7 graus (pedido 90)
+giro: concluido esq=441 dir=-433 pulsos (esperado +-435) = -90.4 graus (pedido -90)
+
+Resultado adotado: giro de 90 graus de cerca de 90,7 (g) e -90,4 (G), calculado pelos pulsos dos encoders
+e pela bitola de 92,5 mm.

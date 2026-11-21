@@ -1,0 +1,31 @@
+Teste 5.28 - Avanco de uma celula (tecla a), bancada esp32_calibracao_bt
+
+A) Rodas no ar, primeira versao do controle (so proporcional), 840 pulsos por volta, esperado 1416:
+avanco: FALHOU esq=1398 dir=1393 pulsos (esperado 1416)   <- roda parou ~18 a 20 pulsos antes (zona morta do motor)
+
+B) Depois de acrescentar a parcela integral sem limitar a janela (acumulava o trajeto todo):
+avanco: FALHOU esq=1449 dir=1443 pulsos (esperado 1416) = 183.9 mm pelos pulsos
+avanco: FALHOU esq=1410 dir=1413 pulsos
+avanco: FALHOU esq=1428 dir=1428 pulsos
+(as rodas ficavam indo e voltando no fim; a roda direita parecia nao andar)
+
+C) Integral so no fim da trajetoria, tolerancia de 8 pulsos, 840 pulsos por volta (rodas no ar):
+avanco: concluido esq=1412 dir=1414 pulsos (esperado 1416) = 179.7 mm pelos pulsos
+avanco: concluido esq=1420 dir=1416 pulsos (esperado 1416) = 180.3 mm pelos pulsos
+avanco: concluido esq=1419 dir=1414 pulsos (esperado 1416) = 180.1 mm pelos pulsos
+
+D) No chao, pelo Bluetooth, 840 pulsos por volta:
+avanco: concluido esq=1424 dir=1423 pulsos (esperado 1416) = 181.0 mm pelos pulsos
+avanco: concluido esq=1422 dir=1424 pulsos (esperado 1416) = 180.9 mm pelos pulsos
+Medida com regua feita pela Amanda: o robo andou cerca de 23 a 25 cm, nao 18 cm.
+
+E) Depois de trocar ENCODER_PULSOS_POR_VOLTA de 840 para 640 (esperado 1079):
+avanco: concluido esq=1078 dir=1082 pulsos (esperado 1079) = 180.2 mm pelos pulsos
+avanco: concluido esq=1077 dir=1080 pulsos (esperado 1079) = 180.0 mm pelos pulsos
+avanco: concluido esq=1079 dir=1082 pulsos (esperado 1079) = 180.3 mm pelos pulsos
+Medida com regua feita pela Amanda: cerca de 18 a 20 cm.
+
+F) Com a roda esquerda roçando na bateria (bateria sem fixacao), 640 pulsos por volta:
+avanco: concluido esq=1070 dir=1075 pulsos (esperado 1079) = 179.0 mm pelos pulsos
+avanco: concluido esq=1087 dir=1073 pulsos (esperado 1079) = 180.2 mm pelos pulsos
+avanco: concluido esq=1078 dir=1080 pulsos (esperado 1079) = 180.1 mm pelos pulsos
