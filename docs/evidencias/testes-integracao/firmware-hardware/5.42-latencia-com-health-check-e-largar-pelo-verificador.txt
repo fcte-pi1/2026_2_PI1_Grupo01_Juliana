@@ -1,0 +1,61 @@
+Teste 5.42 - Atraso de entrega pelo Bluetooth com o health_check e o largar mandados pelo verificador (verificar_serial.py no /dev/rfcomm0)
+Logs completos enviados pela Amanda. Firmware esp32_real_bt_tof_mock, ToF mockado, interruptor ligado, USB fora, rodas no ar. As duas rodadas foram
+interrompidas com Ctrl+C (a primeira com cerca de 70 s e a segunda com cerca de 37 s), nao chegaram aos 600 s pedidos.
+Os numeros de "Duracao" e "Taxa media da tel" abaixo saem distorcidos pelas mensagens que o robo guardou desde o boot (o verificador foi corrigido para
+contar so o que chega ao vivo); as linhas "Atraso de entrega", "Maior silencio" e "Resultado" valem como estao.
+
+[Log 1] Verificador com --health-check (manda o health_check 5 s depois de abrir a porta):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao600 --health-check
+Lendo /dev/rfcomm0 por 600 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 77 (tel 9), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  20 s] mensagens: 87 (tel 19), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  30 s] mensagens: 97 (tel 29), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  40 s] mensagens: 107 (tel 39), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  50 s] mensagens: 117 (tel 49), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  60 s] mensagens: 127 (tel 59), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  70 s] mensagens: 137 (tel 69), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+^C
+Interrompido pelo teclado.
+Linhas por tipo:
+  hc_item: 24
+  hc_resultado: 3
+  tel: 73
+  passo: 35
+  falha: 1
+  sucesso: 5
+Taxa média da tel: 0.07 Hz
+Duração (pelo t_ms): 1021.3 s
+Atraso de entrega: p95 0.03 s, máximo 0.12 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 1.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 59
+Quedas do enlace: 0
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Resultado: OK
+
+[Log 2] Verificador com --largar (manda o largar 5 s depois de abrir a porta):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao600 --largar
+Lendo /dev/rfcomm0 por 600 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 95 (tel 27), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  20 s] mensagens: 117 (tel 45), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  30 s] mensagens: 127 (tel 55), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+^C
+Interrompido pelo teclado.
+Linhas por tipo:
+  hc_item: 20
+  hc_resultado: 3
+  tel: 64
+  passo: 42
+  falha: 1
+  sucesso: 6
+Taxa média da tel: 1.73 Hz
+Duração (pelo t_ms): 37.0 s
+Atraso de entrega: p95 0.03 s, máximo 0.05 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 1.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 64
+Quedas do enlace: 0
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Resultado: OK

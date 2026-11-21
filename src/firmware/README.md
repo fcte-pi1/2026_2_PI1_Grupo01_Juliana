@@ -160,6 +160,7 @@ Teclas e comportamentos comuns ao `esp32_real_hc` e ao `esp32_real` (por `tools/
 - **`l` (`largar`)**: parte, só com o último health-check aprovado.
 - **`i` (`interromper`)**: na corrida para os motores e envia a `falha` com origem `web` e motivo nulo.
 - **`h` (`health_check`)**: só vale parado; roda os 8 itens e relê o DIP. É o único jeito de o health-check rodar: ele não roda ao ligar.
+- **Validade do health-check:** o health-check aprovado vale por 10 minutos (`MAQ_HC_VALIDADE_MS`). Passado esse prazo, o `largar` é ignorado até um novo `health_check` aprovado: se o robô esperava a largada, volta ao estado ocioso (LED com a batida breve). Na corrida o prazo não corta, mas vale para largar de novo.
 - **BOOT, toque** na corrida: para e envia a `falha` com origem `boot`. **Curto** parado (menos de 1,5 s): apaga o mapa da NVS (1 bipe). **Longo** (1,5 s ou mais): apaga também os tipos resolvidos (2 bipes). Cada apagamento imprime uma linha `# BOOT curto: ...` ou `# BOOT longo: ...` no monitor. Na HAL simulada (`esp32_sim_boot`) não há buzzer, então o sinal é só essa linha e o LED; o efeito aparece no `inicio` do próximo boot (`nova`) e na `tel` voltando para (0,0). O BOOT só age com o robô parado fora do health-check (esperando o `largar`, em `success` ou em `failed`).
 
 **5. Verificar a telemetria de 10 min:** `python tools/verificar_serial.py --porta /dev/ttyACM0 --duracao 600 --largar` (ver [Verificar a serial](#verificar-a-serial)).
@@ -393,7 +394,6 @@ As duas issues fecham com o que os testes 5.26 a 5.38 do 7.5 mostram. O que fico
 
 **FIRM-11 (Bluetooth real)**
 - **Alcance a 3 m:** o enlace caía a mais de uns 3 m (teste 5.27), mas isso foi antes de descobrir que o ModemManager tomava as linhas da porta. Repetir com a regra de udev, com o robô andando.
-- **Atraso numa corrida completa:** o p95 do atraso de entrega durante uma corrida (`verificar_serial.py --largar`). Os comandos `health_check`, `largar` e `interromper` pelo Bluetooth já foram validados (teste 5.39 do 7.5).
 - **Notebook oficial:** o pareamento, a regra de udev do ModemManager e, se for Windows, a porta `COMx` na ponte.
 - **Pareamento:** depois de regravar a placa o pareamento pode se perder (`Permission denied` no `rfcomm connect`) e precisa ser refeito (`remove`, `pair`, `trust`).
 

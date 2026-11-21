@@ -15,6 +15,10 @@ roda apenas quando o comando `health_check` chega pela telemetria. O `largar` co
 aprovado, então no estado ocioso ele é ignorado. Os toques do BOOT (curto e longo) valem no estado ocioso.
 O LED dá uma batida breve de 100 ms a cada 3 s nesse estado.
 
+O health-check aprovado **vale por 10 minutos** (`MAQ_HC_VALIDADE_MS`): passado o prazo a largada é ignorada até um novo
+`health_check` aprovado, e o robô que esperava a largada volta ao estado ocioso. Na corrida o prazo não corta; vale para largar de novo
+(depois de `success` ou `failed` também).
+
 ## Alternativas descartadas
 
 - **Manter o health-check no boot e só esconder o autoteste dos motores.** O boot ficaria diferente do comando e o
@@ -25,4 +29,5 @@ O LED dá uma batida breve de 100 ms a cada 3 s nesse estado.
 
 - Quem liga o robô precisa pedir o `health_check` antes do `largar` (`monitor_comandos.py`, a ponte ou `verificar_serial.py --health-check`).
 - O `hc_resultado` do boot deixa de existir; o `inicio` (`nova` ou `retomada`) passa a sair no `hc_resultado` do comando.
+- Quem espera mais de 10 min entre o health-check e a largada precisa pedir o health-check de novo.
 - O estado ocioso não aparece no contrato: ele sai como `health-check`, como o aguardando e o reprovado.
