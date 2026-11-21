@@ -51,8 +51,10 @@
 #define MOV_FREIO_MS                250     /* tempo que as rodas ficam freadas na parada de emergência, antes de soltar a ponte H */
 #define MOV_TRAVADO_MS              200     /* roda sem contar pulsos com potência alta: o movimento falha */
 #define MOV_TRAVADO_POTENCIA        600     /* potência a partir da qual a roda parada conta como travada */
-/* Correções pelos ToF: prontas no código e desligadas (ganho 0) até o FIRM-10. */
-#define MOV_KP_CENTRO               0.0f    /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo */
+
+#define MOV_KP_CENTRO               0.05f   /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo (só com as duas paredes) */
+#define MOV_DESVIO_MAX_PULSOS       40.0f   /* limite do desvio entre as rodas na centralização */
+#define MOV_CENTRALIZAR_UMA_PAREDE  0       /* 1 centraliza com uma parede só, pela leitura de MOV_LADO_CENTRADO_MM (não conferida na pista) */
 #define MOV_LADO_CENTRADO_MM        77      /* lateral com parede e o robô centrado (ver a detecção de parede) */
 #define MOV_GANHO_FRONTAL           0.0f    /* 0 a 1: quanto o fim do avanço segue a parede da frente */
 #define MOV_FRENTE_SOBRA_MM         17      /* distância mínima até a parede à frente que a parada de emergência garante (1,7 cm) */

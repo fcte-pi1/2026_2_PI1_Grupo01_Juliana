@@ -63,6 +63,8 @@ void sim_travar_encoder(int motor, bool travado);
 void sim_definir_rodas_no_ar(bool no_ar);
 /* Zona morta do motor: com potência abaixo disto (em módulo) a roda não anda, como o atrito de um motor real. 0 desliga. */
 void sim_definir_zona_morta(int16_t potencia);
+/* A roda anda fator vezes o que os pulsos dizem (diâmetro diferente, atrito): o encoder não vê, o robô entorta. 0 ou 1 desliga. */
+void sim_definir_escala_roda(int motor, float fator);
 void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);

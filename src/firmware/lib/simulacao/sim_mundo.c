@@ -33,6 +33,7 @@ static struct {
     bool motores_habilitados;
     int16_t potencia[2];
     int16_t zona_morta;
+    float escala_roda[2]; /* 0 = 1: quanto a roda realmente anda por pulso contado */
     float velocidade_mm_s[2];
     float pulsos[2];
     bool encoder_travado[2];
@@ -114,10 +115,14 @@ static void passo_1ms(void)
         m.velocidade_mm_s[i] += (alvo - m.velocidade_mm_s[i]) * dt / CONSTANTE_TEMPO_MOTOR_S;
         deslocamento[i] = m.velocidade_mm_s[i] * dt;
     }
+    float fisico[2];
+    for (int i = 0; i < 2; i++) {
+        fisico[i] = deslocamento[i] * (m.escala_roda[i] > 0.0f ? m.escala_roda[i] : 1.0f);
+    }
 
     /* Cinemática da tração diferencial: média das rodas avança, diferença gira. */
-    float avanco = (deslocamento[0] + deslocamento[1]) / 2.0f;
-    float giro = (deslocamento[1] - deslocamento[0]) / BITOLA_MM;
+    float avanco = (fisico[0] + fisico[1]) / 2.0f;
+    float giro = (fisico[1] - fisico[0]) / BITOLA_MM;
     float theta_medio = m.pose.theta_rad + giro / 2.0f;
     float novo_x = m.pose.x_mm + avanco * cosf(theta_medio);
     float novo_y = m.pose.y_mm + avanco * sinf(theta_medio);
@@ -172,6 +177,13 @@ void sim_definir_rodas_no_ar(bool no_ar) { m.rodas_no_ar = no_ar; }
 void sim_motor_habilitar(bool habilitar) { m.motores_habilitados = habilitar; }
 
 void sim_definir_zona_morta(int16_t potencia) { m.zona_morta = potencia; }
+
+void sim_definir_escala_roda(int motor, float fator)
+{
+    if (motor >= 0 && motor < 2) {
+        m.escala_roda[motor] = fator;
+    }
+}
 
 void sim_motor_definir(int motor, int16_t potencia)
 {

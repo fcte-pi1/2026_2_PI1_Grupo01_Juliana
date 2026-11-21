@@ -31,6 +31,8 @@ static struct {
     float andado;              /* pulsos já andados no avanço, média das rodas */
     uint32_t freando_ms;       /* parada de emergência: tempo de freio já passado; 0 = sem freio */
     bool freando;
+    float residuo_avanco;      /* pulsos que o último avanço ficou do alvo; o próximo compensa */
+    float residuo_giro;        /* o mesmo para o giro, com sinal (positivo = à esquerda) */
     float andado_na_leitura;   /* o andado na última leitura do ToF: o robô seguiu andando desde então */
     float integral[MOTOR_QTD]; /* parcela integral da potência de cada roda */
     uint32_t decorrido_ms;
@@ -66,6 +68,10 @@ static void definir_potencia(float esquerda, float direita)
 /* Corta a potência e põe a ponte H em standby até o próximo movimento. */
 static void desligar(mov_estado_t estado)
 {
+    if (estado != MOV_CONCLUIDO) {
+        mov.residuo_avanco = 0.0f;
+        mov.residuo_giro = 0.0f;
+    }
     definir_potencia(0.0f, 0.0f);
     hal_motor_habilitar(false);
     mov.estado = estado;
@@ -124,6 +130,8 @@ void mov_iniciar(void)
     hal_motor_iniciar();
     hal_encoder_iniciar();
     mov.estado = MOV_LIVRE;
+    mov.residuo_avanco = 0.0f;
+    mov.residuo_giro = 0.0f;
 }
 
 bool mov_avancar_celula(void)
@@ -132,6 +140,7 @@ bool mov_avancar_celula(void)
         return false;
     }
     iniciar(TIPO_AVANCO, mov_pulsos_avanco(CELULA_MM), VELOCIDADE_CRUZEIRO_MM_S);
+    mov.total += mov.residuo_avanco;
     return true;
 }
 
@@ -145,6 +154,7 @@ bool mov_girar(int graus)
     if (graus < 0) {
         mov.total = -mov.total;
     }
+    mov.total += mov.residuo_giro;
     return true;
 }
 
@@ -186,12 +196,14 @@ static float erro_lateral_mm(void)
     if (tem_esquerda && tem_direita) {
         return (esquerda - direita) / 2.0f;
     }
+#if MOV_CENTRALIZAR_UMA_PAREDE
     if (tem_esquerda) {
         return esquerda - MOV_LADO_CENTRADO_MM;
     }
     if (tem_direita) {
         return MOV_LADO_CENTRADO_MM - direita;
     }
+#endif
     return 0.0f;
 }
 
@@ -293,6 +305,7 @@ mov_estado_t mov_atualizar(void)
         }
         if (MOV_KP_CENTRO != 0.0f) {
             mov.desvio += MOV_KP_CENTRO * erro_lateral_mm();
+            mov.desvio = fmaxf(-MOV_DESVIO_MAX_PULSOS, fminf(MOV_DESVIO_MAX_PULSOS, mov.desvio));
         }
         if (MOV_GANHO_FRONTAL != 0.0f) {
             corrigir_pela_frente((esquerda + direita) / 2.0f);
@@ -354,6 +367,13 @@ mov_estado_t mov_atualizar(void)
     mov.assentado_ms = no_alvo ? mov.assentado_ms + MOV_PERIODO_MS : 0;
 
     if (mov.assentado_ms >= MOV_ASSENTAR_MS) {
+        /* O que faltou (ou passou) do alvo entra no próximo movimento: o erro de cada um não se soma. */
+        float feito = (esquerda + direita) / 2.0f;
+        if (mov.tipo == TIPO_AVANCO) {
+            mov.residuo_avanco = total - feito;
+        } else {
+            mov.residuo_giro = (mov.total < 0.0f ? -1.0f : 1.0f) * (total - feito);
+        }
         desligar(MOV_CONCLUIDO);
     } else if (mov.decorrido_ms >= MOV_TEMPO_LIMITE_MS) {
         desligar(MOV_FALHOU);
