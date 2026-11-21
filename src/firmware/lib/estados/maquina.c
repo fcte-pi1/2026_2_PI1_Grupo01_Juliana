@@ -2,14 +2,15 @@
 
 void maq_iniciar(maq_t *m)
 {
-    m->estado = MAQ_HEALTH_CHECK;
+    m->estado = MAQ_OCIOSO;
     m->hc_aprovado = false;
 }
 
 /* Parado e fora de tentativa: o health-check novo e os toques do BOOT valem aqui. */
 static bool parado_fora_de_tentativa(maq_estado_t e)
 {
-    return e == MAQ_AGUARDANDO || e == MAQ_REPROVADO || e == MAQ_SUCCESS || e == MAQ_FAILED;
+    return e == MAQ_OCIOSO || e == MAQ_AGUARDANDO || e == MAQ_REPROVADO || e == MAQ_SUCCESS ||
+           e == MAQ_FAILED;
 }
 
 maq_acao_t maq_evento(maq_t *m, maq_evento_t evento)

@@ -28,6 +28,7 @@ extern "C" {
 #endif
 
 typedef enum {
+    MAQ_OCIOSO,        /* ligado, sem health-check: espera o comando health_check */
     MAQ_HEALTH_CHECK,  /* health-check em andamento */
     MAQ_AGUARDANDO,    /* último health-check aprovado, esperando largar */
     MAQ_REPROVADO,     /* último health-check reprovado */
@@ -65,7 +66,7 @@ typedef struct {
     bool hc_aprovado; /* resultado do último health-check concluído */
 } maq_t;
 
-/* Começa em MAQ_HEALTH_CHECK: o primeiro health-check roda no boot. */
+/* Começa em MAQ_OCIOSO: o health-check só roda quando chega o comando health_check. */
 void maq_iniciar(maq_t *m);
 
 maq_acao_t maq_evento(maq_t *m, maq_evento_t evento);

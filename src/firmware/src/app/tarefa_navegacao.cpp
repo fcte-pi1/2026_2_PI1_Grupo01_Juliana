@@ -230,7 +230,6 @@ void tarefa_navegacao(void *parametro)
 #ifdef HAL_SIMULADA
     acompanhar_celula(&corrida.nav);
 #endif
-    health_check();
 
     TickType_t proximo = xTaskGetTickCount();
     int ciclo = 0;

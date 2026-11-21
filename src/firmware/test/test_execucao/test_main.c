@@ -213,6 +213,7 @@ static void test_corrida_completa_andando_chega_ao_objetivo(void)
 {
     iniciar_mundo(LABIRINTO_DEMO);
     corrida_iniciar(&c, ROBO_TIPO_LABIRINTO);
+    corrida_evento(&c, MAQ_EV_CMD_HEALTH_CHECK, &ef); /* o robô liga ocioso e espera o comando */
     sim_mundo_no_centro_da_celula(c.nav.x, c.nav.y, (int)c.nav.direcao);
     corrida_health_check_concluido(&c, true, ROBO_TIPO_LABIRINTO, &ef);
     corrida_evento(&c, MAQ_EV_CMD_LARGAR, &ef);
@@ -273,6 +274,7 @@ static void test_movimento_falhou_vira_falha_automatica_stuck_e_grava_failed(voi
 {
     iniciar_mundo(LABIRINTO_DEMO);
     corrida_iniciar(&c, ROBO_TIPO_LABIRINTO);
+    corrida_evento(&c, MAQ_EV_CMD_HEALTH_CHECK, &ef); /* o robô liga ocioso e espera o comando */
     corrida_health_check_concluido(&c, true, ROBO_TIPO_LABIRINTO, &ef);
     corrida_evento(&c, MAQ_EV_CMD_LARGAR, &ef);
 

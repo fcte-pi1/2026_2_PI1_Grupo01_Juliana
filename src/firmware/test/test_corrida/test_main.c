@@ -53,6 +53,8 @@ static void boot(void)
     (void)hal_tof_iniciar();
     iniciar_nvs();
     corrida_iniciar(&c, ROBO_TIPO_LABIRINTO);
+    /* O robô liga ocioso: o health-check só roda quando o comando chega. */
+    corrida_evento(&c, MAQ_EV_CMD_HEALTH_CHECK, &ef);
     sim_mundo_na_celula(c.nav.x, c.nav.y, (int)c.nav.direcao);
     sensores_iniciar();
 }

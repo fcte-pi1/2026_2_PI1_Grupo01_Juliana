@@ -153,7 +153,6 @@ void setup()
     amostra.em_movimento = false;
 
     mostrar_memoria("ao ligar");
-    rodar_health_check();
 }
 
 void loop()

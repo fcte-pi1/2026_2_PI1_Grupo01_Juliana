@@ -11,9 +11,16 @@
 
 static maq_t m;
 
-void setUp(void)
+/* O robô liga ocioso e só entra no health-check quando o comando chega. */
+static void reiniciar(void)
 {
     maq_iniciar(&m);
+    maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK);
+}
+
+void setUp(void)
+{
+    reiniciar();
 }
 
 void tearDown(void) {}
@@ -27,6 +34,33 @@ static void ate_running(void)
 {
     ate_aguardando();
     maq_evento(&m, MAQ_EV_CMD_LARGAR);
+}
+
+void test_liga_ocioso_e_nao_roda_health_check_sozinho(void)
+{
+    maq_iniciar(&m);
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
+    TEST_ASSERT_EQUAL(CONTRATO_ESTADO_HEALTH_CHECK, maq_estado_contrato(&m));
+    TEST_ASSERT_FALSE(maq_andando(&m));
+    TEST_ASSERT_FALSE(m.hc_aprovado);
+}
+
+void test_ocioso_so_sai_com_o_comando_health_check(void)
+{
+    maq_iniciar(&m);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_LARGAR));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_NENHUMA, maq_evento(&m, MAQ_EV_CMD_INTERROMPER));
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_RODAR_HEALTH_CHECK, maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK));
+    TEST_ASSERT_EQUAL(MAQ_HEALTH_CHECK, m.estado);
+}
+
+void test_toques_do_boot_valem_no_ocioso(void)
+{
+    maq_iniciar(&m);
+    TEST_ASSERT_EQUAL(MAQ_ACAO_APAGAR_MAPA, maq_evento(&m, MAQ_EV_BOOT_CURTO));
+    TEST_ASSERT_EQUAL(MAQ_ACAO_APAGAR_TUDO, maq_evento(&m, MAQ_EV_BOOT_LONGO));
+    TEST_ASSERT_EQUAL(MAQ_OCIOSO, m.estado);
 }
 
 void test_boot_comeca_no_health_check_e_nao_anda(void)
@@ -105,7 +139,7 @@ void test_health_check_pedido_em_success_e_em_failed_roda(void)
     maq_evento(&m, MAQ_EV_CORRIDA_SUCESSO);
     TEST_ASSERT_EQUAL(MAQ_ACAO_RODAR_HEALTH_CHECK, maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK));
 
-    maq_iniciar(&m);
+    reiniciar();
     ate_running();
     maq_evento(&m, MAQ_EV_CORRIDA_FALHA);
     TEST_ASSERT_EQUAL(MAQ_ACAO_RODAR_HEALTH_CHECK, maq_evento(&m, MAQ_EV_CMD_HEALTH_CHECK));
@@ -126,7 +160,7 @@ void test_corrida_termina_em_success_ou_failed(void)
     TEST_ASSERT_EQUAL(CONTRATO_ESTADO_SUCCESS, maq_estado_contrato(&m));
     TEST_ASSERT_FALSE(maq_andando(&m));
 
-    maq_iniciar(&m);
+    reiniciar();
     ate_running();
     maq_evento(&m, MAQ_EV_CORRIDA_FALHA);
     TEST_ASSERT_EQUAL(MAQ_FAILED, m.estado);
@@ -183,7 +217,7 @@ void test_boot_curto_ou_longo_na_corrida_tambem_para(void)
     ate_running();
     TEST_ASSERT_EQUAL(MAQ_ACAO_PARAR_FALHA_BOOT, maq_evento(&m, MAQ_EV_BOOT_CURTO));
 
-    maq_iniciar(&m);
+    reiniciar();
     ate_running();
     TEST_ASSERT_EQUAL(MAQ_ACAO_PARAR_FALHA_BOOT, maq_evento(&m, MAQ_EV_BOOT_LONGO));
 }
@@ -207,12 +241,12 @@ void test_boot_parado_apaga_tambem_depois_de_reprovado_success_e_failed(void)
     maq_evento(&m, MAQ_EV_HC_REPROVADO);
     TEST_ASSERT_EQUAL(MAQ_ACAO_APAGAR_MAPA, maq_evento(&m, MAQ_EV_BOOT_CURTO));
 
-    maq_iniciar(&m);
+    reiniciar();
     ate_running();
     maq_evento(&m, MAQ_EV_CORRIDA_SUCESSO);
     TEST_ASSERT_EQUAL(MAQ_ACAO_APAGAR_TUDO, maq_evento(&m, MAQ_EV_BOOT_LONGO));
 
-    maq_iniciar(&m);
+    reiniciar();
     ate_running();
     maq_evento(&m, MAQ_EV_CORRIDA_FALHA);
     TEST_ASSERT_EQUAL(MAQ_ACAO_APAGAR_MAPA, maq_evento(&m, MAQ_EV_BOOT_CURTO));
@@ -289,6 +323,9 @@ int main(void)
 #endif
 {
     UNITY_BEGIN();
+    RUN_TEST(test_liga_ocioso_e_nao_roda_health_check_sozinho);
+    RUN_TEST(test_ocioso_so_sai_com_o_comando_health_check);
+    RUN_TEST(test_toques_do_boot_valem_no_ocioso);
     RUN_TEST(test_boot_comeca_no_health_check_e_nao_anda);
     RUN_TEST(test_health_check_aprovado_espera_a_largada);
     RUN_TEST(test_health_check_reprovado_nao_parte_com_largar);

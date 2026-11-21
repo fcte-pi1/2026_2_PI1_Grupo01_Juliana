@@ -19,6 +19,15 @@ static void test_health_check_pisca_rapido_200_aceso_200_apagado(void)
     TEST_ASSERT_TRUE(led(MAQ_HEALTH_CHECK, 1400));
 }
 
+static void test_ocioso_da_uma_batida_breve_a_cada_3_s(void)
+{
+    TEST_ASSERT_TRUE(led(MAQ_OCIOSO, 0));
+    TEST_ASSERT_TRUE(led(MAQ_OCIOSO, 99));
+    TEST_ASSERT_FALSE(led(MAQ_OCIOSO, 100));
+    TEST_ASSERT_FALSE(led(MAQ_OCIOSO, 2999));
+    TEST_ASSERT_TRUE(led(MAQ_OCIOSO, 3000));
+}
+
 static void test_aguardando_fica_aceso_o_tempo_todo(void)
 {
     for (uint32_t t = 0; t < 5000; t += 137) {
@@ -106,6 +115,7 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_health_check_pisca_rapido_200_aceso_200_apagado);
+    RUN_TEST(test_ocioso_da_uma_batida_breve_a_cada_3_s);
     RUN_TEST(test_aguardando_fica_aceso_o_tempo_todo);
     RUN_TEST(test_reprovado_pisca_lento_1_s_aceso_1_s_apagado);
     RUN_TEST(test_running_pisca_medio_500_aceso_500_apagado);

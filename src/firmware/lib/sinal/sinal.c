@@ -4,12 +4,14 @@
 #define PISCA_LENTO_MS         2000
 #define PISCA_MEDIO_MS         1000
 #define PISCA_MUITO_RAPIDO_MS  200
+#define PISCA_OCIOSO_MS        3000
+#define PISCA_OCIOSO_ACESO_MS  100
 #define SUCESSO_PISCADA_MS     200
 #define SUCESSO_PISCADAS       3
 
 void sinal_iniciar(sinal_t *s)
 {
-    s->estado = MAQ_HEALTH_CHECK;
+    s->estado = MAQ_OCIOSO;
     s->desde_ms = 0;
     s->iniciado = false;
 }
@@ -30,6 +32,8 @@ bool sinal_led(sinal_t *s, maq_estado_t estado, uint32_t agora_ms)
     uint32_t desde = agora_ms - s->desde_ms; /* aguenta a volta do relógio de 32 bits */
 
     switch (estado) {
+    case MAQ_OCIOSO:
+        return (desde % PISCA_OCIOSO_MS) < PISCA_OCIOSO_ACESO_MS; /* batida breve: ligado, esperando o comando */
     case MAQ_HEALTH_CHECK:
         return metade(desde, PISCA_RAPIDO_MS);
     case MAQ_AGUARDANDO:
