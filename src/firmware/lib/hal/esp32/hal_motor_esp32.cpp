@@ -24,11 +24,11 @@ typedef struct {
     int8_t in1;
     int8_t in2;
     uint8_t canal;
-    bool invertido; /* PROVISÓRIO: ver na bancada */
+    bool invertido; /* confirmado na bancada: o esquerdo gira para trás sem inverter; o direito já gira para a frente */
 } motor_pinos_t;
 
 static const motor_pinos_t MOTORES[MOTOR_QTD] = {
-    /* MOTOR_ESQ */ {PINO_MOT_E_PWM, PINO_MOT_E_IN1, PINO_MOT_E_IN2, CANAL_PWM_E, false},
+    /* MOTOR_ESQ */ {PINO_MOT_E_PWM, PINO_MOT_E_IN1, PINO_MOT_E_IN2, CANAL_PWM_E, true},
     /* MOTOR_DIR */ {PINO_MOT_D_PWM, PINO_MOT_D_IN1, PINO_MOT_D_IN2, CANAL_PWM_D, false},
 };
 
@@ -87,6 +87,21 @@ void hal_motor_definir(motor_id_t motor, int16_t potencia)
     if (iniciado && motor >= 0 && motor < MOTOR_QTD) {
         aplicar(motor, potencia);
     }
+}
+
+void hal_motor_frear(motor_id_t motor)
+{
+    if (!iniciado || motor < 0 || motor >= MOTOR_QTD) {
+        return;
+    }
+    const motor_pinos_t *m = &MOTORES[motor];
+    if (m->in1 >= 0) {
+        digitalWrite(m->in1, HIGH);
+    }
+    if (m->in2 >= 0) {
+        digitalWrite(m->in2, HIGH);
+    }
+    ledcWrite(m->canal, PONTE_H_DUTY_MAX);
 }
 
 /* Entra no próximo hal_motor_definir (a malha chama a 200 Hz). */

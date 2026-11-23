@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api, ErroApi } from '../api/clienteApi'
 import { buscarUltimoHealthCheck, solicitarHealthCheck } from '../api/endpoints'
 import type { TipoLabirinto, UltimoHealthCheck } from '../api/tipos'
+import { ROTULO_COMPONENTE } from '../utils/formatacao'
 import { useAgora } from './useAgora'
 
 const INTERVALO_AGUARDANDO_MS = 1_000
@@ -23,6 +24,23 @@ function escolher(anterior: UltimoHealthCheck | null, chegando: UltimoHealthChec
   if (anterior.concluido_em && !chegando.concluido_em) return anterior
   if (chegando.itens.length < anterior.itens.length && !chegando.concluido_em) return anterior
   return chegando
+}
+
+const VALIDADE_HEALTH_CHECK_MS = 600_000
+
+/** Leitura da bateria quando ela é o único item reprovado, com os 8 itens recebidos; senão, null. */
+export function soBateriaReprovou(resultado: UltimoHealthCheck | null): { valorMv: number | null } | null {
+  if (!resultado || resultado.aprovado !== false) return null
+  const ultimo = new Map<string, { aprovado: boolean; valor: number | null }>()
+  for (const item of resultado.itens ?? []) {
+    ultimo.set(item.componente, { aprovado: item.aprovado === true, valor: item.valor_lido ?? null })
+  }
+  const componentes = Object.keys(ROTULO_COMPONENTE)
+  if (ultimo.size !== componentes.length || !componentes.every((c) => ultimo.has(c))) return null
+  const bateria = ultimo.get('bateria')!
+  if (bateria.aprovado) return null
+  for (const [componente, item] of ultimo) if (componente !== 'bateria' && !item.aprovado) return null
+  return { valorMv: bateria.valor }
 }
 
 function situacao(dados: UltimoHealthCheck | null, pedido: Pedido | null, agora: number) {
@@ -130,5 +148,9 @@ export function useHealthCheck(tipo: TipoLabirinto, habilitado: boolean) {
   const valido = resultado?.valido_ate != null && Date.parse(resultado.valido_ate) >= agora
   const apto = habilitado && !carregando && !erro && !solicitando && !verificando
     && resultado?.aprovado === true && valido && resultado.tipo_dip === tipo
-  return { dados: resultado, erro, carregando, solicitando, verificando, tempoEsgotado, valido, apto, solicitar }
+  const concluidoEm = resultado?.concluido_em ? Date.parse(resultado.concluido_em) : NaN
+  const bateriaBaixa = habilitado && !carregando && !erro && !solicitando && !verificando
+    && Number.isFinite(concluidoEm) && concluidoEm + VALIDADE_HEALTH_CHECK_MS >= agora
+    && resultado?.tipo_dip === tipo ? soBateriaReprovou(resultado) : null
+  return { dados: resultado, erro, carregando, solicitando, verificando, tempoEsgotado, valido, apto, bateriaBaixa, solicitar }
 }

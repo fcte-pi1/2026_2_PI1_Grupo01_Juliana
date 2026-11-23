@@ -10,6 +10,8 @@
  * Os motores só giram por comando, a 30 %. Rodas no ar.
  *   e / E  esquerdo frente / ré      d / D  direito frente / ré
  *   p      para os dois              n      grava e lê um contador na NVS
+ * Qualquer outra tecla também para os motores. Sem comando novo por 20 s, eles param sozinhos.
+ * Cada comando recebido é repetido na saída (# comando: x), para ver se a tecla chegou.
  */
 
 #include <Arduino.h>
@@ -22,9 +24,11 @@
 
 #define POTENCIA_TESTE 300
 #define PERIODO_MS     200
+#define TEMPO_MAX_MS   20000
 
 static bateria_t bateria;
 static int16_t potencia[MOTOR_QTD];
+static uint32_t ultimo_comando_ms;
 
 static void pedir(motor_id_t motor, int16_t valor)
 {
@@ -62,16 +66,27 @@ void setup()
 
 void loop()
 {
-    if (Serial.available()) {
-        switch (Serial.read()) {
+    /* Lê tudo o que chegou: um comando por volta deixaria o p atrás dos outros por 200 ms cada. */
+    while (Serial.available()) {
+        ultimo_comando_ms = millis();
+        int tecla = Serial.read();
+        if (tecla != '\r' && tecla != '\n') {
+            Serial.printf("# comando: %c\n", tecla);
+        }
+        switch (tecla) {
         case 'e': pedir(MOTOR_ESQ, POTENCIA_TESTE); break;
         case 'E': pedir(MOTOR_ESQ, -POTENCIA_TESTE); break;
         case 'd': pedir(MOTOR_DIR, POTENCIA_TESTE); break;
         case 'D': pedir(MOTOR_DIR, -POTENCIA_TESTE); break;
         case 'p': parar(); break;
         case 'n': testar_nvs(); break;
-        default: break;
+        default: parar(); break;
         }
+    }
+    if ((potencia[MOTOR_ESQ] != 0 || potencia[MOTOR_DIR] != 0) &&
+        millis() - ultimo_comando_ms > TEMPO_MAX_MS) {
+        parar();
+        Serial.println("# parada automatica: sem comando por 20 s");
     }
 
     bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());

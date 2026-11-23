@@ -3,7 +3,8 @@ import threading
 from contextlib import asynccontextmanager
 
 from app.config import settings
-from app.routers import back_health, execucoes, health_check, stream, telemetria
+from app.routers import back_health, execucoes, health_check, robo, stream, telemetria
+from app.services.estado_ponte import EstadoPonte
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.ingestao_telemetria import IngestaoTelemetria
 from app.services.monitor_conexao import MonitorConexao
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
         settings.tempo_maximo_execucao_s, settings.validade_health_check_s
     )
     app.state.monitor_conexao = MonitorConexao(settings.limite_sem_sinal_s)
+    app.state.estado_ponte = EstadoPonte()
     app.state.publicador_sse = PublicadorSSE()
     app.state.deduplicador = Deduplicador()
     app.state.relogio_do_robo = RelogioDoRobo()
@@ -73,6 +75,7 @@ app = FastAPI(
 app.include_router(back_health.router)
 app.include_router(execucoes.router)
 app.include_router(health_check.router)
+app.include_router(robo.router)
 app.include_router(telemetria.router)
 app.include_router(stream.router)
 

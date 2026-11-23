@@ -213,3 +213,28 @@ def test_erro_inesperado_na_leitura_reabre_a_porta(tmp_path):
         "CONEXAO aberta /dev/falsa",
         "RX b",
     ]
+
+
+def test_reconectar_fecha_e_reabre_sem_esperar(tmp_path):
+    parar = threading.Event()
+    leitora_ref = []
+
+    class PortaTravada(PortaFalsa):
+        def readline(self):
+            leitora_ref[0].reconectar()
+            raise serial.SerialException("porta fechada")
+
+    primeira = PortaTravada([])
+    segunda = PortaFalsa([b"x\n", b'{"v":1,"tipo":"tel"}\n'], parar)
+    leitora, fila, auditoria, esperas = montar(tmp_path, [primeira, segunda])
+    leitora_ref.append(leitora)
+
+    leitora.rodar(parar)
+
+    assert primeira.fechada
+    assert esperas == []
+    assert [linha for linha, _ in linhas_da_fila(fila)] == ['{"v":1,"tipo":"tel"}']
+    registros = log(auditoria)
+    assert "CONEXAO reconexao pedida pela tela" in registros
+    assert not any(r.startswith("CONEXAO caiu") for r in registros)
+    assert registros.count("CONEXAO aberta /dev/falsa") == 2

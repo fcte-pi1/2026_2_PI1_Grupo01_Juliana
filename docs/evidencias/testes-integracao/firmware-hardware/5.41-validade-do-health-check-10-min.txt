@@ -1,0 +1,85 @@
+Teste 5.41 - Validade de 10 minutos do health-check (monitor_comandos.py no /dev/rfcomm0)
+Log completo enviado pela Amanda. Firmware esp32_real_bt_tof_mock com MAQ_HC_VALIDADE_MS = 600000 (10 min), ToF mockado, interruptor ligado, USB fora, rodas no ar.
+O monitor so mostra a tel quando o estado muda; os buracos de seq entre as linhas abaixo (por exemplo, de 154 a 952) sao tel que ele nao imprime.
+Sequencia de teclas: h, l, l, i, l, i, l, l, l, l, h, l.
+Tempos: o health-check aprovado saiu em t_ms=38114, entao o prazo de 10 min vencia em t_ms=638114. O proximo health-check saiu em t_ms=878235
+(13 min 56 s depois). Os dois largar sem resposta ficaram entre o sucesso de t_ms=80979 e esse health-check (o monitor nao imprime a hora das teclas).
+
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/monitor_comandos.py /dev/rfcomm0
+# /dev/rfcomm0: l=largar i=interromper h=health_check t=tel q=sair
+{"v":1,"boot":34,"seq":0,"t_ms":35482,"tipo":"tel","estado":"health-check","x":3,"y":3,"rumo":"L","bat_mv":7466,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":34,"seq":3,"t_ms":37690,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7455}
+{"v":1,"boot":34,"seq":4,"t_ms":37743,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":34,"seq":5,"t_ms":37796,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":34,"seq":6,"t_ms":37849,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":34,"seq":7,"t_ms":37902,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":34,"seq":8,"t_ms":37955,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":34,"seq":9,"t_ms":38008,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":514}
+{"v":1,"boot":34,"seq":10,"t_ms":38061,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":535}
+{"v":1,"boot":34,"seq":11,"t_ms":38114,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":34,"seq":16,"t_ms":42313,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":34,"seq":17,"t_ms":42365,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7445,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":34,"seq":22,"t_ms":43186,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":34,"seq":27,"t_ms":44126,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":34,"seq":35,"t_ms":45438,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":34,"seq":46,"t_ms":47562,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":52,"t_ms":48489,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":57,"t_ms":49326,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":58,"t_ms":49376,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":34,"seq":59,"t_ms":50171,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7441,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":34,"seq":68,"t_ms":59053,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":34,"seq":69,"t_ms":59171,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7442,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":34,"seq":73,"t_ms":59951,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":34,"seq":79,"t_ms":60870,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":34,"seq":84,"t_ms":61702,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":34,"seq":97,"t_ms":64126,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":103,"t_ms":65066,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":108,"t_ms":65896,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":109,"t_ms":65949,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":34,"seq":110,"t_ms":66777,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7430,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"interromper"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":34,"seq":115,"t_ms":71257,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":34,"seq":116,"t_ms":71359,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7441,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":34,"seq":119,"t_ms":71917,"tipo":"falha","motivo":null,"origem":"web","x":0,"y":1,"componente":null}
+{"v":1,"boot":34,"seq":120,"t_ms":72759,"tipo":"tel","estado":"failed","x":0,"y":1,"rumo":"N","bat_mv":7443,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":34,"seq":123,"t_ms":75176,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":34,"seq":124,"t_ms":75379,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":7450,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":34,"seq":128,"t_ms":76061,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":34,"seq":134,"t_ms":76991,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":34,"seq":141,"t_ms":78306,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":147,"t_ms":79185,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":152,"t_ms":80105,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":153,"t_ms":80157,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":34,"seq":154,"t_ms":80979,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7436,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+# enviado: {"v":1,"cmd":"largar"}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":34,"seq":952,"t_ms":878235,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7450}
+{"v":1,"boot":34,"seq":953,"t_ms":878288,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":34,"seq":954,"t_ms":878341,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":34,"seq":955,"t_ms":878394,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":34,"seq":956,"t_ms":878447,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":34,"seq":957,"t_ms":878500,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":34,"seq":958,"t_ms":878553,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":512}
+{"v":1,"boot":34,"seq":959,"t_ms":878606,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":535}
+{"v":1,"boot":34,"seq":960,"t_ms":878659,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+{"v":1,"boot":34,"seq":961,"t_ms":878979,"tipo":"tel","estado":"health-check","x":3,"y":3,"rumo":"L","bat_mv":7453,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":34,"seq":963,"t_ms":880979,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":7446,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":34,"seq":964,"t_ms":881007,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":34,"seq":969,"t_ms":881886,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":34,"seq":975,"t_ms":882815,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":34,"seq":980,"t_ms":883652,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":34,"seq":994,"t_ms":886291,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":1000,"t_ms":887221,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":1005,"t_ms":888066,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":34,"seq":1006,"t_ms":888118,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":34,"seq":1007,"t_ms":889009,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7436,"vel_mm_s":0,"eixo_longo":null}

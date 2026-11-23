@@ -119,6 +119,43 @@
   color: var(--cor-lateral-suave);
 }
 
+.receptor__estado--aberto {
+  color: #93c5fd;
+}
+
+.receptor__estado--reconectando {
+  color: #fbbf24;
+}
+
+.receptor__estado--sem-ponte {
+  color: #f87171;
+}
+
+.receptor__botao {
+  margin-top: var(--esp-2);
+  padding: var(--esp-1) var(--esp-3);
+  border: 1px solid #24324d;
+  border-radius: var(--raio-md);
+  background: transparent;
+  color: #fff;
+  font-size: var(--texto-xs);
+  cursor: pointer;
+}
+
+.receptor__botao:hover:not(:disabled) {
+  background: #1a2a47;
+}
+
+.receptor__botao:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.receptor__erro {
+  font-size: var(--texto-xs);
+  color: #f87171;
+}
+
 .receptor__detalhe {
   font-size: var(--texto-xs);
   color: var(--cor-lateral-suave);

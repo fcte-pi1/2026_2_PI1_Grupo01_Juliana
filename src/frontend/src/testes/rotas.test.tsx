@@ -185,6 +185,25 @@ describe('rota /execucoes/:id', () => {
     expect(within(screen.getByRole('table')).getByText('Sucesso')).toBeInTheDocument()
   })
 
+  it('oferece voltar à tela principal da execução, em andamento ou já encerrada', async () => {
+    const { unmount } = renderizarRota('/execucoes/e-0042', '08-encerrada-como-falha')
+    await screen.findByRole('heading', { name: 'Execução #0042' })
+    expect(screen.getByRole('link', { name: 'Voltar à execução' })).toHaveAttribute('href', '/?execucao=e-0042')
+    unmount()
+
+    renderizarRota('/execucoes/e-0036')
+    await screen.findByRole('heading', { name: 'Execução #0036' })
+    expect(screen.getByRole('link', { name: 'Voltar à execução' })).toHaveAttribute('href', '/?execucao=e-0036')
+  })
+
+  it('o botão leva à tela principal da execução, com a retomada disponível', async () => {
+    const { router } = renderizarRota('/execucoes/e-0042', '08-encerrada-como-falha')
+    await screen.findByRole('heading', { name: 'Execução #0042' })
+    await userEvent.click(screen.getByRole('link', { name: 'Voltar à execução' }))
+    expect(await screen.findByRole('button', { name: /Retomar tentativa \(2\/3\)/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/')
+  })
+
   it('mostra o trajeto de cada tentativa em separado', async () => {
     renderizarRota('/execucoes/e-0042', '11-concluida-apos-retomada')
     await screen.findByRole('heading', { name: 'Execução #0042' })

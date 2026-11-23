@@ -1,0 +1,11 @@
+# Teste 5.4. Bancada esp32_hc_bancada, 20/11/2026, interruptor ligado, rodas no ar. Comando h.
+health-check: as rodas vao girar, rodas no ar...
+  bateria           ok      valor=7770
+  tof_frontal       ok      valor=1200
+  tof_esquerdo      REPROVA valor=null
+  tof_direito       REPROVA valor=null
+  motor_esquerdo    ok      valor=null
+  motor_direito     ok      valor=null
+  encoder_esquerdo  ok      valor=340
+  encoder_direito   ok      valor=530
+resultado: REPROVADO  tipo_dip=4x4  primeiro reprovado=tof_esquerdo  duracao=815 ms

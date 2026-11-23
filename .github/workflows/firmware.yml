@@ -106,3 +106,33 @@ jobs:
 
       - name: Compilar os drivers reais
         run: pio run -e esp32_drivers
+
+      - name: Compilar a bancada do health-check
+        run: pio run -e esp32_hc_bancada
+
+      - name: Compilar o firmware com a HAL real
+        run: pio run -e esp32_real_hc
+
+      - name: Compilar o firmware com a HAL real e o ToF mockado
+        run: pio run -e esp32_real_hc_tof_mock
+
+      - name: Compilar a simulação com o botão BOOT físico
+        run: pio run -e esp32_sim_boot
+
+      - name: Compilar o firmware completo no robô
+        run: pio run -e esp32_real
+
+      - name: Compilar o firmware completo no robô com o ToF mockado
+        run: pio run -e esp32_real_tof_mock
+
+      - name: Compilar a bancada de calibração
+        run: pio run -e esp32_calibracao
+
+      - name: Compilar o firmware completo com o Bluetooth real
+        run: pio run -e esp32_real_bt
+
+      - name: Compilar o firmware completo com o Bluetooth real e o ToF mockado
+        run: pio run -e esp32_real_bt_tof_mock
+
+      - name: Compilar a bancada de calibração com o Bluetooth
+        run: pio run -e esp32_calibracao_bt

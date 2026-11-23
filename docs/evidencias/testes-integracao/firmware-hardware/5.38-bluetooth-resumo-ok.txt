@@ -1,0 +1,63 @@
+Teste 5.38 - Enlace Bluetooth (SPP) com resumo OK: ModemManager ativo, regra de udev, verificador corrigido para o Bluetooth
+Logs completos enviados pela Amanda. Firmware esp32_real_bt_tof_mock, interruptor desligado (placa pelo USB).
+
+[Log 1] Verificador no /dev/rfcomm0, 60 s:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 16 (tel 7), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  20 s] mensagens: 26 (tel 17), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  30 s] mensagens: 36 (tel 27), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  40 s] mensagens: 46 (tel 37), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  50 s] mensagens: 56 (tel 47), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  60 s] mensagens: 66 (tel 57), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+Linhas por tipo:
+  hc_item: 8
+  hc_resultado: 1
+  tel: 57
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 1.02 Hz
+Duração (pelo t_ms): 56.0 s
+Atraso de entrega: p95 0.03 s, máximo 0.04 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 1.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 9
+Quedas do enlace: 0
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Resultado: OK
+
+[Log 2] Monitor USB (terminal A) durante a mesma rodada:
+# bt: cliente conectado em t=617075 ms
+# bt: t=619074 ms enfileirado=10523 B confirmado=10523 B
+# bt: t=621074 ms enfileirado=10813 B confirmado=10813 B
+# bt: t=623074 ms enfileirado=11103 B confirmado=11103 B
+# bt: t=625074 ms enfileirado=11393 B confirmado=11393 B
+# bt: t=627074 ms enfileirado=11683 B confirmado=11683 B
+# bt: t=629074 ms enfileirado=11973 B confirmado=11973 B
+# bt: t=631074 ms enfileirado=12263 B confirmado=12263 B
+# bt: t=633074 ms enfileirado=12553 B confirmado=12553 B
+# bt: t=635074 ms enfileirado=12843 B confirmado=12843 B
+# bt: t=637074 ms enfileirado=13133 B confirmado=13133 B
+# bt: t=639074 ms enfileirado=13423 B confirmado=13423 B
+# bt: t=641074 ms enfileirado=13713 B confirmado=13713 B
+# bt: t=643074 ms enfileirado=14003 B confirmado=14003 B
+# bt: t=645074 ms enfileirado=14293 B confirmado=14293 B
+# bt: t=647074 ms enfileirado=14583 B confirmado=14583 B
+# bt: t=649074 ms enfileirado=14873 B confirmado=14873 B
+# bt: t=651074 ms enfileirado=15163 B confirmado=15163 B
+# bt: t=653074 ms enfileirado=15455 B confirmado=15455 B
+# bt: t=655074 ms enfileirado=15747 B confirmado=15747 B
+# bt: t=657074 ms enfileirado=16039 B confirmado=16039 B
+# bt: t=659074 ms enfileirado=16331 B confirmado=16331 B
+# bt: t=661074 ms enfileirado=16623 B confirmado=16623 B
+# bt: t=663074 ms enfileirado=16915 B confirmado=16915 B
+# bt: t=665074 ms enfileirado=17207 B confirmado=17207 B
+# bt: t=667074 ms enfileirado=17499 B confirmado=17499 B
+# bt: t=669074 ms enfileirado=17791 B confirmado=17791 B
+# bt: t=671074 ms enfileirado=18083 B confirmado=18083 B
+# bt: t=673074 ms enfileirado=18375 B confirmado=18375 B
+# bt: desconectado (status 0)

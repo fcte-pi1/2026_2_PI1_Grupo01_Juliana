@@ -1,0 +1,33 @@
+# Teste 5.7. Gestos do botão BOOT (debounce, toque na corrida, toque curto e toque longo), na ESP32 real, 20/11/2026.
+# Comando: pio test -e esp32_sim -f test_boot --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# Transcrição da saída do terminal (print 5.7-gestos-boot-esp32.png). A suíte é gravada na placa e o resultado volta pela serial USB.
+
+Collected 19 tests
+Processing test_boot in esp32_sim environment
+Building & Uploading...
+Testing...
+test/test_boot/test_main.c:204: test_sem_apertar_nao_sai_nada   [PASSED]
+test/test_boot/test_main.c:205: test_toque_curto_sai_ao_soltar  [PASSED]
+test/test_boot/test_main.c:206: test_toque_curto_so_sai_uma_vez [PASSED]
+test/test_boot/test_main.c:207: test_um_milissegundo_antes_do_limite_ainda_e_toque_curto     [PASSED]
+test/test_boot/test_main.c:208: test_toque_longo_sai_com_o_botao_ainda_apertado [PASSED]
+test/test_boot/test_main.c:209: test_toque_longo_sai_no_instante_do_limite      [PASSED]
+test/test_boot/test_main.c:210: test_soltar_depois_do_toque_longo_nao_gera_toque_curto      [PASSED]
+test/test_boot/test_main.c:211: test_toque_longo_sai_uma_vez_so_mesmo_segurando_mais        [PASSED]
+test/test_boot/test_main.c:212: test_em_corrida_o_toque_sai_ao_apertar  [PASSED]
+test/test_boot/test_main.c:213: test_em_corrida_soltar_ou_segurar_nao_gera_mais_nada        [PASSED]
+test/test_boot/test_main.c:214: test_aperto_durante_a_corrida_solto_depois_dela_nao_vira_curto      [PASSED]
+test/test_boot/test_main.c:215: test_aperto_antes_da_corrida_vira_toque_quando_a_corrida_comeca_so_no_proximo_aperto   [PASSED]
+test/test_boot/test_main.c:216: test_ruido_curto_e_ignorado     [PASSED]
+test/test_boot/test_main.c:217: test_pulso_menor_que_o_debounce_e_ignorado      [PASSED]
+test/test_boot/test_main.c:218: test_aperto_com_ruido_no_inicio_ainda_conta_como_um_toque   [PASSED]
+test/test_boot/test_main.c:219: test_dois_toques_curtos_seguidos_dao_dois_gestos       [PASSED]
+test/test_boot/test_main.c:220: test_funciona_na_virada_do_contador_de_32_bits [PASSED]
+test/test_boot/test_main.c:221: test_botao_da_hal_simulada_da_toque_curto       [PASSED]
+test/test_boot/test_main.c:222: test_botao_da_hal_simulada_da_toque_longo       [PASSED]
+test/test_boot/test_main.c:223: test_botao_da_hal_simulada_para_a_corrida       [PASSED]
+esp32_sim:test_boot [PASSED] Took 10.10 seconds
+20 test cases: 20 succeeded in 00:00:10.099
+
+# Mesma suíte no PC: pio test -e native -f test_boot
+20 test cases: 20 succeeded

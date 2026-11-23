@@ -10,10 +10,13 @@
  * Toque curto do BOOT (FIRM-09) apaga só o mapa; o longo apaga as duas.
  *
  * Gravar só com o robô já na célula (ADR-012); quem chama escolhe o momento.
+ * Cada gravação do mapa escreve ~1,2 KB na flash: nunca chamar mem_gravar em laço. A gravação por
+ * célula nova para depois de MEM_GRAVACOES_MAX por inicialização (só as forçadas continuam).
  * Se o nav_estado_t mudar, suba MEM_VERSAO.
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "nav.h"
 #include "telemetria.h"
@@ -32,12 +35,15 @@ typedef enum {
     MEM_RETOMADA,  /* mapa e posição gravados: hc_resultado com inicio "retomada" */
 } mem_inicio_t;
 
+/* Gravações do mapa desde a última mem_carregar. */
+uint32_t mem_gravacoes(void);
+
 /* Grava as duas chaves. A de tipos só é regravada se mudou. */
 bool mem_gravar(const nav_estado_t *nav, contrato_estado_t estado);
 
 /*
  * Grava se a célula mudou desde a última gravada, ou se forcar (fim da
- * corrida na mesma célula). Sem mudança, não escreve e devolve true.
+ * corrida na mesma célula). Passando de MEM_GRAVACOES_MAX, só grava se forcar. Sem mudança, não escreve e devolve true.
  * Em sucesso, *celula_x e *celula_y passam a ser a célula gravada.
  */
 bool mem_gravar_celula(const nav_estado_t *nav, contrato_estado_t estado, int8_t *celula_x,

@@ -24,3 +24,5 @@ No PR #209 (BACK-04), a discussão sobre contar o tempo da tentativa a partir de
 - RF39, RNF06, RNF-B06, UC30, 4.4, 4.4.1, Glossário e `src/README.md` revisados na issue #230.
 - A ponte serial (BACK-08) escreve na serial só os comandos do contrato.
 - O firmware espera o `largar` depois do health-check aprovado.
+
+> **Atualização (21/11/2026):** a validade do health-check passou de 7 para 10 minutos, igual no contrato, no back-end e no firmware ([ADR-022](022-health-check-vale-10-minutos.md)).

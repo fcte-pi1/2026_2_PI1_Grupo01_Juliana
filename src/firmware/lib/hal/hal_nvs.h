@@ -23,6 +23,9 @@ bool hal_nvs_ler(const char *chave, void *dados, size_t tamanho);
 
 bool hal_nvs_apagar(const char *chave);
 
+/* true se a chave existe, qualquer que seja o tamanho do bloco. */
+bool hal_nvs_existe(const char *chave);
+
 #ifdef __cplusplus
 }
 #endif

@@ -31,6 +31,14 @@ paths:
           schema:
             $ref: "#/components/schemas/Labirinto"
           example: "4x4"
+        - name: configuracao
+          in: query
+          required: false
+          description: Filtra pelo rótulo de configuração de paredes que o operador informou ao abrir a execução.
+          schema:
+            type: string
+            maxLength: 60
+          example: "paredes A"
         - name: limite
           in: query
           required: false
@@ -114,7 +122,7 @@ paths:
       summary: Registra uma nova execução, contando 1/3 tentativas.
       description: >
         O operador informa o labirinto. Exige um health-check aprovado, concluído
-        há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409
+        há no máximo 10 minutos e com o DIP igual ao labirinto; sem ele, responde 409
         e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio
         de 10 minutos e cria a tentativa 1 já em running, com o comando `largar`
         para o robô. Se já houver execução em andamento, ela é cancelada.
@@ -149,7 +157,7 @@ paths:
       summary: Health-check mais recente, pré-requisito da largada
       description: >
         A tela mostra os itens e, quando aprovado, até quando ele libera a
-        largada (valido_ate, 7 minutos depois da conclusão).
+        largada (valido_ate, 10 minutos depois da conclusão).
       responses:
         "200":
           description: Há pelo menos um health-check.
@@ -162,7 +170,7 @@ paths:
                 tipo_dip: "4x4"
                 iniciado_em: "2026-10-07T13:58:00-03:00"
                 concluido_em: "2026-10-07T13:58:02-03:00"
-                valido_ate: "2026-10-07T14:05:02-03:00"
+                valido_ate: "2026-10-07T14:08:02-03:00"
                 itens:
                   - componente: bateria
                     aprovado: true
@@ -180,7 +188,7 @@ paths:
       summary: Pedir ao robô um novo health-check
       description: >
         O operador pede um novo health-check, por exemplo depois de um reprovado,
-        de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao
+        de trocar o DIP ou de passar a validade de 10 minutos. A resposta ao
         POST /telemetria passa a incluir o comando `health_check` até o robô
         enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada.
         O resultado aparece em GET /health-check/ultimo e na stream
@@ -222,6 +230,148 @@ paths:
                     event: health_check
                     data: {"tipo":"health_check","aprovado":null,"tipo_dip":null,"iniciado_em":"2026-10-07T13:58:00-03:00","concluido_em":null,"valido_ate":null,"itens":[{"componente":"bateria","aprovado":true,"valor_lido":7840}]}
 
+  /robo/estado:
+    get:
+      operationId: buscarEstadoRobo
+      tags: [robo]
+      summary: Último sinal do robô e estado do enlace da ponte
+      description: >
+        Instante da última linha que a ponte entregou e há quantos segundos foi, mais o
+        estado do enlace que a ponte relata (conectada, reconectando ou desligada, esta
+        última quando não há relato nos últimos 15 s). Sem nenhuma linha desde que a API
+        subiu, os campos do sinal vêm nulos. O robô parado não envia nada, então o
+        silêncio longo não prova desconexão.
+      responses:
+        "200":
+          description: Estado do último sinal e do enlace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstadoRobo"
+              example:
+                ultimo_sinal_em: "2026-10-07T13:58:02-03:00"
+                segundos_sem_sinal: 4.2
+                ponte: conectada
+                porta: /dev/rfcomm0
+                reconexao_pedida: false
+
+  /robo/ponte:
+    post:
+      operationId: relatarPonte
+      tags: [robo]
+      summary: Relato periódico da ponte sobre o enlace
+      description: >
+        A ponte informa a cada poucos segundos se a porta serial está aberta ou sendo
+        reaberta. A resposta traz reconectar verdadeiro uma única vez depois que a tela
+        pediu a reconexão.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RelatoPonte"
+      responses:
+        "200":
+          description: Relato registrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RespostaRelatoPonte"
+
+  /robo/reconectar:
+    post:
+      operationId: pedirReconexao
+      tags: [robo]
+      summary: Pedir que a ponte reabra a porta do robô
+      description: >
+        Registra o pedido; a ponte o recebe no próximo relato e reabre a porta serial.
+        Recusa com 409 quando a ponte não relata há mais de 15 s.
+      responses:
+        "202":
+          description: Pedido registrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidoReconexao"
+        "409":
+          description: A ponte não está ligada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErroNaoEncontrado"
+              example:
+                detail: A ponte não está ligada.
+
+  /execucoes/campanha:
+    get:
+      operationId: resumoDaCampanha
+      tags: [execucoes]
+      summary: Resumo das execuções para a campanha de corridas
+      description: >
+        Total, concluídas, canceladas, taxa de sucesso, tempo médio e máximo, quantas concluídas
+        ficaram abaixo de 10 min e o mesmo por configuração de paredes. Aceita os filtros do histórico.
+      parameters:
+        - name: tipo_labirinto
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Labirinto"
+        - name: configuracao
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: Resumo do filtro.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumoCampanha"
+  /execucoes/exportar:
+    get:
+      operationId: exportarExecucoes
+      tags: [execucoes]
+      summary: Exporta as execuções em CSV ou JSON, uma linha por tentativa
+      description: >
+        Colunas: execucao_id, tentativa_id, attempt_index, tipo_labirinto, configuracao, observacao,
+        status_execucao, status_tentativa, tipo_inicio, tipo_dip, iniciada_em, encerrada_em, tempo_s,
+        tempo_total_s, velocidade_media, bateria_inicial, bateria_final, consumo_bateria_pct,
+        motivo_falha, origem_falha, celula_x, celula_y, componente, observacao_falha, passos.
+        Aceita os filtros do histórico. A resposta vem como arquivo para baixar.
+      parameters:
+        - name: formato
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [csv, json]
+            default: csv
+        - name: tipo_labirinto
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Labirinto"
+        - name: configuracao
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: Arquivo com as linhas da exportação.
+          content:
+            text/csv:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
   /execucoes/em-andamento:
     get:
       operationId: buscarExecucaoEmAndamento
@@ -357,13 +507,19 @@ paths:
       tags: [execucoes]
       summary: Abrir a tentativa seguinte depois de uma falha
       description: >
-        O pedido não tem corpo. Em caso de sucesso a resposta é o retorno
+        O corpo é opcional (ignorar_bateria). Em caso de sucesso a resposta é o retorno
         da tentativa 2 ou 3, já em running, com o comando `largar` para o robô.
         Recusa com 409 e não cria tentativa quando já existe tentativa aberta,
         quando as três já foram usadas, quando a execução está cancelada ou
-        quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
+        quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
       parameters:
         - $ref: "#/components/parameters/ExecucaoId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetomarTentativa"
       responses:
         "201":
           description: Nova tentativa aberta. attempt_index é 2 ou 3.
@@ -588,7 +744,7 @@ components:
                 motivo: execucao_cancelada
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
             health-check-expirado:
-              summary: O último health-check aprovado foi concluído há mais de 7 minutos.
+              summary: O último health-check aprovado foi concluído há mais de 10 minutos.
               value:
                 motivo: health_check_expirado
                 ocorrida_em: "2026-10-07T14:12:00-03:00"
@@ -1094,7 +1250,7 @@ components:
       description: >
         Os motivos health_check_* e dip_divergente valem para Nova execução e
         Retomar: falta um health-check, o último foi reprovado, foi concluído há
-        mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+        mais de 10 minutos ou o DIP lido não é o labirinto escolhido.
       enum:
         - tentativa_aberta
         - limite_3
@@ -1116,6 +1272,32 @@ components:
       properties:
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
+        configuracao:
+          type: string
+          maxLength: 60
+          nullable: true
+          description: >
+            Rótulo livre da configuração de paredes (por exemplo, "paredes A"), para agrupar as corridas
+            de uma campanha. Opcional; espaços nas pontas saem e vazio vira nulo.
+        observacao:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Anotação livre do operador, por exemplo o caso de teste. Opcional.
+        ignorar_bateria:
+          type: boolean
+          default: false
+          description: >
+            O operador confirmou largar com a bateria abaixo do corte seguro. Só vale quando a
+            bateria é o único item reprovado do health-check, com os 8 itens recebidos; qualquer
+            outro item reprovado ou ausente continua recusando com health_check_reprovado.
+    RetomarTentativa:
+      type: object
+      properties:
+        ignorar_bateria:
+          type: boolean
+          default: false
+          description: Mesma confirmação de Nova execução, para a retomada.
     RetornoNovaExecucao:
       type: object
       description: >
@@ -1155,6 +1337,51 @@ components:
         valor_lido:
           type: number
           nullable: true
+    EstadoRobo:
+      type: object
+      properties:
+        ultimo_sinal_em:
+          type: [string, "null"]
+          format: date-time
+        segundos_sem_sinal:
+          type: [number, "null"]
+          minimum: 0
+        ponte:
+          type: string
+          enum: [conectada, reconectando, desligada]
+          default: desligada
+        porta:
+          type: [string, "null"]
+        reconexao_pedida:
+          type: boolean
+          default: false
+
+    RelatoPonte:
+      type: object
+      required: [estado, porta]
+      properties:
+        estado:
+          type: string
+          enum: [conectada, reconectando]
+        porta:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    RespostaRelatoPonte:
+      type: object
+      required: [reconectar]
+      properties:
+        reconectar:
+          type: boolean
+
+    PedidoReconexao:
+      type: object
+      required: [aceito]
+      properties:
+        aceito:
+          type: boolean
+
     UltimoHealthCheck:
       type: object
       description: >
@@ -1360,6 +1587,7 @@ components:
         linhas novas, não por este POST de criação.
       required:
         - execucao_id
+        - numero
         - tipo_labirinto
         - status
         - tentativas_usadas
@@ -1371,6 +1599,10 @@ components:
         execucao_id:
           type: string
           format: uuid
+        numero:
+          type: integer
+          minimum: 1
+          description: Número sequencial crescente da execução (#0001, #0002...).
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
@@ -1389,6 +1621,14 @@ components:
         tempo_total_s:
           type: number
           nullable: true
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração de paredes informado ao abrir a execução.
+        observacao:
+          type: string
+          nullable: true
+          description: Anotação do operador ao abrir a execução.
         variacao_melhor_tempo_pct:
           type: number
           nullable: true
@@ -1426,11 +1666,15 @@ components:
 
     ResumoExecucao:
       type: object
-      required: [execucao_id, tipo_labirinto, status, tentativas_usadas, iniciada_em]
+      required: [execucao_id, numero, tipo_labirinto, status, tentativas_usadas, iniciada_em]
       properties:
         execucao_id:
           type: string
           format: uuid
+        numero:
+          type: integer
+          minimum: 1
+          description: Número sequencial crescente da execução (#0001, #0002...), mostrado na tela no lugar do UUID.
         tipo_labirinto:
           $ref: "#/components/schemas/Labirinto"
         status:
@@ -1452,11 +1696,81 @@ components:
         velocidade_media:
           type: number
           nullable: true
-          description: Velocidade média da última tentativa, em metros por segundo.
+          description: Velocidade média da última tentativa, em metros por segundo, com três casas.
         consumo_bateria:
           type: number
           nullable: true
           description: Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida.
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração de paredes informado ao abrir a execução.
+        observacao:
+          type: string
+          nullable: true
+          description: Anotação do operador ao abrir a execução.
+
+    ResumoConfiguracao:
+      type: object
+      required: [total, concluidas]
+      properties:
+        configuracao:
+          type: string
+          nullable: true
+          description: Rótulo de configuração; nulo agrupa as execuções sem rótulo.
+        total:
+          type: integer
+          minimum: 0
+        concluidas:
+          type: integer
+          minimum: 0
+        taxa_sucesso_pct:
+          type: number
+          nullable: true
+          description: Concluídas sobre as encerradas (concluídas e canceladas), em porcentagem.
+        tempo_medio_s:
+          type: number
+          nullable: true
+        tempo_maximo_s:
+          type: number
+          nullable: true
+
+    ResumoCampanha:
+      type: object
+      description: >
+        Resumo das execuções do filtro, para a campanha de corridas (FIRM-13). Sucesso é a execução
+        concluída; a taxa só conta as já encerradas.
+      required: [total, concluidas, canceladas, em_andamento, concluidas_abaixo_de_10_min, por_configuracao]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+        concluidas:
+          type: integer
+          minimum: 0
+        canceladas:
+          type: integer
+          minimum: 0
+        em_andamento:
+          type: integer
+          minimum: 0
+        taxa_sucesso_pct:
+          type: number
+          nullable: true
+        tempo_medio_s:
+          type: number
+          nullable: true
+        tempo_maximo_s:
+          type: number
+          nullable: true
+        concluidas_abaixo_de_10_min:
+          type: integer
+          minimum: 0
+          description: Execuções concluídas com tempo total abaixo de 600 s.
+        por_configuracao:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResumoConfiguracao"
 
     EventoSSE:
       description: >
@@ -1632,6 +1946,12 @@ components:
             pelo operador em Nova execução ou Retomar. health_check: o operador
             pediu um novo health-check.
           enum: [interromper, largar, health_check]
+        forcar_bateria:
+          type: boolean
+          enum: [true]
+          description: >
+            Só no largar: o operador confirmou largar com a bateria abaixo do corte. O campo
+            não vem nos demais comandos.
     EntradaPonte:
       type: object
       required: [linha, recebido_em]

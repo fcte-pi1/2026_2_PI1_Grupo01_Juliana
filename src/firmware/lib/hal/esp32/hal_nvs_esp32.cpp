@@ -57,4 +57,6 @@ bool hal_nvs_apagar(const char *chave)
     return prefs.remove(chave);
 }
 
+bool hal_nvs_existe(const char *chave) { return aberta && chave != nullptr && prefs.isKey(chave); }
+
 #endif /* ARDUINO */

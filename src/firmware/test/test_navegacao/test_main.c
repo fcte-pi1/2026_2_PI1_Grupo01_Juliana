@@ -3,6 +3,7 @@
  * Arduino na pasta navegacao/, este ambiente quebra.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <unity.h>
 
@@ -1123,6 +1124,248 @@ static void test_direcao_depois_de_cada_acao(void)
     TEST_ASSERT_EQUAL_INT(NAV_SUL, nav_direcao_apos(NAV_SUL, NAV_ACAO_FRENTE));
 }
 
+/*
+ * Equivalência do flood fill (#224): a versão por varreduras de Harrison [9]
+ * fica aqui como referência, e o mapa inteiro de distâncias de nav_recalcular
+ * é comparado com ela célula a célula. Região e objetivos são cópias das
+ * regras static do nav.c (D6).
+ */
+static bool regiao_da_referencia(const nav_estado_t *nav, int x, int y)
+{
+    if (x < 0 || y < 0) {
+        return false;
+    }
+    int longo = nav->tipo == NAV_TIPO_12X4 ? 12 : nav->tipo == NAV_TIPO_8X4 ? 8 : 4;
+    bool longo_x = x < longo && y < 4;
+    bool longo_y = x < 4 && y < longo;
+    switch (nav->orientacao) {
+    case NAV_ORIENTACAO_LONGO_X:
+        return longo_x;
+    case NAV_ORIENTACAO_LONGO_Y:
+        return longo_y;
+    default:
+        return longo_x || longo_y;
+    }
+}
+
+static bool objetivo_da_referencia(const nav_estado_t *nav, int x, int y)
+{
+    if (!regiao_da_referencia(nav, x, y)) {
+        return false;
+    }
+    int ultimo_longo = (nav->tipo == NAV_TIPO_12X4 ? 12 : nav->tipo == NAV_TIPO_8X4 ? 8 : 4) - 1;
+    return (x == ultimo_longo && y == 3) || (x == 3 && y == ultimo_longo);
+}
+
+/* Varreduras da matriz inteira até nada mudar, sem tocar no estado. */
+static void recalcular_por_varreduras(const nav_estado_t *nav,
+                                      uint8_t referencia[NAV_MAX_CELULAS][NAV_MAX_CELULAS])
+{
+    static const int passo_x[4] = {0, 1, 0, -1};
+    static const int passo_y[4] = {1, 0, -1, 0};
+    for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+        for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+            referencia[x][y] = objetivo_da_referencia(nav, x, y) ? 0 : NAV_DIST_INFINITA;
+        }
+    }
+
+    bool mudou = true;
+    while (mudou) {
+        mudou = false;
+        for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+            for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+                if (!regiao_da_referencia(nav, x, y) || objetivo_da_referencia(nav, x, y)) {
+                    continue;
+                }
+                uint8_t menor = NAV_DIST_INFINITA;
+                for (int d = NAV_NORTE; d <= NAV_OESTE; d++) {
+                    if (!nav_acessivel(nav, x, y, (nav_direcao_t)d)) {
+                        continue;
+                    }
+                    uint8_t vizinha = referencia[x + passo_x[d]][y + passo_y[d]];
+                    if (vizinha < menor) {
+                        menor = vizinha;
+                    }
+                }
+                uint8_t valor = menor == NAV_DIST_INFINITA ? NAV_DIST_INFINITA : (uint8_t)(menor + 1);
+                if (valor != referencia[x][y]) {
+                    referencia[x][y] = valor;
+                    mudou = true;
+                }
+            }
+        }
+    }
+}
+
+static void conferir_equivalencia(nav_estado_t *nav)
+{
+    uint8_t referencia[NAV_MAX_CELULAS][NAV_MAX_CELULAS];
+    nav_recalcular(nav);
+    recalcular_por_varreduras(nav, referencia);
+    for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+        for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+            char mensagem[48];
+            snprintf(mensagem, sizeof mensagem, "distancia diferente em x = %d, y = %d", x, y);
+            TEST_ASSERT_EQUAL_UINT8_MESSAGE(referencia[x][y], nav->mapa[x][y].distancia, mensagem);
+        }
+    }
+}
+
+/* Parede entre (x, y) e (x, y + 1), gravada nos dois lados. */
+static void parede_ao_norte(nav_estado_t *nav, int x, int y)
+{
+    nav->mapa[x][y].paredes |= NAV_PAREDE_N;
+    nav->mapa[x][y + 1].paredes |= NAV_PAREDE_S;
+}
+
+/* Parede entre (x, y) e (x + 1, y), gravada nos dois lados. */
+static void parede_a_leste(nav_estado_t *nav, int x, int y)
+{
+    nav->mapa[x][y].paredes |= NAV_PAREDE_L;
+    nav->mapa[x + 1][y].paredes |= NAV_PAREDE_O;
+}
+
+static void test_equivalencia_no_labirinto_vazio_4x4(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    conferir_equivalencia(&nav);
+}
+
+static void test_equivalencia_no_labirinto_vazio_8x4(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_8X4);
+    conferir_equivalencia(&nav);
+}
+
+static void test_equivalencia_no_labirinto_vazio_12x4(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_12X4);
+    conferir_equivalencia(&nav);
+}
+
+/* A serpentina do test_desempenho_nav: 12x4, orientação indefinida. */
+static void test_equivalencia_na_serpentina_12x4(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_12X4);
+    for (int y = 0; y < NAV_MAX_CELULAS - 1; y++) {
+        int largura = y < 3 ? NAV_MAX_CELULAS : 4;
+        int passagem = y % 2 == 0 ? largura - 1 : 0;
+        for (int x = 0; x < largura; x++) {
+            if (x != passagem) {
+                parede_ao_norte(&nav, x, y);
+            }
+        }
+    }
+    conferir_equivalencia(&nav);
+    TEST_ASSERT_EQUAL_INT(NAV_ORIENTACAO_INDEFINIDA, nav_orientacao(&nav));
+}
+
+static void conferir_orientacao_forcada(nav_tipo_t tipo, nav_orientacao_t orientacao)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, tipo);
+    nav.orientacao = orientacao;
+    conferir_equivalencia(&nav);
+}
+
+static void test_equivalencia_8x4_com_longo_x(void)
+{
+    conferir_orientacao_forcada(NAV_TIPO_8X4, NAV_ORIENTACAO_LONGO_X);
+}
+
+static void test_equivalencia_8x4_com_longo_y(void)
+{
+    conferir_orientacao_forcada(NAV_TIPO_8X4, NAV_ORIENTACAO_LONGO_Y);
+}
+
+static void test_equivalencia_12x4_com_longo_x(void)
+{
+    conferir_orientacao_forcada(NAV_TIPO_12X4, NAV_ORIENTACAO_LONGO_X);
+}
+
+static void test_equivalencia_12x4_com_longo_y(void)
+{
+    conferir_orientacao_forcada(NAV_TIPO_12X4, NAV_ORIENTACAO_LONGO_Y);
+}
+
+/* LCG de 32 bits (constantes de Numerical Recipes), semente fixa: teste repetível. */
+static uint32_t sorteio = 20261023u;
+
+static uint32_t sortear(uint32_t limite)
+{
+    sorteio = sorteio * 1664525u + 1013904223u;
+    return (sorteio >> 16) % limite;
+}
+
+#define LABIRINTOS_ALEATORIOS 200
+
+/*
+ * Para cada orientação, 200 labirintos com paredes ao norte e a leste
+ * sorteadas na matriz inteira, com densidade entre 10% e 50%.
+ */
+static void conferir_aleatorios(nav_tipo_t tipo)
+{
+    static const nav_orientacao_t orientacoes[3] = {
+        NAV_ORIENTACAO_INDEFINIDA, NAV_ORIENTACAO_LONGO_X, NAV_ORIENTACAO_LONGO_Y
+    };
+    for (int o = 0; o < 3; o++) {
+        for (int i = 0; i < LABIRINTOS_ALEATORIOS; i++) {
+            nav_estado_t nav;
+            nav_iniciar(&nav, tipo);
+            nav.orientacao = orientacoes[o];
+            uint32_t densidade = 10 + sortear(41);
+            for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+                for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+                    if (y + 1 < NAV_MAX_CELULAS && sortear(100) < densidade) {
+                        parede_ao_norte(&nav, x, y);
+                    }
+                    if (x + 1 < NAV_MAX_CELULAS && sortear(100) < densidade) {
+                        parede_a_leste(&nav, x, y);
+                    }
+                }
+            }
+            conferir_equivalencia(&nav);
+        }
+    }
+}
+
+static void test_equivalencia_em_labirintos_aleatorios_4x4(void)
+{
+    conferir_aleatorios(NAV_TIPO_4X4);
+}
+
+static void test_equivalencia_em_labirintos_aleatorios_8x4(void)
+{
+    conferir_aleatorios(NAV_TIPO_8X4);
+}
+
+static void test_equivalencia_em_labirintos_aleatorios_12x4(void)
+{
+    conferir_aleatorios(NAV_TIPO_12X4);
+}
+
+/* Objetivo (3, 3) do 4x4 fechado a sul e a oeste: ninguém chega a ele. */
+static void test_equivalencia_com_o_objetivo_cercado(void)
+{
+    nav_estado_t nav;
+    nav_iniciar(&nav, NAV_TIPO_4X4);
+    parede_ao_norte(&nav, 3, 2);
+    parede_a_leste(&nav, 2, 3);
+    conferir_equivalencia(&nav);
+    for (int x = 0; x < NAV_MAX_CELULAS; x++) {
+        for (int y = 0; y < NAV_MAX_CELULAS; y++) {
+            if (x != 3 || y != 3) {
+                TEST_ASSERT_EQUAL_UINT8(NAV_DIST_INFINITA, nav.mapa[x][y].distancia);
+            }
+        }
+    }
+    TEST_ASSERT_EQUAL_UINT8(0, nav.mapa[3][3].distancia);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -1193,5 +1436,17 @@ int main(void)
     RUN_TEST(test_sair_da_coluna_0_com_lado_indefinido_fixa_direita);
     RUN_TEST(test_leitura_falsa_a_direita_com_o_labirinto_a_esquerda_chega);
     RUN_TEST(test_direcao_depois_de_cada_acao);
+    RUN_TEST(test_equivalencia_no_labirinto_vazio_4x4);
+    RUN_TEST(test_equivalencia_no_labirinto_vazio_8x4);
+    RUN_TEST(test_equivalencia_no_labirinto_vazio_12x4);
+    RUN_TEST(test_equivalencia_na_serpentina_12x4);
+    RUN_TEST(test_equivalencia_8x4_com_longo_x);
+    RUN_TEST(test_equivalencia_8x4_com_longo_y);
+    RUN_TEST(test_equivalencia_12x4_com_longo_x);
+    RUN_TEST(test_equivalencia_12x4_com_longo_y);
+    RUN_TEST(test_equivalencia_em_labirintos_aleatorios_4x4);
+    RUN_TEST(test_equivalencia_em_labirintos_aleatorios_8x4);
+    RUN_TEST(test_equivalencia_em_labirintos_aleatorios_12x4);
+    RUN_TEST(test_equivalencia_com_o_objetivo_cercado);
     return UNITY_END();
 }

@@ -67,6 +67,9 @@ mov_estado_t mov_atualizar(void);
 
 mov_estado_t mov_estado(void);
 
+/* Quanto o robô já andou no avanço em curso, em mm (média das duas rodas); 0 no giro e sem movimento. */
+float mov_andado_mm(void);
+
 /*
  * Última leitura dos ToF, a cada sensores_ler(). Cada movimento novo descarta a anterior.
  * A cópia não é protegida: chamar na mesma tarefa do mov_atualizar(), ou o FIRM-09

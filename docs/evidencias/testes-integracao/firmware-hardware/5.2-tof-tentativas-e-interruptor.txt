@@ -1,0 +1,28 @@
+# Teste 5.2, hipóteses "tempo de boot" e "alimentação pelo lado da bateria".
+# Bancada esp32_hc_bancada, 20/11/2026.
+
+# Tempo de boot: a inicialização espera 10 ms depois do XSHUT (o datasheet pede 1,2 ms) e tenta o begin
+# três vezes por sensor, reiniciando o sensor entre as tentativas. Os três Error 263 (~1,26 s de intervalo)
+# são as três tentativas do lateral; o resultado é o mesmo da primeira.
+[  1787][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3051][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4315][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+tof: algum nao iniciou (confira XSHUT e I2C)
+
+# Interruptor da bateria LIGADO: mesmo resultado no boot e no comando t (frontal / esquerdo / direito, em mm).
+# O frontal lê 8191 (nada à vista, saturado) e os laterais seguem sem resposta (--).
+tof: frontal / esquerdo / direito em mm (-- = sem resposta)
+  8191     --     -- 
+  8191     --     -- 
+  8191     --     -- 
+  [... 40 leituras iguais ...]
+
+# Interruptor LIGADO: o comando v continua falhando no mesmo passo.
+VL53L0X: PerformRefSpadManagement
+[  9390][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)

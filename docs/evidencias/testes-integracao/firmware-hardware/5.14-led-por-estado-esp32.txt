@@ -1,0 +1,26 @@
+# Teste 5.14. LED por estado na ESP32 real, 20/11/2026.
+# Parte A: esp32_sim_boot (HAL simulada, botão real, navegação a 1 Hz), com tools/monitor_comandos.py.
+# Parte B: esp32_real (HAL real, ToF laterais falhando por hardware, health-check reprovado).
+# O LED é o azul da placa (GPIO2). Relato: em todos os estados o LED seguiu o padrão esperado (conferência visual, sem foto nem vídeo).
+# Transcrição do monitor serial da parte A (linhas do bootloader omitidas).
+
+## Parte A. Sequência de estados do esp32_sim_boot (boot 5)
+{"v":1,"boot":5,"seq":8,"t_ms":1210,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+# health-check aprovado: o robô espera o largar
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":5,"seq":14,"t_ms":6800,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":5,"seq":20,"t_ms":7800,"tipo":"passo","x":0,"y":1,"paredes":12}
+[... passos ...]
+{"v":1,"boot":5,"seq":50,"t_ms":12850,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":5,"seq":51,"t_ms":13600,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":5,"seq":58,"t_ms":19800,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":5,"seq":74,"t_ms":22200,"tipo":"falha","motivo":null,"origem":"web","x":0,"y":3,"componente":null}
+{"v":1,"boot":5,"seq":77,"t_ms":23600,"tipo":"tel","estado":"failed","x":0,"y":3,"rumo":"N","bat_mv":8397,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":5,"seq":85,"t_ms":31246,"tipo":"tel","estado":"health-check","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":5,"seq":93,"t_ms":31650,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+
+## Parte B. esp32_real, health-check reprovado (ToF laterais, teste 5.2)
+# Resultado relatado: o LED fica 1 s aceso e 1 s apagado (pisca lento do estado reprovado).

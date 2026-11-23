@@ -51,11 +51,20 @@ void sim_buzzer_definir(bool ligado);
 
 void sim_mundo_na_celula(int celula_x, int celula_y, int direcao);
 
+/* Põe o robô no centro da célula, virado para a direção (0 norte, 1 leste, 2 sul, 3 oeste). */
+void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao);
+
 /* Usado pelos testes para provocar situações */
 void sim_definir_tof_ausente(int tof, bool ausente);
 
 /* O encoder deixa de contar. A roda e a pose continuam. */
 void sim_travar_encoder(int motor, bool travado);
+/* Rodas no ar: as rodas giram e os encoders contam, mas a pose não muda e não há colisão. */
+void sim_definir_rodas_no_ar(bool no_ar);
+/* Zona morta do motor: com potência abaixo disto (em módulo) a roda não anda, como o atrito de um motor real. 0 desliga. */
+void sim_definir_zona_morta(int16_t potencia);
+/* A roda anda fator vezes o que os pulsos dizem (diâmetro diferente, atrito): o encoder não vê, o robô entorta. 0 ou 1 desliga. */
+void sim_definir_escala_roda(int motor, float fator);
 void sim_definir_bateria_mv(uint16_t mv);
 void sim_definir_boot(bool pressionado);
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad);

@@ -332,6 +332,22 @@ describe('FRONT-05 no fluxo REST existente', () => {
     expect(modal.getByRole('button', { name: 'Encerrar como falha' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Encerrar tentativa' })).toBeEnabled()
   })
+
+  it('o aviso da recusa pode ser fechado e some ao abrir outro modal', async () => {
+    servidor.use(http.post('*/api/execucoes/:id/encerrar-tentativa', () => HttpResponse.json({ detail: 'Não há tentativa aberta' }, { status: 409 })))
+    renderizarRota('/?modal=encerrar', '03-em-execucao')
+    const modal = within(await screen.findByRole('dialog'))
+    await userEvent.click(modal.getByRole('radio', { name: /collision/ }))
+    await userEvent.click(modal.getByRole('button', { name: 'Encerrar como falha' }))
+    const aviso = await screen.findByRole('alert')
+    await userEvent.click(within(aviso).getByRole('button', { name: 'Fechar' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    await userEvent.click(modal.getByRole('button', { name: 'Encerrar como falha' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    await userEvent.click(modal.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })
 
 describe('consulta atrasada após um comando confirmado', () => {

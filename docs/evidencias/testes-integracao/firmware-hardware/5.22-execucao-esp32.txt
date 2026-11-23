@@ -1,0 +1,42 @@
+# Teste 5.22. Suíte test_execucao (executor de movimento andando no mundo simulado) na ESP32 real, 21/11/2026.
+# Comando: pio test -e esp32_sim -f test_execucao --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# Em seguida, a suíte test_corrida foi rodada de novo, com o laço novo da navegação (19 de 19).
+# Transcrição da saída do terminal (print 5.22-execucao-esp32.png; o print começa no terceiro caso do test_execucao).
+
+test_direita_gira_e_avanca_para_o_leste [PASSED]
+test_meia_volta_gira_e_avanca_para_o_sul        [PASSED]
+test_acoes_que_nao_movem_sao_recusadas  [PASSED]
+test_nao_comeca_outra_acao_com_uma_em_andamento [PASSED]
+test_roda_travada_faz_a_execucao_falhar_e_parar [PASSED]
+test_parar_cancela_a_execucao_e_desliga_os_motores      [PASSED]
+test_corrida_completa_andando_chega_ao_objetivo [PASSED]
+test_movimento_falhou_vira_falha_automatica_stuck_e_grava_failed        [PASSED]
+test_movimento_falhou_fora_da_corrida_nao_faz_nada      [PASSED]
+esp32_sim:test_execucao [PASSED] Took 11.49 seconds
+11 test cases: 11 succeeded in 00:00:11.487
+
+Collected 23 tests
+Processing test_corrida in esp32_sim environment
+Building & Uploading...
+Testing...
+test_depois_do_boot_espera_em_health_check_sem_partir_sozinho   [PASSED]
+test_health_check_aprovado_continua_esperando_o_largar  [PASSED]
+test_largar_com_health_check_reprovado_nao_parte        [PASSED]
+test_largar_antes_do_resultado_do_health_check_nao_parte        [PASSED]
+test_largar_com_health_check_aprovado_parte_e_publica_passo     [PASSED]
+test_interromper_na_corrida_para_e_envia_falha_web_sem_motivo   [PASSED]
+test_interromper_ja_parado_em_failed_repete_a_falha_sem_parar   [PASSED]
+test_interromper_sem_corrida_nao_envia_falha    [PASSED]
+test_boot_na_corrida_envia_falha_boot_encerrado_pelo_operador   [PASSED]
+test_interrupcao_grava_failed_na_nvs_e_o_reset_volta_na_mesma_celula    [PASSED]
+test_largar_depois_da_falha_retoma_da_mesma_celula      [PASSED]
+test_depois_do_reset_o_primeiro_passo_da_retomada_e_publicado   [PASSED]
+test_comando_health_check_so_vale_parado        [PASSED]
+test_boot_curto_parado_apaga_o_mapa_e_reinicia_a_navegacao      [PASSED]
+test_boot_longo_parado_apaga_mapa_e_tipos_com_dois_bipes        [PASSED]
+test_boot_parado_antes_do_health_check_nao_apaga_nada   [PASSED]
+test_corrida_completa_termina_em_sucesso_e_largar_recomeca_da_largada   [PASSED]
+test_dip_diferente_depois_do_health_check_reinicia_a_navegacao  [PASSED]
+test_dip_igual_depois_do_health_check_mantem_a_navegacao        [PASSED]
+esp32_sim:test_corrida [PASSED] Took 14.02 seconds
+19 test cases: 19 succeeded in 00:00:14.015

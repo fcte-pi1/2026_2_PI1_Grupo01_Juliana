@@ -47,6 +47,9 @@ export function DetalheExecucao() {
         acoes={
           <>
             <PilulaResultado resultado={execucao.status} />
+            <Link to={`/?execucao=${execucao.execucao_id}`} className="botao botao--primario">
+              Voltar à execução
+            </Link>
             <Link to="/execucoes" className="botao">
               Voltar ao histórico
             </Link>

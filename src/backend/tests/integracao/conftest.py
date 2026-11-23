@@ -44,6 +44,8 @@ class Fabrica:
         iniciada_em: datetime | None = None,
         tentativas_usadas: int = 0,
         tempo_total_s: Decimal | None = None,
+        configuracao: str | None = None,
+        observacao: str | None = None,
     ) -> ExecucaoLogica:
         iniciada_em = iniciada_em or (datetime.now(UTC) if status == "em_andamento" else INICIO)
         execucao = ExecucaoLogica(
@@ -56,6 +58,8 @@ class Fabrica:
             iniciada_em=iniciada_em,
             encerrada_em=None if status == "em_andamento" else iniciada_em + timedelta(minutes=2),
             tempo_total_s=tempo_total_s,
+            configuracao=configuracao,
+            observacao=observacao,
         )
         self.session.add(execucao)
         self.session.flush()
