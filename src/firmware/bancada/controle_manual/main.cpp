@@ -37,7 +37,7 @@
 #define BUZZER 12
 
 // Se um motor girar ao contrario do esperado, troque o 1 por -1 dele
-#define SENTIDO_E  1
+#define SENTIDO_E  -1
 #define SENTIDO_D  1
 
 #define VEL_MIN    60
