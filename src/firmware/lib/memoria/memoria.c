@@ -1,5 +1,7 @@
 #include "memoria.h"
 
+#include "config/robo.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -68,8 +70,13 @@ static void montar_tipos(registro_tipos_t *r, const nav_estado_t *nav)
     r->crc = CRC_TIPOS(r);
 }
 
+static uint32_t gravacoes;
+
+uint32_t mem_gravacoes(void) { return gravacoes; }
+
 bool mem_gravar(const nav_estado_t *nav, contrato_estado_t estado)
 {
+    gravacoes++;
     /* static: o registro tem ~1,2 KB e a pilha da tarefa é de 4 KB. */
     static registro_mapa_t mapa;
     memset(&mapa, 0, sizeof(mapa));
@@ -102,6 +109,9 @@ bool mem_gravar_celula(const nav_estado_t *nav, contrato_estado_t estado, int8_t
                        int8_t *celula_y, bool forcar)
 {
     if (!forcar && nav->x == *celula_x && nav->y == *celula_y) {
+        return true;
+    }
+    if (!forcar && gravacoes >= MEM_GRAVACOES_MAX) {
         return true;
     }
     if (!mem_gravar(nav, estado)) {
@@ -145,6 +155,7 @@ static bool ler_mapa(registro_mapa_t *r)
 
 mem_inicio_t mem_carregar(nav_estado_t *nav, contrato_estado_t *estado, nav_tipo_t tipo_dip)
 {
+    gravacoes = 0;
     nav_iniciar(nav, tipo_dip);
     *estado = CONTRATO_ESTADO_HEALTH_CHECK;
 

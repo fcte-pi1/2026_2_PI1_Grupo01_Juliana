@@ -19,7 +19,7 @@ export interface paths {
         put?: never;
         /**
          * Registra uma nova execução, contando 1/3 tentativas.
-         * @description O operador informa o labirinto. Exige um health-check aprovado, concluído há no máximo 7 minutos e com o DIP igual ao labirinto; sem ele, responde 409 e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1 já em running, com o comando `largar` para o robô. Se já houver execução em andamento, ela é cancelada.
+         * @description O operador informa o labirinto. Exige um health-check aprovado, concluído há no máximo 10 minutos e com o DIP igual ao labirinto; sem ele, responde 409 e não cria nada. Com ele, o backend abre a execução lógica, começa o relógio de 10 minutos e cria a tentativa 1 já em running, com o comando `largar` para o robô. Se já houver execução em andamento, ela é cancelada.
          */
         post: operations["novaExecucao"];
         delete?: never;
@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * Health-check mais recente, pré-requisito da largada
-         * @description A tela mostra os itens e, quando aprovado, até quando ele libera a largada (valido_ate, 7 minutos depois da conclusão).
+         * @description A tela mostra os itens e, quando aprovado, até quando ele libera a largada (valido_ate, 10 minutos depois da conclusão).
          */
         get: operations["buscarUltimoHealthCheck"];
         put?: never;
@@ -59,7 +59,7 @@ export interface paths {
         put?: never;
         /**
          * Pedir ao robô um novo health-check
-         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 7 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
+         * @description O operador pede um novo health-check, por exemplo depois de um reprovado, de trocar o DIP ou de passar a validade de 10 minutos. A resposta ao POST /telemetria passa a incluir o comando `health_check` até o robô enviar o primeiro `hc_item` ou `hc_resultado`, ou até uma largada. O resultado aparece em GET /health-check/ultimo e na stream GET /health-check/stream.
          */
         post: operations["solicitarHealthCheck"];
         delete?: never;
@@ -80,6 +80,106 @@ export interface paths {
          * @description Fluxo do health-check do robô, independente de uma execução. O primeiro evento, quando já há um health-check, repete GET /health-check/ultimo. Cada hc_item e hc_resultado seguintes republicam o retrato inteiro. Enquanto não há evento novo, o servidor manda um comentário de keep-alive a cada 1 s. Esse relógio começa com a abertura do GET.
          */
         get: operations["abrirStreamHealthCheck"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robo/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Último sinal do robô e estado do enlace da ponte
+         * @description Instante da última linha que a ponte entregou e há quantos segundos foi, mais o estado do enlace que a ponte relata (conectada, reconectando ou desligada, esta última quando não há relato nos últimos 15 s). Sem nenhuma linha desde que a API subiu, os campos do sinal vêm nulos. O robô parado não envia nada, então o silêncio longo não prova desconexão.
+         */
+        get: operations["buscarEstadoRobo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robo/ponte": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Relato periódico da ponte sobre o enlace
+         * @description A ponte informa a cada poucos segundos se a porta serial está aberta ou sendo reaberta. A resposta traz reconectar verdadeiro uma única vez depois que a tela pediu a reconexão.
+         */
+        post: operations["relatarPonte"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/robo/reconectar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pedir que a ponte reabra a porta do robô
+         * @description Registra o pedido; a ponte o recebe no próximo relato e reabre a porta serial. Recusa com 409 quando a ponte não relata há mais de 15 s.
+         */
+        post: operations["pedirReconexao"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/execucoes/campanha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumo das execuções para a campanha de corridas
+         * @description Total, concluídas, canceladas, taxa de sucesso, tempo médio e máximo, quantas concluídas ficaram abaixo de 10 min e o mesmo por configuração de paredes. Aceita os filtros do histórico.
+         */
+        get: operations["resumoDaCampanha"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/execucoes/exportar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Exporta as execuções em CSV ou JSON, uma linha por tentativa
+         * @description Colunas: execucao_id, tentativa_id, attempt_index, tipo_labirinto, configuracao, observacao, status_execucao, status_tentativa, tipo_inicio, tipo_dip, iniciada_em, encerrada_em, tempo_s, tempo_total_s, velocidade_media, bateria_inicial, bateria_final, consumo_bateria_pct, motivo_falha, origem_falha, celula_x, celula_y, componente, observacao_falha, passos. Aceita os filtros do histórico. A resposta vem como arquivo para baixar.
+         */
+        get: operations["exportarExecucoes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -179,7 +279,7 @@ export interface paths {
         put?: never;
         /**
          * Abrir a tentativa seguinte depois de uma falha
-         * @description O pedido não tem corpo. Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 7 minutos com o DIP certo.
+         * @description O corpo é opcional (ignorar_bateria). Em caso de sucesso a resposta é o retorno da tentativa 2 ou 3, já em running, com o comando `largar` para o robô. Recusa com 409 e não cria tentativa quando já existe tentativa aberta, quando as três já foram usadas, quando a execução está cancelada ou quando não há health-check aprovado nos últimos 10 minutos com o DIP certo.
          */
         post: operations["retomarTentativa"];
         delete?: never;
@@ -263,7 +363,7 @@ export interface components {
          */
         OrigemFalha: "automatica" | "encerrado_operador";
         /**
-         * @description Os motivos health_check_* e dip_divergente valem para Nova execução e Retomar: falta um health-check, o último foi reprovado, foi concluído há mais de 7 minutos ou o DIP lido não é o labirinto escolhido.
+         * @description Os motivos health_check_* e dip_divergente valem para Nova execução e Retomar: falta um health-check, o último foi reprovado, foi concluído há mais de 10 minutos ou o DIP lido não é o labirinto escolhido.
          * @enum {string}
          */
         MotivoRecusa: "tentativa_aberta" | "limite_3" | "execucao_cancelada" | "health_check_ausente" | "health_check_reprovado" | "health_check_expirado" | "dip_divergente";
@@ -273,6 +373,22 @@ export interface components {
         EixoLongo: "x" | "y";
         NovaExecucao: {
             tipo_labirinto: components["schemas"]["Labirinto"];
+            /** @description Rótulo livre da configuração de paredes (por exemplo, "paredes A"), para agrupar as corridas de uma campanha. Opcional; espaços nas pontas saem e vazio vira nulo. */
+            configuracao?: string | null;
+            /** @description Anotação livre do operador, por exemplo o caso de teste. Opcional. */
+            observacao?: string | null;
+            /**
+             * @description O operador confirmou largar com a bateria abaixo do corte seguro. Só vale quando a bateria é o único item reprovado do health-check, com os 8 itens recebidos; qualquer outro item reprovado ou ausente continua recusando com health_check_reprovado.
+             * @default false
+             */
+            ignorar_bateria: boolean;
+        };
+        RetomarTentativa: {
+            /**
+             * @description Mesma confirmação de Nova execução, para a retomada.
+             * @default false
+             */
+            ignorar_bateria: boolean;
         };
         /** @description Retorno ao abrir uma tentativa. Em POST /execucoes, attempt_index é 1. Em POST /execucoes/{id}/retomar, é 2 ou 3. */
         RetornoNovaExecucao: {
@@ -290,6 +406,30 @@ export interface components {
             componente: components["schemas"]["Componente"];
             aprovado: boolean;
             valor_lido?: number | null;
+        };
+        EstadoRobo: {
+            /** Format: date-time */
+            ultimo_sinal_em?: string | null;
+            segundos_sem_sinal?: number | null;
+            /**
+             * @default desligada
+             * @enum {string}
+             */
+            ponte: "conectada" | "reconectando" | "desligada";
+            porta?: string | null;
+            /** @default false */
+            reconexao_pedida: boolean;
+        };
+        RelatoPonte: {
+            /** @enum {string} */
+            estado: "conectada" | "reconectando";
+            porta: string;
+        };
+        RespostaRelatoPonte: {
+            reconectar: boolean;
+        };
+        PedidoReconexao: {
+            aceito: boolean;
         };
         /** @description Health-check mais recente do robô. Em andamento, aprovado e concluido_em vêm nulos e os itens chegam aos poucos. valido_ate só vem quando aprovado: até lá, Nova execução e Retomar são aceitos. */
         UltimoHealthCheck: {
@@ -376,6 +516,8 @@ export interface components {
         ExecucaoDetalhe: {
             /** Format: uuid */
             execucao_id: string;
+            /** @description Número sequencial crescente da execução (#0001, */
+            numero: number;
             tipo_labirinto: components["schemas"]["Labirinto"];
             status: components["schemas"]["StatusExecucao"];
             tentativas_usadas: number;
@@ -384,6 +526,10 @@ export interface components {
             /** Format: date-time */
             encerrada_em?: string | null;
             tempo_total_s?: number | null;
+            /** @description Rótulo de configuração de paredes informado ao abrir a execução. */
+            configuracao?: string | null;
+            /** @description Anotação do operador ao abrir a execução. */
+            observacao?: string | null;
             /** @description Variação percentual contra o melhor tempo do mesmo labirinto. Negativo quando esta execução foi mais rápida. Null se não houver marca anterior. */
             variacao_melhor_tempo_pct?: number | null;
             /** @description Eixo em que o 8x4 ou o 12x4 se estende. Null no 4x4 e enquanto o robô não entrou numa célula além do canto 4x4. */
@@ -401,6 +547,8 @@ export interface components {
         ResumoExecucao: {
             /** Format: uuid */
             execucao_id: string;
+            /** @description Número sequencial crescente da execução (#0001, */
+            numero: number;
             tipo_labirinto: components["schemas"]["Labirinto"];
             status: components["schemas"]["StatusExecucao"];
             tentativas_usadas: number;
@@ -409,10 +557,37 @@ export interface components {
             /** Format: date-time */
             encerrada_em?: string | null;
             tempo_total_s?: number | null;
-            /** @description Velocidade média da última tentativa, em metros por segundo. */
+            /** @description Velocidade média da última tentativa, em metros por segundo, com três casas. */
             velocidade_media?: number | null;
             /** @description Queda de tensao (mV) da execucao, da bateria_inicial da primeira tentativa ate a ultima leitura conhecida. */
             consumo_bateria?: number | null;
+            /** @description Rótulo de configuração de paredes informado ao abrir a execução. */
+            configuracao?: string | null;
+            /** @description Anotação do operador ao abrir a execução. */
+            observacao?: string | null;
+        };
+        ResumoConfiguracao: {
+            /** @description Rótulo de configuração; nulo agrupa as execuções sem rótulo. */
+            configuracao?: string | null;
+            total: number;
+            concluidas: number;
+            /** @description Concluídas sobre as encerradas (concluídas e canceladas), em porcentagem. */
+            taxa_sucesso_pct?: number | null;
+            tempo_medio_s?: number | null;
+            tempo_maximo_s?: number | null;
+        };
+        /** @description Resumo das execuções do filtro, para a campanha de corridas (FIRM-13). Sucesso é a execução concluída; a taxa só conta as já encerradas. */
+        ResumoCampanha: {
+            total: number;
+            concluidas: number;
+            canceladas: number;
+            em_andamento: number;
+            taxa_sucesso_pct?: number | null;
+            tempo_medio_s?: number | null;
+            tempo_maximo_s?: number | null;
+            /** @description Execuções concluídas com tempo total abaixo de 600 s. */
+            concluidas_abaixo_de_10_min: number;
+            por_configuracao: components["schemas"]["ResumoConfiguracao"][];
         };
         /** @description Conteúdo do campo data de um frame do stream. O campo tipo discrimina qual dos seis eventos é e repete o valor da linha event do frame. */
         EventoSSE: components["schemas"]["EventoTelemetria"] | components["schemas"]["EventoPasso"] | components["schemas"]["EventoStatus"] | components["schemas"]["EventoHealthCheck"] | components["schemas"]["EventoFalha"] | components["schemas"]["EventoSucesso"];
@@ -496,6 +671,11 @@ export interface components {
              * @enum {string}
              */
             cmd: "interromper" | "largar" | "health_check";
+            /**
+             * @description Só no largar: o operador confirmou largar com a bateria abaixo do corte. O campo não vem nos demais comandos.
+             * @enum {boolean}
+             */
+            forcar_bateria?: true;
         };
         EntradaPonte: {
             /** @description Linha lida da serial, sem o \\n, sem alteração. */
@@ -599,6 +779,11 @@ export interface operations {
             query?: {
                 /** @example 4x4 */
                 tipo_labirinto?: components["schemas"]["Labirinto"];
+                /**
+                 * @description Filtra pelo rótulo de configuração de paredes que o operador informou ao abrir a execução.
+                 * @example paredes A
+                 */
+                configuracao?: string;
                 /** @description Quantidade máxima de execuções na página. */
                 limite?: number;
                 /** @description Quantas execuções pular antes da página. */
@@ -683,7 +868,7 @@ export interface operations {
                      *       "tipo_dip": "4x4",
                      *       "iniciado_em": "2026-10-07T13:58:00-03:00",
                      *       "concluido_em": "2026-10-07T13:58:02-03:00",
-                     *       "valido_ate": "2026-10-07T14:05:02-03:00",
+                     *       "valido_ate": "2026-10-07T14:08:02-03:00",
                      *       "itens": [
                      *         {
                      *           "componente": "bateria",
@@ -752,6 +937,143 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": string;
+                };
+            };
+        };
+    };
+    buscarEstadoRobo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado do último sinal e do enlace. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "ultimo_sinal_em": "2026-10-07T13:58:02-03:00",
+                     *       "segundos_sem_sinal": 4.2,
+                     *       "ponte": "conectada",
+                     *       "porta": "/dev/rfcomm0",
+                     *       "reconexao_pedida": false
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EstadoRobo"];
+                };
+            };
+        };
+    };
+    relatarPonte: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RelatoPonte"];
+            };
+        };
+        responses: {
+            /** @description Relato registrado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespostaRelatoPonte"];
+                };
+            };
+        };
+    };
+    pedirReconexao: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pedido registrado. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PedidoReconexao"];
+                };
+            };
+            /** @description A ponte não está ligada. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": "A ponte não está ligada."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ErroNaoEncontrado"];
+                };
+            };
+        };
+    };
+    resumoDaCampanha: {
+        parameters: {
+            query?: {
+                tipo_labirinto?: components["schemas"]["Labirinto"];
+                configuracao?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Resumo do filtro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumoCampanha"];
+                };
+            };
+        };
+    };
+    exportarExecucoes: {
+        parameters: {
+            query?: {
+                formato?: "csv" | "json";
+                tipo_labirinto?: components["schemas"]["Labirinto"];
+                configuracao?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Arquivo com as linhas da exportação. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
             };
         };
@@ -868,7 +1190,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RetomarTentativa"];
+            };
+        };
         responses: {
             /** @description Nova tentativa aberta. attempt_index é 2 ou 3. */
             201: {

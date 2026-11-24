@@ -6,3 +6,4 @@ from app.schemas.api import TipoLabirinto
 @dataclass(frozen=True, slots=True)
 class FiltroExecucoes:
     tipo_labirinto: TipoLabirinto | None = None
+    configuracao: str | None = None

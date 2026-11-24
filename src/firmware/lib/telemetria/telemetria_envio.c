@@ -114,6 +114,8 @@ uint32_t telemetria_descartados(void)
  * as duas. Um volatile só garantiria a leitura, não a troca.
  */
 static atomic_uint interrupcao;
+static atomic_uint largada;
+static atomic_uint pedido_health_check;
 
 void telemetria_iniciar(uint32_t boot)
 {
@@ -127,6 +129,8 @@ void telemetria_iniciar(uint32_t boot)
     descartando = false;
     linha_partida = false;
     atomic_store(&interrupcao, 0u);
+    atomic_store(&largada, 0u);
+    atomic_store(&pedido_health_check, 0u);
 }
 
 void telemetria_inserir_evento(const telemetria_evento_t *e)
@@ -209,6 +213,10 @@ static void ler_comandos(void)
                 linha_recebida[tamanho_recebido] = '\0';
                 if (contrato_eh_interromper(linha_recebida)) {
                     atomic_store(&interrupcao, 1u);
+                } else if (contrato_eh_largar(linha_recebida)) {
+                    atomic_store(&largada, contrato_largar_forcado(linha_recebida) ? 2u : 1u);
+                } else if (contrato_eh_health_check(linha_recebida)) {
+                    atomic_store(&pedido_health_check, 1u);
                 }
             }
             tamanho_recebido = 0;
@@ -224,6 +232,21 @@ static void ler_comandos(void)
 bool telemetria_consumir_interrupcao(void)
 {
     return atomic_exchange(&interrupcao, 0u) != 0u;
+}
+
+telemetria_largada_t telemetria_consumir_largada_modo(void)
+{
+    return (telemetria_largada_t)atomic_exchange(&largada, 0u);
+}
+
+bool telemetria_consumir_largada(void)
+{
+    return telemetria_consumir_largada_modo() != TELEMETRIA_LARGADA_NENHUMA;
+}
+
+bool telemetria_consumir_health_check(void)
+{
+    return atomic_exchange(&pedido_health_check, 0u) != 0u;
 }
 
 uint32_t telemetria_passo(uint32_t agora_ms, const telemetria_amostra_t *amostra)

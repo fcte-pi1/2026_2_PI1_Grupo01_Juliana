@@ -1,0 +1,34 @@
+# Teste 5.20. Pulsos do encoder girando a roda à mão (motores desligados), 21/11/2026.
+# Bancada esp32_drivers (HAL real). Sem comando: a bancada imprime enc_e e enc_d a cada ~200 ms.
+# Procedimento: uma volta de cada roda, para um lado e voltando. A volta exata não foi medida (sem marca na roda).
+# Resultado: não conclusivo para os 840 pulsos por volta; a repetir com uma distância medida (ver observação do 7.5).
+
+## Roda esquerda
+enc_e=0 enc_d=0 bat=7762 mV ponte=7412 mV
+enc_e=-1 enc_d=0 ...
+enc_e=-95 enc_d=0
+enc_e=-163 enc_d=0
+enc_e=-281 enc_d=0
+enc_e=-387 enc_d=0
+enc_e=-492 enc_d=0
+enc_e=-574 enc_d=0
+enc_e=-588 enc_d=0         <- fim do giro no primeiro sentido (-588 pulsos)
+[... parada por ~70 leituras em -588 ...]
+enc_e=-554 enc_d=0
+enc_e=-382 enc_d=0
+enc_e=-124 enc_d=0
+enc_e=-7 enc_d=0
+enc_e=19 enc_d=0           <- voltou ao ponto de partida (+19)
+
+## Roda direita
+enc_e=19 enc_d=7
+enc_e=19 enc_d=161
+enc_e=19 enc_d=327
+enc_e=19 enc_d=485
+enc_e=19 enc_d=618
+enc_e=19 enc_d=633         <- fim do giro no primeiro sentido (+633 pulsos)
+[... parada ...]
+enc_e=19 enc_d=621
+enc_e=19 enc_d=397
+enc_e=19 enc_d=143
+enc_e=19 enc_d=33          <- voltou ao ponto de partida (+33)

@@ -1,0 +1,17 @@
+# Teste 5.15. Suíte test_encoder_soma (soma dos pulsos do encoder sem interrupção) na ESP32 real, 21/11/2026.
+# Comando: pio test -e esp32_sim -f test_encoder_soma --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# Transcrição da saída do terminal (print 5.15-encoder-soma-esp32.png). A suíte é gravada na placa e o resultado volta pela serial USB.
+
+Collected 22 tests
+Processing test_encoder_soma in esp32_sim environment
+Building & Uploading...
+Testing...
+test_sem_voltar_a_zero_soma_a_contagem  [PASSED]
+test_passar_do_limite_para_a_frente_nao_perde_pulsos    [PASSED]
+test_varias_voltas_do_contador_para_a_frente    [PASSED]
+test_passar_do_limite_para_tras_nao_perde_pulsos        [PASSED]
+test_ir_e_voltar_perto_do_limite_mantem_o_total [PASSED]
+test_iniciar_com_o_contador_do_hardware_diferente_de_zero       [PASSED]
+esp32_sim:test_encoder_soma [PASSED] Took 12.52 seconds
+6 test cases: 6 succeeded in 00:00:12.522
+# No PC: pio test -e native -f test_encoder_soma, 6 de 6.

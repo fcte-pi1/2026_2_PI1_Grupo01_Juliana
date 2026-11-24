@@ -141,7 +141,7 @@ def test_ultimo_health_check_aprovado_tem_validade(client, db_session):
     assert corpo["aprovado"] is True
     assert corpo["tipo_dip"] == "8x4"
     valido_ate = datetime.fromisoformat(corpo["valido_ate"])
-    assert valido_ate == concluido_em + timedelta(seconds=420)
+    assert valido_ate == concluido_em + timedelta(seconds=600)
 
 
 def test_ultimo_health_check_reprovado_sem_validade(client, db_session):

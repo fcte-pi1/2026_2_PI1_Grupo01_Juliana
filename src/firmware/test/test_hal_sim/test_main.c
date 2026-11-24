@@ -184,7 +184,10 @@ static void test_nvs_grava_le_e_sobrevive_ao_reinicio(void)
     TEST_ASSERT_FALSE(hal_nvs_ler("mapa", lido, sizeof(int)));
     TEST_ASSERT_FALSE(hal_nvs_ler("nao_existe", lido, sizeof(lido)));
 
+    TEST_ASSERT_TRUE(hal_nvs_existe("mapa"));
+    TEST_ASSERT_FALSE(hal_nvs_existe("nao_existe"));
     TEST_ASSERT_TRUE(hal_nvs_apagar("mapa"));
+    TEST_ASSERT_FALSE(hal_nvs_existe("mapa"));
     TEST_ASSERT_FALSE(hal_nvs_ler("mapa", lido, sizeof(lido)));
 }
 

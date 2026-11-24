@@ -1,0 +1,145 @@
+# Teste 5.24. BOOT parado (toque curto e longo) e corrida nova do (0,0) na ESP32 (esp32_sim_boot), 21/11/2026.
+# HAL simulada, botão BOOT real, interruptor da bateria desligado. Firmware com a linha "# BOOT ..." a cada apagamento.
+# Roteiro: gravar o esp32_sim_boot; python tools/monitor_comandos.py; EN; BOOT curto (duas vezes) e BOOT longo (1,5 s ou mais) com o robô parado;
+#          t (mostra toda a tel); l. O boot anterior já tinha saído como "nova" (um toque longo antes do reset).
+# Log completo do monitor serial desde o boot (a saída do upload foi omitida):
+
+# /dev/ttyACM0: l=largar i=interromper h=health_check t=tel q=sair
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# Ratatouille: firmware com HAL SIMULADA
+[    24][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+{"v":1,"boot":7,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":7,"seq":1,"t_ms":855,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":585}
+{"v":1,"boot":7,"seq":2,"t_ms":905,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":7,"seq":3,"t_ms":955,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":7,"seq":4,"t_ms":1005,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":7,"seq":5,"t_ms":1005,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":7,"seq":6,"t_ms":1075,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":7,"seq":7,"t_ms":1125,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":7,"seq":8,"t_ms":1175,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":7,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# Ratatouille: firmware com HAL SIMULADA
+[    24][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+{"v":1,"boot":8,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":8,"seq":1,"t_ms":855,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":585}
+{"v":1,"boot":8,"seq":2,"t_ms":905,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":8,"seq":3,"t_ms":955,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":8,"seq":5,"t_ms":1005,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":8,"seq":6,"t_ms":1075,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":8,"seq":7,"t_ms":1125,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":8,"seq":8,"t_ms":1175,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":8,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+# BOOT curto: mapa apagado, tipos resolvidos mantidos
+# BOOT curto: mapa apagado, tipos resolvidos mantidos
+# BOOT longo: mapa e tipos resolvidos apagados
+# tel completa: sim
+{"v":1,"boot":8,"seq":42,"t_ms":34065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":43,"t_ms":35065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":44,"t_ms":36065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":45,"t_ms":37065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":46,"t_ms":38065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":47,"t_ms":39065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":48,"t_ms":40065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":49,"t_ms":41065,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":8,"seq":50,"t_ms":42065,"tipo":"tel","estado":"running","x":0,"y":0,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+[ 42114][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+{"v":1,"boot":8,"seq":51,"t_ms":42265,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":52,"t_ms":42465,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":53,"t_ms":42665,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":54,"t_ms":42865,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":55,"t_ms":43020,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":8,"seq":56,"t_ms":43075,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":57,"t_ms":43275,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":58,"t_ms":43475,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":59,"t_ms":43675,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":60,"t_ms":43875,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":61,"t_ms":43960,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":8,"seq":62,"t_ms":44075,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":63,"t_ms":44275,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":64,"t_ms":44475,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":65,"t_ms":44675,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":66,"t_ms":44875,"tipo":"tel","estado":"running","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":67,"t_ms":44900,"tipo":"passo","x":0,"y":3,"paredes":9}
+{"v":1,"boot":8,"seq":68,"t_ms":45075,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":69,"t_ms":45275,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":70,"t_ms":45475,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":71,"t_ms":45675,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":72,"t_ms":45875,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":73,"t_ms":46075,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":74,"t_ms":46275,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":75,"t_ms":46360,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":8,"seq":76,"t_ms":46475,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":77,"t_ms":46675,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":78,"t_ms":46875,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":79,"t_ms":47075,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":80,"t_ms":47275,"tipo":"tel","estado":"running","x":2,"y":3,"rumo":"L","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":81,"t_ms":47300,"tipo":"passo","x":2,"y":3,"paredes":5}
+{"v":1,"boot":8,"seq":82,"t_ms":47475,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":83,"t_ms":47675,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":84,"t_ms":47875,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8393,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":85,"t_ms":48075,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8393,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":86,"t_ms":48275,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8393,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":87,"t_ms":48475,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8393,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":88,"t_ms":48675,"tipo":"tel","estado":"running","x":2,"y":2,"rumo":"S","bat_mv":8393,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":89,"t_ms":48760,"tipo":"passo","x":2,"y":2,"paredes":2}
+{"v":1,"boot":8,"seq":90,"t_ms":48875,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":91,"t_ms":49075,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":92,"t_ms":49275,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":93,"t_ms":49475,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":94,"t_ms":49675,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":95,"t_ms":49875,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":96,"t_ms":50075,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":97,"t_ms":50220,"tipo":"passo","x":3,"y":2,"paredes":4}
+{"v":1,"boot":8,"seq":98,"t_ms":50280,"tipo":"tel","estado":"running","x":3,"y":2,"rumo":"L","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":99,"t_ms":50480,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":100,"t_ms":50680,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":101,"t_ms":50880,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":102,"t_ms":51080,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":103,"t_ms":51280,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":104,"t_ms":51480,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":105,"t_ms":51680,"tipo":"tel","estado":"running","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":106,"t_ms":51690,"tipo":"passo","x":3,"y":3,"paredes":13}
+{"v":1,"boot":8,"seq":107,"t_ms":51740,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":8,"seq":108,"t_ms":52680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":109,"t_ms":53680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":110,"t_ms":54680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":111,"t_ms":55680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":112,"t_ms":56680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":113,"t_ms":57680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":114,"t_ms":58680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":115,"t_ms":59680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":116,"t_ms":60680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":117,"t_ms":61680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":118,"t_ms":62680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":119,"t_ms":63680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":120,"t_ms":64680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":121,"t_ms":65680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":122,"t_ms":66680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":123,"t_ms":67680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":124,"t_ms":68680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":125,"t_ms":69680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":126,"t_ms":70680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":127,"t_ms":71680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":128,"t_ms":72680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8392,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":129,"t_ms":73680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8391,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":8,"seq":130,"t_ms":74680,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8390,"vel_mm_s":0,"eixo_longo":null}

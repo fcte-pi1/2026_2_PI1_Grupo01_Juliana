@@ -7,7 +7,7 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 - **Execução lógica:** `em_andamento` | `concluida` | `cancelada`.
 - **Tentativa:** `running` | `success` | `failed` | **∅** (nenhuma tentativa aberta na execução).
 - **Aberta:** `running`.
-- **Health-check:** registro anterior à tentativa ([ADR-017](017-downlink-tres-comandos.md)). **Nova execução** e **Retomar** exigem o último health-check aprovado, concluído há até 7 minutos e com `tipo_dip` igual ao do labirinto; senão são recusados (R06).
+- **Health-check:** registro anterior à tentativa ([ADR-017](017-downlink-tres-comandos.md)). **Nova execução** e **Retomar** exigem o último health-check aprovado, concluído há até 10 minutos e com `tipo_dip` igual ao do labirinto; senão são recusados (R06).
 - Contadores: `attempt_index` ∈ {1,2,3}; relógio da execução desde **Nova execução** (RF32).
 - Ações recusadas em uma execução existente (**Retomar**) registram **tentativa rejeitada** (RF19) sem alterar estados válidos. A recusa de **Nova execução** só é informada ao operador.
 
@@ -34,7 +34,7 @@ Oráculo único para **backend** (`GerenciadorExecucoes`), **front** (habilitaç
 | --- | --------------------------- | ----------------------------------------- | ------------------------- | ------------------------ | ----------------------------------------------------------------------------- |
 | T01 | ∅                           | Abertura com **Nova execução** (UC01) e health-check válido | `running`       | `em_andamento`           | Nova `execucao_id`, `tentativa_id`, `attempt_index`=1, `iniciada_em` execução; `largar` ao robô |
 | T02 | ∅                           | **Retomar tentativa** válida (UC31) com health-check válido | `running`      | `em_andamento`           | Nova `tentativa_id`, `attempt_index`+1, `tipo_inicio`=retomada; `largar` ao robô |
-| T03 | ∅                           | Telemetria: health-check concluído e aprovado | ∅                         | `em_andamento`           | Registro próprio, sem tentativa; vale 7 minutos (RF29)                        |
+| T03 | ∅                           | Telemetria: health-check concluído e aprovado | ∅                         | `em_andamento`           | Registro próprio, sem tentativa; vale 10 minutos (RF29)                        |
 | T04 | ∅                           | Telemetria: health-check reprovado        | ∅                         | `em_andamento`           | Nova execução e Retomar recusados (R06); nenhuma tentativa é criada           |
 | T05 | `running`                   | Telemetria: `success`                     | `success`                 | `concluida`              | Métricas; execução encerrada com sucesso (RF26, RF33)                         |
 | T06 | `running`                   | Telemetria: `failed` (trajeto/componente) | `failed`                  | `em_andamento`†          | Motivo conforme RF15; célula/componente gravados                              |
@@ -89,7 +89,7 @@ Estado derivado das tentativas e dos monitores de tempo/link. Use com a tabela 1
 | R03 | `attempt_index`=3 já consumido                               | **Retomar tentativa**                                        | Recusa RF19                               |
 | R04 | Execução `cancelada` ou `concluida`                          | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
 | R05 | Nenhuma tentativa aberta                                     | **Encerrar tentativa**                                       | HTTP 409; sem mudança                     |
-| R06 | Health-check ausente, reprovado, expirado (> 7 min) ou com `tipo_dip` diferente do labirinto | **Nova execução** ou **Retomar tentativa** | Recusa RF19; só a do Retomar registra tentativa rejeitada |
+| R06 | Health-check ausente, reprovado, expirado (> 10 min) ou com `tipo_dip` diferente do labirinto | **Nova execução** ou **Retomar tentativa** | Recusa RF19; só a do Retomar registra tentativa rejeitada |
 
 
 **Nova execução** com execução anterior `em_andamento` **não** é recusa: cancela a anterior (E02), conforme US12.

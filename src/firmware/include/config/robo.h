@@ -14,11 +14,15 @@
  *   [HW]   docs/4.3 - Projeto conceitual de hardware.md e hw/SCH_Micromouse_2026-09-26.pdf
  */
 
+/* Botão BOOT */
+#define BOTAO_DEBOUNCE_MS           30      /* o contato precisa ficar estável por este tempo */
+#define BOTAO_LONGO_MS              1500    /* a partir daqui o toque é longo; PROVISÓRIO, confirmar com a equipe */
+
 /* Pista — [TAP] células de 18 cm, paredes de 1,2 cm */
 #define CELULA_MM                   180
 #define PAREDE_ESPESSURA_MM         12
 #define LABIRINTO_MAX_CELULAS       12   /* maior lado possível (12x4) */
-/* PROVISÓRIO: fixo até o firmware ler o DIP switch. Usar onde nav.h já foi incluído. */
+/* Só para testes: o firmware lê o tipo no DIP switch (lib/dip). Usar onde nav.h já foi incluído. */
 #define ROBO_TIPO_LABIRINTO         NAV_TIPO_4X4
 
 /* Rodas e tração */
@@ -38,19 +42,38 @@
 #define MOV_VELOCIDADE_GIRO_MM_S    250.0f  /* velocidade de cada roda no giro */
 #define MOV_ATRASO_MOTOR_S          0.05f   /* constante de tempo da roda; medir na bancada (FIRM-04) */
 #define MOV_KP_POSICAO              1.5f    /* potência por pulso de erro de cada roda */
-#define MOV_TOLERANCIA_PULSOS       2       /* erro aceito no fim, por roda (~0,25 mm) */
+#define MOV_TOLERANCIA_PULSOS       6       /* erro aceito no fim do giro, por roda (~1°) */
+#define MOV_TOLERANCIA_AVANCO_PULSOS 8      /* no avanço o atrito do motor deixa a roda oscilar: ~1 mm */
+#define MOV_KI_POSICAO              8.0f    /* potência por pulso de erro e por segundo: vence o atrito parado no fim do movimento */
+#define MOV_INTEGRAL_MAX            200.0f  /* limite da parcela integral, em potência (anti-windup) */
 #define MOV_ASSENTAR_MS             50      /* tempo dentro da tolerância para concluir */
 #define MOV_TEMPO_LIMITE_MS         3000    /* sem concluir nesse tempo, o movimento falha */
+#define MAQ_HC_VALIDADE_MS          600000UL /* o health-check aprovado vale por 10 min: depois disso a largada exige um novo */
+#define MOV_FREIO_MS                250     /* tempo que as rodas ficam freadas na parada de emergência, antes de soltar a ponte H */
 #define MOV_TRAVADO_MS              200     /* roda sem contar pulsos com potência alta: o movimento falha */
 #define MOV_TRAVADO_POTENCIA        600     /* potência a partir da qual a roda parada conta como travada */
-/* Correções pelos ToF: prontas no código e desligadas (ganho 0) até o FIRM-10. */
-#define MOV_KP_CENTRO               0.0f    /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo */
+
+#define MOV_KP_CENTRO               0.05f   /* pulsos de desvio entre as rodas, por mm fora do centro e por ciclo (só com as duas paredes) */
+#define MOV_DESVIO_MAX_PULSOS       40.0f   /* limite do desvio entre as rodas na centralização */
+#define MOV_CENTRALIZAR_UMA_PAREDE  0       /* 1 centraliza com uma parede só, pela leitura de MOV_LADO_CENTRADO_MM (não conferida na pista) */
 #define MOV_LADO_CENTRADO_MM        77      /* lateral com parede e o robô centrado (ver a detecção de parede) */
 #define MOV_GANHO_FRONTAL           0.0f    /* 0 a 1: quanto o fim do avanço segue a parede da frente */
-#define MOV_FRENTE_ALVO_MM          44      /* frontal com o robô centrado e parede à frente */
+#define MOV_FRENTE_SOBRA_MM         17      /* distância mínima até a parede à frente que a parada de emergência garante (1,7 cm) */
+#define MOV_TOF_ATRASO_S            0.075f  /* atraso do ToF frontal até o movimento: meia amostra de 50 ms mais a mediana de 3 a 20 Hz */
+#define MOV_FRENTE_ALVO_MM          (CELULA_MM / 2 - PAREDE_ESPESSURA_MM / 2 - 40) /* frontal com o robô centrado e parede à frente: 44 (40 = TOF_F_X_MM) */
+
+/* NVS: a flash aguenta cerca de 100 mil apagamentos por setor. */
+#define MEM_GRAVACOES_MAX           600     /* gravações do mapa por inicialização; um robô que oscila entre células não gasta a flash */
+
+/*
+ * Leitura da parede lateral: o lateral a 45° só lê a célula com confiança logo ao entrar nela (ver a
+ * detecção de parede). O avanço guarda a leitura quando já andou isto, ou seja, ~10 mm depois da
+ * fronteira da célula nova. PROVISÓRIO: calibrar na pista.
+ */
+#define EXEC_LEITURA_LATERAL_MM     (CELULA_MM / 2 + 10)
 
 /* Encoder — PROVISÓRIO: [EST] diz "a confirmar no datasheet do modelo adquirido" */
-#define ENCODER_PULSOS_POR_VOLTA    840     /* 7 PPR x redução 1:30 x 4 (quadratura) */
+#define ENCODER_PULSOS_POR_VOLTA    640     /* [EST] provisório: o robô andou 23 a 25 cm por 18 cm calculados com 840; a volta à mão deu 588 e 633 */
 
 /* Derivadas: o controle, o mundo simulado e os testes usam as mesmas. */
 #define PI_F                        3.14159265f
@@ -62,6 +85,10 @@
  * limitada a 100 %. Dá 71 % com 8,4 V, 81 % com 7,4 V e 100 % com as pilhas (≤ 6 V).
  */
 #define MOTOR_TENSAO_NOMINAL_MV     6000    /* [EST] N20 de 6 V */
+/* Autoteste de motor e encoder do health-check: giro curto de uma roda por vez, rodas no ar. */
+#define MOTOR_AUTOTESTE_POTENCIA    300     /* 30 %, a mesma da bancada dos drivers; ~500 pulsos esperados no tempo abaixo */
+#define MOTOR_AUTOTESTE_MS          300
+#define MOTOR_AUTOTESTE_MIN_PULSOS  50      /* PROVISÓRIO: ~6 mm de roda; ajustar com a bancada */
 #define MOTOR_TRAVADO_MS            1000    /* encoder parado com PWM ativo: desliga a ponte H (stuck) */
 
 /*
@@ -82,6 +109,8 @@
 #define TOF_D_X_MM      20.0f
 #define TOF_D_Y_MM     -30.0f
 #define TOF_D_ANG      -45.0f
+/* I²C dos ToF: 50 kHz tolera os jumpers da bancada; subir na placa definitiva. */
+#define TOF_I2C_HZ          50000
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
 
 /*

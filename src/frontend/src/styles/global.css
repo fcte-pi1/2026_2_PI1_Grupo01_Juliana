@@ -268,6 +268,14 @@ select {
   background: transparent;
 }
 
+.tabela--clicavel tbody tr {
+  cursor: pointer;
+}
+
+.tabela--clicavel tbody tr:hover td {
+  background: var(--cor-superficie-suave);
+}
+
 .tabela .alinhar-direita {
   text-align: right;
 }

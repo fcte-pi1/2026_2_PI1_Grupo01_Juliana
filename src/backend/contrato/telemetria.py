@@ -7,15 +7,17 @@ este schema os aceita e os gera de volta byte a byte.
 """
 
 from datetime import datetime, timedelta
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
+    SerializerFunctionWrapHandler,
     TypeAdapter,
     ValidationError,
+    model_serializer,
     model_validator,
 )
 
@@ -222,6 +224,16 @@ class Comando(BaseModel):
 
     v: Literal[1] = VERSAO
     cmd: Literal["interromper", "largar", "health_check"] = "interromper"
+    # só no `largar`: o operador confirmou largar com a bateria abaixo do corte
+    forcar_bateria: Literal[True] | None = None
+
+    @model_serializer(mode="wrap")
+    def _sem_campo_vazio(self, proximo: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        """Os comandos de sempre saem como antes: sem o campo, em vez de `null`."""
+        dados = proximo(self)
+        if dados.get("forcar_bateria") is None:
+            dados.pop("forcar_bateria", None)
+        return dados
 
 
 class EntradaPonte(BaseModel):

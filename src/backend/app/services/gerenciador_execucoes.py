@@ -37,6 +37,14 @@ ABERTA = ("running",)
 TERMINAL_TENTATIVA = ("success", "failed")
 
 
+def _texto_ou_none(texto: str | None) -> str | None:
+    """Texto livre do operador: sem espaços nas pontas, e vazio vira nulo."""
+    if texto is None:
+        return None
+    texto = texto.strip()
+    return texto or None
+
+
 @dataclass(frozen=True)
 class RetornoTentativa:
     execucao_id: uuid.UUID
@@ -50,14 +58,37 @@ class ResultadoMonitor:
     eventos: list[EventoSSE]
 
 
+COMPONENTES_DO_HEALTH_CHECK = (
+    "bateria",
+    "tof_frontal",
+    "tof_esquerdo",
+    "tof_direito",
+    "motor_esquerdo",
+    "motor_direito",
+    "encoder_esquerdo",
+    "encoder_direito",
+)
+
+
+def _reprovado_so_pela_bateria(health_check: HealthCheck) -> bool:
+    """Os 8 itens chegaram, a bateria reprovou e todos os outros aprovaram."""
+    ultimo: dict[str, bool] = {}
+    for item in health_check.itens:
+        ultimo[item.componente] = item.aprovado
+    if set(ultimo) != set(COMPONENTES_DO_HEALTH_CHECK):
+        return False
+    return not ultimo["bateria"] and all(ok for nome, ok in ultimo.items() if nome != "bateria")
+
+
 class GerenciadorExecucoes:
     limite_tentativas: int = 3
 
-    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 420) -> None:
+    def __init__(self, tempo_maximo_execucao_s: int, validade_health_check_s: int = 600) -> None:
         self.tempo_maximo_execucao_s = tempo_maximo_execucao_s
         self.validade_health_check_s = validade_health_check_s
         self._interrupcao_pendente = False
         self._largada_pendente = False
+        self._largada_forcada = False
         self._health_check_pendente = False
 
     def solicitar_health_check(self, sessao: Session) -> datetime:
@@ -71,10 +102,19 @@ class GerenciadorExecucoes:
         """O robô começou o health-check: o pedido deixa de ir nas respostas."""
         self._health_check_pendente = False
 
-    def nova_execucao(self, sessao: Session, tipo_labirinto: str) -> RetornoTentativa:
+    def nova_execucao(
+        self,
+        sessao: Session,
+        tipo_labirinto: str,
+        configuracao: str | None = None,
+        observacao: str | None = None,
+        ignorar_bateria: bool = False,
+    ) -> RetornoTentativa:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
-        motivo, health_check = self._conferir_health_check(repo, tipo_labirinto, agora)
+        motivo, health_check = self._conferir_health_check(
+            repo, tipo_labirinto, agora, ignorar_bateria
+        )
         if motivo is not None:
             # sem execução aberta, a recusa não tem onde ser gravada
             raise RecusaTentativa(motivo, agora)
@@ -93,6 +133,8 @@ class GerenciadorExecucoes:
             status="em_andamento",
             tentativas_usadas=0,
             iniciada_em=agora,
+            configuracao=_texto_ou_none(configuracao),
+            observacao=_texto_ou_none(observacao),
         )
         repo.salvar(execucao)
         tentativa = self._abrir_tentativa(
@@ -106,7 +148,9 @@ class GerenciadorExecucoes:
         execucao.tentativas_usadas = 1
         return RetornoTentativa(execucao.execucao_id, tentativa.tentativa_id, 1)
 
-    def retomar(self, sessao: Session, execucao_id: uuid.UUID) -> RetornoTentativa:
+    def retomar(
+        self, sessao: Session, execucao_id: uuid.UUID, ignorar_bateria: bool = False
+    ) -> RetornoTentativa:
         repo = Repositorio(sessao)
         agora = datetime.now(UTC)
         execucao = repo.bloquear_execucao(execucao_id)
@@ -126,7 +170,9 @@ class GerenciadorExecucoes:
         if ultima is None or ultima.status != "failed":
             raise self._recusar(sessao, execucao.execucao_id, "execucao_cancelada", agora)
 
-        motivo, health_check = self._conferir_health_check(repo, execucao.labirinto.tipo, agora)
+        motivo, health_check = self._conferir_health_check(
+            repo, execucao.labirinto.tipo, agora, ignorar_bateria
+        )
         if motivo is not None:
             raise self._recusar(sessao, execucao.execucao_id, motivo, agora)
 
@@ -317,7 +363,9 @@ class GerenciadorExecucoes:
         if self._interrupcao_pendente:
             comandos.append(Comando(cmd="interromper"))
         if self._largada_pendente:
-            comandos.append(Comando(cmd="largar"))
+            comandos.append(
+                Comando(cmd="largar", forcar_bateria=True if self._largada_forcada else None)
+            )
         if self._health_check_pendente:
             comandos.append(Comando(cmd="health_check"))
         return comandos
@@ -327,14 +375,29 @@ class GerenciadorExecucoes:
         self._largada_pendente = False
 
     def _conferir_health_check(
-        self, repo: Repositorio, tipo_labirinto: str, agora: datetime
+        self,
+        repo: Repositorio,
+        tipo_labirinto: str,
+        agora: datetime,
+        ignorar_bateria: bool = False,
     ) -> tuple[str | None, HealthCheck | None]:
-        """Devolve o motivo da recusa, ou None e o health-check que libera a largada."""
+        """Devolve o motivo da recusa, ou None e o health-check que libera a largada.
+
+        Com `ignorar_bateria`, um health-check reprovado só pela bateria libera a largada;
+        qualquer outro item reprovado ou ausente continua recusando.
+        """
         health_check = repo.ultimo_health_check_concluido()
+        self._largada_forcada = False
         if health_check is None:
             return "health_check_ausente", None
         if not health_check.aprovado:
-            return "health_check_reprovado", None
+            if not (ignorar_bateria and _reprovado_so_pela_bateria(health_check)):
+                return "health_check_reprovado", None
+            self._largada_forcada = True
+            logger.warning(
+                "largada com a bateria abaixo do corte, confirmada pelo operador (hc %s)",
+                health_check.hc_id,
+            )
         idade = (agora - health_check.concluido_em).total_seconds()
         if idade > self.validade_health_check_s:
             return "health_check_expirado", None

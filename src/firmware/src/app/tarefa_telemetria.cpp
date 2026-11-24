@@ -13,6 +13,10 @@
 #include "eventos.h"
 #include "hal_tempo.h"
 
+#ifdef HAL_SIMULADA
+#include "sim/hal_sim.h"
+#endif
+
 #ifdef TELEMETRIA_DEPURACAO
 #include <stdio.h>
 
@@ -51,6 +55,13 @@ void tarefa_telemetria(void *parametro)
 #endif
 
     for (;;) {
+#ifdef HAL_SIMULADA
+        /* O Bluetooth simulado só escreve na serial; o que chega por ela entra como comando. */
+        while (Serial.available() > 0) {
+            char byte[2] = {(char)Serial.read(), '\0'};
+            hal_bt_sim_injetar(byte);
+        }
+#endif
         if (xQueueReceive(fila_eventos, &ev, pdMS_TO_TICKS(espera_ms)) == pdTRUE) {
             do {
                 telemetria_inserir_evento(&ev);

@@ -1,53 +1,51 @@
 /*
- * Tarefa de navegação (núcleo 1): lê os sensores, pede a decisão à navegação
- * e publica para a telemetria a amostra da tel e os eventos do contrato.
+ * Tarefa de navegação (núcleo 1): lê os sensores, decide, anda e publica para a telemetria a amostra
+ * da tel e os eventos do contrato.
  *
- * As rodas ainda não executam a ação (FIRM-05). Com a HAL simulada, o robô é
- * colocado na célula em que a navegação entrou, na faixa em que o ToF lateral
- * mede essa célula. O laço mostra o caminho completo:
- * sensores -> navegação -> NVS -> filas -> telemetria.
+ * O laço roda a cada MOV_PERIODO_MS (5 ms), o ciclo do controle de movimento. Anda e para: parado no
+ * centro de uma célula, espera os ToF estabilizarem, decide a ação e a executa (giro e avanço pelo
+ * lib/execucao). A parede lateral da célula nova é guardada ao entrar nela, durante o avanço. Com a
+ * HAL simulada o robô anda pela física do mundo simulado, e com a real, pelos motores.
  *
- * No boot, carrega o mapa da NVS (FIRM-08), publica o health-check (hc_item e
- * hc_resultado, com inicio "retomada" quando o mapa voltou) e, a cada célula
- * nova, grava de novo. Sucesso e falha saem uma vez, quando a corrida acaba.
+ * No boot, carrega o mapa da NVS, publica o health-check (hc_item e hc_resultado, com inicio
+ * "retomada" quando o mapa voltou) e espera o comando largar; só parte com o último health-check
+ * aprovado. A cada célula nova, grava de novo. Sucesso e falha saem uma vez, quando a corrida acaba.
+ * Interromper, health_check e os toques do BOOT passam pela máquina de estados.
  */
 
 #include <Arduino.h>
 
 #include "app.h"
 #include "bateria.h"
+#include "botao.h"
 #include "config/robo.h"
+#include "corrida.h"
 #include "eventos.h"
+#include "execucao.h"
+#include "dip.h"
 #include "hal_bateria.h"
-#include "hal_encoder.h"
+#include "hal_boot.h"
+#include "hal_dip.h"
 #include "hal_led.h"
 #include "hal_motor.h"
 #include "hal_tempo.h"
 #include "hal_tof.h"
-#include "memoria.h"
+#include "health_check.h"
+#include "maquina.h"
+#include "movimento.h"
 #include "nav.h"
 #include "sensores.h"
+#include "sinal.h"
 #include "telemetria_nav.h"
-#include "tof_autoteste.h"
 
 #ifdef HAL_SIMULADA
 #include "sim_mundo.h"
 #endif
 
-#define PERIODO_MS              50   /* 20 Hz: leitura dos ToF (FIRM-03) */
-#define CICLOS_POR_DECISAO      4    /* a navegação decide a 5 Hz; a taxa da tel quem decide é a telemetria */
-
-static void publicar_hc_item(contrato_componente_t componente, bool aprovado, bool tem_valor,
-                             int32_t valor)
-{
-    telemetria_evento_t ev = {};
-    ev.tipo = TELEMETRIA_EVENTO_HC_ITEM;
-    ev.m.hc_item.componente = componente;
-    ev.m.hc_item.aprovado = aprovado;
-    ev.m.hc_item.tem_valor = tem_valor;
-    ev.m.hc_item.valor = valor;
-    app_publicar_evento(&ev);
-}
+#define PERIODO_MS              MOV_PERIODO_MS  /* ciclo do controle de movimento */
+#define CICLOS_POR_LEITURA      10   /* 50 ms: leitura dos ToF a 20 Hz (FIRM-03) */
+#define CICLOS_POR_AMOSTRA      40   /* 200 ms: bateria e tel a 5 Hz; a taxa da tel quem decide é a telemetria */
+#define ESPERA_PARADO_MS        200  /* parado, a mediana dos ToF precisa de amostras novas */
 
 static void publicar_falha(contrato_motivo_t motivo, int8_t x, int8_t y,
                            contrato_componente_t componente)
@@ -60,6 +58,28 @@ static void publicar_falha(contrato_motivo_t motivo, int8_t x, int8_t y,
     ev.m.falha.y = (uint8_t)y;
     ev.m.falha.componente = componente;
     app_publicar_evento(&ev);
+}
+
+static void publicar_falha_pronta(const contrato_falha_t *falha)
+{
+    telemetria_evento_t ev = {};
+    ev.tipo = TELEMETRIA_EVENTO_FALHA;
+    ev.m.falha = *falha;
+    app_publicar_evento(&ev);
+}
+
+static void bipe(int vezes)
+{
+    for (int i = 0; i < vezes; i++) {
+        hal_buzzer_definir(true);
+        hal_led_definir(true);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        hal_buzzer_definir(false);
+        hal_led_definir(false);
+        if (i + 1 < vezes) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+    }
 }
 
 static void publicar_sucesso(int8_t x, int8_t y)
@@ -81,102 +101,145 @@ static void publicar_passo(int8_t x, int8_t y, uint8_t paredes)
     app_publicar_evento(&ev);
 }
 
-/* Health-check do boot. Devolve false se algum item reprovou; *motivo e *componente dizem a falha. */
-static bool publicar_health_check(mem_inicio_t inicio, bateria_t *bateria, contrato_motivo_t *motivo,
-                                  contrato_componente_t *componente)
+/* Espera do autoteste dos motores: a tarefa dorme, e a simulação deixa o mundo andar. */
+static void esperar_ms(uint32_t ms)
 {
-    for (int i = 0; i < BATERIA_MEDIA_AMOSTRAS; i++) {
-        bateria_amostrar(bateria, hal_bateria_ler_adc_mv());
+#ifdef HAL_SIMULADA
+    for (uint32_t t = 0; t < ms; t += PERIODO_MS) {
+        sim_mundo_avancar(PERIODO_MS);
+        vTaskDelay(pdMS_TO_TICKS(PERIODO_MS));
     }
-    uint16_t mv = bateria_mv(bateria);
-    bool bateria_ok = mv > 0 && bateria_nivel(bateria) != BATERIA_BAIXA;
-    publicar_hc_item(CONTRATO_COMPONENTE_BATERIA, bateria_ok, mv > 0, mv);
+#else
+    vTaskDelay(pdMS_TO_TICKS(ms));
+#endif
+}
 
-    bool aprovado = bateria_ok;
-    *motivo = bateria_ok ? CONTRATO_MOTIVO_NENHUM : CONTRATO_MOTIVO_LOW_BATTERY;
-    *componente = bateria_ok ? CONTRATO_COMPONENTE_NENHUM : CONTRATO_COMPONENTE_BATERIA;
-
-    tof_autoteste_t tof[TOF_QTD];
-    tof_autoteste_executar(tof);
-    for (int i = 0; i < TOF_QTD; i++) {
-        contrato_componente_t id = (contrato_componente_t)(CONTRATO_COMPONENTE_TOF_FRONTAL + i);
-        publicar_hc_item(id, tof[i].aprovado, tof[i].tem_valor, tof[i].valor_mm);
-        if (!tof[i].aprovado && aprovado) {
-            aprovado = false;
-            *motivo = CONTRATO_MOTIVO_FALHA_COMPONENTE;
-            *componente = id;
-        }
+/*
+ * Roda o health-check (8 itens) e publica um hc_item por componente e o
+ * hc_resultado. Reprovação não gera falha: vai só nesses eventos.
+ * Devolve se foi aprovado.
+ */
+static bool publicar_health_check(mem_inicio_t inicio, bateria_t *bateria)
+{
+    hc_resultado_t resultado;
+    mov_parar(); /* o autoteste gira as rodas: o movimento tem que estar parado */
+#ifdef HAL_SIMULADA
+    sim_definir_rodas_no_ar(true); /* como no robô real durante o autoteste */
+#endif
+    hc_executar(bateria, esperar_ms, &resultado);
+#ifdef HAL_SIMULADA
+    sim_definir_rodas_no_ar(false);
+#endif
+    telemetria_evento_t eventos[HC_EVENTOS];
+    int n = hc_montar_eventos(&resultado,
+                              inicio == MEM_RETOMADA ? CONTRATO_INICIO_RETOMADA : CONTRATO_INICIO_NOVA,
+                              eventos);
+    for (int i = 0; i < n; i++) {
+        app_publicar_evento(&eventos[i]);
     }
-
-    /* Motores não têm leitura de saúde; os encoders respondem com a contagem. */
-    publicar_hc_item(CONTRATO_COMPONENTE_MOTOR_ESQUERDO, true, false, 0);
-    publicar_hc_item(CONTRATO_COMPONENTE_MOTOR_DIREITO, true, false, 0);
-    publicar_hc_item(CONTRATO_COMPONENTE_ENCODER_ESQUERDO, true, true, hal_encoder_ler(MOTOR_ESQ));
-    publicar_hc_item(CONTRATO_COMPONENTE_ENCODER_DIREITO, true, true, hal_encoder_ler(MOTOR_DIR));
-
-    telemetria_evento_t ev = {};
-    ev.tipo = TELEMETRIA_EVENTO_HC_RESULTADO;
-    ev.m.hc_resultado.aprovado = aprovado;
-    ev.m.hc_resultado.tipo_dip = (contrato_tipo_dip_t)ROBO_TIPO_LABIRINTO;
-    ev.m.hc_resultado.inicio =
-        inicio == MEM_RETOMADA ? CONTRATO_INICIO_RETOMADA : CONTRATO_INICIO_NOVA;
-    app_publicar_evento(&ev);
-    return aprovado;
+    return resultado.aprovado;
 }
 
 #ifdef HAL_SIMULADA
 static void acompanhar_celula(const nav_estado_t *nav)
 {
-    sim_mundo_na_celula(nav->x, nav->y, (int)nav->direcao);
+    sim_mundo_no_centro_da_celula(nav->x, nav->y, (int)nav->direcao);
 }
 #endif
+
+/* Distâncias filtradas e paredes dos ToF para as correções do movimento. */
+static void informar_tof_ao_movimento(void)
+{
+    paredes_t p = sensores_paredes();
+    uint16_t frente = 0, esquerda = 0, direita = 0;
+    sensores_distancia_mm(TOF_FRONTAL, &frente);
+    sensores_distancia_mm(TOF_ESQUERDO, &esquerda);
+    sensores_distancia_mm(TOF_DIREITO, &direita);
+    mov_tof_t tof = {p.frente, p.esquerda, p.direita, frente, esquerda, direita};
+    mov_informar_tof(&tof);
+}
 
 void tarefa_navegacao(void *parametro)
 {
     (void)parametro;
     /* Estático: com cerca de 1,2 KB, o estado não deve ocupar a pilha de 4 KB da tarefa. */
-    static nav_estado_t nav;
-    contrato_estado_t estado = CONTRATO_ESTADO_HEALTH_CHECK;
-    mem_inicio_t inicio = mem_carregar(&nav, &estado, ROBO_TIPO_LABIRINTO);
+    static corrida_t corrida;
+    static botao_t botao;
+    static sinal_t sinal;
     bateria_t bateria;
     bateria_iniciar(&bateria);
+    botao_iniciar(&botao);
+    sinal_iniciar(&sinal);
+    exec_iniciar();
+    corrida_iniciar(&corrida, dip_tipo_nav(hal_dip_ler()));
+
+    /* Parede lateral da célula nova, guardada ao entrar nela; a primeira decisão usa a leitura ao vivo. */
+    bool tem_lateral = false;
+    bool lateral_esq = false;
+    bool lateral_dir = false;
+    uint32_t parado_desde = hal_tempo_ms();
+
+    /* Executa o que a lib pediu depois de um evento. */
+    auto aplicar = [&](const corrida_efeitos_t &ef) {
+        if (ef.parar_motores) {
+            exec_parar();
+        }
+        if (ef.tem_falha) {
+            publicar_falha_pronta(&ef.falha);
+        }
+#ifdef HAL_SIMULADA
+        if (ef.reposicionar) {
+            acompanhar_celula(&corrida.nav);
+        }
+#endif
+        if (ef.bipes == 1) {
+            Serial.println("# BOOT curto: mapa apagado, tipos resolvidos mantidos");
+        } else if (ef.bipes == 2) {
+            Serial.println("# BOOT longo: mapa e tipos resolvidos apagados");
+        }
+        if (ef.bipes > 0) {
+            bipe(ef.bipes);
+        }
+        if (ef.parar_motores || ef.reposicionar) {
+            tem_lateral = false;
+            parado_desde = hal_tempo_ms();
+        }
+    };
+
+    auto health_check = [&]() {
+        exec_parar();
+        bool aprovado = publicar_health_check(corrida.inicio, &bateria);
+        corrida_efeitos_t ef;
+        corrida_health_check_concluido(&corrida, aprovado, dip_tipo_nav(hal_dip_ler()), &ef);
+        aplicar(ef);
+    };
+
+    auto evento = [&](maq_evento_t ev) {
+        corrida_efeitos_t ef;
+        corrida_evento(&corrida, ev, &ef);
+        aplicar(ef);
+        if (ev == MAQ_EV_CMD_LARGAR || ev == MAQ_EV_CMD_LARGAR_FORCADO) {
+            tem_lateral = false;
+            parado_desde = hal_tempo_ms();
+        }
+        if (ef.rodar_health_check) {
+            health_check();
+        }
+    };
 
 #ifdef HAL_SIMULADA
-    acompanhar_celula(&nav);
+    acompanhar_celula(&corrida.nav);
 #endif
 
-    contrato_motivo_t motivo_hc = CONTRATO_MOTIVO_NENHUM;
-    contrato_componente_t componente_hc = CONTRATO_COMPONENTE_NENHUM;
-    bool hc_ok = publicar_health_check(inicio, &bateria, &motivo_hc, &componente_hc);
-    if (!hc_ok) {
-        estado = CONTRATO_ESTADO_FAILED;
-        publicar_falha(motivo_hc, nav.x, nav.y, componente_hc);
-    } else if (estado == CONTRATO_ESTADO_HEALTH_CHECK) {
-        estado = CONTRATO_ESTADO_RUNNING;
-    }
-
-    /* Célula do último passo publicado; a largada não gera passo. */
-    int8_t ultimo_x = nav.x;
-    int8_t ultimo_y = nav.y;
-    if (inicio == MEM_RETOMADA) {
-        /* A retomada começa na célula da falha e ganha o próprio passo: o backend o marca como retomada. */
-        ultimo_x = -1;
-        ultimo_y = -1;
-    }
-    /* Célula já gravada na NVS; começa na que o boot carregou. */
-    int8_t gravada_x = nav.x;
-    int8_t gravada_y = nav.y;
-
     TickType_t proximo = xTaskGetTickCount();
-    bool led = false;
     int ciclo = 0;
+    int ciclos_amostra = 0;
 #ifdef TELEMETRIA_DEPURACAO
     uint32_t volta_anterior = hal_tempo_ms();
 #endif
-    bool terminou = nav.terminou || !hc_ok;
-    nav_acao_t acao = terminou ? nav.acao_terminal : NAV_ACAO_SEM_PASSO;
 
     for (;;) {
+        corrida_tempo(&corrida, hal_tempo_ms());
 #ifdef TELEMETRIA_DEPURACAO
         uint32_t inicio_volta = hal_tempo_ms();
         if (inicio_volta - volta_anterior > app_nav_periodo_max_ms) {
@@ -185,65 +248,78 @@ void tarefa_navegacao(void *parametro)
         volta_anterior = inicio_volta;
 #endif
 #ifdef HAL_SIMULADA
-        /* O mundo simulado anda junto com o tempo real. Sem PWM, a pose não muda. */
+        /* O mundo simulado anda junto com o tempo real: sem PWM a pose não muda, com PWM ele anda. */
         sim_mundo_avancar(PERIODO_MS);
 #endif
 
-        /* Os ToF são lidos a cada ciclo (20 Hz) para o filtro ter amostras novas. */
-        sensores_ler();
-
-#ifdef TELEMETRIA_DEPURACAO
-        for (int i = 0; i < TOF_QTD; i++) {
-            uint16_t mm = 0;
-            if (sensores_distancia_mm((tof_id_t)i, &mm)) {
-                app_tof_ok = (uint8_t)(app_tof_ok | (1u << i));
-            } else {
-                app_tof_ok = (uint8_t)(app_tof_ok & ~(1u << i));
-            }
-            app_tof_mm[i] = mm;
-        }
-#endif
-
-        if (++ciclo >= CICLOS_POR_DECISAO) {
+        /* Os ToF são lidos a 20 Hz para o filtro ter amostras novas. */
+        if (++ciclo >= CICLOS_POR_LEITURA) {
             ciclo = 0;
-
-            bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());
-            if (bateria_pronta(&bateria)) {
-                hal_motor_definir_tensao(bateria_ponte_mv(&bateria));
+            sensores_ler();
+            informar_tof_ao_movimento();
+#ifdef TELEMETRIA_DEPURACAO
+            for (int i = 0; i < TOF_QTD; i++) {
+                uint16_t mm = 0;
+                if (sensores_distancia_mm((tof_id_t)i, &mm)) {
+                    app_tof_ok = (uint8_t)(app_tof_ok | (1u << i));
+                } else {
+                    app_tof_ok = (uint8_t)(app_tof_ok & ~(1u << i));
+                }
+                app_tof_mm[i] = mm;
             }
+#endif
+        }
 
+        /* Comandos e BOOT: a interrupção vem primeiro. */
+        if (telemetria_consumir_interrupcao()) {
+            evento(MAQ_EV_CMD_INTERROMPER);
+        }
+        botao_gesto_t gesto = botao_passo(&botao, hal_boot_pressionado(), hal_tempo_ms(),
+                                          maq_andando(&corrida.maq));
+        if (gesto != BOTAO_NADA) {
+            evento(gesto == BOTAO_CURTO   ? MAQ_EV_BOOT_CURTO
+                   : gesto == BOTAO_LONGO ? MAQ_EV_BOOT_LONGO
+                                          : MAQ_EV_BOOT_TOQUE);
+        }
+        if (telemetria_consumir_health_check()) {
+            evento(MAQ_EV_CMD_HEALTH_CHECK);
+        }
+        telemetria_largada_t largada = telemetria_consumir_largada_modo();
+        if (largada != TELEMETRIA_LARGADA_NENHUMA) {
+            evento(largada == TELEMETRIA_LARGADA_FORCADA ? MAQ_EV_CMD_LARGAR_FORCADO
+                                                         : MAQ_EV_CMD_LARGAR);
+        }
+
+        /* Movimento: um ciclo do controle; a falha vira a falha automática stuck. */
+        exec_estado_t exec = exec_atualizar();
+        if (exec == EXEC_FALHOU) {
+            corrida_efeitos_t ef;
+            corrida_movimento_falhou(&corrida, &ef);
+            exec_parar();
+            aplicar(ef);
+            exec = EXEC_OCIOSO;
+        }
+        if (exec_ler_lateral_agora()) {
+            paredes_t q = sensores_paredes();
+            lateral_esq = q.esquerda;
+            lateral_dir = q.direita;
+            tem_lateral = true;
+        }
+
+        if (exec != EXEC_OCIOSO) {
+            parado_desde = hal_tempo_ms();
+        } else if (maq_andando(&corrida.maq) && hal_tempo_ms() - parado_desde >= ESPERA_PARADO_MS) {
+            /* Parado no centro da célula: lê a frente, junta com a lateral guardada e decide. */
             paredes_t paredes = sensores_paredes();
             nav_leitura_t leitura;
             leitura.frente = paredes.frente;
-            leitura.esquerda = paredes.esquerda;
-            leitura.direita = paredes.direita;
+            leitura.esquerda = tem_lateral ? lateral_esq : paredes.esquerda;
+            leitura.direita = tem_lateral ? lateral_dir : paredes.direita;
+            tem_lateral = false;
 
-            /* A leitura é da célula atual; a pose é guardada antes de o passo levá-la à próxima. */
-            int8_t x = nav.x;
-            int8_t y = nav.y;
-            nav_direcao_t direcao = nav.direcao;
-
-            bool ja_acabou = terminou;
-            acao = mem_aplicar_leitura(&nav, &estado, &gravada_x, &gravada_y, &terminou, leitura);
-
-#ifdef HAL_SIMULADA
-            if (nav.x != x || nav.y != y || nav.direcao != direcao) {
-                acompanhar_celula(&nav);
-            }
-#endif
-
-            /* O passo da célula lida vem antes de sucesso ou falha, com o lado que o passo fixou. */
-            telemetria_decisao_t decisao = {};
-            decisao.mudou_celula = x != ultimo_x || y != ultimo_y;
-            decisao.x = x;
-            decisao.y = y;
-            decisao.paredes = telemetria_paredes_do_nav(direcao, nav.lado, leitura);
-            decisao.terminou_agora = !ja_acabou && terminou;
-            decisao.acao = acao;
-            decisao.nav_x = nav.x;
-            decisao.nav_y = nav.y;
+            bool reposicionar = false;
             telemetria_decisao_evento_t saida[TELEMETRIA_DECISAO_EVENTOS_MAX];
-            int qtd = telemetria_eventos_da_decisao(&decisao, saida);
+            int qtd = corrida_decidir(&corrida, leitura, &reposicionar, saida);
             for (int i = 0; i < qtd; i++) {
                 switch (saida[i].tipo) {
                 case TELEMETRIA_DECISAO_PASSO:
@@ -258,26 +334,32 @@ void tarefa_navegacao(void *parametro)
                     break;
                 }
             }
-            if (decisao.mudou_celula) {
-                ultimo_x = x;
-                ultimo_y = y;
+            if (exec_eh_movimento(corrida.acao)) {
+                exec_comecar(corrida.acao);
+            }
+            parado_desde = hal_tempo_ms();
+        }
+
+        if (++ciclos_amostra >= CICLOS_POR_AMOSTRA) {
+            ciclos_amostra = 0;
+            bateria_amostrar(&bateria, hal_bateria_ler_adc_mv());
+            if (bateria_pronta(&bateria)) {
+                hal_motor_definir_tensao(bateria_ponte_mv(&bateria));
             }
 
             telemetria_amostra_t amostra = {};
-            amostra.tel.estado = estado;
-            amostra.tel.x = (uint8_t)nav.x;
-            amostra.tel.y = (uint8_t)nav.y;
-            amostra.tel.rumo = telemetria_rumo_do_nav(nav.direcao);
+            amostra.tel.estado = corrida_estado_contrato(&corrida);
+            amostra.tel.x = (uint8_t)corrida.nav.x;
+            amostra.tel.y = (uint8_t)corrida.nav.y;
+            amostra.tel.rumo = telemetria_rumo_do_nav(corrida.nav.direcao);
             amostra.tel.bat_mv = bateria_mv(&bateria);
             amostra.tel.vel_mm_s = 0;
             amostra.tel.eixo_longo = CONTRATO_EIXO_DESCONHECIDO;
-            amostra.em_movimento = acao != NAV_ACAO_SUCESSO && acao != NAV_ACAO_SEM_PASSO;
+            amostra.em_movimento = corrida_em_movimento(&corrida);
             app_publicar_amostra(&amostra);
-
-            led = !led;
-            hal_led_definir(led);
         }
 
+        hal_led_definir(sinal_led(&sinal, corrida.maq.estado, hal_tempo_ms()));
         vTaskDelayUntil(&proximo, pdMS_TO_TICKS(PERIODO_MS));
     }
 }

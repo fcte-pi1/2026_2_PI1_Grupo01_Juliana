@@ -25,7 +25,7 @@ Além disso, o glossário busca:
 | **Execução** | Uma passagem do Micromouse por um labirinto. No sistema, corresponde a uma **tentativa** dentro de uma **execução lógica**. Evitar: corrida, run. |
 | **Execução Lógica** | Conjunto das até 3 tentativas do Micromouse em um mesmo tipo de labirinto, aberto pelo operador com **Nova execução**. Termina concluída quando uma tentativa alcança a área de objetivo, ou cancelada pelo tempo limite, pela perda de comunicação ou pelo esgotamento das tentativas. |
 | **Failed** | Estado final da tentativa em que o Micromouse não alcançou a área de objetivo, seja por falha no trajeto, falha de componente, perda de comunicação, estouro do tempo limite ou encerramento feito pelo operador. |
-| **Health-check** | Verificação que o Micromouse faz de seus componentes (bateria, sensores e rodas) antes da largada. É um registro próprio, anterior à tentativa, e vale por 7 minutos. |
+| **Health-check** | Verificação que o Micromouse faz de seus componentes (bateria, sensores e rodas) antes da largada. É um registro próprio, anterior à tentativa, e vale por 10 minutos. |
 | **Interrupção** | Comando que o Sistema de Telemetria envia ao Micromouse, pela ponte Bluetooth, quando o operador encerra a tentativa manualmente. É um dos três comandos do contrato, ao lado do largar e do health_check. O robô para e aguarda. |
 | **Labirinto** | Pista formada por células de 18 x 18 cm, com piso preto e paredes brancas de topo vermelho, nos formatos 4x4, 8x4 ou 12x4. |
 | **Micromouse** | Robô autônomo que explora o labirinto com o algoritmo flood fill (método Adachi) até a área de objetivo, mapeando as paredes e enviando telemetria ao sistema web. |

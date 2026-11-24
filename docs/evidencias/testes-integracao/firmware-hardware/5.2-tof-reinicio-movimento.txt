@@ -1,0 +1,44 @@
+# Teste 5.2. ToF laterais: carrinho em movimento e reinício dos sensores sem reiniciar a placa, 20/11/2026.
+# Bancada esp32_hc_bancada (HAL real, ToF real, 50 kHz). Hipótese: mau contato que só fecha com movimento.
+# Durante os testes: carrinho em movimento, soldas apertadas e sensores mexidos, sem mexer nos fios.
+# Parte A: tecla t (leitura contínua) com o carrinho sendo movimentado. Parte B: comando r (reinicia os 3 ToF) repetido 7 vezes.
+# Transcrição do monitor serial; a parte A mostra um trecho das 10 rodadas do t (as demais têm o mesmo padrão).
+
+## Parte A. Boot e leitura com o carrinho em movimento (tecla t)
+[  1806][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3070][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4334][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+tof: algum nao iniciou (confira XSHUT e I2C)
+tof: frontal / esquerdo / direito em mm (-- = sem resposta)
+   421     --     --
+  8190     --     --
+   306     --     --
+   388     --     --
+  8191     --     --
+  [...]
+   179     --     --
+   175     --     --
+   179     --     --
+[... 10 rodadas: o frontal acompanha o movimento (de cerca de 165 a 550 mm; 8190 = sem nada à vista); as colunas dos laterais ficam em -- em todas ...]
+
+## Parte B. Comando r (reinicia os ToF sem reiniciar a placa), 7 tentativas
+# tentativa 1 (t=10 s)
+[ 10139][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[ 11403][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[ 12667][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+tof_frontal: respondeu (207 mm)
+tof_esquerdo: NAO respondeu
+tof_direito: NAO respondeu
+tof: algum nao iniciou
+# tentativas 2 a 7 (t = 48 s, 70 s, 99 s, 111 s, 120 s, 128 s): resultado idêntico, frontal de 167 a 234 mm
+tof_frontal: respondeu (200 mm)   [tentativa 2]
+tof_frontal: respondeu (212 mm)   [tentativa 3]
+tof_frontal: respondeu (234 mm)   [tentativa 4]
+tof_frontal: respondeu (180 mm)   [tentativa 5]
+tof_frontal: respondeu (167 mm)   [tentativa 6]
+tof_frontal: respondeu (167 mm)   [tentativa 7]
+# em todas: tof_esquerdo: NAO respondeu / tof_direito: NAO respondeu / tof: algum nao iniciou,
+# precedidas de 3 linhas "i2cRead returned Error 263" (as 3 tentativas de início de um dos laterais)

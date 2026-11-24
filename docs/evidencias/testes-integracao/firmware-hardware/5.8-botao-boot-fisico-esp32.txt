@@ -1,0 +1,33 @@
+# Teste 5.8. Toque físico no botão BOOT na ESP32 real (esp32_real_tof_mock), 20/11/2026.
+# Roteiro: pio run -e esp32_sim -t upload (grava mapa e tipos na NVS) -> pio run -e esp32_real_tof_mock -t upload
+#          -> pio device monitor --baud 115200 -> um toque curto e um toque longo no BOOT.
+# Transcrição do monitor serial. Linhas "tel" repetidas foram cortadas (marcadas com [...]); o seq e o t_ms são contínuos.
+# Bateria do carrinho desligada (bat_mv 804): o health-check reprova bateria, motores e encoders, como esperado; não interfere no teste do botão.
+
+E (13) pcnt: _pcnt_isr_service_install(316): PCNT driver error
+E (15) pcnt: _pcnt_isr_handler_add(264): ISR service is not installed, call pcnt_install_isr_service() first
+E (18) pcnt: _pcnt_isr_handler_add(264): ISR service is not installed, call pcnt_install_isr_service() first
+# memoria ao ligar: mem_mapa=sim mem_tipos=sim
+{"v":1,"boot":4,"seq":0,"t_ms":45,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":0,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":4,"seq":1,"t_ms":847,"tipo":"hc_item","componente":"bateria","aprovado":false,"valor":804}
+{"v":1,"boot":4,"seq":2,"t_ms":898,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":4,"seq":3,"t_ms":948,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":4,"seq":4,"t_ms":998,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":4,"seq":5,"t_ms":1048,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":804,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":4,"seq":6,"t_ms":1048,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":false,"valor":null}
+{"v":1,"boot":4,"seq":7,"t_ms":1099,"tipo":"hc_item","componente":"motor_direito","aprovado":false,"valor":null}
+{"v":1,"boot":4,"seq":8,"t_ms":1149,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":false,"valor":0}
+{"v":1,"boot":4,"seq":9,"t_ms":1199,"tipo":"hc_item","componente":"encoder_direito","aprovado":false,"valor":0}
+{"v":1,"boot":4,"seq":10,"t_ms":1249,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"4x4","inicio":"nova"}
+[... tel a 1 Hz, seq 11 a 55, t_ms 2050 a 46094 ...]
+# memoria antes do toque curto: mem_mapa=sim mem_tipos=sim
+# memoria depois do toque curto: mem_mapa=nao mem_tipos=sim
+# BOOT curto: mapa apagado, tipos resolvidos mantidos
+{"v":1,"boot":4,"seq":56,"t_ms":47096,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":804,"vel_mm_s":0,"eixo_longo":null}
+[... tel a 1 Hz, seq 57 a 109, t_ms 48097 a 100149 ...]
+{"v":1,"boot":4,"seq":110,"t_ms":101150,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":804,"vel_mm_s":0,"eixo_longo":null}
+# memoria antes do toque longo: mem_mapa=nao mem_tipos=sim
+# memoria depois do toque longo: mem_mapa=nao mem_tipos=nao
+# BOOT longo: mapa e tipos resolvidos apagados
+{"v":1,"boot":4,"seq":111,"t_ms":102150,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":804,"vel_mm_s":0,"eixo_longo":null}
+[... tel a 1 Hz, seq 112 a 154, t_ms 103151 a 145193; a telemetria segue sem interrupção ...]

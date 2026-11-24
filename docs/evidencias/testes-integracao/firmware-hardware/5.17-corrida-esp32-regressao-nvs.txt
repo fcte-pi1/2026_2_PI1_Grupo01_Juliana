@@ -1,0 +1,29 @@
+# Teste 5.17. Suíte test_corrida na ESP32 real depois do limite de gravações da NVS (MEM_GRAVACOES_MAX), 21/11/2026.
+# Comando: pio test -e esp32_sim -f test_corrida --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# Transcrição da saída do terminal (print 5.17-corrida-esp32-regressao-nvs.png).
+
+Collected 22 tests
+Processing test_corrida in esp32_sim environment
+Building & Uploading...
+Testing...
+test_depois_do_boot_espera_em_health_check_sem_partir_sozinho   [PASSED]
+test_health_check_aprovado_continua_esperando_o_largar  [PASSED]
+test_largar_com_health_check_reprovado_nao_parte        [PASSED]
+test_largar_antes_do_resultado_do_health_check_nao_parte        [PASSED]
+test_largar_com_health_check_aprovado_parte_e_publica_passo      [PASSED]
+test_interromper_na_corrida_para_e_envia_falha_web_sem_motivo   [PASSED]
+test_interromper_ja_parado_em_failed_repete_a_falha_sem_parar   [PASSED]
+test_interromper_sem_corrida_nao_envia_falha    [PASSED]
+test_boot_na_corrida_envia_falha_boot_encerrado_pelo_operador   [PASSED]
+test_interrupcao_grava_failed_na_nvs_e_o_reset_volta_na_mesma_celula    [PASSED]
+test_largar_depois_da_falha_retoma_da_mesma_celula      [PASSED]
+test_depois_do_reset_o_primeiro_passo_da_retomada_e_publicado   [PASSED]
+test_comando_health_check_so_vale_parado        [PASSED]
+test_boot_curto_parado_apaga_o_mapa_e_reinicia_a_navegacao      [PASSED]
+test_boot_longo_parado_apaga_mapa_e_tipos_com_dois_bipes        [PASSED]
+test_boot_parado_antes_do_health_check_nao_apaga_nada   [PASSED]
+test_corrida_completa_termina_em_sucesso_e_largar_recomeca_da_largada   [PASSED]
+test_dip_diferente_depois_do_health_check_reinicia_a_navegacao  [PASSED]
+test_dip_igual_depois_do_health_check_mantem_a_navegacao        [PASSED]
+esp32_sim:test_corrida [PASSED] Took 14.03 seconds
+19 test cases: 19 succeeded in 00:00:14.025

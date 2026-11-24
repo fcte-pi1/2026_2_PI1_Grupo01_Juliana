@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from app.db import get_db
@@ -7,11 +8,13 @@ from app.schemas.api import (
     ExecucaoDetalhe,
     NovaExecucaoRequest,
     Recusa,
+    ResumoCampanha,
     ResumoExecucao,
+    RetomarRequest,
     RetornoNovaExecucao,
     TipoLabirinto,
 )
-from app.services import consulta_execucoes
+from app.services import campanha, consulta_execucoes
 from app.services.excecoes_execucao import (
     ExecucaoIndisponivel,
     ExecucaoNaoEncontrada,
@@ -21,7 +24,7 @@ from app.services.excecoes_execucao import (
 from app.services.gerenciador_execucoes import GerenciadorExecucoes
 from app.services.publicacao_eventos import publicar_apos_commit
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/execucoes", tags=["execucoes"])
@@ -51,7 +54,9 @@ def criar_execucao(
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao | JSONResponse:
     try:
-        retorno = gerenciador.nova_execucao(db, body.tipo_labirinto)
+        retorno = gerenciador.nova_execucao(
+            db, body.tipo_labirinto, body.configuracao, body.observacao, body.ignorar_bateria
+        )
     except RecusaTentativa as recusa:
         return _resposta_recusa(recusa)
     db.commit()
@@ -66,18 +71,51 @@ def criar_execucao(
 def listar_execucoes(
     response: Response,
     tipo_labirinto: TipoLabirinto | None = Query(default=None),
+    configuracao: str | None = Query(default=None, max_length=60),
     limite: int = Query(default=LIMITE_PADRAO, ge=1, le=LIMITE_MAXIMO),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[ResumoExecucao]:
     resumos, total = consulta_execucoes.listar_historico(
         ExecucaoRepository(db),
-        FiltroExecucoes(tipo_labirinto=tipo_labirinto),
+        FiltroExecucoes(tipo_labirinto=tipo_labirinto, configuracao=configuracao),
         limite=limite,
         offset=offset,
     )
     response.headers["X-Total-Count"] = str(total)
     return resumos
+
+
+@router.get("/campanha", response_model=ResumoCampanha)
+def resumo_da_campanha(
+    tipo_labirinto: TipoLabirinto | None = Query(default=None),
+    configuracao: str | None = Query(default=None, max_length=60),
+    db: Session = Depends(get_db),
+) -> ResumoCampanha:
+    execucoes = ExecucaoRepository(db).listar_todas(
+        FiltroExecucoes(tipo_labirinto=tipo_labirinto, configuracao=configuracao)
+    )
+    return campanha.resumir(execucoes)
+
+
+@router.get("/exportar")
+def exportar_execucoes(
+    formato: Literal["csv", "json"] = Query(default="csv"),
+    tipo_labirinto: TipoLabirinto | None = Query(default=None),
+    configuracao: str | None = Query(default=None, max_length=60),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Uma linha por tentativa, para planilha (csv) ou análise (json)."""
+    execucoes = ExecucaoRepository(db).listar_todas(
+        FiltroExecucoes(tipo_labirinto=tipo_labirinto, configuracao=configuracao)
+    )
+    linhas = campanha.linhas_exportacao(execucoes)
+    cabecalho = {"Content-Disposition": f'attachment; filename="execucoes.{formato}"'}
+    if formato == "json":
+        return JSONResponse(content=linhas, headers=cabecalho)
+    return PlainTextResponse(
+        campanha.para_csv(linhas), media_type="text/csv; charset=utf-8", headers=cabecalho
+    )
 
 
 @router.get("/em-andamento", response_model=ExecucaoDetalhe)
@@ -177,11 +215,12 @@ def encerrar_execucao(
 )
 def retomar_execucao(
     execucao_id: UUID,
+    body: RetomarRequest | None = None,
     db: Session = Depends(get_db),
     gerenciador: GerenciadorExecucoes = Depends(_gerenciador),
 ) -> RetornoNovaExecucao | JSONResponse:
     try:
-        retorno = gerenciador.retomar(db, execucao_id)
+        retorno = gerenciador.retomar(db, execucao_id, bool(body and body.ignorar_bateria))
     except ExecucaoNaoEncontrada:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Execução não encontrada."

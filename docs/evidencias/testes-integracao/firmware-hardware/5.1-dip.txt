@@ -1,0 +1,10 @@
+# Teste 5.1. Bancada esp32_hc_bancada, 20/11/2026. Cada linha sai quando uma via muda (vias 4321, 1 = ligada).
+dip: vias 4321 = 0000  codigo(1,2) = 00  tipo = 4x4
+dip: vias 4321 = 0100  codigo(1,2) = 00  tipo = 4x4
+dip: vias 4321 = 0110  codigo(1,2) = 10  tipo = 12x4
+dip: vias 4321 = 1110  codigo(1,2) = 10  tipo = 12x4
+dip: vias 4321 = 1111  codigo(1,2) = 11  tipo = invalido
+dip: vias 4321 = 1101  codigo(1,2) = 01  tipo = 8x4
+dip: vias 4321 = 0101  codigo(1,2) = 01  tipo = 8x4
+dip: vias 4321 = 0001  codigo(1,2) = 01  tipo = 8x4
+dip: vias 4321 = 0000  codigo(1,2) = 00  tipo = 4x4

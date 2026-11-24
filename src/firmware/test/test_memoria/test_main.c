@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unity.h>
 
+#include "config/robo.h"
 #include "hal_nvs.h"
 #include "memoria.h"
 #include "nav.h"
@@ -241,6 +242,52 @@ static void test_gravar_celula_so_quando_muda_ou_forca(void)
     TEST_ASSERT_EQUAL_MEMORY(&gravado, &lido, sizeof(gravado));
 }
 
+static void test_oscilar_entre_duas_celulas_nao_grava_alem_do_limite(void)
+{
+    nav_iniciar(&gravado, NAV_TIPO_4X4);
+    contrato_estado_t estado;
+    mem_carregar(&lido, &estado, NAV_TIPO_4X4);
+    TEST_ASSERT_EQUAL_UINT32(0, mem_gravacoes());
+
+    int8_t x = -1;
+    int8_t y = -1;
+    for (int i = 0; i < 3 * MEM_GRAVACOES_MAX; i++) {
+        gravado.x = (int8_t)(i % 2);
+        gravado.y = 0;
+        TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_RUNNING, &x, &y, false));
+    }
+    TEST_ASSERT_EQUAL_UINT32(MEM_GRAVACOES_MAX, mem_gravacoes());
+}
+
+static void test_depois_do_limite_a_gravacao_forcada_ainda_grava(void)
+{
+    nav_iniciar(&gravado, NAV_TIPO_4X4);
+    contrato_estado_t estado;
+    mem_carregar(&lido, &estado, NAV_TIPO_4X4);
+    int8_t x = -1;
+    int8_t y = -1;
+    for (int i = 0; i < MEM_GRAVACOES_MAX + 5; i++) {
+        gravado.x = (int8_t)(i % 2);
+        mem_gravar_celula(&gravado, CONTRATO_ESTADO_RUNNING, &x, &y, false);
+    }
+    uint32_t antes = mem_gravacoes();
+    andar(&gravado, 2, 3);
+    TEST_ASSERT_TRUE(mem_gravar_celula(&gravado, CONTRATO_ESTADO_FAILED, &x, &y, true));
+    TEST_ASSERT_EQUAL_UINT32(antes + 1, mem_gravacoes());
+    TEST_ASSERT_EQUAL_INT(MEM_RETOMADA, mem_carregar(&lido, &estado, NAV_TIPO_4X4));
+    TEST_ASSERT_EQUAL_INT(CONTRATO_ESTADO_FAILED, estado);
+}
+
+static void test_mem_carregar_zera_a_contagem_do_boot(void)
+{
+    nav_iniciar(&gravado, NAV_TIPO_4X4);
+    mem_gravar(&gravado, CONTRATO_ESTADO_RUNNING);
+    TEST_ASSERT_TRUE(mem_gravacoes() > 0);
+    contrato_estado_t estado;
+    mem_carregar(&lido, &estado, NAV_TIPO_4X4);
+    TEST_ASSERT_EQUAL_UINT32(0, mem_gravacoes());
+}
+
 static void test_gravar_de_novo_fica_com_o_ultimo(void)
 {
     nav_iniciar(&gravado, NAV_TIPO_4X4);
@@ -268,6 +315,9 @@ int main(void)
     RUN_TEST(test_apagar_mapa_preserva_orientacao_e_lado);
     RUN_TEST(test_apagar_tudo_apaga_os_dois);
     RUN_TEST(test_gravar_celula_so_quando_muda_ou_forca);
+    RUN_TEST(test_oscilar_entre_duas_celulas_nao_grava_alem_do_limite);
+    RUN_TEST(test_depois_do_limite_a_gravacao_forcada_ainda_grava);
+    RUN_TEST(test_mem_carregar_zera_a_contagem_do_boot);
     RUN_TEST(test_gravar_de_novo_fica_com_o_ultimo);
     return UNITY_END();
 }

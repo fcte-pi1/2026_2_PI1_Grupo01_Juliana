@@ -1,0 +1,85 @@
+# Teste 5.25. BOOT durante a corrida e retomada depois do reset na ESP32 (esp32_sim_boot), 21/11/2026.
+# HAL simulada, botão BOOT real, interruptor da bateria desligado.
+# Roteiro: gravar o esp32_sim_boot; python tools/monitor_comandos.py; EN; l; BOOT apertado uma vez no meio da corrida; EN; l.
+# Os boots 13 e 14 saíram como retomada em (0,1) por causa da falha da rodada anterior (interromper logo depois do largar).
+# Log completo do monitor serial desde o boot (a saída do upload foi omitida):
+
+# /dev/ttyACM0: l=largar i=interromper h=health_check t=tel q=sair
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# Ratatouille: firmware com HAL SIMULADA
+{"v":1,"boot":13,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":13,"seq":1,"t_ms":855,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":405}
+{"v":1,"boot":13,"seq":2,"t_ms":905,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":13,"seq":3,"t_ms":955,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":13,"seq":4,"t_ms":1005,"tipo":"tel","estado":"health-check","x":0,"y":1,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":13,"seq":5,"t_ms":1005,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":13,"seq":6,"t_ms":1075,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":13,"seq":7,"t_ms":1125,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":13,"seq":8,"t_ms":1175,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":13,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# Ratatouille: firmware com HAL SIMULADA
+{"v":1,"boot":14,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":14,"seq":1,"t_ms":855,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":405}
+{"v":1,"boot":14,"seq":2,"t_ms":905,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":14,"seq":3,"t_ms":955,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":14,"seq":5,"t_ms":1005,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":14,"seq":6,"t_ms":1075,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":14,"seq":7,"t_ms":1125,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":14,"seq":8,"t_ms":1175,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":14,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":14,"seq":23,"t_ms":14370,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":14,"seq":24,"t_ms":14460,"tipo":"tel","estado":"running","x":0,"y":2,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":14,"seq":29,"t_ms":15310,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":14,"seq":34,"t_ms":16250,"tipo":"passo","x":0,"y":3,"paredes":9}
+{"v":1,"boot":14,"seq":41,"t_ms":17295,"tipo":"falha","motivo":"encerrado_operador","origem":"boot","x":1,"y":3,"componente":null}
+{"v":1,"boot":14,"seq":42,"t_ms":18275,"tipo":"tel","estado":"failed","x":1,"y":3,"rumo":"L","bat_mv":8397,"vel_mm_s":0,"eixo_longo":null}
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+# Ratatouille: firmware com HAL SIMULADA
+{"v":1,"boot":15,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":15,"seq":1,"t_ms":855,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":225}
+{"v":1,"boot":15,"seq":2,"t_ms":905,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":15,"seq":3,"t_ms":955,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":15,"seq":4,"t_ms":1005,"tipo":"tel","estado":"health-check","x":1,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":15,"seq":5,"t_ms":1005,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":15,"seq":6,"t_ms":1075,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":15,"seq":7,"t_ms":1125,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":15,"seq":8,"t_ms":1175,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":15,"seq":9,"t_ms":1225,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"retomada"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":15,"seq":22,"t_ms":14005,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":15,"seq":23,"t_ms":14070,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":15,"seq":28,"t_ms":15010,"tipo":"passo","x":2,"y":3,"paredes":5}
+{"v":1,"boot":15,"seq":37,"t_ms":16470,"tipo":"passo","x":2,"y":2,"paredes":2}
+{"v":1,"boot":15,"seq":45,"t_ms":17930,"tipo":"passo","x":3,"y":2,"paredes":4}
+{"v":1,"boot":15,"seq":53,"t_ms":19390,"tipo":"passo","x":3,"y":3,"paredes":13}
+{"v":1,"boot":15,"seq":54,"t_ms":19450,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":15,"seq":55,"t_ms":20245,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}

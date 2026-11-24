@@ -51,6 +51,21 @@ static void test_labirinto_le_paredes_dos_dois_lados(void)
     TEST_ASSERT_TRUE(sim_labirinto_tem_parede(&lab, 5, 5, SIM_PAREDE_N));
 }
 
+static void test_robo_no_centro_da_celula_nas_quatro_direcoes(void)
+{
+    static const char LAB[] = "+---+---+\n|       |\n+---+---+\n";
+    TEST_ASSERT_TRUE(sim_mundo_iniciar(LAB));
+    const float THETA[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
+    for (int d = 0; d < 4; d++) {
+        sim_mundo_no_centro_da_celula(1, 0, d);
+        sim_pose_t p = sim_pose();
+        TEST_ASSERT_FLOAT_WITHIN(0.01f, 1.5f * CELULA_MM, p.x_mm);
+        TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.5f * CELULA_MM, p.y_mm);
+        TEST_ASSERT_FLOAT_WITHIN(0.001f, THETA[d], p.theta_rad);
+        TEST_ASSERT_FALSE(p.colidiu);
+    }
+}
+
 static void test_labirinto_rejeita_desenho_malformado(void)
 {
     sim_labirinto_t lab;
@@ -108,6 +123,20 @@ static void test_motores_desabilitados_nao_movem(void)
 
     TEST_ASSERT_EQUAL_INT32(0, sim_encoder(0));
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 90.0f, sim_pose().y_mm);
+}
+
+static void test_rodas_no_ar_contam_pulsos_sem_mover_o_robo(void)
+{
+    sim_mundo_iniciar(CORREDOR_1X3);
+    sim_definir_rodas_no_ar(true);
+    sim_motor_habilitar(true);
+    sim_motor_definir(0, 800);
+    sim_mundo_avancar(1000);
+
+    TEST_ASSERT_GREATER_THAN_INT32(100, sim_encoder(0));
+    TEST_ASSERT_EQUAL_INT32(0, sim_encoder(1));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 90.0f, sim_pose().y_mm);
+    TEST_ASSERT_FALSE(sim_pose().colidiu);
 }
 
 static void test_encoders_acompanham_o_deslocamento(void)
@@ -211,11 +240,13 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_labirinto_le_paredes_dos_dois_lados);
+    RUN_TEST(test_robo_no_centro_da_celula_nas_quatro_direcoes);
     RUN_TEST(test_labirinto_rejeita_desenho_malformado);
     RUN_TEST(test_tof_mede_distancia_ate_as_paredes);
     RUN_TEST(test_tof_frontal_centrado_ve_a_parede_da_frente);
     RUN_TEST(test_tof_fora_de_alcance);
     RUN_TEST(test_motores_desabilitados_nao_movem);
+    RUN_TEST(test_rodas_no_ar_contam_pulsos_sem_mover_o_robo);
     RUN_TEST(test_encoders_acompanham_o_deslocamento);
     RUN_TEST(test_colisao_trava_robo_e_encoders);
     RUN_TEST(test_giro_no_lugar);

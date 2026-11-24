@@ -22,5 +22,9 @@ describe('formatação', () => {
 
   it('formata o número da execução com 4 dígitos', () => {
     expect(formatarNumeroExecucao(42)).toBe('#0042')
+    expect(formatarNumeroExecucao(1)).toBe('#0001')
+    expect(formatarNumeroExecucao(12345)).toBe('#12345')
+    // sem número (resposta antiga), a tela cai no UUID, nunca em #undefined
+    expect(formatarNumeroExecucao(undefined, 'abc-123')).toBe('abc-123')
   })
 })

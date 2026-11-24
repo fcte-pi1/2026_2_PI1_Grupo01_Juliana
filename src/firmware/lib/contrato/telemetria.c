@@ -126,6 +126,11 @@ bool contrato_eh_largar(const char *linha)
     return eh_comando(linha, "\"cmd\":\"largar\"");
 }
 
+bool contrato_largar_forcado(const char *linha)
+{
+    return contrato_eh_largar(linha) && strstr(linha, "\"forcar_bateria\":true") != NULL;
+}
+
 bool contrato_eh_health_check(const char *linha)
 {
     return eh_comando(linha, "\"cmd\":\"health_check\"");

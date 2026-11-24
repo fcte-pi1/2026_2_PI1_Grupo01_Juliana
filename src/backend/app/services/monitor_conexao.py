@@ -20,6 +20,10 @@ class MonitorConexao:
     def agora(self) -> datetime:
         return self.relogio()
 
+    @property
+    def ultima_mensagem(self) -> datetime | None:
+        return self._ultima_mensagem
+
     def registrar_mensagem(self, recebido_em: datetime | None = None) -> None:
         self._ultima_mensagem = recebido_em or self.agora()
 

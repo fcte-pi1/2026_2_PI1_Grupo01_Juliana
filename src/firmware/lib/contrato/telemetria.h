@@ -147,6 +147,9 @@ bool contrato_eh_interromper(const char *linha);
 /* true se a linha for a largada dada pelo operador (Nova execução ou Retomar). */
 bool contrato_eh_largar(const char *linha);
 
+/* true se a largada trouxer a confirmação do operador para largar com a bateria abaixo do corte. */
+bool contrato_largar_forcado(const char *linha);
+
 /* true se a linha for o pedido de um novo health-check feito pelo operador. */
 bool contrato_eh_health_check(const char *linha);
 

@@ -1,0 +1,78 @@
+# Teste 5.19. Estouro do contador do encoder (PCNT de 16 bits, zera em +-30000) com o motor girando, 21/11/2026.
+# Bancada esp32_drivers (HAL real), rodas no ar, interruptor da bateria ligado (bat ~7,7 V), motor a 30% (POTENCIA_TESTE 300).
+# Comandos: e (esquerdo frente), E (esquerdo ré), D / d (direito ré / frente), p (parar). Saída a cada ~200 ms.
+# O contador segue sem pulo ao cruzar +-30000 e +-60000 (o PCNT zera nesses pontos). Passo típico: ~402 pulsos por linha.
+# Trechos transcritos do monitor serial (as colunas bat e ponte, ~7,73 V e ~7,38 V, foram abreviadas).
+
+## Motor esquerdo para a frente (e): sobe, cruza +30000 e passa de 32767
+enc_e=0 enc_d=0
+enc_e=320 enc_d=0
+enc_e=724 enc_d=0
+[... passo de ~404 pulsos por linha ...]
+enc_e=28948 enc_d=0
+enc_e=29351 enc_d=0
+enc_e=29752 enc_d=0
+enc_e=30154 enc_d=0        <- cruzou +30000 sem pulo
+enc_e=30556 enc_d=0
+enc_e=30957 enc_d=0
+enc_e=31359 enc_d=0
+enc_e=31761 enc_d=0
+enc_e=32163 enc_d=0
+enc_e=32565 enc_d=0
+enc_e=32967 enc_d=0        <- passou de 32767 (limite do int16)
+enc_e=33369 enc_d=0
+[... segue subindo ...]
+enc_e=46227 enc_d=0
+enc_e=46464 enc_d=0        <- p (parar)
+enc_e=46475 enc_d=0
+enc_e=46475 enc_d=0
+
+## Motor esquerdo em ré (E): desce, cruza +30000, 0, -30000 e -60000
+enc_e=46154 enc_d=0
+enc_e=45750 enc_d=0
+[...]
+enc_e=30802 enc_d=0
+enc_e=30399 enc_d=0
+enc_e=29996 enc_d=0        <- cruzou +30000 descendo, sem pulo
+enc_e=29592 enc_d=0
+[...]
+enc_e=628 enc_d=0
+enc_e=225 enc_d=0
+enc_e=-177 enc_d=0         <- cruzou 0
+enc_e=-579 enc_d=0
+[...]
+enc_e=-29490 enc_d=0
+enc_e=-29892 enc_d=0
+enc_e=-30293 enc_d=0       <- cruzou -30000 sem pulo
+enc_e=-30694 enc_d=0
+[...]
+enc_e=-59552 enc_d=0
+enc_e=-59954 enc_d=0
+enc_e=-60356 enc_d=0       <- cruzou -60000 sem pulo
+enc_e=-60757 enc_d=0
+[...]
+enc_e=-66796 enc_d=0
+enc_e=-67034 enc_d=-332
+enc_e=-67046 enc_d=-743    <- esquerdo parado em -67046; direito em ré (D)
+
+## Motor direito em ré (D): desce, cruza -30000
+enc_e=-67046 enc_d=-29190
+enc_e=-67046 enc_d=-29602
+enc_e=-67046 enc_d=-30014  <- cruzou -30000 sem pulo
+enc_e=-67046 enc_d=-30426
+[...]
+enc_e=-67046 enc_d=-40325  <- inversão para frente (d), sem p entre os comandos
+enc_e=-67046 enc_d=-40053
+[... sobe de volta, cruzando -30000 e 0 sem pulo ...]
+enc_e=-67046 enc_d=-30196
+enc_e=-67046 enc_d=-29786
+[...]
+enc_e=-67046 enc_d=-303
+enc_e=-67046 enc_d=106
+enc_e=-67046 enc_d=5018
+enc_e=-67368 enc_d=5258    <- esquerdo volta a descer (E); direito parado em 5266
+
+## Sentido
+# e / d (potência positiva) somam; E / D (potência negativa) subtraem, nos dois motores.
+# Observação da bancada: nesta configuração a roda esquerda girava para TRÁS com e e para a frente com E.
+# A roda direita já estava certa (d para a frente). Por isso só o motor e o encoder esquerdos passaram a ter invertido = true (a conferir na placa).
