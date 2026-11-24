@@ -12,6 +12,12 @@
 /* Da navegação (núcleo 1) para a telemetria (núcleo 0). */
 extern QueueHandle_t fila_amostra;  /* telemetria_amostra_t, tamanho 1 */
 extern QueueHandle_t fila_eventos;  /* telemetria_evento_t */
+extern QueueHandle_t fila_diagnostico; /* app_linha_diag_t: linhas "#" para o log da ponte */
+
+#define APP_DIAG_TAMANHO 200
+typedef struct {
+    char texto[APP_DIAG_TAMANHO];
+} app_linha_diag_t;
 
 /* Contador de inicializações (NVS), lido uma vez em app_iniciar. */
 extern uint32_t app_boot;
@@ -40,6 +46,8 @@ void app_iniciar(void);
 /* Publicam para a telemetria sem nunca esperar. */
 void app_publicar_amostra(const telemetria_amostra_t *amostra);
 void app_publicar_evento(const telemetria_evento_t *evento);
+/* Linha de diagnóstico ("# ..." com \n); com a fila cheia, é descartada. */
+void app_publicar_diagnostico(const char *linha);
 
 void tarefa_navegacao(void *parametro);
 void tarefa_telemetria(void *parametro);

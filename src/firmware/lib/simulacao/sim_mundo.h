@@ -25,6 +25,7 @@ extern "C" {
 #define SIM_TOF_FORA_DE_ALCANCE 8190 /* valor que o VL53L0X devolve quando não vê nada */
 #define SIM_TOF_QTD             3    /* frontal, esquerdo e direito (mesmo TOF_QTD da HAL) */
 
+/* A pose é a do ponto médio entre as rodas (o eixo), que no robô montado fica atrás do centro do chassi. */
 typedef struct {
     float x_mm;      /* a partir do canto inferior esquerdo do labirinto */
     float y_mm;
@@ -32,7 +33,7 @@ typedef struct {
     bool colidiu;    /* true se o último movimento foi bloqueado por parede */
 } sim_pose_t;
 
-/* Carrega o labirinto e põe o robô no centro de (0, 0), virado para o norte. */
+/* Carrega o labirinto e põe o robô com o chassi centrado em (0, 0), virado para o norte. */
 bool sim_mundo_iniciar(const char *labirinto_texto);
 
 /* Avança o tempo simulado (em passos internos de 1 ms). */
@@ -49,10 +50,17 @@ bool sim_boot_pressionado(void);
 void sim_led_definir(bool aceso);
 void sim_buzzer_definir(bool ligado);
 
+/* Põe o robô parado na célula para ler as paredes: o mesmo que sim_mundo_no_centro_da_celula. */
 void sim_mundo_na_celula(int celula_x, int celula_y, int direcao);
 
-/* Põe o robô no centro da célula, virado para a direção (0 norte, 1 leste, 2 sul, 3 oeste). */
+/*
+ * Põe o robô com o chassi centrado na célula, virado para a direção (0 norte, 1 leste, 2 sul, 3 oeste):
+ * o eixo fica EIXO_RECUO_MM atrás do centro, como o robô é posto na largada.
+ */
 void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao);
+
+/* Pose do centro do chassi (a pose do eixo deslocada EIXO_RECUO_MM para a frente). */
+sim_pose_t sim_centro_do_chassi(void);
 
 /* Usado pelos testes para provocar situações */
 void sim_definir_tof_ausente(int tof, bool ausente);
@@ -75,6 +83,15 @@ void sim_definir_pose(float x_mm, float y_mm, float theta_rad);
  * (reprodutível). Amplitude 0 (o padrão) desliga.
  */
 void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente);
+
+/*
+ * Perto da parede (abaixo de TOF_MIN_CONFIAVEL_MM) a leitura do frontal e do direito vira 20 + d/2, como no
+ * VL53L0X do robô; o esquerdo (que no robô tem o erro descontado) segue medindo. Desligado por padrão.
+ */
+void sim_definir_tof_curto(bool ligado);
+
+/* Soma mm a toda leitura do sensor (descalibrado; negativo lê mais perto). 0 desliga. */
+void sim_definir_tof_desvio(int tof, int16_t mm);
 
 /* A próxima leitura do sensor devolve distancia_mm (um pico isolado). */
 void sim_definir_tof_pico(int tof, uint16_t distancia_mm);

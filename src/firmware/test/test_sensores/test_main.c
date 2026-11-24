@@ -172,7 +172,7 @@ static const caso_t CASOS[] = {
     /* Lateral presente */
     {"esquerda 77", ESQUERDA, {77, 77, 77, 77, 77}, true},
     {"esquerda 54", ESQUERDA, {54, 54, 54}, true},
-    {"esquerda 139", ESQUERDA, {139, 139, 139}, true},
+    {"esquerda 119", ESQUERDA, {119, 119, 119}, true},
     {"direita 77", DIREITA, {77, 77, 77, 77, 77}, true},
     /* Lateral ausente */
     {"esquerda 331", ESQUERDA, {331, 331, 331}, false},
@@ -187,9 +187,9 @@ static const caso_t CASOS[] = {
     {"direita aberta, pico baixo", DIREITA, {331, 331, 77, 331, 331}, false},
     {"esquerda parede, pico alto", ESQUERDA, {77, 77, 1200, 77, 77}, true},
     /* Lateral: histerese */
-    {"esquerda parede, faixa mantém", ESQUERDA, {100, 100, 100, 160, 160, 160}, true},
+    {"esquerda parede, faixa mantém", ESQUERDA, {100, 100, 100, 140, 140, 140}, true},
     {"esquerda parede some", ESQUERDA, {100, 100, 100, 180, 180, 180}, false},
-    {"esquerda aberta, faixa mantém", ESQUERDA, {300, 300, 300, 150, 150, 150}, false},
+    {"esquerda aberta, faixa mantém", ESQUERDA, {300, 300, 300, 140, 140, 140}, false},
     /* Lateral: falhas */
     {"esquerda cai e não volta", ESQUERDA, {SEM, SEM, SEM, 77, 77}, false},
     {"direita 2 falhas toleradas", DIREITA, {77, SEM, SEM, 77}, true},
@@ -261,9 +261,10 @@ static void test_45_casos_sinteticos(void)
 /* ------------------------------------------------- ponta a ponta (HAL sim) */
 
 /* Robô em (0, 0), 10 mm depois de entrar na célula, virado para o norte. */
+/* Largada: chassi centrado em (0, 0), virado para o norte (paredes dos dois lados, frente aberta). */
 static void pose_na_janela_lateral(void)
 {
-    sim_definir_pose(CELULA_MM / 2.0f, 10.0f, PI_F / 2.0f);
+    sim_mundo_no_centro_da_celula(0, 0, 0);
 }
 
 static void ler_ciclos(int ciclos)
@@ -351,14 +352,14 @@ static void test_pico_isolado_nao_cria_parede(void)
 
 static void test_frente_ve_parede_ao_chegar_no_fim(void)
 {
-    /* (0, 1): centro da célula do topo, parede norte a ~44 mm do frontal. */
-    sim_definir_pose(CELULA_MM / 2.0f, CELULA_MM * 1.5f, PI_F / 2.0f);
+    /* (0, 1): chassi centrado na célula do topo, parede norte a ~26 mm do frontal. */
+    sim_mundo_no_centro_da_celula(0, 1, 0);
     ler_ciclos(3);
     TEST_ASSERT_TRUE(sensores_paredes().frente);
 }
 
 /*
- * Janela da leitura lateral (config/robo.h), no pior caso: coluna do meio sem
+ * Leitura lateral (config/robo.h): os laterais a 90° medem a própria célula. Pior caso: coluna do meio sem
  * paredes laterais e vizinhas com parede horizontal em toda fronteira.
  */
 static const char CORREDOR_ABERTO[] =
@@ -379,44 +380,25 @@ static const char CORREDOR_FECHADO[] =
     "|   |   |   |\n"
     "+---+---+---+\n";
 
-/* Anda pela coluna do meio, de 60 mm antes até 20 mm depois de entrar em (1, 1). */
-static paredes_t atravessar_fronteira(const char *labirinto)
+/* Robô parado com o chassi centrado em (1, 1), virado para o norte. */
+static paredes_t parado_no_meio(const char *labirinto)
 {
     sim_mundo_iniciar(labirinto);
     sensores_iniciar();
-    for (int p = -60; p <= 20; p += 20) { /* 20 mm por amostra: 400 mm/s a 20 Hz */
-        sim_definir_pose(CELULA_MM * 1.5f, CELULA_MM + p, PI_F / 2.0f);
-        sensores_ler();
-    }
+    sim_mundo_no_centro_da_celula(1, 1, 0);
+    ler_ciclos(3);
     return sensores_paredes();
 }
 
-static void test_lateral_lida_ao_entrar_na_celula(void)
+static void test_lateral_parado_mede_a_propria_celula(void)
 {
-    paredes_t aberto = atravessar_fronteira(CORREDOR_ABERTO);
+    paredes_t aberto = parado_no_meio(CORREDOR_ABERTO);
     TEST_ASSERT_FALSE(aberto.esquerda);
     TEST_ASSERT_FALSE(aberto.direita);
 
-    paredes_t fechado = atravessar_fronteira(CORREDOR_FECHADO);
+    paredes_t fechado = parado_no_meio(CORREDOR_FECHADO);
     TEST_ASSERT_TRUE(fechado.esquerda);
     TEST_ASSERT_TRUE(fechado.direita);
-}
-
-/* Lida tarde demais (p = 60 mm), o lateral vê a parede da vizinha. */
-static void test_lateral_tarde_demais_ve_a_vizinha(void)
-{
-    sim_mundo_iniciar(CORREDOR_ABERTO);
-    sim_definir_pose(CELULA_MM * 1.5f, CELULA_MM + 60.0f, PI_F / 2.0f);
-    ler_ciclos(3);
-    TEST_ASSERT_TRUE(sensores_paredes().direita);
-}
-
-/* No centro de uma célula sem paredes laterais, o lateral vê o poste do canto. */
-static void test_lateral_no_centro_ve_o_poste(void)
-{
-    sim_definir_pose(X_CELULA_ABERTA, CELULA_MM / 2.0f, PI_F / 2.0f);
-    ler_ciclos(3);
-    TEST_ASSERT_TRUE(sensores_paredes().direita);
 }
 
 static void test_sensor_ausente_reportado_com_o_nome(void)
@@ -466,8 +448,9 @@ static void test_autoteste_na_largada(void)
         TEST_ASSERT_TRUE(r[i].tem_valor);
         TEST_ASSERT_EQUAL_STRING(hal_tof_nome((tof_id_t)i), r[i].nome);
     }
-    TEST_ASSERT_UINT16_WITHIN(5, 77, r[TOF_ESQUERDO].valor_mm);
-    TEST_ASSERT_UINT16_WITHIN(5, 77, r[TOF_DIREITO].valor_mm);
+    /* Chassi centrado: 82,5 - 40 = 42,5 mm do lateral à parede. */
+    TEST_ASSERT_UINT16_WITHIN(3, 43, r[TOF_ESQUERDO].valor_mm);
+    TEST_ASSERT_UINT16_WITHIN(3, 43, r[TOF_DIREITO].valor_mm);
 }
 
 static void test_autoteste_regras(void)
@@ -596,9 +579,7 @@ int main(void)
     RUN_TEST(test_paredes_estaveis_com_ruido);
     RUN_TEST(test_pico_isolado_nao_cria_parede);
     RUN_TEST(test_frente_ve_parede_ao_chegar_no_fim);
-    RUN_TEST(test_lateral_no_centro_ve_o_poste);
-    RUN_TEST(test_lateral_lida_ao_entrar_na_celula);
-    RUN_TEST(test_lateral_tarde_demais_ve_a_vizinha);
+    RUN_TEST(test_lateral_parado_mede_a_propria_celula);
     RUN_TEST(test_sensor_ausente_reportado_com_o_nome);
     RUN_TEST(test_autoteste_na_largada);
     RUN_TEST(test_autoteste_regras);

@@ -98,6 +98,14 @@ bool hal_tof_iniciar(void)
     return todos;
 }
 
+/* Desconta o erro medido de cada sensor (config/robo.h): o esquerdo lê ~2 cm a mais. */
+static uint16_t corrigir(tof_id_t id, uint16_t mm)
+{
+    static const int16_t DESVIO_MM[TOF_QTD] = {TOF_F_DESVIO_MM, TOF_E_DESVIO_MM, TOF_D_DESVIO_MM};
+    int32_t corrigido = (int32_t)mm - DESVIO_MM[id];
+    return (uint16_t)(corrigido < 1 ? 1 : corrigido); /* 0 quer dizer "sem leitura" no movimento */
+}
+
 bool hal_tof_ler_mm(tof_id_t id, uint16_t *distancia_mm)
 {
     if (id < 0 || id >= TOF_QTD || !presente[id]) {
@@ -109,7 +117,7 @@ bool hal_tof_ler_mm(tof_id_t id, uint16_t *distancia_mm)
         if (sensor[id].Status != VL53L0X_ERROR_NONE) {
             return false; /* erro de I²C: não usa o dado e não renova a validade */
         }
-        ultima_mm[id] = mm == 0xFFFF ? TOF_SEM_NADA_MM : mm;
+        ultima_mm[id] = mm == 0xFFFF ? TOF_SEM_NADA_MM : corrigir(id, mm);
         ultima_em_ms[id] = millis();
     }
 

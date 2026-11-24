@@ -4,7 +4,7 @@
  *
  * O laço roda a cada MOV_PERIODO_MS (5 ms), o ciclo do controle de movimento. Anda e para: parado no
  * centro de uma célula, espera os ToF estabilizarem, decide a ação e a executa (giro e avanço pelo
- * lib/execucao). A parede lateral da célula nova é guardada ao entrar nela, durante o avanço. Com a
+ * lib/execucao). As paredes são lidas com o robô parado. Com a
  * HAL simulada o robô anda pela física do mundo simulado, e com a real, pelos motores.
  *
  * No boot, carrega o mapa da NVS, publica o health-check (hc_item e hc_resultado, com inicio
@@ -14,6 +14,7 @@
  */
 
 #include <Arduino.h>
+#include <stdio.h>
 
 #include "app.h"
 #include "bateria.h"
@@ -147,6 +148,47 @@ static void acompanhar_celula(const nav_estado_t *nav)
 }
 #endif
 
+/*
+ * Diagnóstico na pista: ao fim de cada etapa de movimento, uma linha "# mov" com o que o robô fez e estimou; a
+ * cada decisão, uma linha "# dec" com o que ele viu. A ponte grava no log e não manda ao backend.
+ */
+static void publicar_diagnostico_movimento(void)
+{
+    mov_diag_t d;
+    if (!mov_diagnostico(&d)) {
+        return;
+    }
+    char linha[APP_DIAG_TAMANHO];
+    snprintf(linha, sizeof(linha),
+             "# mov t=%lu %c pedido=%.1f fim=%s dur=%lums esq=%ld/%ld dir=%ld/%ld lat=%.1f rumo=%.1f deriva=%.2f"
+             " tof=%u/%u/%u\n",
+             (unsigned long)hal_tempo_ms(), d.tipo, (double)d.pedido, mov_fim_nome(d.fim),
+             (unsigned long)d.duracao_ms, (long)d.pulsos_esq, (long)d.alvo_esq, (long)d.pulsos_dir,
+             (long)d.alvo_dir, (double)d.lateral_mm, (double)d.rumo_graus, (double)d.deriva_graus_m,
+             (unsigned)d.tof.frente_mm, (unsigned)d.tof.esquerda_mm, (unsigned)d.tof.direita_mm);
+    app_publicar_diagnostico(linha);
+}
+
+static void publicar_diagnostico_decisao(const nav_estado_t *nav, nav_leitura_t leitura, nav_acao_t acao,
+                                         uint16_t bateria_mv)
+{
+    static const char *const ACOES[] = {"frente", "direita", "esquerda", "meia_volta", "sucesso", "sem_passo"};
+    static const char RUMOS[] = {'N', 'L', 'S', 'O'};
+    uint16_t f = 0, e = 0, d = 0;
+    sensores_distancia_mm(TOF_FRONTAL, &f);
+    sensores_distancia_mm(TOF_ESQUERDO, &e);
+    sensores_distancia_mm(TOF_DIREITO, &d);
+    char linha[APP_DIAG_TAMANHO];
+    snprintf(linha, sizeof(linha),
+             "# dec t=%lu proxima=%d,%d rumo=%c paredes F%d E%d D%d tof=%u/%u/%u acao=%s"
+             " lat=%.1f rumo_est=%.1f bat=%u\n",
+             (unsigned long)hal_tempo_ms(), nav->x, nav->y, RUMOS[(int)nav->direcao & 3], leitura.frente,
+             leitura.esquerda, leitura.direita, f, e, d,
+             (unsigned)acao < 6 ? ACOES[acao] : "?", (double)mov_lateral_mm(),
+             (double)(mov_rumo_rad() * 57.2958f), (unsigned)bateria_mv);
+    app_publicar_diagnostico(linha);
+}
+
 /* Distâncias filtradas e paredes dos ToF para as correções do movimento. */
 static void informar_tof_ao_movimento(void)
 {
@@ -173,10 +215,6 @@ void tarefa_navegacao(void *parametro)
     exec_iniciar();
     corrida_iniciar(&corrida, dip_tipo_nav(hal_dip_ler()));
 
-    /* Parede lateral da célula nova, guardada ao entrar nela; a primeira decisão usa a leitura ao vivo. */
-    bool tem_lateral = false;
-    bool lateral_esq = false;
-    bool lateral_dir = false;
     uint32_t parado_desde = hal_tempo_ms();
 
     /* Executa o que a lib pediu depois de um evento. */
@@ -201,7 +239,6 @@ void tarefa_navegacao(void *parametro)
             bipe(ef.bipes);
         }
         if (ef.parar_motores || ef.reposicionar) {
-            tem_lateral = false;
             parado_desde = hal_tempo_ms();
         }
     };
@@ -219,7 +256,6 @@ void tarefa_navegacao(void *parametro)
         corrida_evento(&corrida, ev, &ef);
         aplicar(ef);
         if (ev == MAQ_EV_CMD_LARGAR || ev == MAQ_EV_CMD_LARGAR_FORCADO) {
-            tem_lateral = false;
             parado_desde = hal_tempo_ms();
         }
         if (ef.rodar_health_check) {
@@ -292,6 +328,7 @@ void tarefa_navegacao(void *parametro)
 
         /* Movimento: um ciclo do controle; a falha vira a falha automática stuck. */
         exec_estado_t exec = exec_atualizar();
+        publicar_diagnostico_movimento();
         if (exec == EXEC_FALHOU) {
             corrida_efeitos_t ef;
             corrida_movimento_falhou(&corrida, &ef);
@@ -299,23 +336,19 @@ void tarefa_navegacao(void *parametro)
             aplicar(ef);
             exec = EXEC_OCIOSO;
         }
-        if (exec_ler_lateral_agora()) {
-            paredes_t q = sensores_paredes();
-            lateral_esq = q.esquerda;
-            lateral_dir = q.direita;
-            tem_lateral = true;
-        }
 
         if (exec != EXEC_OCIOSO) {
             parado_desde = hal_tempo_ms();
         } else if (maq_andando(&corrida.maq) && hal_tempo_ms() - parado_desde >= ESPERA_PARADO_MS) {
-            /* Parado no centro da célula: lê a frente, junta com a lateral guardada e decide. */
+            /*
+             * Parado na célula, com os ToF estabilizados: as três paredes são as lidas agora. Com os laterais a 90°,
+             * o sensor parado olha a própria célula; a leitura em movimento errava na troca de célula (24/11/2026).
+             */
             paredes_t paredes = sensores_paredes();
             nav_leitura_t leitura;
             leitura.frente = paredes.frente;
-            leitura.esquerda = tem_lateral ? lateral_esq : paredes.esquerda;
-            leitura.direita = tem_lateral ? lateral_dir : paredes.direita;
-            tem_lateral = false;
+            leitura.esquerda = paredes.esquerda;
+            leitura.direita = paredes.direita;
 
             bool reposicionar = false;
             telemetria_decisao_evento_t saida[TELEMETRIA_DECISAO_EVENTOS_MAX];
@@ -334,6 +367,7 @@ void tarefa_navegacao(void *parametro)
                     break;
                 }
             }
+            publicar_diagnostico_decisao(&corrida.nav, leitura, corrida.acao, bateria_mv(&bateria));
             if (exec_eh_movimento(corrida.acao)) {
                 exec_comecar(corrida.acao);
             }

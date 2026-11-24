@@ -1,0 +1,36 @@
+Teste 5.43 - Medidas do robo montado, encoders em 10 voltas e leituras dos ToF contra a parede, 24/11/2026.
+Medidas com regua, robo desligado (geometria) e com a ESP32 no USB e o interruptor da bateria desligado (encoders e ToF).
+Usadas no ADR-024 e em include/config/robo.h.
+
+[Geometria] (origem no ponto medio entre as rodas)
+eixo ate a frente: 87,5 mm
+eixo ate a traseira: 25 mm
+largura: 95 mm; 100 mm contando os fios que sobram do lado esquerdo
+centro a centro dos pneus (bitola): 87 mm
+diametro da roda: 34 mm
+ToF frontal: 87,5 mm a frente do eixo, a 40 mm do chao
+ToF laterais: 65 mm a frente do eixo, 80 mm entre os dois chips, apontados para os lados (90 graus, nao 45)
+alturas: esquerdo 40 mm, direito 38,5 mm
+os bracos dos laterais estao presos com fita e tortos: o direito aponta um pouco para baixo, o esquerdo um pouco para cima
+
+[Labirinto da equipe]
+celula de 180 mm; parede de 15 mm (sobram 165 mm livres)
+paredes externas de 35, 23, 35 e 25 mm de altura; internas de 35 mm (abaixo dos ToF, a 40 mm do chao)
+
+[Giro de 180 graus a mao, num beco]
+robo centrado no beco, girado pelos polegares em volta do ponto entre as rodas:
+a quina esquerda encostou na parede (pelos fios, ~0,5 cm), a direita quase encostou
+
+[Encoders: 10 voltas marcadas, girando a roda a mao para a frente] (bancada esp32_drivers)
+roda esquerda: 5759 e 5743 pulsos  -> ~575 por volta
+roda direita:  5716 e 5752 pulsos  -> ~573 por volta
+(o codigo usava 640; com ele o avanco andava 18 a 20 cm por celula, ver 5.28)
+
+[ToF contra a parede, tecla t] (bancada esp32_calibracao)
+frontal: a partir de 4 cm le certo; 3 cm le ~40 mm; 2 cm le ~30 mm
+esquerdo: le ~2 cm a mais em todas as distancias (10 cm -> 120 a 130 mm; 2 cm -> 40; 1 cm -> 30)
+direito: como o frontal: 10 cm -> ~100 mm; 2 cm -> ~30 mm
+sem parede: os laterais leram de 220 a 350 mm (parede da celula vizinha ou nada)
+
+[Teste do angulo real dos giros no chao]
+adiado pela equipe (receio de danificar o robo).

@@ -5,13 +5,17 @@
  * Executa a ação que a navegação decidiu, com as primitivas de movimento:
  *
  *   FRENTE      avança uma célula
- *   DIREITA     gira -90° e avança uma célula
- *   ESQUERDA    gira +90° e avança uma célula
- *   MEIA_VOLTA  gira 180° e avança uma célula
+ *   DIREITA     recua, faz um arco de 90° para a direita e avança até a célula seguinte
+ *   ESQUERDA    recua, faz um arco de 90° para a esquerda e avança até a célula seguinte
+ *   MEIA_VOLTA  gira 20°, dá ré para levar o eixo ao lado, completa os 180° e avança até a célula
  *
- * O robô para no centro de cada célula antes da próxima decisão (anda e para): é aí que os ToF
- * medem a parede lateral com confiança (config/robo.h). A tarefa chama exec_atualizar() a cada
- * MOV_PERIODO_MS, junto de mov_atualizar(), e decide de novo quando o estado voltar a EXEC_OCIOSO.
+ * O eixo das rodas fica atrás do centro do chassi (config/robo.h, docs/decisoes/024): girar no lugar
+ * desloca o robô. As etapas são calculadas para o robô terminar com o chassi centrado na célula nova;
+ * o que sobra de desvio lateral, o avanço corrige pelas paredes.
+ *
+ * O robô para em cada célula antes da próxima decisão (anda e para), e as paredes são lidas parado: com os
+ * laterais a 90°, o sensor olha a própria célula. A tarefa chama exec_atualizar() a cada MOV_PERIODO_MS,
+ * junto de mov_atualizar(), e decide de novo quando o estado voltar a EXEC_OCIOSO.
  *
  * Não lê HAL nem relógio: roda igual na ESP32 e nos testes do PC.
  */
@@ -44,12 +48,6 @@ exec_estado_t exec_estado(void);
 
 /* Cancela o que estiver em andamento e para os motores. */
 void exec_parar(void);
-
-/*
- * true uma única vez por ação, quando o avanço chega a EXEC_LEITURA_LATERAL_MM: é a hora de guardar
- * a parede lateral da célula nova (o robô acabou de entrar nela).
- */
-bool exec_ler_lateral_agora(void);
 
 /* Só as ações que movem o robô. */
 bool exec_eh_movimento(nav_acao_t acao);

@@ -26,7 +26,9 @@ class Porta(Protocol):
 
 
 def abrir_serial(porta: str) -> Porta:
-    return serial.Serial(porta, 115200, timeout=0.2)
+    """Abre a porta: um caminho (`/dev/rfcomm0`, `COM5`) ou uma URL do pyserial (`socket://ratatouille.local:3333`,
+    o enlace Wi-Fi de testes do firmware `esp32_real_wifi`)."""
+    return serial.serial_for_url(porta, 115200, timeout=0.2)
 
 
 def _agora() -> datetime:

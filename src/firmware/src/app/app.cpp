@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include <Arduino.h>
+#include <string.h>
 
 #include "config/pinos.h"
 #include "eventos.h"
@@ -27,6 +28,7 @@
 
 QueueHandle_t fila_amostra;
 QueueHandle_t fila_eventos;
+QueueHandle_t fila_diagnostico;
 uint32_t app_boot;
 volatile uint32_t app_eventos_descartados;
 #ifdef TELEMETRIA_DEPURACAO
@@ -76,6 +78,7 @@ void app_iniciar(void)
 
     fila_amostra = xQueueCreate(1, sizeof(telemetria_amostra_t));
     fila_eventos = xQueueCreate(TAMANHO_FILA_EVENTOS, sizeof(telemetria_evento_t));
+    fila_diagnostico = xQueueCreate(8, sizeof(app_linha_diag_t));
 
     xTaskCreatePinnedToCore(tarefa_telemetria, "telemetria", PILHA_TAREFA, NULL, 1, NULL,
                             NUCLEO_TELEMETRIA);
@@ -86,6 +89,14 @@ void app_iniciar(void)
 void app_publicar_amostra(const telemetria_amostra_t *amostra)
 {
     xQueueOverwrite(fila_amostra, amostra);
+}
+
+void app_publicar_diagnostico(const char *linha)
+{
+    app_linha_diag_t l;
+    strncpy(l.texto, linha, sizeof(l.texto) - 1);
+    l.texto[sizeof(l.texto) - 1] = '\0';
+    (void)xQueueSend(fila_diagnostico, &l, 0);
 }
 
 void app_publicar_evento(const telemetria_evento_t *evento)

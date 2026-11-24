@@ -13,6 +13,10 @@
 #include "eventos.h"
 #include "hal_tempo.h"
 
+#include <string.h>
+
+#include "hal_bt.h"
+
 #ifdef HAL_SIMULADA
 #include "sim/hal_sim.h"
 #endif
@@ -69,6 +73,12 @@ void tarefa_telemetria(void *parametro)
         }
 
         /* Antes da primeira amostra a fila está vazia e nenhuma tel sai. */
+        /* Diagnóstico do movimento: linhas "#", que a ponte grava no log e não manda ao backend. */
+        app_linha_diag_t diag;
+        while (xQueueReceive(fila_diagnostico, &diag, 0) == pdTRUE) {
+            hal_bt_escrever(diag.texto, strlen(diag.texto));
+        }
+
         bool tem_amostra = xQueuePeek(fila_amostra, &amostra, 0) == pdTRUE;
         uint32_t agora = hal_tempo_ms();
         espera_ms = telemetria_passo(agora, tem_amostra ? &amostra : NULL);

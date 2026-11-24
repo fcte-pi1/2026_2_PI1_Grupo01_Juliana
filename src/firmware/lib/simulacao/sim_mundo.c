@@ -9,7 +9,7 @@
 
 #define CONSTANTE_TEMPO_MOTOR_S  0.05f  /* atraso da roda para atingir a velocidade pedida */
 #define MEIA_PAREDE_MM           (PAREDE_ESPESSURA_MM / 2.0f)
-#define PONTOS_CONTORNO          16     /* pontos do contorno do robô testados na colisão */
+#define PASSO_CONTORNO_MM        5.0f   /* distância entre os pontos do contorno testados na colisão */
 
 /* Consumo simulado, só para a tensão cair de forma plausível */
 #define DESCARGA_REPOUSO_MV_S    0.1f
@@ -43,6 +43,8 @@ static struct {
     uint16_t tof_ruido_mm;
     uint32_t tof_semente;
     bool tof_tem_pico[SIM_TOF_QTD];
+    bool tof_curto; /* perto da parede o sensor lê de 30 a 40 mm, como o VL53L0X do robô */
+    int16_t tof_desvio[SIM_TOF_QTD]; /* erro somado à leitura, como um sensor descalibrado */
     uint16_t tof_pico_mm[SIM_TOF_QTD];
     bool boot;
     bool led;
@@ -78,15 +80,41 @@ static bool ponto_em_parede(float px, float py)
            (perto_n && sim_labirinto_tem_parede(&m.lab, cx, cy, SIM_PAREDE_N));
 }
 
-static bool robo_encosta_em_parede(float x, float y)
+/*
+ * O contorno do robô montado é um retângulo em volta do eixo (config/robo.h): da traseira à frente e de uma
+ * lateral à outra. Testa pontos a cada PASSO_CONTORNO_MM ao longo das quatro bordas, na pose (x, y, theta).
+ */
+static bool robo_encosta_em_parede(float x, float y, float theta)
 {
-    for (int i = 0; i < PONTOS_CONTORNO; i++) {
-        float a = 2.0f * PI_F * i / PONTOS_CONTORNO;
-        if (ponto_em_parede(x + ROBO_RAIO_MM * cosf(a), y + ROBO_RAIO_MM * sinf(a))) {
-            return true;
+    const float cantos[4][2] = {
+        {EIXO_ATE_FRENTE_MM, MEIA_LARGURA_ESQ_MM},
+        {-EIXO_ATE_TRAS_MM, MEIA_LARGURA_ESQ_MM},
+        {-EIXO_ATE_TRAS_MM, -MEIA_LARGURA_DIR_MM},
+        {EIXO_ATE_FRENTE_MM, -MEIA_LARGURA_DIR_MM},
+    };
+    float c = cosf(theta);
+    float s = sinf(theta);
+    for (int lado = 0; lado < 4; lado++) {
+        const float *a = cantos[lado];
+        const float *b = cantos[(lado + 1) % 4];
+        float comprimento = fabsf(b[0] - a[0]) + fabsf(b[1] - a[1]);
+        int pontos = (int)(comprimento / PASSO_CONTORNO_MM) + 1;
+        for (int i = 0; i < pontos; i++) {
+            float t = (float)i / (float)pontos;
+            float lx = a[0] + (b[0] - a[0]) * t;
+            float ly = a[1] + (b[1] - a[1]) * t;
+            if (ponto_em_parede(x + lx * c - ly * s, y + lx * s + ly * c)) {
+                return true;
+            }
         }
     }
     return false;
+}
+
+/* Pose do eixo para o chassi centrado no ponto (cx, cy), virado para theta. */
+static void pose_centrada(float cx, float cy, float theta)
+{
+    sim_definir_pose(cx - EIXO_RECUO_MM * cosf(theta), cy - EIXO_RECUO_MM * sinf(theta), theta);
 }
 
 bool sim_mundo_iniciar(const char *labirinto_texto)
@@ -95,9 +123,7 @@ bool sim_mundo_iniciar(const char *labirinto_texto)
     if (!sim_labirinto_carregar(&m.lab, labirinto_texto)) {
         return false;
     }
-    m.pose.x_mm = CELULA_MM / 2.0f;
-    m.pose.y_mm = CELULA_MM / 2.0f;
-    m.pose.theta_rad = PI_F / 2.0f;
+    pose_centrada(CELULA_MM / 2.0f, CELULA_MM / 2.0f, PI_F / 2.0f);
     m.bateria_mv = BATERIA_CHEIA_MV;
     return true;
 }
@@ -135,7 +161,7 @@ static void passo_1ms(void)
                 m.pulsos[i] += deslocamento[i] / MM_POR_PULSO;
             }
         }
-    } else if (robo_encosta_em_parede(novo_x, novo_y)) {
+    } else if (robo_encosta_em_parede(novo_x, novo_y, m.pose.theta_rad + giro)) {
         /* Bateu: o robô não sai do lugar e as rodas (e os encoders) param. */
         m.pose.colidiu = true;
         m.velocidade_mm_s[0] = m.velocidade_mm_s[1] = 0.0f;
@@ -239,6 +265,14 @@ bool sim_tof_medir(int tof, uint16_t *distancia_mm)
     /* Anda 1 mm por vez até encontrar uma parede. */
     for (int d = 0; d <= TOF_ALCANCE_MAX_MM; d++) {
         if (ponto_em_parede(ox + d * dx, oy + d * dy)) {
+            d += m.tof_desvio[tof];
+            if (d < 0) {
+                d = 0;
+            }
+            /* O esquerdo do robô, com o erro descontado, mede bem de perto: só o frontal e o direito comprimem. */
+            if (m.tof_curto && tof != 1 && d < TOF_MIN_CONFIAVEL_MM) {
+                d = TOF_MIN_CONFIAVEL_MM / 2 + d / 2; /* 20 mm vira 30, 30 vira 35: perto, a leitura não mede */
+            }
             *distancia_mm = (uint16_t)aplicar_ruido(d);
             return true;
         }
@@ -268,6 +302,15 @@ void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente)
     m.tof_semente = semente;
 }
 
+void sim_definir_tof_curto(bool ligado) { m.tof_curto = ligado; }
+
+void sim_definir_tof_desvio(int tof, int16_t mm)
+{
+    if (tof >= 0 && tof < SIM_TOF_QTD) {
+        m.tof_desvio[tof] = mm;
+    }
+}
+
 void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
 {
     m.tof_tem_pico[tof] = true;
@@ -277,42 +320,29 @@ void sim_definir_tof_pico(int tof, uint16_t distancia_mm)
 void sim_definir_bateria_mv(uint16_t mv) { m.bateria_mv = mv; }
 void sim_definir_boot(bool pressionado) { m.boot = pressionado; }
 
-/* 10 mm depois da fronteira: a lateral ainda mede a célula atual, não a vizinha. */
-#define ENTRADA_MM 10.0f
+static const float THETA_DIRECAO[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
 
+/*
+ * Robô parado numa célula, onde a navegação lê as paredes: com os laterais a 90°, é a mesma posição do
+ * centro (chassi centrado). Antes, com os laterais a 45°, a leitura era logo depois de entrar na célula.
+ */
 void sim_mundo_na_celula(int celula_x, int celula_y, int direcao)
 {
-    float x = (celula_x + 0.5f) * (float)CELULA_MM;
-    float y = (celula_y + 0.5f) * (float)CELULA_MM;
-    float theta = PI_F / 2.0f;
-
-    switch (direcao) {
-    case 1: /* leste: entrou pela borda oeste */
-        x = celula_x * (float)CELULA_MM + ENTRADA_MM;
-        theta = 0.0f;
-        break;
-    case 2: /* sul: entrou pela borda norte */
-        y = (celula_y + 1) * (float)CELULA_MM - ENTRADA_MM;
-        theta = -PI_F / 2.0f;
-        break;
-    case 3: /* oeste: entrou pela borda leste */
-        x = (celula_x + 1) * (float)CELULA_MM - ENTRADA_MM;
-        theta = PI_F;
-        break;
-    default: /* norte: entrou pela borda sul */
-        y = celula_y * (float)CELULA_MM + ENTRADA_MM;
-        theta = PI_F / 2.0f;
-        break;
-    }
-    sim_definir_pose(x, y, theta);
+    sim_mundo_no_centro_da_celula(celula_x, celula_y, direcao);
 }
 
 void sim_mundo_no_centro_da_celula(int celula_x, int celula_y, int direcao)
 {
-    static const float THETA[4] = {PI_F / 2.0f, 0.0f, -PI_F / 2.0f, PI_F};
-    sim_definir_pose(((float)celula_x + 0.5f) * (float)CELULA_MM,
-                     ((float)celula_y + 0.5f) * (float)CELULA_MM,
-                     THETA[direcao >= 0 && direcao < 4 ? direcao : 0]);
+    pose_centrada(((float)celula_x + 0.5f) * (float)CELULA_MM, ((float)celula_y + 0.5f) * (float)CELULA_MM,
+                  THETA_DIRECAO[direcao >= 0 && direcao < 4 ? direcao : 0]);
+}
+
+sim_pose_t sim_centro_do_chassi(void)
+{
+    sim_pose_t p = m.pose;
+    p.x_mm += EIXO_RECUO_MM * cosf(p.theta_rad);
+    p.y_mm += EIXO_RECUO_MM * sinf(p.theta_rad);
+    return p;
 }
 
 void sim_definir_pose(float x_mm, float y_mm, float theta_rad)

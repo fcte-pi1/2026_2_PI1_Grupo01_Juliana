@@ -6,3 +6,6 @@
 
 # Saída do simulador no PC
 simulador-navegacao/build/
+
+# Rede Wi-Fi do esp32_real_wifi (senha local; modelo em include/config/wifi_local.exemplo.h)
+include/config/wifi_local.h

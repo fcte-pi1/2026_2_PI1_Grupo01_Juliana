@@ -113,10 +113,10 @@ static void test_tof_frontal_centrado_ve_a_parede_da_frente(void)
 {
     uint16_t mm;
 
-    /* Centro de (0, 0) virado para o leste, onde há parede. */
-    sim_definir_pose(CELULA_MM / 2.0f, CELULA_MM / 2.0f, 0.0f);
+    /* Chassi centrado em (0, 0) virado para o leste, onde há parede: ~26 mm do nariz à parede. */
+    sim_mundo_no_centro_da_celula(0, 0, 1);
     TEST_ASSERT_TRUE(hal_tof_ler_mm(TOF_FRONTAL, &mm));
-    TEST_ASSERT_UINT16_WITHIN(5, 45, mm);
+    TEST_ASSERT_UINT16_WITHIN(2, (uint16_t)MOV_FRENTE_ALVO_MM, mm);
     TEST_ASSERT_EQUAL_STRING("tof_frontal", hal_tof_nome(TOF_FRONTAL));
 }
 

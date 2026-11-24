@@ -59,6 +59,14 @@ A porta fica em `/dev/rfcomm0`, o padrão da ponte. Para desfazer: `sudo rfcomm 
 
 **Windows.** Pareie o robô nas configurações de Bluetooth. Em "Mais opções de Bluetooth", aba "Portas COM", fica a porta de saída do SPP (por exemplo `COM5`); use-a em `--porta` ou `PONTE_PORTA_SERIAL`.
 
+**Wi-Fi (só para testes, sem Bluetooth no notebook).** Com o firmware `esp32_real_wifi`, o robô entra na rede Wi-Fi da casa e abre a porta TCP 3333. A porta da ponte passa a ser uma URL do pyserial, e o resto não muda:
+
+```sh
+python -m ponte --porta socket://ratatouille.local:3333
+```
+
+Se o nome `ratatouille.local` não resolver, use o IP do robô (o firmware o imprime no USB, e ele aparece na lista de aparelhos do roteador). O notebook e o robô precisam estar no mesmo roteador, na rede principal de 2,4 GHz.
+
 **Reconexão pela tela.** A ponte reabre a porta sozinha quando ela cai (espera de 0,5 s, 1 s e 2 s). Além disso, a cada 3 s ela relata o estado do enlace à API (`POST /robo/ponte`), e o botão "Reconectar" da barra lateral da tela faz a ponte fechar e reabrir a porta na hora. Com o `rfcomm bind`, abrir a porta religa o Bluetooth com o robô. Se o `/dev/rfcomm0` sumir (por exemplo, depois de reiniciar o notebook), a ponte não consegue recriá-lo: rode o `rfcomm bind` de novo.
 
 **Uma ponte por porta.** Dois processos lendo o mesmo `/dev/rfcomm0` dividem os bytes e as linhas chegam quebradas (a API responde 422). O `scripts/ambiente.sh` recusa subir uma segunda ponte na mesma porta.

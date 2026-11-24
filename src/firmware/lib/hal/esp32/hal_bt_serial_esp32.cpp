@@ -1,9 +1,9 @@
-#if !defined(HAL_SIMULADA) && defined(ARDUINO) && !defined(BT_REAL)
+#if !defined(HAL_SIMULADA) && defined(ARDUINO) && !defined(BT_REAL) && !defined(WIFI_REAL)
 
 /*
  * Enlace com a ponte pela serial USB, no lugar do Bluetooth: a ponte do notebook abre
- * /dev/ttyACM0 e fala o mesmo contrato. O Bluetooth real (BluetoothSerial) substitui este
- * arquivo; a HAL e a telemetria não mudam.
+ * /dev/ttyACM0 e fala o mesmo contrato. O Bluetooth real (BluetoothSerial) e o Wi-Fi (só para
+ * testes) substituem este arquivo; a HAL e a telemetria não mudam.
  */
 
 #include <Arduino.h>

@@ -2,10 +2,13 @@
  * Testes das primitivas de movimento (FIRM-05, #135) com os encoders do mundo
  * simulado: os pulsos contados batem com os calculados para 180 mm e 90°.
  *
- * Pulsos esperados, com a roda de 34 mm, 640 pulsos por volta e bitola de 92,5 mm:
- *   avanço de 180 mm:  180 / (pi x 34 / 640)                ~ 1078,6 -> 1079
- *   giro de 90°:       (pi x 92,5 / 4) / (pi x 34 / 640)    ~  435,3 ->  435
- *   giro de 180°:      o dobro do arco                      ~  870,6 ->  871
+ * Pulsos esperados, com a roda de 34 mm, 574 pulsos por volta e bitola de 87 mm (medidos no robô):
+ *   avanço de 180 mm:  180 / (pi x 34 / 574)                ~ 967,3 -> 967
+ *   giro de 90°:       (pi x 87 / 4) / (pi x 34 / 574)      ~ 367,2 -> 367
+ *   giro de 180°:      o dobro do arco                      ~ 734,4 -> 734
+ *
+ * O robô montado gira em volta do eixo, que fica atrás do centro do chassi, e a quina da frente varre ~100 mm:
+ * os testes giram no meio de um labirinto aberto, longe das paredes.
  */
 
 #include <math.h>
@@ -16,23 +19,25 @@
 #include "movimento.h"
 #include "sim_mundo.h"
 
-#define PULSOS_180_MM  1079
-#define PULSOS_90_GRAUS 435
-#define PULSOS_180_GRAUS 871
+#define PULSOS_180_MM  967
+#define PULSOS_90_GRAUS 367
+#define PULSOS_180_GRAUS 734
 
-/* 2x2 sem paredes internas: o robô anda e gira sem encostar em nada. */
-static const char LABIRINTO_2X2[] =
-    "+---+---+\n"
-    "|       |\n"
-    "+   +   +\n"
-    "|       |\n"
-    "+---+---+\n";
-
-/* Corredor de 4 células, só com as paredes de fora. */
-static const char LABIRINTO_1X4[] =
+/* 4x4 sem paredes internas: partindo de (1, 1), o robô anda e gira sem encostar em nada. */
+static const char LABIRINTO_ABERTO[] =
     "+---+---+---+---+\n"
     "|               |\n"
+    "+   +   +   +   +\n"
+    "|               |\n"
+    "+   +   +   +   +\n"
+    "|               |\n"
+    "+   +   +   +   +\n"
+    "|               |\n"
     "+---+---+---+---+\n";
+
+/* Centro da célula (1, 1) e o eixo do robô parado nela, virado para o norte. */
+#define CENTRO_MM   (CELULA_MM * 1.5f)
+#define EIXO_Y_MM   (CENTRO_MM - EIXO_RECUO_MM)
 
 static const char LABIRINTO_1X1[] =
     "+---+\n"
@@ -41,7 +46,8 @@ static const char LABIRINTO_1X1[] =
 
 void setUp(void)
 {
-    sim_mundo_iniciar(LABIRINTO_2X2);
+    sim_mundo_iniciar(LABIRINTO_ABERTO);
+    sim_mundo_no_centro_da_celula(1, 1, 0);
     mov_iniciar();
 }
 
@@ -90,12 +96,36 @@ static void test_avancar_celula_conta_os_pulsos_de_180_mm(void)
     TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_ESQ));
     TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_DIR));
 
-    /* Saiu do centro de A1 e parou no centro da célula de cima, sem desviar. */
-    sim_pose_t p = sim_pose();
-    TEST_ASSERT_FLOAT_WITHIN(1.5f, CELULA_MM / 2.0f, p.x_mm);
-    TEST_ASSERT_FLOAT_WITHIN(1.5f, CELULA_MM * 1.5f, p.y_mm);
+    /* Saiu do centro de (1, 1) e parou no centro da célula de cima, sem desviar. */
+    sim_pose_t p = sim_centro_do_chassi();
+    TEST_ASSERT_FLOAT_WITHIN(1.5f, CENTRO_MM, p.x_mm);
+    TEST_ASSERT_FLOAT_WITHIN(1.5f, CENTRO_MM + CELULA_MM, p.y_mm);
     TEST_ASSERT_FLOAT_WITHIN(0.02f, PI_F / 2.0f, p.theta_rad);
     TEST_ASSERT_FALSE(p.colidiu);
+}
+
+/* Cada movimento terminado deixa um resumo para o diagnóstico na pista, uma vez só. */
+static void test_diagnostico_resume_o_movimento(void)
+{
+    mov_diag_t d;
+    TEST_ASSERT_FALSE(mov_diagnostico(&d));
+    TEST_ASSERT_TRUE(mov_avancar_celula());
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    TEST_ASSERT_TRUE(mov_diagnostico(&d));
+    TEST_ASSERT_EQUAL_CHAR('C', d.tipo);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, (float)CELULA_MM, d.pedido);
+    TEST_ASSERT_EQUAL_INT(MOV_FIM_ASSENTOU, d.fim);
+    TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, d.pulsos_esq);
+    TEST_ASSERT_INT32_WITHIN(1, PULSOS_180_MM, d.alvo_dir);
+    TEST_ASSERT_TRUE(d.duracao_ms > 500 && d.duracao_ms < MOV_TEMPO_LIMITE_MS);
+    TEST_ASSERT_FALSE(mov_diagnostico(&d)); /* uma vez por movimento */
+
+    TEST_ASSERT_TRUE(mov_girar(-90));
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    TEST_ASSERT_TRUE(mov_diagnostico(&d));
+    TEST_ASSERT_EQUAL_CHAR('G', d.tipo);
+    TEST_ASSERT_INT32_WITHIN(1, PULSOS_90_GRAUS, d.alvo_esq); /* à direita, a roda esquerda anda para a frente */
+    TEST_ASSERT_EQUAL_STRING("assentou", mov_fim_nome(d.fim));
 }
 
 static void test_girar_90_conta_os_pulsos_de_90_graus(void)
@@ -106,11 +136,11 @@ static void test_girar_90_conta_os_pulsos_de_90_graus(void)
     TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_PULSOS, -PULSOS_90_GRAUS, hal_encoder_ler(MOTOR_ESQ));
     TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_PULSOS, PULSOS_90_GRAUS, hal_encoder_ler(MOTOR_DIR));
 
-    /* Começa virado para o norte; girar para a esquerda deixa virado para o oeste, no mesmo lugar. */
+    /* Começa virado para o norte; girar para a esquerda deixa virado para o oeste, com o eixo no mesmo lugar. */
     sim_pose_t p = sim_pose();
     TEST_ASSERT_FLOAT_WITHIN(0.02f, PI_F, fabsf(angulo_normalizado(p.theta_rad)));
-    TEST_ASSERT_FLOAT_WITHIN(0.5f, CELULA_MM / 2.0f, p.x_mm);
-    TEST_ASSERT_FLOAT_WITHIN(0.5f, CELULA_MM / 2.0f, p.y_mm);
+    TEST_ASSERT_FLOAT_WITHIN(0.5f, CENTRO_MM, p.x_mm);
+    TEST_ASSERT_FLOAT_WITHIN(0.5f, EIXO_Y_MM, p.y_mm);
 }
 
 static void test_andado_acompanha_o_avanco_e_fica_em_zero_no_giro(void)
@@ -147,6 +177,27 @@ static void test_avanco_e_giro_concluem_com_zona_morta_no_motor(void)
     sim_definir_zona_morta(0);
 }
 
+/*
+ * Pista, 24/11/2026: o robô parou perto do fim da primeira célula e empurrou até o tempo limite (falha stuck): a
+ * força que sobra no fim do movimento não vencia o atrito do motor parado. Com zonas mortas de até metade da
+ * potência, o avanço termina (no pior caso alguns mm curto, que o movimento seguinte compensa) e não falha.
+ */
+static void test_zona_morta_alta_nao_faz_o_avanco_falhar(void)
+{
+    const int16_t zonas[] = {300, 500};
+    for (int z = 0; z < 2; z++) {
+        sim_mundo_iniciar(LABIRINTO_ABERTO);
+        sim_mundo_no_centro_da_celula(1, 1, 0);
+        mov_iniciar();
+        sim_definir_zona_morta(zonas[z]);
+        TEST_ASSERT_TRUE(mov_avancar_celula());
+        TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+        TEST_ASSERT_INT32_WITHIN(3 * MOV_PERTO_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_ESQ));
+        TEST_ASSERT_INT32_WITHIN(3 * MOV_PERTO_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_DIR));
+    }
+    sim_definir_zona_morta(0);
+}
+
 static void test_girar_menos_90_vai_para_a_direita(void)
 {
     TEST_ASSERT_TRUE(mov_girar(-90));
@@ -157,8 +208,18 @@ static void test_girar_menos_90_vai_para_a_direita(void)
     TEST_ASSERT_FLOAT_WITHIN(0.02f, 0.0f, angulo_normalizado(sim_pose().theta_rad));
 }
 
+/*
+ * Giros grandes no lugar: com o chassi centrado, a quina passa a ~97 mm dos postes de trás e bateria neles.
+ * Os testes de giro puro põem o eixo no centro da célula, longe de tudo.
+ */
+static void eixo_no_centro(void)
+{
+    sim_definir_pose(CENTRO_MM, CENTRO_MM, PI_F / 2.0f);
+}
+
 static void test_girar_180_volta_para_tras(void)
 {
+    eixo_no_centro();
     TEST_ASSERT_TRUE(mov_girar(180));
     TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
 
@@ -236,7 +297,7 @@ static void test_rampa_acelera_e_freia_sem_degrau(void)
 
 static void test_sequencia_de_primitivas_chega_na_celula_certa(void)
 {
-    /* A1 -> A2 (norte), vira à direita, A2 -> B2 (leste). */
+    /* (1, 1) -> (1, 2) (norte), vira à direita no lugar e anda 180 mm para o leste. */
     TEST_ASSERT_TRUE(mov_avancar_celula());
     TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
     TEST_ASSERT_TRUE(mov_girar(-90));
@@ -244,39 +305,60 @@ static void test_sequencia_de_primitivas_chega_na_celula_certa(void)
     TEST_ASSERT_TRUE(mov_avancar_celula());
     TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
 
-    /* Cada avanço pode terminar a MOV_TOLERANCIA_AVANCO_PULSOS (1,3 mm) do alvo: dois avanços, até 3 mm. */
+    /* Cada avanço pode terminar a MOV_TOLERANCIA_AVANCO_PULSOS (1,5 mm) do alvo: dois avanços, até 3 mm. */
     sim_pose_t p = sim_pose();
-    TEST_ASSERT_FLOAT_WITHIN(3.0f, CELULA_MM * 1.5f, p.x_mm);
-    TEST_ASSERT_FLOAT_WITHIN(3.0f, CELULA_MM * 1.5f, p.y_mm);
+    TEST_ASSERT_FLOAT_WITHIN(3.0f, CENTRO_MM + CELULA_MM, p.x_mm);
+    TEST_ASSERT_FLOAT_WITHIN(3.0f, EIXO_Y_MM + CELULA_MM, p.y_mm);
     TEST_ASSERT_FLOAT_WITHIN(0.02f, 0.0f, angulo_normalizado(p.theta_rad));
     TEST_ASSERT_FALSE(p.colidiu);
 }
 
-/* As correções pelos ToF ficam desligadas até o FIRM-10: uma leitura torta não muda o avanço. */
-static void test_correcoes_pelos_tof_desligadas(void)
+/* Avança informando sempre a mesma leitura dos ToF. */
+static mov_estado_t avancar_com_tof(const mov_tof_t *tof)
 {
-    const mov_tof_t torto = {false, true, false, 0, 40, 0};
-
     TEST_ASSERT_TRUE(mov_avancar_celula());
     mov_estado_t estado = MOV_EM_CURSO;
     while (estado == MOV_EM_CURSO) {
-        mov_informar_tof(&torto);
+        mov_informar_tof(tof);
         sim_mundo_avancar(MOV_PERIODO_MS);
         estado = mov_atualizar();
     }
-    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, estado);
-    TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_ESQ));
-    TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_DIR));
+    return estado;
 }
 
-/* Parede a 70 mm logo na partida: o robô anda um pouco e para, a tempo de sobrar ao menos 1 cm até ela. */
+/* Paredes dos dois lados a 42,5 mm (robô no meio): o avanço segue reto. */
+static void test_leitura_centrada_nao_desvia(void)
+{
+    const mov_tof_t centrado = {false, true, true, 0, 43, 43};
+
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, avancar_com_tof(&centrado));
+    TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_ESQ));
+    TEST_ASSERT_INT32_WITHIN(MOV_TOLERANCIA_AVANCO_PULSOS, PULSOS_180_MM, hal_encoder_ler(MOTOR_DIR));
+    TEST_ASSERT_FLOAT_WITHIN(2.0f, 0.0f, mov_lateral_mm());
+}
+
+/*
+ * A parede da direita a 63 mm diz que o eixo está ~20 mm à esquerda do meio (a da esquerda, perto demais
+ * para o sensor medir, é ignorada): o avanço puxa o robô para a direita e para reto.
+ */
+static void test_robo_deslocado_volta_para_o_meio(void)
+{
+    const mov_tof_t a_esquerda = {false, true, true, 0, 23, 63};
+    float x_inicial = sim_pose().x_mm;
+
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, avancar_com_tof(&a_esquerda));
+    sim_pose_t p = sim_pose();
+    TEST_ASSERT_TRUE(p.x_mm > x_inicial + 8.0f); /* norte: a direita é +x */
+    TEST_ASSERT_FLOAT_WITHIN(0.05f, PI_F / 2.0f, p.theta_rad);
+}
+
+/* Obstáculo a 70 mm logo na partida: o robô anda um pouco e para, a tempo de sobrar ao menos 1 cm até ele. */
 static void test_obstaculo_a_frente_para_o_avanco(void)
 {
-    const mov_tof_t perto = {true, false, false, 70, 0, 0};
-
     TEST_ASSERT_TRUE(mov_avancar_celula());
     mov_estado_t estado = MOV_EM_CURSO;
     while (estado == MOV_EM_CURSO) {
+        mov_tof_t perto = {true, false, false, (uint16_t)(70.0f - mov_andado_mm()), 0, 0};
         mov_informar_tof(&perto);
         sim_mundo_avancar(MOV_PERIODO_MS);
         estado = mov_atualizar();
@@ -371,6 +453,7 @@ static void test_dez_avancos_seguidos_erram_ate_10_mm(void)
 /* Critério da FIRM-10: 10 giros de 90° (2,5 voltas) terminam a 180° da partida, com até 5° de desvio. */
 static void test_dez_giros_de_90_graus_desviam_ate_5_graus(void)
 {
+    eixo_no_centro();
     float inicial = sim_pose().theta_rad;
     for (int i = 0; i < 10; i++) {
         TEST_ASSERT_TRUE(mov_girar(90));
@@ -382,6 +465,11 @@ static void test_dez_giros_de_90_graus_desviam_ate_5_graus(void)
 }
 
 /* Uma roda anda 3% mais que os pulsos dizem: sem os ToF laterais o robô entorta e encosta; com eles, atravessa. */
+static const char LABIRINTO_1X4[] =
+    "+---+---+---+---+\n"
+    "|               |\n"
+    "+---+---+---+---+\n";
+
 static void atravessar_corredor_com_deriva(bool ler_tof, sim_pose_t *fim, mov_estado_t *estado)
 {
     sim_mundo_iniciar(LABIRINTO_1X4);
@@ -396,7 +484,7 @@ static void atravessar_corredor_com_deriva(bool ler_tof, sim_pose_t *fim, mov_es
             break;
         }
     }
-    *fim = sim_pose();
+    *fim = sim_centro_do_chassi();
 }
 
 static void test_corredor_de_4_celulas_com_deriva_sem_tof_encosta(void)
@@ -457,16 +545,19 @@ int main(void)
     UNITY_BEGIN();
     RUN_TEST(test_pulsos_calculados);
     RUN_TEST(test_avancar_celula_conta_os_pulsos_de_180_mm);
+    RUN_TEST(test_diagnostico_resume_o_movimento);
     RUN_TEST(test_girar_90_conta_os_pulsos_de_90_graus);
     RUN_TEST(test_andado_acompanha_o_avanco_e_fica_em_zero_no_giro);
     RUN_TEST(test_avanco_e_giro_concluem_com_zona_morta_no_motor);
+    RUN_TEST(test_zona_morta_alta_nao_faz_o_avanco_falhar);
     RUN_TEST(test_girar_menos_90_vai_para_a_direita);
     RUN_TEST(test_girar_180_volta_para_tras);
     RUN_TEST(test_angulo_invalido_nao_move);
     RUN_TEST(test_nao_aceita_outro_movimento_em_curso);
     RUN_TEST(test_rampa_acelera_e_freia_sem_degrau);
     RUN_TEST(test_sequencia_de_primitivas_chega_na_celula_certa);
-    RUN_TEST(test_correcoes_pelos_tof_desligadas);
+    RUN_TEST(test_leitura_centrada_nao_desvia);
+    RUN_TEST(test_robo_deslocado_volta_para_o_meio);
     RUN_TEST(test_obstaculo_a_frente_para_o_avanco);
     RUN_TEST(test_parede_no_fim_da_celula_nao_para_o_avanco);
     RUN_TEST(test_dez_avancos_seguidos_erram_ate_10_mm);
