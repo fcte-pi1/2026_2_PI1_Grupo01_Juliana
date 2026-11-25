@@ -187,7 +187,13 @@
  * 70/35 mm), em qualquer rumo. Sem o desconto, o robô se achava à esquerda do meio e andava raspando a direita.
  */
 #define TOF_D_DESVIO_MM     20
-#define TOF_MIN_CONFIAVEL_MM 40
+#define TOF_MIN_CONFIAVEL_MM 40   /* na leitura bruta, antes do desconto do erro */
+/*
+ * Piso do direito na leitura já descontada: a compressão é do sensor e vale para a leitura bruta, então, com os
+ * 20 mm de erro, o direito mede bem até ~20 mm. Com o piso de 40 na leitura descontada (até 24/11/2026), o robô
+ * centrado lia ~42 mm e bastava ficar 3 mm à direita do meio para o direito parar de medir.
+ */
+#define TOF_D_MIN_CONFIAVEL_MM (TOF_MIN_CONFIAVEL_MM - TOF_D_DESVIO_MM)
 /*
  * O esquerdo é diferente: lê ~2 cm a mais em todas as distâncias, inclusive de perto (1 cm vira 30, 2 cm vira
  * 40), então, descontado o erro, a leitura dele mede bem até ~1,5 cm. Na pista (24/11/2026), tratá-lo como os

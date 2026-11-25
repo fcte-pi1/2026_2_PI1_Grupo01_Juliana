@@ -346,7 +346,8 @@ void mov_informar_tof(const mov_tof_t *tof)
 /*
  * Posição lateral do eixo pelas paredes, com rumo theta (rad, positivo à esquerda). Cada lateral, a
  * (TOF_E_X_MM, ±TOF_E_Y_MM) do eixo e apontado para o seu lado, mede até a parede a CELULA_LIVRE_MEIA_MM
- * do meio. Só vale leitura com parede e dentro da faixa em que o sensor mede (TOF_MIN_CONFIAVEL_MM).
+ * do meio. Só vale leitura com parede e dentro da faixa em que o sensor mede (TOF_E_MIN_CONFIAVEL_MM e
+ * TOF_D_MIN_CONFIAVEL_MM, na leitura com o erro já descontado).
  * Devolve false se nenhuma serviu.
  */
 static bool lateral_pelas_paredes(float theta, float *lateral)
@@ -361,7 +362,7 @@ static bool lateral_pelas_paredes(float theta, float *lateral)
         soma += CELULA_LIVRE_MEIA_MM - ((float)e + TOF_E_Y_MM) * c - TOF_E_X_MM * s;
         n++;
     }
-    if (mov.tof.parede_direita && d >= TOF_MIN_CONFIAVEL_MM && d <= MOV_LATERAL_MAX_MM) {
+    if (mov.tof.parede_direita && d >= TOF_D_MIN_CONFIAVEL_MM && d <= MOV_LATERAL_MAX_MM) {
         soma += -CELULA_LIVRE_MEIA_MM + ((float)d - TOF_D_Y_MM) * c - TOF_D_X_MM * s;
         n++;
     }
@@ -373,9 +374,10 @@ static bool lateral_pelas_paredes(float theta, float *lateral)
 }
 
 /*
- * Leitura perto demais para medir (abaixo de TOF_MIN_CONFIAVEL_MM no direito; o esquerdo mede bem até
+ * Leitura perto demais para medir (abaixo de TOF_D_MIN_CONFIAVEL_MM no direito; o esquerdo mede bem até
  * TOF_E_MIN_CONFIAVEL_MM): ela não diz a distância, mas diz que a parede está no máximo a
- * 2 x leitura - TOF_MIN_CONFIAVEL_MM no direito (bancada: 2 cm vira 30, 3 cm vira 40) e a leitura no esquerdo. Isso
+ * 2 x bruta - TOF_MIN_CONFIAVEL_MM no direito (bancada: 2 cm vira 30, 3 cm vira 40), com bruta = leitura +
+ * TOF_D_DESVIO_MM e o erro descontado de novo no fim, e a leitura no esquerdo. Isso
  * limita a lateral: perto da parede esquerda, a lateral é pelo menos *minimo*; perto da direita, no máximo
  * *maximo*. Sem isso, num corredor com parede de um lado só, o robô que deriva para ela fica sem medida.
  */
@@ -391,8 +393,9 @@ static void limites_pelas_paredes(float theta, float *minimo, float *maximo)
         float distancia_max = (float)e;
         *minimo = CELULA_LIVRE_MEIA_MM - (distancia_max + TOF_E_Y_MM) * c - TOF_E_X_MM * s;
     }
-    if (mov.tof.parede_direita && d > 0 && d < TOF_MIN_CONFIAVEL_MM) {
-        float distancia_max = fmaxf(0.0f, 2.0f * (float)d - (float)TOF_MIN_CONFIAVEL_MM);
+    if (mov.tof.parede_direita && d > 0 && d < TOF_D_MIN_CONFIAVEL_MM) {
+        float bruta = (float)d + (float)TOF_D_DESVIO_MM;
+        float distancia_max = fmaxf(0.0f, 2.0f * bruta - (float)TOF_MIN_CONFIAVEL_MM - (float)TOF_D_DESVIO_MM);
         *maximo = -CELULA_LIVRE_MEIA_MM + (distancia_max - TOF_D_Y_MM) * c - TOF_D_X_MM * s;
     }
 }

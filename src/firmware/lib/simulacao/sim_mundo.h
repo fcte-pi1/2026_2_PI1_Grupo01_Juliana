@@ -85,8 +85,9 @@ void sim_definir_pose(float x_mm, float y_mm, float theta_rad);
 void sim_definir_tof_ruido(uint16_t amplitude_mm, uint32_t semente);
 
 /*
- * Perto da parede (abaixo de TOF_MIN_CONFIAVEL_MM) a leitura do frontal e do direito vira 20 + d/2, como no
- * VL53L0X do robô; o esquerdo (que no robô tem o erro descontado) segue medindo. Desligado por padrão.
+ * Perto da parede a leitura do frontal e do direito comprime, como no VL53L0X do robô: a leitura bruta (a distância
+ * mais o TOF_*_DESVIO_MM do sensor) abaixo de TOF_MIN_CONFIAVEL_MM vira 20 + bruta/2, e o mundo devolve o valor com
+ * o desvio já descontado, como o driver real. O esquerdo segue medindo. Desligado por padrão.
  */
 void sim_definir_tof_curto(bool ligado);
 

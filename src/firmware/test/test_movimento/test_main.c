@@ -12,6 +12,7 @@
  */
 
 #include <math.h>
+#include <stdio.h>
 #include <unity.h>
 
 #include "config/robo.h"
@@ -436,6 +437,69 @@ static mov_estado_t rodar_lendo_tof(bool ler)
     return estado;
 }
 
+/* Corredores para o norte em (1, 1) e (1, 2): com parede só à direita (leste) e com as duas paredes. */
+static const char LABIRINTO_SO_PAREDE_DIREITA[] =
+    "+---+---+---+\n"
+    "|       |   |\n"
+    "+   +   +   +\n"
+    "|       |   |\n"
+    "+   +   +   +\n"
+    "|           |\n"
+    "+---+---+---+\n";
+
+static const char LABIRINTO_CORREDOR_NORTE[] =
+    "+---+---+---+\n"
+    "|   |   |   |\n"
+    "+   +   +   +\n"
+    "|   |   |   |\n"
+    "+   +   +   +\n"
+    "|           |\n"
+    "+---+---+---+\n";
+
+/* Um avanço de (1, 1) com o eixo deslocado para a direita, lendo os ToF do mundo com ruído; devolve o erro final. */
+static float avancar_deslocado_a_direita(const char *labirinto, float deslocamento_mm, uint32_t semente)
+{
+    sim_mundo_iniciar(labirinto);
+    sim_mundo_no_centro_da_celula(1, 1, 0);
+    mov_iniciar();
+    historico_n = 0;
+    sim_definir_tof_curto(true);
+    sim_definir_tof_ruido(7, semente);
+    sim_pose_t p0 = sim_pose();
+    sim_definir_pose(p0.x_mm + deslocamento_mm, p0.y_mm, p0.theta_rad); /* norte: a direita é +x */
+    for (int i = 0; i < 3; i++) {
+        informar_tof_do_mundo(); /* parado, a mediana já tem amostras */
+    }
+    TEST_ASSERT_TRUE(mov_avancar_celula());
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar_lendo_tof(true));
+    sim_definir_tof_curto(false);
+    sim_definir_tof_ruido(0, 1);
+    TEST_ASSERT_FALSE(sim_pose().colidiu);
+    return sim_pose().x_mm - CENTRO_MM;
+}
+
+/*
+ * Pista, 24/11/2026: o direito, com os 20 mm de erro descontados, lia de 21 a 37 mm com o robô um pouco à direita
+ * do meio, e o movimento jogava essas leituras fora (o piso de 40 mm valia para a leitura já descontada; o robô
+ * centrado lê ~42). Partindo de 5 a 20 mm à direita do meio, com ruído de ±7 mm (o medido na bancada), o avanço
+ * termina a até 9 mm do meio. Com o piso antigo, o pior caso passava de 10 mm.
+ */
+static void test_robo_a_direita_com_ruido_volta_ao_meio(void)
+{
+    const char *labirintos[2] = {LABIRINTO_SO_PAREDE_DIREITA, LABIRINTO_CORREDOR_NORTE};
+    char mensagem[96];
+    for (int l = 0; l < 2; l++) {
+        for (int deslocamento = 5; deslocamento <= 20; deslocamento += 5) {
+            for (uint32_t semente = 1; semente <= 8; semente++) {
+                float erro = avancar_deslocado_a_direita(labirintos[l], (float)deslocamento, semente);
+                snprintf(mensagem, sizeof(mensagem), "%s, %d mm a direita, semente %u: fim a %.1f mm do meio",
+                         l == 0 ? "parede so a direita" : "duas paredes", deslocamento, (unsigned)semente, erro);
+                TEST_ASSERT_FLOAT_WITHIN_MESSAGE(9.0f, 0.0f, erro, mensagem);
+            }
+        }
+    }
+}
+
 /* Critério da FIRM-10: dez avanços seguidos terminam a até 10 mm de 1800 mm. */
 static void test_dez_avancos_seguidos_erram_ate_10_mm(void)
 {
@@ -562,6 +626,7 @@ int main(void)
     RUN_TEST(test_parede_no_fim_da_celula_nao_para_o_avanco);
     RUN_TEST(test_dez_avancos_seguidos_erram_ate_10_mm);
     RUN_TEST(test_dez_giros_de_90_graus_desviam_ate_5_graus);
+    RUN_TEST(test_robo_a_direita_com_ruido_volta_ao_meio);
     RUN_TEST(test_corredor_de_4_celulas_com_deriva_sem_tof_encosta);
     RUN_TEST(test_corredor_de_4_celulas_com_deriva_centraliza_pelos_tof);
     RUN_TEST(test_parar_corta_o_movimento);
