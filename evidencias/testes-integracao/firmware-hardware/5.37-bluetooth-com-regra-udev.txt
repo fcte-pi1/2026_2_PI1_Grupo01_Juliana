@@ -1,0 +1,65 @@
+Teste 5.37 - Enlace Bluetooth (SPP) com o ModemManager ATIVO e a regra de udev que o faz ignorar as portas rfcomm
+Logs completos enviados pela Amanda. Firmware esp32_real_bt_tof_mock, interruptor desligado (placa pelo USB). Verificador ainda com o descarte da primeira linha ao abrir.
+
+[Log 1] Verificador no /dev/rfcomm0, 60 s (a ultima linha do resumo, "Resultado", nao veio no trecho colado):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 15 (tel 7), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  20 s] mensagens: 25 (tel 17), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  30 s] mensagens: 35 (tel 27), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  40 s] mensagens: 45 (tel 37), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  50 s] mensagens: 55 (tel 47), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  60 s] mensagens: 65 (tel 57), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+Linhas por tipo:
+  hc_item: 7
+  hc_resultado: 1
+  tel: 57
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 1.02 Hz
+Duração (pelo t_ms): 56.0 s
+Atraso de entrega: p95 0.03 s, máximo 0.13 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 1.0 s
+Quedas do enlace: 0
+Buracos de seq: 1
+  boot 20: esperado seq 2, recebido seq 3
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+
+[Log 2] Monitor USB (terminal A) durante a mesma rodada (enfileirado igual a confirmado o tempo todo):
+# bt: cliente conectado em t=25370 ms
+# bt: t=27370 ms enfileirado=1300 B confirmado=1300 B
+# bt: t=29370 ms enfileirado=1588 B confirmado=1588 B
+# bt: t=31370 ms enfileirado=1876 B confirmado=1876 B
+# bt: t=33370 ms enfileirado=2164 B confirmado=2164 B
+# bt: t=35370 ms enfileirado=2452 B confirmado=2452 B
+# bt: t=37370 ms enfileirado=2740 B confirmado=2740 B
+# bt: t=39370 ms enfileirado=3028 B confirmado=3028 B
+# bt: t=41370 ms enfileirado=3316 B confirmado=3316 B
+# bt: t=43370 ms enfileirado=3604 B confirmado=3604 B
+# bt: t=45370 ms enfileirado=3892 B confirmado=3892 B
+# bt: t=47370 ms enfileirado=4180 B confirmado=4180 B
+# bt: t=49370 ms enfileirado=4468 B confirmado=4468 B
+# bt: t=51370 ms enfileirado=4756 B confirmado=4756 B
+# bt: t=53370 ms enfileirado=5044 B confirmado=5044 B
+# bt: t=55370 ms enfileirado=5332 B confirmado=5332 B
+# bt: t=57370 ms enfileirado=5620 B confirmado=5620 B
+# bt: t=59370 ms enfileirado=5908 B confirmado=5908 B
+# bt: t=61370 ms enfileirado=6196 B confirmado=6196 B
+# bt: t=63370 ms enfileirado=6484 B confirmado=6484 B
+# bt: t=65370 ms enfileirado=6772 B confirmado=6772 B
+# bt: t=67370 ms enfileirado=7060 B confirmado=7060 B
+# bt: t=69370 ms enfileirado=7348 B confirmado=7348 B
+# bt: t=71370 ms enfileirado=7636 B confirmado=7636 B
+# bt: t=73370 ms enfileirado=7924 B confirmado=7924 B
+# bt: t=75370 ms enfileirado=8212 B confirmado=8212 B
+# bt: t=77370 ms enfileirado=8500 B confirmado=8500 B
+# bt: t=79370 ms enfileirado=8788 B confirmado=8788 B
+# bt: t=81370 ms enfileirado=9076 B confirmado=9076 B
+# bt: desconectado (status 0)
+
+Conta feita depois: o unico buraco (esperado seq 2, recebido seq 3) e a mensagem que o verificador jogou fora ao abrir a porta
+(limpava a entrada e descartava a primeira linha, e o robo reenvia os eventos guardados logo ao conectar); o verificador foi corrigido para nao fazer isso no Bluetooth.

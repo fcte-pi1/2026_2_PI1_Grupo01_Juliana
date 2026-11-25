@@ -1,0 +1,46 @@
+# Teste 5.9. Corrida com largar, interromper e BOOT na ESP32 real (esp32_sim_boot), 20/11/2026.
+# Firmware: HAL simulada (sensores e labirinto), com o botão BOOT físico e a navegação a 1 Hz (CORRIDA_LENTA).
+# Roteiro: pio run -e esp32_sim_boot -t upload; python tools/monitor_comandos.py;
+#          l = largar, BOOT apertado na corrida, l = retomar, i = interromper.
+# Transcrição do monitor serial (a tel só aparece quando o estado muda). Linhas do bootloader omitidas.
+
+# Ratatouille: firmware com HAL SIMULADA
+{"v":1,"boot":3,"seq":0,"t_ms":800,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":8398}
+{"v":1,"boot":3,"seq":1,"t_ms":860,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":665}
+{"v":1,"boot":3,"seq":2,"t_ms":910,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":77}
+{"v":1,"boot":3,"seq":3,"t_ms":960,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":77}
+{"v":1,"boot":3,"seq":4,"t_ms":1010,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":3,"seq":5,"t_ms":1060,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":3,"seq":6,"t_ms":1110,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":503}
+{"v":1,"boot":3,"seq":7,"t_ms":1160,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":503}
+{"v":1,"boot":3,"seq":8,"t_ms":1210,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+# Robô em health-check, sem nenhum passo, esperando o largar.
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":3,"seq":13,"t_ms":5800,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":3,"seq":19,"t_ms":6800,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":3,"seq":25,"t_ms":7800,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":3,"seq":31,"t_ms":8800,"tipo":"passo","x":0,"y":3,"paredes":8}
+{"v":1,"boot":3,"seq":37,"t_ms":9800,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":3,"seq":43,"t_ms":10800,"tipo":"passo","x":2,"y":3,"paredes":1}
+{"v":1,"boot":3,"seq":49,"t_ms":11800,"tipo":"passo","x":3,"y":3,"paredes":1}
+{"v":1,"boot":3,"seq":50,"t_ms":11850,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":3,"seq":51,"t_ms":12800,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":8398,"vel_mm_s":0,"eixo_longo":null}
+# Novo largar depois do sucesso: recomeça do (0,0).
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":3,"seq":72,"t_ms":32800,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":3,"seq":73,"t_ms":33000,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":3,"seq":78,"t_ms":33800,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":3,"seq":84,"t_ms":34800,"tipo":"passo","x":0,"y":2,"paredes":12}
+# BOOT apertado na corrida:
+{"v":1,"boot":3,"seq":89,"t_ms":35700,"tipo":"falha","motivo":"encerrado_operador","origem":"boot","x":0,"y":3,"componente":null}
+{"v":1,"boot":3,"seq":90,"t_ms":36600,"tipo":"tel","estado":"failed","x":0,"y":3,"rumo":"N","bat_mv":8395,"vel_mm_s":0,"eixo_longo":null}
+# Largar depois da falha: retoma da mesma célula (0,3).
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":3,"seq":107,"t_ms":52800,"tipo":"passo","x":0,"y":3,"paredes":8}
+{"v":1,"boot":3,"seq":108,"t_ms":52850,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":3,"seq":113,"t_ms":53800,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":3,"seq":119,"t_ms":54800,"tipo":"passo","x":2,"y":3,"paredes":1}
+# Interrupção pela web (comando interromper):
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":3,"seq":122,"t_ms":55150,"tipo":"falha","motivo":null,"origem":"web","x":3,"y":3,"componente":null}
+{"v":1,"boot":3,"seq":126,"t_ms":56650,"tipo":"tel","estado":"failed","x":3,"y":3,"rumo":"L","bat_mv":8394,"vel_mm_s":0,"eixo_longo":null}

@@ -1,0 +1,16 @@
+Teste 5.33 - PID de velocidade (v) e limiar de stuck (s), bancada esp32_calibracao_bt
+
+[v, rodas no ar, pelo Bluetooth, 840 pulsos por volta]
+O log completo deste teste foi enviado numa sessao anterior e nao esta mais disponivel para copia; o que resta e o resumo do resultado:
+as duas rodas a 407 mm/s (alvo 400 mm/s), erro de 1,7%, APROVADO (limite 5%).
+Com a conversao de pulsos corrigida para 640 por volta, o v precisa ser repetido para valer.
+
+[v no chao]
+Relato da Amanda: "no v ele so foi e bateu na parede". A tecla v roda as duas rodas a 400 mm/s por 3 s (ate 1,2 m) e nao usa o freio de emergencia.
+Nao e um teste valido; o README passou a avisar que o v e so com as rodas no ar.
+
+[s, rodas no ar, roda esquerda segurada sem forca]
+Relato da Amanda: "eu tentei segurar sem forca e ele simplesmente nao parou e continuou rodando ate um certo periodo de segundos".
+Mensagem final prevista no codigo para esse caso: "stuck: nao detectado em 8 s (a roda girou livre)".
+O detector exige o encoder parado por 1000 ms (MOTOR_TRAVADO_MS); a roda segurada sem forca seguiu girando, entao nao disparou.
+O s ficou como nao verificado, por decisao da Amanda.

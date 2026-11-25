@@ -1,0 +1,51 @@
+# Teste 5.2, hipóteses "clock do I2C" e "timeout de leitura". Bancada esp32_hc_bancada, 20/11/2026,
+# interruptor desligado. Comandos: c troca o clock (50, 100 e 400 kHz), o alterna o timeout (50 e 500 ms)
+# e v roda a biblioteca da Adafruit no sensor do GPIO5. A primeira linha de cada v mostra a condição.
+
+# 1) 50 kHz, timeout 50 ms (referência)
+i2c: clock = 50000 Hz, timeout de leitura = 50 ms
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X: PerformRefSpadManagement
+[  9153][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+refSpadCount = 1073489524, isApertureSpads = 0
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# 2) 50 kHz, timeout 500 ms
+i2c: clock = 50000 Hz, timeout de leitura = 500 ms
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X: PerformRefSpadManagement
+[ 26731][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# 3) 100 kHz, timeout 50 ms
+i2c: clock = 100000 Hz, timeout de leitura = 50 ms
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X: PerformRefSpadManagement
+[ 54405][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# 4) 400 kHz, timeout 50 ms
+i2c: clock = 400000 Hz, timeout de leitura = 50 ms
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X: PerformRefSpadManagement
+[ 79039][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# 5) 50 kHz, timeout 500 ms (repetição)
+i2c: clock = 50000 Hz, timeout de leitura = 500 ms
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X: PerformRefSpadManagement
+[102784][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+
+# Em todas as condições: ID do chip correto (0xEE), mas a leitura da calibração dá Error 263 e begin FALHOU.

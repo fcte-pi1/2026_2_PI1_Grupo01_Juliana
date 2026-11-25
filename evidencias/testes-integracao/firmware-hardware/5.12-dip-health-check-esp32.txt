@@ -1,0 +1,23 @@
+# Teste 5.12. DIP lido pelo health-check depois do boot, na ESP32 com a HAL real (esp32_real), 20/11/2026.
+# Roteiro: pio run -e esp32_real -t upload; python tools/monitor_comandos.py; DIP trocado com a placa ligada; tecla h a cada troca.
+# Interruptor da bateria ligado. ToF laterais reprovam (hardware, teste 5.2), então o resultado do health-check é reprovado em todos.
+# O boot 3 já saiu com o DIP em 8x4. Linhas do bootloader e ruídos conhecidos (PCNT, Error 263) omitidas.
+
+# Boot 1: DIP todo desligado
+# memoria ao ligar: mem_mapa=nao mem_tipos=nao
+{"v":1,"boot":1,"seq":10,"t_ms":5570,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"4x4","inicio":"nova"}
+# Boot 3 (DIP já em outra posição)
+{"v":1,"boot":3,"seq":10,"t_ms":5567,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"8x4","inicio":"nova"}
+# Cada h abaixo relê o DIP depois do boot, com o DIP trocado entre eles
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":3,"seq":44,"t_ms":31090,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"12x4","inicio":"nova"}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":3,"seq":76,"t_ms":54039,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"12x4","inicio":"nova"}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":3,"seq":108,"t_ms":76857,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"8x4","inicio":"nova"}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":3,"seq":136,"t_ms":96053,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"4x4","inicio":"nova"}
+
+# Motores e encoders nesta rodada (bateria 7,7 a 7,8 V):
+# boot 3 e primeiro h: motor_esquerdo reprovado, encoder_esquerdo com 29 e 34 pulsos (mínimo 50): a bateria atrapalhava a roda esquerda.
+# Nos 3 últimos h a bateria foi segurada e a roda girou livre: motores aprovados, encoders de 520 a 534 pulsos.

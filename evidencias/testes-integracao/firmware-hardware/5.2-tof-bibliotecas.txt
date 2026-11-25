@@ -1,0 +1,28 @@
+# Teste 5.2, hipótese "biblioteca do sensor" e identificação do chip. Sensor do GPIO5, interruptor desligado.
+
+# Comando v: biblioteca da Adafruit com depuração. O chip é identificado, e a falha vem na leitura da calibração.
+v: so tof_direito (GPIO5) em alto; a biblioteca vai imprimir o que encontrar
+VL53L0X Info:
+Device Name: VL53L0X ES1 or later, Type: VL53L0X, ID: VL53L0CAV0DH/1$5
+Rev Major: 1, Minor: 1
+VL53L0X: StaticInit
+VL53L0X: PerformRefSpadManagement
+[  9089][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+refSpadCount = 1073489524, isApertureSpads = 0
+VL53L0X Error: -6
+v: begin = FALHOU, Status da biblioteca = -6 (0 = sem erro)
+v: ID do chip (0xC0) = 0xEE (VL53L0X = 0xEE)
+# O refSpadCount é lixo de memória: a biblioteca imprime uma variável não inicializada quando a leitura falha.
+
+# Biblioteca da Pololu no mesmo sensor: o init devolve OK, mas toda leitura de distância dá 0 mm com o mesmo erro.
+p: so tof_direito (GPIO5) em alto, biblioteca da Pololu
+[  8820][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  9831][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+p: init = OK
+[ 10846][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+   0 mm
+[ 11961][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+   0 mm
+[ 13076][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+   0 mm
+[... 20 leituras iguais, todas 0 mm com Error 263 ...]

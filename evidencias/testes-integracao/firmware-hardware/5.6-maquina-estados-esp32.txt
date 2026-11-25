@@ -1,0 +1,41 @@
+# Teste 5.6. Máquina de estados do robô e falha por origem, na ESP32 real, 20/11/2026.
+# Comando: pio test -e esp32_sim -f test_estados --upload-port /dev/ttyACM0 --test-port /dev/ttyACM0
+# A suíte é gravada na placa e o resultado volta pela serial USB.
+
+Collected 18 tests
+Processing test_estados in esp32_sim environment
+Building & Uploading...
+Testing...
+test/test_estados/test_main.c:292: test_boot_comeca_no_health_check_e_nao_anda  [PASSED]
+test/test_estados/test_main.c:293: test_health_check_aprovado_espera_a_largada  [PASSED]
+test/test_estados/test_main.c:294: test_health_check_reprovado_nao_parte_com_largar     [PASSED]
+test/test_estados/test_main.c:295: test_largar_antes_do_resultado_do_health_check_e_ignorado    [PASSED]
+test/test_estados/test_main.c:296: test_largar_com_health_check_aprovado_parte  [PASSED]
+test/test_estados/test_main.c:297: test_largar_na_corrida_nao_faz_nada  [PASSED]
+test/test_estados/test_main.c:298: test_health_check_pedido_parado_roda_de_novo [PASSED]
+test/test_estados/test_main.c:299: test_health_check_pedido_depois_de_reprovado_pode_aprovar    [PASSED]
+test/test_estados/test_main.c:300: test_health_check_pedido_na_corrida_e_ignorado       [PASSED]
+test/test_estados/test_main.c:301: test_health_check_pedido_em_success_e_em_failed_roda [PASSED]
+test/test_estados/test_main.c:302: test_resultado_do_health_check_fora_dele_e_ignorado  [PASSED]
+test/test_estados/test_main.c:303: test_corrida_termina_em_success_ou_failed    [PASSED]
+test/test_estados/test_main.c:304: test_retomar_depois_de_failed_parte_com_o_ultimo_health_check_aprovado       [PASSED]
+test/test_estados/test_main.c:305: test_nova_execucao_depois_de_success_parte   [PASSED]
+test/test_estados/test_main.c:306: test_interromper_na_corrida_para_com_falha_da_web    [PASSED]
+test/test_estados/test_main.c:307: test_interromper_ja_parado_so_repete_a_confirmacao   [PASSED]
+test/test_estados/test_main.c:308: test_interromper_fora_de_tentativa_e_ignorado        [PASSED]
+test/test_estados/test_main.c:309: test_boot_na_corrida_para_com_falha_do_boot  [PASSED]
+test/test_estados/test_main.c:310: test_boot_curto_ou_longo_na_corrida_tambem_para      [PASSED]
+test/test_estados/test_main.c:311: test_boot_curto_parado_apaga_o_mapa  [PASSED]
+test/test_estados/test_main.c:312: test_boot_longo_parado_apaga_tudo    [PASSED]
+test/test_estados/test_main.c:313: test_boot_parado_apaga_tambem_depois_de_reprovado_success_e_failed   [PASSED]
+test/test_estados/test_main.c:314: test_boot_durante_o_health_check_e_ignorado  [PASSED]
+test/test_estados/test_main.c:315: test_toque_simples_parado_nao_apaga_nada     [PASSED]
+test/test_estados/test_main.c:316: test_falha_da_interrupcao_pela_web_e_a_do_contrato   [PASSED]
+test/test_estados/test_main.c:317: test_falha_repetida_da_web_sai_igual_a_primeira      [PASSED]
+test/test_estados/test_main.c:318: test_falha_do_boot_e_a_do_contrato   [PASSED]
+test/test_estados/test_main.c:319: test_acoes_sem_falha_nao_geram_falha [PASSED]
+esp32_sim:test_estados [PASSED] Took 9.51 seconds
+28 test cases: 28 succeeded in 00:00:09.514
+
+# Mesma suíte no PC: pio test -e native -f test_estados
+28 test cases: 28 succeeded

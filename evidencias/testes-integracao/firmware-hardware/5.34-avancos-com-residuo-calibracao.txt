@@ -1,0 +1,45 @@
+Teste 5.34 - Avancos (a e A) com o erro de cada avanco compensado no seguinte e o ToF frontal lido durante o avanco, pelo Bluetooth, esperado 1079
+Log completo enviado pela Amanda (o mesmo [Log 10] do 5.28):
+
+[Log 10] Bluetooth, 640 pulsos por volta, versao mais recente (com o erro de cada avanco levado ao seguinte e o radio em potencia maxima); tres a:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200 --echo
+--- Terminal on /dev/rfcomm0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+a
+# comando: a
+# frontal ao partir: 167 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 189 189 169 164 164 164 167 167 176 211 204 204 174 174 187 189 200 208 208
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1072 dir=1078 pulsos (esperado 1079) = 179.4 mm pelos pulsos
+# frontal ao parar: 208 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 195 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 195 195 190 190 195 195 195 208 209 209 209 218 242 221 223 221 223 220 236
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1076 dir=1079 pulsos (esperado 1079) = 179.8 mm pelos pulsos
+# frontal ao parar: 236 mm (a parada garante pelo menos 17 mm ate a parede)
+a
+# comando: a
+# frontal ao partir: 222 mm (a parada de emergencia deixa pelo menos 17 mm ate a parede)
+# frontal a cada 50 ms (0 = sem leitura): 222 228 233 240 234 234 223 223 223 229 229 248 248 265 240 249 249 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco: concluido esq=1080 dir=1082 pulsos (esperado 1079) = 180.4 mm pelos pulsos
+# frontal ao parar: 1200 mm (a parada garante pelo menos 17 mm ate a parede)
+A
+# comando: A
+# frontal a cada 50 ms (0 = sem leitura): 180 180 179 184 179 191 176 186 158 186 191 192 193 200 200 200 169 177 169
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 1: concluido esq=1071 dir=1080
+# frontal a cada 50 ms (0 = sem leitura): 155 166 166 176 176 184 162 176 176 176 190 180 210 182 191 191 191 193 193
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 2: concluido esq=1075 dir=1081
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 177 173 175 175 1200 1200 1200 210 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 3: concluido esq=1071 dir=1087
+# frontal a cada 50 ms (0 = sem leitura): 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 1200 12001200 1200 1200 1200 1200 1200 1200 1200
+# a leitura dos ToF levou no maximo 10 ms (o laco do movimento e de 5 ms)
+avanco 4: FALHOU esq=1086 dir=1088
+
+Relato da Amanda sobre o avanco 4: falhou por conta da bateria entre a roda boba e a roda esquerda.

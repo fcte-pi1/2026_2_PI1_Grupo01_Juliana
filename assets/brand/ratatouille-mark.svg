@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Marca Ratatouille</title>
+  <desc id="desc">Robô geométrico sobre um caminho de labirinto</desc>
+  <rect width="64" height="64" rx="16" fill="#12364b"/>
+  <path d="M10 14h16v10h12V14h16M10 36h12v14h16V36h16M10 25h8v11M54 25h-8v11" fill="none" stroke="#f29a54" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <rect x="20" y="24" width="24" height="22" rx="7" fill="#f4f7f8" stroke="#12364b" stroke-width="3"/>
+  <circle cx="28" cy="34" r="2.5" fill="#12364b"/>
+  <circle cx="36" cy="34" r="2.5" fill="#12364b"/>
+  <path d="M28 40h8M32 24v-5M29 19h6" fill="none" stroke="#f29a54" stroke-linecap="round" stroke-width="3"/>
+  <circle cx="18" cy="47" r="5" fill="#12364b" stroke="#f4f7f8" stroke-width="3"/>
+  <circle cx="46" cy="47" r="5" fill="#12364b" stroke="#f4f7f8" stroke-width="3"/>
+</svg>

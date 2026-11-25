@@ -1,0 +1,73 @@
+Teste 5.39 - Comandos health_check, largar e interromper pelo Bluetooth (monitor_comandos.py no /dev/rfcomm0)
+Log completo enviado pela Amanda. Firmware esp32_real_bt_tof_mock (ToF mockado: frontal 300 mm, laterais 120 mm), interruptor ligado, USB fora, rodas no ar.
+O monitor so mostra a tel quando o estado muda; os buracos de seq entre as linhas abaixo (por exemplo seq 29) sao tel que ele nao imprime.
+Sequencia de teclas: h, l, h, l, h, i, l, i.
+
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/monitor_comandos.py /dev/rfcomm0
+# /dev/rfcomm0: l=largar i=interromper h=health_check t=tel q=sair
+{"v":1,"boot":23,"seq":0,"t_ms":130114,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":7389,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":23,"seq":1,"t_ms":130114,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7385}
+{"v":1,"boot":23,"seq":2,"t_ms":130176,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":23,"seq":3,"t_ms":130229,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":4,"t_ms":130282,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":5,"t_ms":130335,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":6,"t_ms":130388,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":7,"t_ms":130441,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":515}
+{"v":1,"boot":23,"seq":8,"t_ms":130494,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":539}
+{"v":1,"boot":23,"seq":9,"t_ms":130546,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":23,"seq":21,"t_ms":141722,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7343}
+{"v":1,"boot":23,"seq":22,"t_ms":141775,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":23,"seq":23,"t_ms":141828,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":24,"t_ms":141881,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":25,"t_ms":141934,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":26,"t_ms":141987,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":27,"t_ms":142040,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":518}
+{"v":1,"boot":23,"seq":28,"t_ms":142093,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":540}
+{"v":1,"boot":23,"seq":30,"t_ms":142146,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":23,"seq":39,"t_ms":150570,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7352,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":23,"seq":43,"t_ms":151325,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":23,"seq":49,"t_ms":152208,"tipo":"passo","x":0,"y":2,"paredes":12}
+{"v":1,"boot":23,"seq":54,"t_ms":153089,"tipo":"passo","x":0,"y":3,"paredes":12}
+{"v":1,"boot":23,"seq":72,"t_ms":156560,"tipo":"falha","motivo":"stuck","origem":"automatica","x":1,"y":3,"componente":null}
+{"v":1,"boot":23,"seq":73,"t_ms":157372,"tipo":"tel","estado":"failed","x":1,"y":3,"rumo":"L","bat_mv":7342,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":23,"seq":96,"t_ms":179682,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7339}
+{"v":1,"boot":23,"seq":97,"t_ms":179735,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":23,"seq":98,"t_ms":179788,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":99,"t_ms":179841,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":100,"t_ms":179894,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":101,"t_ms":179947,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":102,"t_ms":180000,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":515}
+{"v":1,"boot":23,"seq":103,"t_ms":180053,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":538}
+{"v":1,"boot":23,"seq":104,"t_ms":180106,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+{"v":1,"boot":23,"seq":105,"t_ms":180372,"tipo":"tel","estado":"health-check","x":1,"y":3,"rumo":"L","bat_mv":7333,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":23,"seq":112,"t_ms":187372,"tipo":"tel","estado":"running","x":1,"y":3,"rumo":"L","bat_mv":7345,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":23,"seq":113,"t_ms":187400,"tipo":"passo","x":1,"y":3,"paredes":3}
+{"v":1,"boot":23,"seq":118,"t_ms":188278,"tipo":"passo","x":2,"y":3,"paredes":3}
+{"v":1,"boot":23,"seq":124,"t_ms":189211,"tipo":"passo","x":3,"y":3,"paredes":3}
+{"v":1,"boot":23,"seq":125,"t_ms":189263,"tipo":"sucesso","x":3,"y":3}
+{"v":1,"boot":23,"seq":126,"t_ms":190203,"tipo":"tel","estado":"success","x":3,"y":3,"rumo":"L","bat_mv":7336,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"health_check"}
+{"v":1,"boot":23,"seq":134,"t_ms":197512,"tipo":"hc_item","componente":"bateria","aprovado":true,"valor":7344}
+{"v":1,"boot":23,"seq":135,"t_ms":197565,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":300}
+{"v":1,"boot":23,"seq":136,"t_ms":197618,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":137,"t_ms":197670,"tipo":"hc_item","componente":"tof_direito","aprovado":true,"valor":120}
+{"v":1,"boot":23,"seq":138,"t_ms":197722,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":139,"t_ms":197775,"tipo":"hc_item","componente":"motor_direito","aprovado":true,"valor":null}
+{"v":1,"boot":23,"seq":140,"t_ms":197828,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":true,"valor":519}
+{"v":1,"boot":23,"seq":141,"t_ms":197881,"tipo":"hc_item","componente":"encoder_direito","aprovado":true,"valor":539}
+{"v":1,"boot":23,"seq":142,"t_ms":197934,"tipo":"hc_resultado","aprovado":true,"tipo_dip":"4x4","inicio":"nova"}
+{"v":1,"boot":23,"seq":143,"t_ms":198203,"tipo":"tel","estado":"health-check","x":3,"y":3,"rumo":"L","bat_mv":7342,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"interromper"}
+# enviado: {"v":1,"cmd":"largar"}
+{"v":1,"boot":23,"seq":148,"t_ms":203134,"tipo":"passo","x":0,"y":0,"paredes":12}
+{"v":1,"boot":23,"seq":149,"t_ms":203187,"tipo":"tel","estado":"running","x":0,"y":1,"rumo":"N","bat_mv":7334,"vel_mm_s":0,"eixo_longo":null}
+# enviado: {"v":1,"cmd":"interromper"}
+{"v":1,"boot":23,"seq":154,"t_ms":204028,"tipo":"passo","x":0,"y":1,"paredes":12}
+{"v":1,"boot":23,"seq":155,"t_ms":204078,"tipo":"falha","motivo":null,"origem":"web","x":0,"y":2,"componente":null}
+{"v":1,"boot":23,"seq":156,"t_ms":204987,"tipo":"tel","estado":"failed","x":0,"y":2,"rumo":"N","bat_mv":7331,"vel_mm_s":0,"eixo_longo":null}

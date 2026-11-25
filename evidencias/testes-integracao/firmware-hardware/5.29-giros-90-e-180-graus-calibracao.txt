@@ -1,0 +1,69 @@
+Teste 5.29 - Giros de 90 e 180 graus (teclas g, G, h), bancada esp32_calibracao_bt
+Logs completos enviados pela Amanda. Os giros que vieram dentro de logs de avanco estao inteiros no 5.28 e sao citados abaixo:
+  - [Log 2 do 5.28]: g FALHOU esq=-578 dir=602 (integral sobre a trajetoria toda, 840 pulsos por volta)
+  - [Log 5 do 5.28]: tres g concluidos, esq=-570 dir=567, esq=-574 dir=570, esq=-571 dir=575 (840 pulsos por volta)
+  - [Log 7 do 5.28]: g esq=-438 dir=439 = 90.7 graus e G esq=441 dir=-433 = -90.4 graus (640 pulsos por volta)
+
+[Log 1] USB (com cliente Bluetooth conectado), 840 pulsos por volta, tolerancia de giro de 4 pulsos (a, g, G, h e G):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200 --echo
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+␛�;␃�$�8␃�$␄�␄$$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2357][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3621][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4885][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+# bt: cliente conectado
+a
+# comando: a
+avanco: concluido esq=1419 dir=1410 pulsos (esperado 1416) = 179.9 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1415 dir=1410 pulsos (esperado 1416) = 179.6 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1419 dir=1411 pulsos (esperado 1416) = 179.9 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1416 dir=1412 pulsos (esperado 1416) = 179.8 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1414 dir=1416 pulsos (esperado 1416) = 179.9 mm pelos pulsos
+a
+# comando: a
+avanco: concluido esq=1417 dir=1412 pulsos (esperado 1416) = 179.9 mm pelos pulsos
+g
+# comando: g
+giro: concluido esq=-568 dir=574 pulsos (esperado +-571) = 90.0 graus (pedido 90)
+G
+# comando: G
+giro: FALHOU esq=568 dir=-576 pulsos (esperado +--571) = 90.2 graus (pedido -90)
+h
+# comando: h
+giro: concluido esq=-1139 dir=1140 pulsos (esperado +-1143) = 179.4 graus (pedido 180)
+G
+# comando: G
+giro: FALHOU esq=576 dir=-569 pulsos (esperado +--571) = 90.2 graus (pedido -90)
+
+[Log 2] USB, 840 pulsos por volta, tolerancia de giro de 6 pulsos (G tres vezes):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200 --echo
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+␛�;␃�$�8␃�$␄�␄$$␄$���$�␄��␇$;$�;�#␄␄␛␄␄#�$����$$␛$␛;���$8��''�␟�␄␛��␄#$�␛$␛�����␛�$��␃$␛ ?�$�$;$␇�''��␟;␛'#␄␄␄#�␛�$�␛␟�␄��� ␃␇�';��#�#␄␄␃␄␄#���#�#␄␄␃␄␄#�␛�<�#␄␄␃␄␄#8�␃�␛�<�#␄␄␃␄␄#'�␛�<�#␄␄␃␄␄#��␛�<�#␄␄␃␄$ ␃;�'���␄��?�#��''8'␃␄���#�$ ␃8�'�␘#␄␄;����␄�␄␄#'�<#$$␄␄�␇$8�'�␘#␄␄�␄␄��␄␄␄␄#'�<#$����$ ␃8�'�␘#␄␄�␄␄␄␄␄�␄␄#'�<#�␄�␄$ ␃␛�'�<�␃␄␄�␄␄␄␄$���$ ␃# bt: aguardando conexao como "Ratatouille"
+[  2363][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3627][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4891][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+bancada de calibracao: digite a tecla e Enter: a A g G h Q v s t p (Enter sozinho para)
+tof: algum nao iniciou
+G
+# comando: G
+giro: concluido esq=574 dir=-575 pulsos (esperado +-571) = -90.6 graus (pedido -90)
+G
+# comando: G
+giro: concluido esq=565 dir=-570 pulsos (esperado +-571) = -89.4 graus (pedido -90)
+G
+# comando: G
+ggiro: concluido esq=573 dir=-574 pulsos (esperado +-571) = -90.4 graus (pedido -90)

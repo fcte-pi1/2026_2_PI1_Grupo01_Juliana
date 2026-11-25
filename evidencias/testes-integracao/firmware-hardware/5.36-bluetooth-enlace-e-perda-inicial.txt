@@ -1,0 +1,407 @@
+Teste 5.36 - Enlace Bluetooth (SPP) com o verificador da telemetria: do enlace que nao abria ate a causa da perda inicial
+Logs completos enviados pela Amanda, na ordem em que foram feitos. Firmware: esp32_real_bt / esp32_real_bt_tof_mock, interruptor desligado (placa pelo USB), rodas no ar.
+
+[Log 1] Verificador no /dev/rfcomm0 (versao que contava toda falha de leitura como queda; DTR baixo derrubava a conexao):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao600
+Lendo /dev/rfcomm0 por 600 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 0 (tel 0), quedas do enlace: 3, última mensagem há nenhuma ainda
+[  20 s] mensagens: 0 (tel 0), quedas do enlace: 7, última mensagem há nenhuma ainda
+[  30 s] mensagens: 0 (tel 0), quedas do enlace: 12, última mensagem há nenhuma ainda
+[  40 s] mensagens: 0 (tel 0), quedas do enlace: 15, última mensagem há nenhuma ainda
+[  50 s] mensagens: 0 (tel 0), quedas do enlace: 18, última mensagem há nenhuma ainda
+[  60 s] mensagens: 0 (tel 0), quedas do enlace: 21, última mensagem há nenhuma ainda
+[  70 s] mensagens: 0 (tel 0), quedas do enlace: 24, última mensagem há nenhuma ainda
+[  80 s] mensagens: 0 (tel 0), quedas do enlace: 29, última mensagem há nenhuma ainda
+[  90 s] mensagens: 0 (tel 0), quedas do enlace: 32, última mensagem há nenhuma ainda
+[ 100 s] mensagens: 0 (tel 0), quedas do enlace: 36, última mensagem há nenhuma ainda
+[ 110 s] mensagens: 0 (tel 0), quedas do enlace: 40, última mensagem há nenhuma ainda
+[ 120 s] mensagens: 0 (tel 0), quedas do enlace: 43, última mensagem há nenhuma ainda
+[ 130 s] mensagens: 0 (tel 0), quedas do enlace: 46, última mensagem há nenhuma ainda
+[ 140 s] mensagens: 0 (tel 0), quedas do enlace: 50, última mensagem há nenhuma ainda
+[ 150 s] mensagens: 0 (tel 0), quedas do enlace: 54, última mensagem há nenhuma ainda
+[ 160 s] mensagens: 0 (tel 0), quedas do enlace: 56, última mensagem há nenhuma ainda
+[ 170 s] mensagens: 0 (tel 0), quedas do enlace: 60, última mensagem há nenhuma ainda
+[ 180 s] mensagens: 0 (tel 0), quedas do enlace: 64, última mensagem há nenhuma ainda
+[ 190 s] mensagens: 0 (tel 0), quedas do enlace: 68, última mensagem há nenhuma ainda
+[ 200 s] mensagens: 0 (tel 0), quedas do enlace: 71, última mensagem há nenhuma ainda
+[ 210 s] mensagens: 0 (tel 0), quedas do enlace: 73, última mensagem há nenhuma ainda
+[ 220 s] mensagens: 0 (tel 0), quedas do enlace: 78, última mensagem há nenhuma ainda
+[ 230 s] mensagens: 0 (tel 0), quedas do enlace: 81, última mensagem há nenhuma ainda
+[ 240 s] mensagens: 0 (tel 0), quedas do enlace: 84, última mensagem há nenhuma ainda
+[ 250 s] mensagens: 0 (tel 0), quedas do enlace: 89, última mensagem há nenhuma ainda
+[ 260 s] mensagens: 0 (tel 0), quedas do enlace: 92, última mensagem há nenhuma ainda
+[ 270 s] mensagens: 0 (tel 0), quedas do enlace: 95, última mensagem há nenhuma ainda
+[ 280 s] mensagens: 0 (tel 0), quedas do enlace: 99, última mensagem há nenhuma ainda
+[ 290 s] mensagens: 0 (tel 0), quedas do enlace: 104, última mensagem há nenhuma ainda
+[ 300 s] mensagens: 0 (tel 0), quedas do enlace: 108, última mensagem há nenhuma ainda
+[ 310 s] mensagens: 0 (tel 0), quedas do enlace: 112, última mensagem há nenhuma ainda
+[ 320 s] mensagens: 0 (tel 0), quedas do enlace: 116, última mensagem há nenhuma ainda
+^C
+Interrompido pelo teclado.
+Linhas por tipo:
+  hc_item: 0
+  hc_resultado: 0
+  tel: 0
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: sem dados
+Duração (pelo t_ms): 0.0 s
+Quedas do enlace: 118
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Nenhuma mensagem do contrato recebida
+Resultado: FALHOU
+
+[Log 2] Depois de nao mexer mais no DTR do rfcomm; o enlace nao abria (a placa estava com o pareamento perdido):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 3, última mensagem há nenhuma ainda
+[  20 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 6, última mensagem há nenhuma ainda
+[  30 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 8, última mensagem há nenhuma ainda
+[  40 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 10, última mensagem há nenhuma ainda
+[  50 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 14, última mensagem há nenhuma ainda
+[  60 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 17, última mensagem há nenhuma ainda
+Linhas por tipo:
+  hc_item: 0
+  hc_resultado: 0
+  tel: 0
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: sem dados
+Duração (pelo t_ms): 0.0 s
+Quedas do enlace: 0
+Tentativas de conexão sem nenhuma mensagem: 17
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Nenhuma mensagem do contrato recebida
+O enlace não abriu: confira o pareamento, se há outro programa na porta, e reinicie a placa (desligue e ligue o interruptor)
+Resultado: FALHOU
+
+[Log 3] Diagnostico do pareamento no notebook:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ bluetoothctl info 88:57:21:70:7F:0E | grep -i -E "paired|trusted|connected"
+bluetoothctl connect 88:57:21:70:7F:0E
+        Paired: yes
+        Trusted: yes
+        Connected: no
+Attempting to connect to 88:57:21:70:7F:0E
+[CHG] Device 88:57:21:70:7F:0E Connected: yes
+[CHG] Device 88:57:21:70:7F:0E ServicesResolved: yes
+Failed to connect: org.bluez.Error.BREDR.ProfileUnavailable No more profiles to connect to
+
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm connect /dev/rfcomm0 88:57:21:70:7F:0E 1
+[sudo: authenticate] Password:       
+Can't connect RFCOMM socket: Permission denied
+
+[Log 4] Depois de remover e refazer o pareamento (remove, scan on, pair, trust):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm connect /dev/rfcomm0 88:57:21:70:7F:0E 1
+[sudo: authenticate] Password:       
+Connected /dev/rfcomm0 to 88:57:21:70:7F:0E on channel 1
+
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/rfcomm0 --baud 115200
+UserSideException: [Errno 16] could not open port /dev/rfcomm0: [Errno 16] Device or resource busy: '/dev/rfcomm0'
+
+[Log 5] Verificador com o monitor aberto ao mesmo tempo na mesma porta (duas leituras dividem as linhas):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+[  20 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+[  30 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+[  40 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+[  50 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+[  60 s] mensagens: 0 (tel 0), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há nenhuma ainda
+Linhas por tipo:
+  hc_item: 0
+  hc_resultado: 0
+  tel: 0
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: sem dados
+Duração (pelo t_ms): 0.0 s
+Quedas do enlace: 0
+Buracos de seq: 0
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Nenhuma mensagem do contrato recebida
+Resultado: FALHOU
+(o monitor estava aberto em outro terminal, mostrando a telemetria: o seq ia de 78 a 146, com os hc_item 1 a 9 reenviados no meio)
+
+[Log 6] Verificador sozinho no /dev/rfcomm0, ModemManager ativo, 60 s (primeiro a mostrar as mensagens):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 5 s
+[  20 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 15 s
+[  30 s] mensagens: 17 (tel 9), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  40 s] mensagens: 27 (tel 19), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  50 s] mensagens: 37 (tel 29), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  60 s] mensagens: 47 (tel 39), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+Linhas por tipo:
+  hc_item: 7
+  hc_resultado: 1
+  tel: 39
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.68 Hz
+Duração (pelo t_ms): 57.0 s
+Atraso de entrega: p95 247.16 s, máximo 247.25 s (limite do p95: 3.0 s)
+Buracos de seq: 4
+  boot 7: esperado seq 239, recebido seq 1
+  boot 7: esperado seq 2, recebido seq 3
+  boot 7: esperado seq 10, recebido seq 239
+  boot 7: esperado seq 241, recebido seq 260
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 1
+  linha 12: JSON inválido
+Resultado: FALHOU
+
+[Log 7] Duas rodadas de 120 s, ModemManager ativo (o verificador ja descontava o que o robo guardou antes da conexao):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 
+120
+Lendo /dev/rfcomm0 por 120 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 11 (tel 2), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 3 s
+[  20 s] mensagens: 11 (tel 2), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 13 s
+[  30 s] mensagens: 15 (tel 6), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  40 s] mensagens: 25 (tel 16), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  50 s] mensagens: 35 (tel 26), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  60 s] mensagens: 45 (tel 36), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  70 s] mensagens: 55 (tel 46), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  80 s] mensagens: 65 (tel 56), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  90 s] mensagens: 75 (tel 66), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[ 100 s] mensagens: 85 (tel 76), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[ 110 s] mensagens: 95 (tel 86), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[ 120 s] mensagens: 105 (tel 96), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+Linhas por tipo:
+  hc_item: 8
+  hc_resultado: 1
+  tel: 96
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.17 Hz
+Duração (pelo t_ms): 555.9 s
+Atraso de entrega: p95 0.03 s, máximo 0.04 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 20.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 9
+Quedas do enlace: 0
+Buracos de seq: 2
+  boot 7: esperado seq 10, recebido seq 297
+  boot 7: esperado seq 299, recebido seq 318
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 1
+  linha 12: JSON inválido
+Resultado: FALHOU
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao120
+Lendo /dev/rfcomm0 por 120 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 11 (tel 2), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 7 s
+[  20 s] mensagens: 11 (tel 2), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 17 s
+[  30 s] mensagens: 18 (tel 9), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  40 s] mensagens: 28 (tel 19), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  50 s] mensagens: 38 (tel 29), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  60 s] mensagens: 48 (tel 39), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  70 s] mensagens: 58 (tel 49), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  80 s] mensagens: 68 (tel 59), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  90 s] mensagens: 78 (tel 69), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[ 100 s] mensagens: 88 (tel 79), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[ 110 s] mensagens: 98 (tel 89), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[ 120 s] mensagens: 108 (tel 99), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+Linhas por tipo:
+  hc_item: 8
+  hc_resultado: 1
+  tel: 100
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.15 Hz
+Duração (pelo t_ms): 688.2 s
+Atraso de entrega: p95 0.03 s, máximo 0.03 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 20.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 9
+Quedas do enlace: 0
+Buracos de seq: 2
+  boot 7: esperado seq 10, recebido seq 413
+  boot 7: esperado seq 415, recebido seq 434
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 1
+  linha 12: JSON inválido
+Resultado: FALHOU
+
+[Log 8] Boot 9 e boot 13 (60 s cada), ModemManager ativo:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 7 s
+[  20 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 17 s
+[  30 s] mensagens: 18 (tel 10), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  40 s] mensagens: 28 (tel 20), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  50 s] mensagens: 38 (tel 30), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  60 s] mensagens: 48 (tel 40), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+Linhas por tipo:
+  hc_item: 7
+  hc_resultado: 1
+  tel: 41
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.70 Hz
+Duração (pelo t_ms): 58.9 s
+Atraso de entrega: p95 0.04 s, máximo 0.15 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 20.0 s
+Quedas do enlace: 0
+Buracos de seq: 3
+  boot 9: esperado seq 4, recebido seq 0
+  boot 9: esperado seq 2, recebido seq 4
+  boot 9: esperado seq 12, recebido seq 31
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 1
+  linha 12: JSON inválido
+Resultado: FALHOU
+
+[Log 9] Monitor USB (terminal A), primeira versao com os avisos de congestionamento: nenhuma linha de congestionamento durante a conexao:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ pio device monitor --port /dev/ttyACM0 --baud 115200
+--- Terminal on /dev/ttyACM0 | 115200 8-N-1
+--- Available filters and text transformations: debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+# bt: aguardando conexao como "Ratatouille"
+[   537][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+# bt: cliente conectado em t=20213 ms
+# bt: desconectado (status 0)
+# bt: cliente conectado em t=302865 ms
+# bt: aguardando conexao como "Ratatouille"
+[   541][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+# bt: cliente conectado em t=22560 ms
+# bt: desconectado (status 0)
+(boot 13 do verificador, 60 s: o mesmo resumo, com mensagens 11/tel 3 aos 10 s, maior silencio de 20,0 s, buracos 2->3 e 12->31, linha 13 com JSON invalido, "Tentativas de conexao sem nenhuma mensagem: 1")
+
+[Log 10] Boot 15, ModemManager ativo: resumo do verificador e o monitor USB com a contagem de bytes (enfileirado igual a confirmado o tempo todo):
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 5 s
+[  20 s] mensagens: 11 (tel 3), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 15 s
+[  30 s] mensagens: 16 (tel 8), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  40 s] mensagens: 26 (tel 18), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  50 s] mensagens: 36 (tel 28), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+[  60 s] mensagens: 46 (tel 38), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 1 s
+Linhas por tipo:
+  hc_item: 7
+  hc_resultado: 1
+  tel: 38
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.68 Hz
+Duração (pelo t_ms): 56.0 s
+Atraso de entrega: p95 0.04 s, máximo 0.08 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 20.0 s
+Quedas do enlace: 0
+Buracos de seq: 2
+  boot 15: esperado seq 2, recebido seq 3
+  boot 15: esperado seq 12, recebido seq 31
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 1
+  linha 12: JSON inválido
+Resultado: FALHOU
+
+# bt: aguardando conexao como "Ratatouille"
+[   552][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: mem_tipos NOT_FOUND
+# bt: t=8366 ms enfileirado=0 B confirmado=0 B
+# bt: cliente conectado em t=8367 ms
+# bt: t=10366 ms enfileirado=1289 B confirmado=1289 B
+# bt: t=12366 ms enfileirado=1577 B confirmado=1577 B
+# bt: t=14366 ms enfileirado=1865 B confirmado=1865 B
+# bt: t=16366 ms enfileirado=2153 B confirmado=2153 B
+# bt: t=18366 ms enfileirado=2441 B confirmado=2441 B
+# bt: t=20366 ms enfileirado=2729 B confirmado=2729 B
+# bt: t=22366 ms enfileirado=3017 B confirmado=3017 B
+# bt: t=24366 ms enfileirado=3305 B confirmado=3305 B
+# bt: t=26366 ms enfileirado=3593 B confirmado=3593 B
+# bt: t=28366 ms enfileirado=3881 B confirmado=3881 B
+# bt: t=30366 ms enfileirado=4169 B confirmado=4169 B
+# bt: t=32366 ms enfileirado=4457 B confirmado=4457 B
+# bt: t=34366 ms enfileirado=4745 B confirmado=4745 B
+# bt: t=36366 ms enfileirado=5033 B confirmado=5033 B
+# bt: t=38366 ms enfileirado=5321 B confirmado=5321 B
+# bt: t=40366 ms enfileirado=5609 B confirmado=5609 B
+# bt: t=42366 ms enfileirado=5897 B confirmado=5897 B
+# bt: t=44366 ms enfileirado=6185 B confirmado=6185 B
+# bt: t=46366 ms enfileirado=6473 B confirmado=6473 B
+# bt: t=48366 ms enfileirado=6761 B confirmado=6761 B
+# bt: t=50366 ms enfileirado=7049 B confirmado=7049 B
+# bt: t=52366 ms enfileirado=7337 B confirmado=7337 B
+# bt: t=54366 ms enfileirado=7625 B confirmado=7625 B
+# bt: t=56366 ms enfileirado=7913 B confirmado=7913 B
+# bt: t=58366 ms enfileirado=8201 B confirmado=8201 B
+# bt: t=60366 ms enfileirado=8489 B confirmado=8489 B
+# bt: t=62366 ms enfileirado=8777 B confirmado=8777 B
+# bt: t=64366 ms enfileirado=9065 B confirmado=9065 B
+# bt: desconectado (status 0)
+
+[Log 11] ModemManager PARADO (sudo systemctl stop ModemManager): sem silencio inicial, sem linha invalida; o buraco que sobrou (seq 10 a 67) e o salto de quem entra no meio do boot, e o verificador passou a descarta-lo depois:
+(.venv) amanda-de-moura@amanda-de-moura:~/UNB/2026_2_PI1_Grupo01_Juliana/src/firmware$ sudo systemctl stop ModemManager
+sudo rfcomm release all
+sudo rfcomm bind /dev/rfcomm0 88:57:21:70:7F:0E 1
+python tools/verificar_serial.py --porta /dev/rfcomm0 --duracao 60
+Lendo /dev/rfcomm0 por 60 s. O resumo sai no fim; Ctrl+C encerra antes e mostra o que foi lido.
+[  10 s] mensagens: 18 (tel 9), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  20 s] mensagens: 28 (tel 19), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  30 s] mensagens: 38 (tel 29), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  40 s] mensagens: 48 (tel 39), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  50 s] mensagens: 58 (tel 49), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+[  60 s] mensagens: 68 (tel 59), quedas do enlace: 0, conexões sem mensagem: 0, última mensagem há 0 s
+Linhas por tipo:
+  hc_item: 8
+  hc_resultado: 1
+  tel: 59
+  passo: 0
+  falha: 0
+  sucesso: 0
+Taxa média da tel: 0.12 Hz
+Duração (pelo t_ms): 508.8 s
+Atraso de entrega: p95 0.02 s, máximo 0.02 s (limite do p95: 3.0 s)
+Maior silêncio entre mensagens: 1.0 s
+Mensagens guardadas pelo robô antes de a conexão abrir (fora do atraso): 9
+Quedas do enlace: 0
+Buracos de seq: 1
+  boot 15: esperado seq 10, recebido seq 68
+Descartadas antes da primeira mensagem: 0
+Linhas inválidas: 0
+Resultado: FALHOU
+
+# bt: cliente conectado em t=458172 ms
+# bt: t=460171 ms enfileirado=10647 B confirmado=10647 B
+# bt: t=462171 ms enfileirado=10937 B confirmado=10937 B
+# bt: t=464171 ms enfileirado=11227 B confirmado=11227 B
+# bt: t=466171 ms enfileirado=11517 B confirmado=11517 B
+# bt: t=468171 ms enfileirado=11807 B confirmado=11807 B
+# bt: t=470171 ms enfileirado=12097 B confirmado=12097 B
+# bt: t=472171 ms enfileirado=12387 B confirmado=12387 B
+# bt: t=474171 ms enfileirado=12677 B confirmado=12677 B
+# bt: t=476171 ms enfileirado=12967 B confirmado=12967 B
+# bt: t=478171 ms enfileirado=13257 B confirmado=13257 B
+# bt: t=480171 ms enfileirado=13547 B confirmado=13547 B
+# bt: t=482171 ms enfileirado=13837 B confirmado=13837 B
+# bt: t=484171 ms enfileirado=14127 B confirmado=14127 B
+# bt: t=486171 ms enfileirado=14417 B confirmado=14417 B
+# bt: t=488171 ms enfileirado=14707 B confirmado=14707 B
+# bt: t=490171 ms enfileirado=14997 B confirmado=14997 B
+# bt: t=492171 ms enfileirado=15288 B confirmado=15288 B
+# bt: t=494171 ms enfileirado=15580 B confirmado=15580 B
+# bt: t=496171 ms enfileirado=15872 B confirmado=15872 B
+# bt: t=498171 ms enfileirado=16164 B confirmado=16164 B
+# bt: t=500171 ms enfileirado=16456 B confirmado=16456 B
+# bt: t=502171 ms enfileirado=16748 B confirmado=16748 B
+# bt: t=504171 ms enfileirado=17040 B confirmado=17040 B
+# bt: t=506171 ms enfileirado=17332 B confirmado=17332 B
+# bt: t=508171 ms enfileirado=17624 B confirmado=17624 B
+# bt: t=510171 ms enfileirado=17916 B confirmado=17916 B
+# bt: t=512171 ms enfileirado=18208 B confirmado=18208 B
+# bt: t=514171 ms enfileirado=18500 B confirmado=18500 B
+# bt: t=516171 ms enfileirado=18792 B confirmado=18792 B
+# bt: desconectado (status 0)

@@ -1,0 +1,27 @@
+# Teste 5.16. Boot do esp32_real sem o erro do PCNT, 21/11/2026.
+# Roteiro: pio run -e esp32_real -t upload --upload-port /dev/ttyACM0; pio device monitor --port /dev/ttyACM0 --baud 115200.
+# Antes (encoder com serviço de interrupção do PCNT), todo boot trazia estas três linhas, vistas nos logs dos testes 5.2 e 5.12:
+#   E (12) pcnt: _pcnt_isr_service_install(316): PCNT driver error
+#   E (14) pcnt: _pcnt_isr_handler_add(264): ISR service is not installed, call pcnt_install_isr_service() first
+#   E (17) pcnt: _pcnt_isr_handler_add(264): ISR service is not installed, call pcnt_install_isr_service() first
+# Agora o encoder soma o estouro do contador na leitura (encoder_soma), sem interrupção. Saída do monitor depois do reset
+# (interruptor da bateria desligado: bat_mv 804, health-check reprovado por bateria, motores e encoders, como esperado):
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+[  1840][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  3104][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4368][E][Wire.cpp:513] requestFrom(): i2cRead returned Error 263
+[  4375][E][Preferences.cpp:503] getBytesLength(): nvs_get_blob len fail: boot NOT_FOUND
+# memoria ao ligar: mem_mapa=nao mem_tipos=nao
+{"v":1,"boot":1,"seq":0,"t_ms":4403,"tipo":"tel","estado":"health-check","x":0,"y":0,"rumo":"N","bat_mv":0,"vel_mm_s":0,"eixo_longo":null}
+{"v":1,"boot":1,"seq":1,"t_ms":5205,"tipo":"hc_item","componente":"bateria","aprovado":false,"valor":804}
+{"v":1,"boot":1,"seq":2,"t_ms":5256,"tipo":"hc_item","componente":"tof_frontal","aprovado":true,"valor":80}
+{"v":1,"boot":1,"seq":3,"t_ms":5306,"tipo":"hc_item","componente":"tof_esquerdo","aprovado":false,"valor":null}
+{"v":1,"boot":1,"seq":4,"t_ms":5356,"tipo":"hc_item","componente":"tof_direito","aprovado":false,"valor":null}
+{"v":1,"boot":1,"seq":6,"t_ms":5406,"tipo":"hc_item","componente":"motor_esquerdo","aprovado":false,"valor":null}
+{"v":1,"boot":1,"seq":7,"t_ms":5457,"tipo":"hc_item","componente":"motor_direito","aprovado":false,"valor":null}
+{"v":1,"boot":1,"seq":8,"t_ms":5507,"tipo":"hc_item","componente":"encoder_esquerdo","aprovado":false,"valor":0}
+{"v":1,"boot":1,"seq":9,"t_ms":5557,"tipo":"hc_item","componente":"encoder_direito","aprovado":false,"valor":0}
+{"v":1,"boot":1,"seq":10,"t_ms":5607,"tipo":"hc_resultado","aprovado":false,"tipo_dip":"4x4","inicio":"nova"}
+[... tel a 1 Hz, health-check, seq contínuo ...]
+# Nenhuma linha "pcnt" no boot. Restam só o Error 263 do I²C (ToF laterais, teste 5.2) e o aviso do NVS no primeiro boot.
