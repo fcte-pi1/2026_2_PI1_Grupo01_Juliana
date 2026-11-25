@@ -5,7 +5,7 @@ import type { EstadoRobo } from '../api/tipos'
 import type { EstadoReceptor } from '../components/layout/StatusReceptor'
 
 const INTERVALO_MS = 3_000
-/** O robô parado não envia nada; passado esse tempo o sinal deixa de ser considerado recente. */
+/** O robô envia telemetria o tempo todo; sem nenhuma linha por esse tempo, o enlace Bluetooth é tratado como desconectado ou instável. */
 export const LIMITE_SINAL_RECENTE_S = 60
 
 type Enlace = EstadoRobo['ponte']

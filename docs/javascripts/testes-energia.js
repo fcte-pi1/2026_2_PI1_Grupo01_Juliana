@@ -3,7 +3,7 @@
  * e as contas da página. Quem executa o teste só preenche o CSV.
  *
  * CSV com ";" entre colunas, vírgula ou ponto nos decimais e "#" para comentário.
- * A exportação das execuções (teste 5.44 do 7.5) vem do back-end com "," entre as colunas
+ * A exportação das execuções (testes 5.47 a 5.53 do 7.5) vem do back-end com "," entre as colunas
  * e é lida como está, sem editar.
  */
 
@@ -303,7 +303,7 @@ async function montarConsumo(alvo) {
 }
 
 /*
- * Teste 5.44 do 7.5 (integração): tensão da bateria lida pelo firmware em cada tentativa das corridas,
+ * Testes 5.47 a 5.53 do 7.5 (integração): tensão da bateria lida pelo firmware em cada tentativa das corridas,
  * a partir da exportação das execuções feita pela tela (uma linha por tentativa).
  */
 function graficoCorridas(alvo, titulo, tipo, series, rotuloY, tentativas, referencias = []) {
