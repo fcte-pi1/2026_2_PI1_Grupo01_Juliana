@@ -269,3 +269,14 @@ button:focus-visible {
 .energia-figura { display: block; margin: 0 auto; }
 .energia-fotos { max-width: 52rem; margin: 0 auto; }
 .energia-fotos--par { max-width: 40rem; grid-template-columns: repeat(2, 1fr); }
+
+/* Computador: aproveita a largura da tela. Celular e tablet seguem como estão. */
+@media screen and (min-width: 76.25em) {
+  .md-grid { max-width: min(96vw, 110rem); }
+  .md-sidebar--primary { width: 14.5rem; }
+  .md-sidebar--secondary { width: 14.5rem; }
+  .md-content__inner { margin-right: 1.2rem; margin-left: 1.2rem; }
+  .md-typeset table:not([class]) { display: table; width: 100%; }
+  .md-typeset .md-typeset__table { display: block; }
+  .md-typeset img { max-width: 100%; height: auto; }
+}

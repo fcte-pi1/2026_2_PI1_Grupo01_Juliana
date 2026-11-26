@@ -21,6 +21,7 @@ theme:
     - navigation.tracking
     - navigation.indexes
     - navigation.footer
+    - toc.follow
     - search.suggest
     - search.highlight
     - content.code.copy
@@ -114,6 +115,7 @@ nav:
       - Cronograma: 5 - Cronograma.md
       - Orçamento: 6 - Orçamento.md
   - Validação:
+      - 7 - Validação.md
       - Testes de estrutura: 7.1 - Testes de estrutura.md
       - Testes de energia: 7.2 - Testes de energia.md
       - Testes de hardware: 7.3 - Testes de hardware.md
