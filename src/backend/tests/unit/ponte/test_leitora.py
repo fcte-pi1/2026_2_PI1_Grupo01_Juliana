@@ -238,3 +238,90 @@ def test_reconectar_fecha_e_reabre_sem_esperar(tmp_path):
     assert "CONEXAO reconexao pedida pela tela" in registros
     assert not any(r.startswith("CONEXAO caiu") for r in registros)
     assert registros.count("CONEXAO aberta /dev/falsa") == 2
+
+
+def test_silencio_na_porta_aberta_reabre(tmp_path):
+    """No Windows a porta COM do Bluetooth não dá erro quando o robô some: só para de chegar dado."""
+    parar = threading.Event()
+    agora = [0.0]
+
+    class PortaMuda(PortaFalsa):
+        def readline(self):
+            agora[0] += 0.2  # cada leitura vazia gasta o timeout da serial
+            return b""
+
+    primeira = PortaMuda([])
+    segunda = PortaFalsa([b"x\n", b"a\n"], parar)
+    aberturas = [primeira, segunda]
+    esperas = []
+    fila = Fila(100)
+    auditoria = Auditoria(tmp_path, relogio=lambda: INICIO)
+    leitora = Leitora(
+        "COM8",
+        fila,
+        auditoria,
+        abrir=lambda _porta: aberturas.pop(0),
+        relogio=Relogio(),
+        dormir=esperas.append,
+        tique=lambda: agora[0],
+        silencio_maximo_s=5.0,
+    )
+
+    leitora.rodar(parar)
+
+    assert primeira.fechada
+    assert esperas == [0.5]
+    assert [linha for linha, _ in linhas_da_fila(fila)] == ["a"]
+    assert log(auditoria) == [
+        "CONEXAO aberta COM8",
+        "CONEXAO caiu sem dados ha mais de 5 s",
+        "CONEXAO aberta COM8",
+        "RX a",
+    ]
+
+
+def test_dado_chegando_nao_conta_como_silencio(tmp_path):
+    parar = threading.Event()
+    agora = [0.0]
+
+    class PortaLenta(PortaFalsa):
+        def readline(self):
+            agora[0] += 4.0  # uma linha a cada 4 s: abaixo do limite, a porta fica aberta
+            return super().readline()
+
+    porta = PortaLenta([b"x\n", b"a\n", b"b\n", b"c\n"], parar)
+    fila = Fila(100)
+    auditoria = Auditoria(tmp_path, relogio=lambda: INICIO)
+    leitora = Leitora(
+        "COM8", fila, auditoria, abrir=lambda _porta: porta, relogio=Relogio(), tique=lambda: agora[0]
+    )
+
+    leitora.rodar(parar)
+
+    assert [linha for linha, _ in linhas_da_fila(fila)] == ["a", "b", "c"]
+    assert not any(r.startswith("CONEXAO caiu") for r in log(auditoria))
+
+
+def test_reconectar_de_outra_thread_quem_fecha_e_a_leitura(tmp_path):
+    parar = threading.Event()
+    leitora_ref = []
+    fechada_no_pedido = []
+
+    class PortaComPedido(PortaFalsa):
+        def readline(self):
+            leitora_ref[0].reconectar()
+            fechada_no_pedido.append(self.fechada)
+            return b""
+
+    primeira = PortaComPedido([])
+    segunda = PortaFalsa([b"x\n", b"a\n"], parar)
+    leitora, fila, auditoria, esperas = montar(tmp_path, [primeira, segunda])
+    leitora_ref.append(leitora)
+
+    leitora.rodar(parar)
+
+    assert fechada_no_pedido == [False]  # o pedido não fecha a porta por baixo da leitura
+    assert primeira.fechada
+    assert esperas == []
+    assert [linha for linha, _ in linhas_da_fila(fila)] == ["a"]
+    assert not any(r.startswith("CONEXAO caiu") for r in log(auditoria))

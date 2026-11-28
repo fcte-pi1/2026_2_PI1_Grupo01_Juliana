@@ -106,6 +106,75 @@ def test_largar_vai_nas_respostas_ate_o_robo_correr(client, db_session: Session)
     assert depois.json() == {"comandos": []}
 
 
+def test_linha_de_depuracao_nao_repete_o_largar(client, db_session: Session):
+    """A `# dec` sai logo depois da largada, antes da primeira `tel` em running.
+
+    Na ponte de 27/11 o 422 dela levava o `largar` de novo para a serial, 0,4 s depois
+    do primeiro (19:22:24.982 e 19:22:25.417).
+    """
+    criado = _nova_execucao(client, db_session)
+    _, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
+    depuracao = "# dec t=379966 proxima=0,1 rumo=N paredes F0 E1 D1 acao=frente bat=7722"
+
+    parado = _telemetria(client, _tel(1, estado="health-check"), inicio + timedelta(seconds=1))
+    debug = _telemetria(client, depuracao, inicio + timedelta(seconds=1.4))
+    pendentes = [c.model_dump() for c in client.app.state.gerenciador.comandos_pendentes()]
+    correndo = _telemetria(client, _tel(2), inicio + timedelta(seconds=1.5))
+
+    assert parado.json() == {"comandos": [{"v": 1, "cmd": "largar"}]}
+    assert debug.status_code == 422
+    assert debug.json()["comandos"] == []
+    # a largada segue pendente: só a `tel` em running ou o `passo` a confirmam
+    assert pendentes == [{"v": 1, "cmd": "largar"}]
+    assert correndo.json() == {"comandos": []}
+
+
+def test_linha_de_depuracao_ainda_leva_a_interrupcao(client, db_session: Session):
+    criado = _nova_execucao(client, db_session)
+    _, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])
+    _telemetria(client, _tel(1), inicio + timedelta(seconds=1))
+    encerrada = client.post(
+        f"/execucoes/{criado['execucao_id']}/encerrar-tentativa", json={"motivo": "stuck"}
+    )
+    assert encerrada.status_code == 200
+
+    debug = _telemetria(client, "# mov t=1 C pedido=180.0", inicio + timedelta(seconds=2))
+
+    assert debug.status_code == 422
+    assert debug.json()["comandos"] == [{"v": 1, "cmd": "interromper"}]
+
+
+def _tel_parado(boot: int) -> str:
+    campos = {"tipo": "tel", "estado": "health-check", "x": 0, "y": 0, "rumo": "N"}
+    return _evento(1, campos | {"boot": boot, "bat_mv": 8400, "vel_mm_s": 0, "eixo_longo": None})
+
+
+def test_robo_reiniciado_depois_do_health_check_recusa_a_largada(client, db_session: Session):
+    """O health-check do boot anterior ainda vale no banco, mas o robô perdeu a aprovação.
+
+    Em 27/11 (20:11, boot 330 para 331) a largada foi aceita assim: o robô ignorou 24
+    `largar`, um por segundo, e a tela mostrou a tentativa em running com ele parado.
+    """
+    health_check = gravar_health_check(db_session, "4x4")
+    _telemetria(client, _tel_parado(health_check.boot + 1), _t0())
+
+    resposta = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
+
+    assert resposta.status_code == 409
+    assert resposta.json()["motivo"] == "health_check_expirado"
+    assert client.app.state.gerenciador.comandos_pendentes() == []
+    assert db_session.scalar(select(Tentativa)) is None
+
+
+def test_health_check_do_boot_atual_libera_a_largada(client, db_session: Session):
+    health_check = gravar_health_check(db_session, "4x4")
+    _telemetria(client, _tel_parado(health_check.boot), _t0())
+
+    resposta = client.post("/execucoes", json={"tipo_labirinto": "4x4"})
+
+    assert resposta.status_code == 201
+
+
 def test_consumo_parcial_atualiza_a_cada_tel(client, db_session: Session):
     criado = _nova_execucao(client, db_session)
     tentativa, inicio = _alinhar_inicio(client, db_session, criado["execucao_id"])

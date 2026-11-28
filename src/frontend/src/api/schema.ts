@@ -1263,7 +1263,7 @@ export interface operations {
                     "application/json": components["schemas"]["RespostaPonte"];
                 };
             };
-            /** @description Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na serial como no 200. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`, por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`. A ponte não deve reenviar 4xx. */
+            /** @description Dois casos. Linha inválida (mais de 256 B, não é JSON, v diferente de 1, tipo desconhecido, campo faltando ou fora da faixa, falha incoerente, célula fora do labirinto): o corpo traz `detail` em texto e `comandos`, que a ponte escreve na serial; aqui só vai a interrupção pendente, nunca `largar` nem `health_check`. Corpo **EntradaPonte** malformado (não é JSON, falta `linha`, por exemplo): formato padrão do FastAPI, com `detail` em lista e sem `comandos`. A ponte não deve reenviar 4xx. */
             422: {
                 headers: {
                     [name: string]: unknown;

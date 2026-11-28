@@ -626,6 +626,9 @@ class GerenciadorFalso:
     def confirmar_largada(self) -> None:
         self.ordem.append("confirmar_largada")
 
+    def registrar_boot(self, boot: int) -> None:
+        pass
+
     def confirmar_health_check(self) -> None:
         self.ordem.append("confirmar_health_check")
 

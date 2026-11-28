@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Falha, PassoTrajeto, Tentativa } from '../api/tipos'
-import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, inicioDaTentativa, passosDaTentativa } from '../components/labirinto/trajeto'
+import { deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, inicioDaTentativa, paredesDasCelulas, passosDaTentativa } from '../components/labirinto/trajeto'
 import { VisualizacaoLabirinto } from '../components/labirinto/VisualizacaoLabirinto'
 import { trajeto12x4Longo } from '../mocks/dados'
 
@@ -149,6 +149,59 @@ describe('VisualizacaoLabirinto', () => {
 
     expect(container.querySelectorAll('rect.labirinto__celula')).toHaveLength(32)
     expect(screen.getByText('Objetivo D8')).toBeInTheDocument()
+  })
+})
+
+/** Execução nº 86 de 27/11 (4x4), como o backend gravou: [x, y, paredes] de cada passo. */
+const EXECUCAO_86: Array<[number, number, number]> = [
+  [0, 1, 12], [0, 2, 8], [0, 3, 9], [1, 3, 7], [0, 3, 1], [0, 2, 8], [1, 2, 1], [2, 2, 5], [2, 1, 14],
+  [2, 2, 4], [1, 2, 1], [1, 1, 12], [1, 0, 10], [2, 0, 3], [3, 0, 6], [3, 1, 12], [3, 2, 12], [3, 3, 5],
+]
+
+function comParedes(celulas: Array<[number, number, number]>, retomadaEm?: number): PassoTrajeto[] {
+  return celulas.map(([x, y, paredes_mask], i) => ({ seq: i + 1, x, y, paredes_mask, retomada: i === retomadaEm }))
+}
+
+describe('paredes das células', () => {
+  it('mantém a parede vista na ida quando a volta pela célula não a relê', () => {
+    const paredes = paredesDasCelulas(comParedes(EXECUCAO_86))
+
+    // A4: norte e oeste na ida (9); na volta, só norte (1). C3: norte e leste (5); depois, só leste (4).
+    expect(paredes.get('0,3')).toBe(9)
+    expect(paredes.get('2,2')).toBe(5)
+    // B4 é um beco: o lado oeste, por onde o robô entrou, segue aberto.
+    expect(paredes.get('1,3')).toBe(7)
+  })
+
+  it('não deixa parede no caminho que o robô percorreu', () => {
+    // A2 marcou parede ao norte e o robô seguiu para A3 (execução nº 59); B3 marcou a oeste na volta.
+    const paredes = paredesDasCelulas(comParedes([[0, 1, 1], [0, 2, 0], [1, 2, 8], [0, 2, 2]]))
+
+    expect(paredes.get('0,1')).toBe(0)
+    expect(paredes.get('1,2')).toBe(0)
+    expect(paredes.get('0,2')).toBe(0)
+  })
+
+  it('não abre passagem entre o fim de uma tentativa e o começo da retomada', () => {
+    const paredes = paredesDasCelulas(comParedes([[0, 1, 1], [0, 2, 2]], 1))
+
+    expect(paredes.get('0,1')).toBe(1)
+    expect(paredes.get('0,2')).toBe(2)
+  })
+
+  it('desenha as paredes somadas, e não só as do último passo da célula', () => {
+    const ida = comParedes([[0, 2, 8], [0, 3, 9]])
+    const volta = comParedes([[0, 2, 8], [0, 3, 9], [1, 3, 7], [0, 3, 1]])
+    const contar = (trajeto: PassoTrajeto[]) => {
+      const { container, unmount } = render(<VisualizacaoLabirinto largura={4} altura={4} trajeto={trajeto} />)
+      const linhas = container.querySelectorAll('.labirinto__parede line').length
+      unmount()
+      return linhas
+    }
+
+    // A3 oeste, A4 norte e oeste; a volta acrescenta só as três paredes do beco B4.
+    expect(contar(ida)).toBe(3)
+    expect(contar(volta)).toBe(6)
   })
 })
 

@@ -1,13 +1,11 @@
 import { memo, useMemo } from 'react'
 import type { Celula, PassoTrajeto } from '../../api/tipos'
 import { nomeCelula } from '../../utils/formatacao'
-import { celulasDeRetomada, deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, type EixoLongo, type FalhaNoMapa } from './trajeto'
+import {
+  celulasDeRetomada, deduzirEixo, dimensoes, dividirEmTrechos, eixoParaGrade, paredesDasCelulas,
+  PAREDE_L, PAREDE_N, PAREDE_O, PAREDE_S, type EixoLongo, type FalhaNoMapa,
+} from './trajeto'
 import './labirinto.css'
-
-const PAREDE_N = 1
-const PAREDE_S = 2
-const PAREDE_L = 4
-const PAREDE_O = 8
 
 /** Lado da célula em unidades do viewBox. */
 const LADO = 100
@@ -64,6 +62,7 @@ export function VisualizacaoLabirinto({
     for (const passo of trajeto) mapa.set(chave(passo), passo)
     return mapa
   }, [trajeto])
+  const paredes = useMemo(() => paredesDasCelulas(trajeto), [trajeto])
   const trechos = useMemo(() => dividirEmTrechos(trajeto), [trajeto])
   const retomadas = useMemo(() => celulasDeRetomada(trechos, falhas), [trechos, falhas])
 
@@ -109,7 +108,7 @@ export function VisualizacaoLabirinto({
             return (
               <g key={chave(p)}>
                 <title>{`${nomeCelula(p)} · passo ${p.seq}`}</title>
-                <Paredes x={x} y={y} mascara={p.paredes_mask} />
+                <Paredes x={x} y={y} mascara={paredes.get(chave(p)) ?? p.paredes_mask} />
               </g>
             )
           })}

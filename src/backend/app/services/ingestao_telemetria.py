@@ -98,6 +98,8 @@ class IngestaoTelemetria:
             return
         # relógio do servidor: o recebido_em de uma linha reenviada pela ponte é antigo
         self.monitor.registrar_mensagem()
+        # antes do descarte por falta de tentativa: a `tel` do robô parado também conta
+        gerenciador.registrar_boot(mensagem.boot)
 
         tentativa = Repositorio(sessao).buscar_tentativa_aberta()
         if tentativa is not None and self._robo_reiniciou(mensagem, tentativa):

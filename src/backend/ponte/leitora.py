@@ -14,6 +14,19 @@ from ponte.fila import Fila, classificar
 
 ERROS_DA_PORTA = (serial.SerialException, OSError)
 
+# O robô manda uma `tel` por segundo. No Windows, quando o Bluetooth cai (robô desligado ou reiniciado), a porta
+# COM do SPP continua aberta e a leitura só devolve vazio, sem erro: sem este limite a ponte ficaria "conectada"
+# para sempre, sem receber nada e sem entregar os comandos da tela. Passado o silêncio, a porta é reaberta.
+SILENCIO_MAXIMO_S = 5.0
+
+
+class PortaEmSilencio(Exception):
+    """A porta está aberta, mas não chega nada há mais de `SILENCIO_MAXIMO_S`."""
+
+
+class ReconexaoPedida(Exception):
+    """A tela pediu para fechar e reabrir a porta."""
+
 
 class Porta(Protocol):
     """O que a leitora usa de `serial.Serial`."""
@@ -46,6 +59,8 @@ class Leitora:
         abrir: Callable[[str], Porta] = abrir_serial,
         relogio: Callable[[], datetime] = _agora,
         dormir: Callable[[float], None] = time.sleep,
+        tique: Callable[[], float] = time.monotonic,
+        silencio_maximo_s: float = SILENCIO_MAXIMO_S,
     ) -> None:
         self._nome = porta
         self._fila = fila
@@ -53,6 +68,8 @@ class Leitora:
         self._abrir = abrir
         self._relogio = relogio
         self._dormir = dormir
+        self._tique = tique
+        self._silencio_maximo_s = silencio_maximo_s
         self._espera = Espera()
         self._trava = threading.Lock()
         self._porta: Porta | None = None
@@ -64,10 +81,11 @@ class Leitora:
             return self._porta is not None
 
     def reconectar(self) -> None:
-        """Fecha a porta agora e reabre sem esperar; a leitura em curso cai e o laço reabre."""
+        """Pede para fechar a porta e reabrir sem esperar. Quem fecha é a thread da leitura, na volta da
+        leitura em curso (até 0,2 s): no Windows, fechar a porta do Bluetooth de outra thread, com uma leitura
+        pendente, deixou a porta presa e a reabertura falhou com "Acesso negado" até reiniciar a ponte."""
         self._reabrir_ja.set()
         self._auditoria.registrar("CONEXAO", "reconexao pedida pela tela")
-        self._fechar()
 
     def rodar(self, parar: threading.Event) -> None:
         """Abre, lê e reabre a porta até `parar` ser sinalizado."""
@@ -106,8 +124,16 @@ class Leitora:
     def _ler(self, porta: Porta, parar: threading.Event) -> None:
         pedacos = b""
         primeira = True
+        ultimo_dado = self._tique()
         while not parar.is_set():
-            pedacos += porta.readline()
+            lido = porta.readline()
+            if self._reabrir_ja.is_set():
+                raise ReconexaoPedida()
+            if lido:
+                ultimo_dado = self._tique()
+            elif self._tique() - ultimo_dado > self._silencio_maximo_s:
+                raise PortaEmSilencio(f"sem dados ha mais de {self._silencio_maximo_s:g} s")
+            pedacos += lido
             while b"\n" in pedacos:
                 bruta, pedacos = pedacos.split(b"\n", 1)
                 recebido_em = self._relogio()

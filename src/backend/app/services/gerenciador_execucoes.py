@@ -90,6 +90,12 @@ class GerenciadorExecucoes:
         self._largada_pendente = False
         self._largada_forcada = False
         self._health_check_pendente = False
+        # `boot` da última mensagem recebida do robô; None até chegar a primeira
+        self._boot_do_robo: int | None = None
+
+    def registrar_boot(self, boot: int) -> None:
+        """Guarda o `boot` da última mensagem do robô, com ou sem tentativa aberta."""
+        self._boot_do_robo = boot
 
     def solicitar_health_check(self, sessao: Session) -> datetime:
         """Pede ao robô um novo health-check. Com o robô correndo, o pedido é recusado."""
@@ -400,6 +406,14 @@ class GerenciadorExecucoes:
             )
         idade = (agora - health_check.concluido_em).total_seconds()
         if idade > self.validade_health_check_s:
+            return "health_check_expirado", None
+        # o robô reiniciou depois deste health-check: a aprovação fica na RAM dele e se
+        # perdeu, então ele ignoraria o `largar` e a tentativa ficaria em running parada
+        if (
+            self._boot_do_robo is not None
+            and health_check.boot is not None
+            and self._boot_do_robo > health_check.boot
+        ):
             return "health_check_expirado", None
         if health_check.tipo_dip != tipo_labirinto:
             return "dip_divergente", None
