@@ -21,17 +21,44 @@
 
 /* Pista — [TAP] células de 18 cm; [MED] paredes de 1,5 cm (o TAP diz 1,2 cm) */
 #define CELULA_MM                   180
+/* Muda de pista para pista: 15 na 1ª pista de testes, 18 na 2ª, 12 na da faculdade (Tema_PI1.pdf). */
+#ifndef PAREDE_ESPESSURA_MM
 #define PAREDE_ESPESSURA_MM         15
+#endif
 #define CELULA_LIVRE_MEIA_MM        ((CELULA_MM - PAREDE_ESPESSURA_MM) / 2.0f) /* do centro da célula à face da parede: 82,5 */
 #define LABIRINTO_MAX_CELULAS       12   /* maior lado possível (12x4) */
 /* Só para testes: o firmware lê o tipo no DIP switch (lib/dip). Usar onde nav.h já foi incluído. */
 #define ROBO_TIPO_LABIRINTO         NAV_TIPO_4X4
 
 /* Rodas e tração */
-#define RODA_DIAMETRO_MM            34.0f   /* [EST] roda 34 x 6,5 mm */
-#define BITOLA_MM                   87.0f   /* [MED] centro a centro dos pneus; o CAD dizia 92,5 */
+/*
+ * [MED] pelo avanço, na bancada de calibração (25/11/2026): com 34 mm (o nominal da roda 34 x 6,5) o robô andou
+ * 170 e 175 mm para 176 e 182 mm contados pelos encoders, e 350 e 350 mm para 361 e 358: 3,2 % a menos, igual nas
+ * duas rodas e sem patinar. O pneu assentado no chão roda com um diâmetro efetivo menor que o nominal.
+ */
+#define RODA_DIAMETRO_MM            33.0f
+/*
+ * [MED] pelo giro, na bancada de calibração (25/11/2026), em chão livre: 10 giros de 90° no lugar somaram 3659 e
+ * 3689 pulsos e o robô girou ~890° (faltaram ~10° para as 2,5 voltas); um giro só deu 89° com 368 e 364 pulsos.
+ * Com a roda de 33 mm, isso dá 85,4 mm entre os pontos de apoio. Na régua: 90 mm por fora dos pneus de 6,5 mm, ou
+ * ~83,5 de centro a centro. Era 87 (régua, com a roda de 34); o CAD dizia 92,5.
+ */
+/* Depende do piso: onde a roda patina mais no giro, o valor efetivo cresce (o robô gira de menos). */
+#ifndef BITOLA_MM
+#define BITOLA_MM                   85.5f
+#endif
 #define VELOCIDADE_MAX_MM_S         850.0f  /* [EST] máxima efetiva do N20 de 600 RPM com a roda de 34 mm */
-#define VELOCIDADE_CRUZEIRO_MM_S    250.0f  /* baixada de 400: o ToF lê a cada 12 mm e o robô para no ponto */
+/*
+ * Velocidade de operação: 400 no projeto, 250 em 24/11/2026 e 200 em 25/11/2026 (o robô ainda passava rápido demais
+ * pela pista). A 200 mm/s o ToF lê a cada 10 mm.
+ * 200 é o piso no simulador: a 180 e a 150 o avanço FALHA com a zona morta alta do motor
+ * (test_zona_morta_alta_nao_faz_o_avanco_falhar), porque a potência de cruzeiro fica abaixo da que tira a roda do
+ * lugar (MOV_ZONA_MORTA) e ela anda aos trancos. Para andar mais devagar que isso, é preciso mexer no controle.
+ * Para ensaiar outro valor sem editar o arquivo: -D VELOCIDADE_CRUZEIRO_MM_S=220.0f no build_flags.
+ */
+#ifndef VELOCIDADE_CRUZEIRO_MM_S
+#define VELOCIDADE_CRUZEIRO_MM_S    200.0f
+#endif
 
 /*
  * Geometria do robô montado [MED]. O CAD do docs/4.1 punha o eixo no meio de um chassi de 92 x 103 mm;
@@ -43,7 +70,7 @@
  *   - a quina da frente gira num raio de ~100 mm, mais que os 82,5 mm do centro à parede: o giro de 90°
  *     precisa de espaço à frente, e o de 180° não cabe no lugar num corredor (a execução faz uma manobra).
  */
-#define EIXO_ATE_FRENTE_MM          87.5f   /* do eixo das rodas à frente do robô */
+#define EIXO_ATE_FRENTE_MM          90.0f   /* [MED] do eixo das rodas à frente do robô (régua, 26/11/2026; era 87,5) */
 #define EIXO_ATE_TRAS_MM            25.0f   /* do eixo à traseira */
 #define MEIA_LARGURA_ESQ_MM         50.0f   /* do meio à lateral esquerda, contando os fios que sobram */
 #define MEIA_LARGURA_DIR_MM         47.5f   /* do meio à lateral direita */
@@ -54,8 +81,16 @@
  * Valores ajustados no mundo simulado; os da pista são ajustados no FIRM-10 (#141).
  */
 #define MOV_PERIODO_MS              5       /* 200 Hz, o mesmo laço do PID do FIRM-04 */
-#define MOV_ACELERACAO_MM_S2        1000.0f /* rampa: chega a 250 mm/s em 0,25 s e 31 mm; menos patinagem */
-#define MOV_VELOCIDADE_GIRO_MM_S    150.0f  /* velocidade de cada roda no giro: devagar, perto das paredes */
+#ifndef MOV_ACELERACAO_MM_S2
+#define MOV_ACELERACAO_MM_S2        1000.0f /* rampa: chega a 200 mm/s em 0,2 s e 20 mm; menos patinagem */
+#endif
+/* Giro no lugar: por padrão igual ao arco; o arco não pode ser mais lento (a roda de dentro para). */
+#ifndef MOV_VELOCIDADE_GIRO_LUGAR_MM_S
+#define MOV_VELOCIDADE_GIRO_LUGAR_MM_S MOV_VELOCIDADE_GIRO_MM_S
+#endif
+#ifndef MOV_VELOCIDADE_GIRO_MM_S
+#define MOV_VELOCIDADE_GIRO_MM_S    140.0f  /* 150 -> 120 em 25/11 -> 140 em 26/11/2026: a 120 a roda de dentro do arco ficava a ~63 mm/s e parava; com 150 e o raio de 120 o simulador encosta no labirinto 4x4-03 */
+#endif
 #define MOV_ATRASO_MOTOR_S          0.05f   /* constante de tempo da roda; medir na bancada (FIRM-04) */
 #define MOV_KP_POSICAO              1.5f    /* potência por pulso de erro de cada roda */
 #define MOV_TOLERANCIA_PULSOS       6       /* erro aceito no fim do giro, por roda (~1°) */
@@ -94,7 +129,9 @@
 #define MOV_CENTRO_GANHO_RAD_POR_MM 0.02f   /* rumo pedido por mm fora do centro: o desvio cai à metade em ~35 mm */
 #define MOV_CENTRO_RUMO_MAX_RAD     0.15f   /* ~8,6°: o nariz não vai para cima da parede */
 #define MOV_CENTRO_FUSAO            0.4f    /* peso de cada leitura lateral nova contra a estimativa da odometria */
+#ifndef MOV_RUMO_FUSAO
 #define MOV_RUMO_FUSAO              0.03f   /* quanto da diferença entre medida e estimativa, por mm, vira rumo */
+#endif
 /*
  * Leituras laterais que não servem para centralizar: acima de MOV_LATERAL_MAX_MM o robô estaria com o eixo a
  * mais de ~40 mm do meio (dentro da outra parede); a mediana dá valores assim quando o feixe passa por um
@@ -102,6 +139,21 @@
  */
 #define MOV_LATERAL_MAX_MM          85
 #define MOV_CENTRO_PORTAO_MM        20.0f
+/* Ré reta: mede o rumo pela parede do lado (ver medir_rumo_na_re). Só em ré longa e com leitura bastante. */
+#ifndef MOV_RE_RUMO_MIN_MM
+#define MOV_RE_RUMO_MIN_MM 90.0f
+#endif
+#ifndef MOV_RE_RUMO_LEITURAS_MM
+#define MOV_RE_RUMO_LEITURAS_MM 60.0f
+#endif
+/* Torto assim ou mais no começo do arco, o robô se endireita no lugar antes (ver comecar_etapa). */
+#ifndef ARCO_ALINHAR_MIN_GRAUS
+#define ARCO_ALINHAR_MIN_GRAUS 5.0f
+#endif
+#define MOV_RE_RUMO_MAX_RAD 0.35f
+#define MOV_RE_RUMO_LONGA_MM 150.0f
+#define MOV_RE_RUMO_CURTA_MIN_RAD 0.12f
+#define MOV_CENTRO_SALTO_MM         8.0f    /* entre duas leituras seguidas (50 ms): mais que isto é borda de parede */
 #define MOV_CENTRO_PORTAO_LEITURAS  3       /* tantas leituras seguidas fora do portão, e a estimativa é que está errada */
 #define MOV_RUMO_MAX_RAD            0.3f    /* ~17°: limite da estimativa do rumo */
 /*
@@ -109,7 +161,9 @@
  * A cada avanço com paredes, o que o rumo precisou ser corrigido por mm andado vira deriva aprendida, que os
  * avanços seguintes já descontam.
  */
+#ifndef MOV_DERIVA_APRENDIZADO
 #define MOV_DERIVA_APRENDIZADO      0.7f
+#endif
 #define MOV_DERIVA_MAX_RAD_POR_MM   0.0005f /* ~2,9° a cada 100 mm: uma roda ~2,5% maior */
 #define MOV_CENTRO_FIM_MM           40.0f   /* nos últimos mm o rumo pedido cai a zero: o robô para reto */
 #define MOV_RUMO_PASSO_PULSOS       2.0f    /* quanto o desvio entre as rodas muda por ciclo, no máximo */
@@ -130,6 +184,17 @@
 #define MOV_PAREDE_FIM_MM           50.0f
 #define MOV_PAREDE_PARADO_MS        300
 #define MOV_PAREDE_POTENCIA         450.0f  /* só é parede se as duas rodas empurram com isto e não andam (não é zona morta) */
+/*
+ * Ajuste pela parede da frente, parado na célula [MED]. Na corrida de 26/11/2026 o robô chegou várias vezes 4 a
+ * 12 cm antes do repouso (frontal em 75, 91, 86, 65 e 148 mm, para os 30 a 45 que ele mostra no repouso): a
+ * meia-volta e o arco que enrosca deixam o robô para trás, e a correção frontal do avanço só encurta. Partindo
+ * daí, a curva seguinte sai colada na parede de dentro ou enrosca, e a chegada foi dada com o robô fora da célula.
+ * No repouso, uma parede à frente entre MIN e MAX só pode ser a desta célula vista de trás (a da célula seguinte
+ * estaria a mais de 200 mm): o robô avança até o frontal mostrar ALVO.
+ */
+#define AJUSTE_FRENTE_MIN_MM        60
+#define AJUSTE_FRENTE_MAX_MM        170
+#define AJUSTE_FRENTE_ALVO_MM       40
 #define MOV_FRENTE_SOBRA_MM         10      /* distância mínima até a parede à frente que a parada de emergência garante */
 #define MOV_FRENTE_FIM_MM           35.0f   /* parada de emergência a isto do fim do avanço conta como chegada, não falha */
 #define MOV_TOF_ATRASO_S            0.075f  /* atraso do ToF frontal até o movimento: meia amostra de 50 ms mais a mediana de 3 a 20 Hz */
@@ -175,18 +240,25 @@
 #define TOF_D_Y_MM     -40.0f
 #define TOF_D_ANG      -90.0f
 /*
- * Erro de cada ToF, descontado da leitura [MED] (régua contra a parede): o esquerdo lê ~2 cm a mais em
- * todas as distâncias; o frontal e o direito acertam a partir de ~4 cm. Abaixo de TOF_MIN_CONFIAVEL_MM os
- * três leem de 30 a 40 mm seja qual for a distância (3 cm vira 40, 2 cm vira 30): a leitura não mede.
+ * Erro de cada ToF, descontado da leitura [MED] (régua contra a parede). Abaixo de TOF_MIN_CONFIAVEL_MM na
+ * leitura bruta os três leem de 30 a 40 mm seja qual for a distância (3 cm vira 40, 2 cm vira 30): a leitura
+ * não mede.
+ *
+ * Recalibrado em 25/11/2026 na bancada de calibração (tecla t, mediana de 40 leituras, régua na parede do
+ * labirinto). A mesma montagem repete com ±4 mm de uma leitura para outra.
+ *   Esquerdo, a 45 mm: bruta 46, 47, 49, 49, 54 e 49 -> erro de +4 mm. A 20 mm: bruta 32 a 37 (comprimida).
+ *   Direito, a 45 mm: bruta 64 e 70 (parede de 3,5 cm), 61, 65 e 68 (parede alta); a 70 mm: 91 -> erro de +21 mm.
+ * Até 24/11/2026 o esquerdo descontava 20 mm ("lê 2 cm a mais em todas as distâncias"): com isso o robô centrado
+ * se achava ~8 mm à esquerda do meio. O braço dele é preso com fita e pode ter mudado de posição desde então.
  */
 #define TOF_F_DESVIO_MM     0
-#define TOF_E_DESVIO_MM     20
+#define TOF_E_DESVIO_MM     5
 /*
  * Direito: na bancada (contra uma madeira) acertava, mas no labirinto, com o braço torto para baixo, leu ~20 mm a
  * mais que o esquerdo em todas as células com parede dos dois lados (24/11/2026: 61/45, 68/40, 63/45, 62/47 e
  * 70/35 mm), em qualquer rumo. Sem o desconto, o robô se achava à esquerda do meio e andava raspando a direita.
  */
-#define TOF_D_DESVIO_MM     20
+#define TOF_D_DESVIO_MM     21
 #define TOF_MIN_CONFIAVEL_MM 40   /* na leitura bruta, antes do desconto do erro */
 /*
  * Piso do direito na leitura já descontada: a compressão é do sensor e vale para a leitura bruta, então, com os
@@ -195,11 +267,10 @@
  */
 #define TOF_D_MIN_CONFIAVEL_MM (TOF_MIN_CONFIAVEL_MM - TOF_D_DESVIO_MM)
 /*
- * O esquerdo é diferente: lê ~2 cm a mais em todas as distâncias, inclusive de perto (1 cm vira 30, 2 cm vira
- * 40), então, descontado o erro, a leitura dele mede bem até ~1,5 cm. Na pista (24/11/2026), tratá-lo como os
- * outros fez o robô achar que estava colado na parede (lateral 51 mm) quando estava a ~27 mm do meio.
+ * O esquerdo comprime de perto como os outros (25/11/2026: a 20 mm da parede a bruta deu 32 a 37 mm), então o
+ * piso dele segue a mesma regra do direito. Até 24/11/2026 era tratado como se medisse bem até 1,5 cm.
  */
-#define TOF_E_MIN_CONFIAVEL_MM 15
+#define TOF_E_MIN_CONFIAVEL_MM (TOF_MIN_CONFIAVEL_MM - TOF_E_DESVIO_MM)
 /* I²C dos ToF: 50 kHz tolera os jumpers da bancada; subir na placa definitiva. */
 #define TOF_I2C_HZ          50000
 #define TOF_ALCANCE_MAX_MM  1200  /* acima disso o VL53L0X não mede com confiança */
@@ -225,8 +296,13 @@
  */
 #define PAREDE_FRENTE_ENTRA_MM      120
 #define PAREDE_FRENTE_SAI_MM        150
+/* Parede lateral de verdade lê até ~90 mm; entre 95 e 140 o sensor direito pegava poste (pista, 26/11/2026). */
+#ifndef PAREDE_LADO_ENTRA_MM
 #define PAREDE_LADO_ENTRA_MM        120
+#endif
+#ifndef PAREDE_LADO_SAI_MM
 #define PAREDE_LADO_SAI_MM          150
+#endif
 
 /*
  * Giros com o eixo atrás do centro (docs/decisoes/024). Raios do giro no lugar, a partir do eixo: quina da
@@ -237,7 +313,52 @@
  *   - 180°: manobra. Giro curto, ré que leva o eixo para o lado, e o resto do giro, que cabe no corredor com
  *     o eixo ~22 mm fora do meio (~4 mm de folga de cada lado); depois um "S" volta o robô ao meio.
  */
-#define GIRO_RAIO_ARCO_MM           90.0f   /* raio do arco do eixo no giro de 90° */
+#ifndef GIRO_RAIO_ARCO_MM
+/*
+ * 90 -> 120 em 26/11/2026: na pista, com 90, o robô enroscou a quina dianteira na parede no começo do arco. Com
+ * 120 ele recua 30 mm a mais, a quina de fora passa a ~14 mm da parede da frente (eram ~10) e a roda de dentro
+ * anda a 64 % da velocidade do eixo (eram 52 %), mais longe da zona morta do motor.
+ */
+#define GIRO_RAIO_ARCO_MM           120.0f  /* raio do arco do eixo no giro de 90° */
+#endif
+/*
+ * Ré a mais antes do arco de 90°, para experimentar na pista (-DGIRO_RECUO_EXTRA_MM=12.0f). Na bancada de
+ * calibração (26/11/2026), partindo com o nariz a 115 mm da parede da frente (o previsto é 112,5), o arco de
+ * 120 mm passou duas vezes e terminou com o robô reto, mas 11 e 16 mm além do meio do corredor novo (lateral 26 e
+ * 31 mm, para 42,5 no meio); partindo ~1 a 2 cm adiantado, a quina dianteira de fora enroscou na parede da frente
+ * a ~48° do giro. Fica em 0 porque no simulador, que faz o arco exato, qualquer ré a mais (5, 8 ou 12 mm) tira o
+ * robô do meio do corredor novo e ele encosta em algum labirinto de teste.
+ */
+#ifndef GIRO_RECUO_EXTRA_MM
+#define GIRO_RECUO_EXTRA_MM         0.0f
+#endif
+/*
+ * O mesmo, quando não há parede à frente (-DGIRO_RECUO_EXTRA_ABERTO_MM=-10.0f). Sem parede à frente a quina de
+ * fora não tem onde pegar, e quem aperta é o poste de dentro: com +12 mm, nas duas corridas de 26/11/2026 o arco
+ * travou a ~95% e o robô saiu a 22 mm da parede de dentro do corredor novo (o meio dá ~50). Cada mm de ré a mais
+ * tira ~0,75 mm da folga do lado de dentro até o poste (21 mm com 0, 12 mm com +12).
+ */
+/* 1 = sem parede à frente, o giro de 90° é no lugar, com o eixo no centro da célula, em vez do arco. */
+#ifndef GIRO_NO_CENTRO_SE_ABERTO
+#define GIRO_NO_CENTRO_SE_ABERTO    0
+#endif
+/* Com parede à frente, a ré antes do arco vai até o sensor da frente ler isto (0 = ré fixa, pela odometria). */
+#ifndef GIRO_FRENTE_ANTES_DO_ARCO_MM
+#define GIRO_FRENTE_ANTES_DO_ARCO_MM 0
+#endif
+#define RE_ALINHAR_MIN_GRAUS         4.0f   /* antes da ré de uma célula, desvira o rumo estimado acima disto */
+#define GIRO_RECUO_NOVA_TENTATIVA_MM 15.0f  /* ré a mais antes de refazer um arco que enroscou */
+/* Avanço que enroscou torto: a nova tentativa sai virada este tanto além de reta, para o lado livre. */
+#ifndef NOVA_TENTATIVA_DESVIO_FATOR
+#define NOVA_TENTATIVA_DESVIO_FATOR 0.6f
+#endif
+#define NOVA_TENTATIVA_DESVIO_MAX_GRAUS 8.0f
+#ifndef GIRO_CENTRO_ATRAS_MM
+#define GIRO_CENTRO_ATRAS_MM         8.0f    /* no giro de 90° no lugar, quanto o eixo fica atrás do centro da célula */
+#endif
+#ifndef GIRO_RECUO_EXTRA_ABERTO_MM
+#define GIRO_RECUO_EXTRA_ABERTO_MM  0.0f
+#endif
 #define GIRO_ALFA_MEIA_VOLTA_GRAUS  15.0f   /* giro curto da meia-volta e do "S": com o eixo no meio, a quina vai a ~71 mm do centro */
 #define GIRO_FOLGA_FRENTE_MM        10.0f   /* folga do nariz até a parede da célula seguinte no "S" da meia-volta */
 

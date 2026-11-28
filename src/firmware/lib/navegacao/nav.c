@@ -523,10 +523,41 @@ static nav_acao_t acao_para(const nav_estado_t *estado, nav_direcao_t destino)
     return horario ? NAV_ACAO_DIREITA : NAV_ACAO_ESQUERDA;
 }
 
+static bool re_permitida = false;
+
+void nav_permitir_re(bool permitir)
+{
+    re_permitida = permitir;
+}
+
+/*
+ * A ré serve se a célula de trás é conhecida (visitada: o robô não tem sensor atrás). Lá o robô segue de ré
+ * ou vira 90° no lugar (a execução não usa o arco depois de uma ré: a ré do arco pediria espaço atrás).
+ * Assim o robô sai de um beco de ré, sem a meia-volta no corredor, que tem ~3 mm de folga de cada lado.
+ */
+static bool pode_ir_de_re(const nav_estado_t *estado, nav_direcao_t tras)
+{
+    if (!re_permitida) {
+        return false;
+    }
+    int x = estado->x + PASSO_X[tras];
+    int y = estado->y + PASSO_Y[tras];
+    return (estado->mapa[x][y].paredes & NAV_VISITADA) != 0;
+}
+
 /* Supõe que o app executa a ação: o estado já fica na célula de destino (D4). */
 static nav_acao_t mover(nav_estado_t *estado)
 {
     nav_direcao_t destino = escolher_direcao(estado);
+    estado->de_re = false;
+    if (destino == oposta(estado->direcao) && pode_ir_de_re(estado, destino)) {
+        /* De ré: a posição anda para trás e o rumo fica. */
+        estado->de_re = true;
+        estado->x = (int8_t)(estado->x + PASSO_X[destino]);
+        estado->y = (int8_t)(estado->y + PASSO_Y[destino]);
+        estado->movimento_pendente = true;
+        return NAV_ACAO_RE;
+    }
     nav_acao_t acao = acao_para(estado, destino);
     estado->direcao = destino;
     estado->x = (int8_t)(estado->x + PASSO_X[destino]);
@@ -544,7 +575,9 @@ nav_acao_t nav_passo(nav_estado_t *estado, nav_leitura_t leitura)
     /* Pela D4, a origem do movimento é a célula atual menos o passo do rumo. */
     if (estado->movimento_pendente) {
         estado->movimento_pendente = false;
-        provar_aberta(estado, estado->x, estado->y, oposta(estado->direcao));
+        /* De ré, o robô entrou pela frente dele. */
+        provar_aberta(estado, estado->x, estado->y, estado->de_re ? estado->direcao : oposta(estado->direcao));
+        estado->de_re = false;
     }
     tornar_lado_definitivo(estado);
     registrar_leitura(estado, leitura);
@@ -576,10 +609,12 @@ nav_acao_t nav_bloqueado(nav_estado_t *estado)
     }
     estado->bloqueios++;
     /* O robô não andou: volta à origem e fica com o rumo novo (D4). */
-    estado->x = (int8_t)(estado->x - PASSO_X[estado->direcao]);
-    estado->y = (int8_t)(estado->y - PASSO_Y[estado->direcao]);
+    nav_direcao_t sentido = estado->de_re ? oposta(estado->direcao) : estado->direcao;
+    estado->de_re = false;
+    estado->x = (int8_t)(estado->x - PASSO_X[sentido]);
+    estado->y = (int8_t)(estado->y - PASSO_Y[sentido]);
     if (!desfazer_lado(estado)) {
-        votar_bloqueio(estado, estado->x, estado->y, estado->direcao);
+        votar_bloqueio(estado, estado->x, estado->y, sentido);
     }
     if (estado->mapa_alterado && !recalcular_com_perdao(estado)) {
         return terminar(estado, NAV_ACAO_SEM_PASSO);

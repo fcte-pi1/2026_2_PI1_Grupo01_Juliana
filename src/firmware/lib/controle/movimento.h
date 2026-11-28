@@ -98,6 +98,12 @@ bool mov_avancar_celula(void);
 bool mov_avancar_mm(float mm, bool celula);
 
 /*
+ * A próxima ré (mov_avancar_mm negativo) mede o rumo pela parede do lado: só serve com o robô andando ao
+ * longo do corredor, e quem chama é que sabe disso. Vale para uma ré só.
+ */
+void mov_medir_rumo_na_re(void);
+
+/*
  * Gira no lugar: 90 para a esquerda, -90 para a direita ou 180.
  * false para outro ângulo ou se já houver um movimento em curso.
  */
@@ -111,6 +117,12 @@ bool mov_girar_graus(float graus);
  * com a roda de dentro mais devagar. raio_mm precisa ser maior que meia bitola.
  */
 bool mov_arco(float graus, float raio_mm);
+
+/* O arco de `graus` de mov_arco, desfeito: o robô volta de ré pelo mesmo círculo (para tentar a curva de novo). */
+bool mov_arco_re(float graus, float raio_mm);
+
+/* O que o último movimento andou de fato, pelos encoders: avanço do eixo (mm) e giro (graus, + = esquerda). */
+void mov_ultimo_percurso(float *mm, float *graus);
 
 /* Cancela o movimento, corta a potência e põe a ponte H em standby. */
 void mov_parar(void);

@@ -47,9 +47,18 @@ static struct {
     float rumo_inicio;         /* rumo do robô em relação ao corredor no início do movimento (rad, + à esquerda) */
     float rumo_rad;            /* rumo agora: rumo_inicio mais o que os encoders giraram desde o início */
     float desde_medida_mm;     /* avanço desde a última leitura lateral usada */
+    bool re_pedida;            /* a próxima ré mede o rumo pelas paredes (mov_medir_rumo_na_re) */
+    bool re_mede;              /* esta ré mede */
+    float re_andado_mm;        /* ré: avanço na leitura lateral anterior */
+    uint16_t re_esq_mm;        /* ré: leitura lateral anterior (0 = não serve) */
+    uint16_t re_dir_mm;
+    float re_soma_lado_mm;     /* ré: quanto as paredes se afastaram ou chegaram, somado */
+    float re_soma_andado_mm;   /* ré: avanço coberto por essas leituras */
     bool tem_anterior;         /* já houve uma leitura dos ToF neste movimento */
     float lateral_anterior;    /* estimativa na leitura anterior: a mediana do ToF chega com ~50 ms de atraso */
     float theta_anterior;
+    float medida_anterior;     /* última medida lateral pelas paredes, para ver o salto entre leituras */
+    bool tem_medida;
     int fora_do_portao;        /* leituras seguidas que discordaram da estimativa mais que o portão */
     float deriva;              /* rad por mm andado para a frente que os encoders não veem (aprendida) */
     float rumo_corrigido;      /* soma das correções do rumo pelas paredes neste avanço */
@@ -183,6 +192,11 @@ static void iniciar(tipo_t tipo, float pulsos, float velocidade_max)
     mov.fator[MOTOR_ESQ] = 1.0f;
     mov.fator[MOTOR_DIR] = 1.0f;
     mov.giro_previsto_rad = 0.0f;
+    mov.re_andado_mm = 0.0f;
+    mov.re_esq_mm = 0;
+    mov.re_dir_mm = 0;
+    mov.re_soma_lado_mm = 0.0f;
+    mov.re_soma_andado_mm = 0.0f;
     mov.andado = 0.0f;
     mov.andado_na_leitura = 0.0f;
     mov.freando = false;
@@ -207,6 +221,7 @@ static void iniciar(tipo_t tipo, float pulsos, float velocidade_max)
     mov.rumo_inicio = mov.rumo_rad;
     mov.desde_medida_mm = 0.0f;
     mov.tem_anterior = false;
+    mov.tem_medida = false;
     mov.fora_do_portao = 0;
     mov.rumo_corrigido = 0.0f;
     mov.correcoes = 0;
@@ -228,6 +243,11 @@ void mov_iniciar(void)
     mov.diag_novo = false;
 }
 
+void mov_medir_rumo_na_re(void)
+{
+    mov.re_pedida = true;
+}
+
 bool mov_avancar_mm(float mm, bool celula)
 {
     if (mov.estado == MOV_EM_CURSO || mm == 0.0f) {
@@ -238,6 +258,8 @@ bool mov_avancar_mm(float mm, bool celula)
         pulsos += mov.residuo_avanco;
     }
     iniciar(TIPO_AVANCO, pulsos, VELOCIDADE_CRUZEIRO_MM_S);
+    mov.re_mede = mov.re_pedida && mm < 0.0f;
+    mov.re_pedida = false;
     mov.celula = celula && mm > 0.0f;
     mov.diag_tipo = mov.celula ? 'C' : (mm < 0.0f ? 'R' : 'A');
     mov.diag_pedido = mm;
@@ -255,9 +277,34 @@ bool mov_girar_graus(float graus)
         return false;
     }
     /* O sinal fica no total da roda direita: positivo gira para a esquerda. */
-    iniciar(TIPO_GIRO, pulsos_giro(graus) + mov.residuo_giro, MOV_VELOCIDADE_GIRO_MM_S);
+    iniciar(TIPO_GIRO, pulsos_giro(graus) + mov.residuo_giro, MOV_VELOCIDADE_GIRO_LUGAR_MM_S);
     mov.diag_tipo = 'G';
     mov.diag_pedido = graus;
+    return true;
+}
+
+void mov_ultimo_percurso(float *mm, float *graus)
+{
+    float esq = (float)mov.diag.pulsos_esq * MM_POR_PULSO;
+    float dir = (float)mov.diag.pulsos_dir * MM_POR_PULSO;
+    *mm = (esq + dir) / 2.0f;
+    *graus = (dir - esq) / BITOLA_MM * 180.0f / PI_F;
+}
+
+bool mov_arco_re(float graus, float raio_mm)
+{
+    if (mov.estado == MOV_EM_CURSO || graus == 0.0f || fabsf(graus) > 180.0f || raio_mm <= BITOLA_MM / 2.0f) {
+        return false;
+    }
+    float angulo = graus * PI_F / 180.0f;
+    float lado = graus > 0.0f ? 1.0f : -1.0f;
+    /* O mesmo círculo do arco para a frente, andado para trás: as rodas guardam a proporção e o giro inverte. */
+    iniciar(TIPO_AVANCO, -fabsf(angulo) * raio_mm / MM_POR_PULSO, MOV_VELOCIDADE_GIRO_MM_S);
+    mov.fator[MOTOR_ESQ] = (raio_mm - lado * BITOLA_MM / 2.0f) / raio_mm;
+    mov.fator[MOTOR_DIR] = (raio_mm + lado * BITOLA_MM / 2.0f) / raio_mm;
+    mov.giro_previsto_rad = -angulo;
+    mov.diag_tipo = 'V';
+    mov.diag_pedido = -graus;
     return true;
 }
 
@@ -374,10 +421,9 @@ static bool lateral_pelas_paredes(float theta, float *lateral)
 }
 
 /*
- * Leitura perto demais para medir (abaixo de TOF_D_MIN_CONFIAVEL_MM no direito; o esquerdo mede bem até
- * TOF_E_MIN_CONFIAVEL_MM): ela não diz a distância, mas diz que a parede está no máximo a
- * 2 x bruta - TOF_MIN_CONFIAVEL_MM no direito (bancada: 2 cm vira 30, 3 cm vira 40), com bruta = leitura +
- * TOF_D_DESVIO_MM e o erro descontado de novo no fim, e a leitura no esquerdo. Isso
+ * Leitura perto demais para medir (abaixo de TOF_E_MIN_CONFIAVEL_MM ou de TOF_D_MIN_CONFIAVEL_MM): ela não diz
+ * a distância, mas diz que a parede está no máximo a 2 x bruta - TOF_MIN_CONFIAVEL_MM (bancada: 2 cm vira 30,
+ * 3 cm vira 40), com bruta = leitura + TOF_*_DESVIO_MM e o erro descontado de novo no fim. Isso
  * limita a lateral: perto da parede esquerda, a lateral é pelo menos *minimo*; perto da direita, no máximo
  * *maximo*. Sem isso, num corredor com parede de um lado só, o robô que deriva para ela fica sem medida.
  */
@@ -390,7 +436,8 @@ static void limites_pelas_paredes(float theta, float *minimo, float *maximo)
     *minimo = -1e9f;
     *maximo = 1e9f;
     if (mov.tof.parede_esquerda && e > 0 && e < TOF_E_MIN_CONFIAVEL_MM) {
-        float distancia_max = (float)e;
+        float bruta = (float)e + (float)TOF_E_DESVIO_MM;
+        float distancia_max = fmaxf(0.0f, 2.0f * bruta - (float)TOF_MIN_CONFIAVEL_MM - (float)TOF_E_DESVIO_MM);
         *minimo = CELULA_LIVRE_MEIA_MM - (distancia_max + TOF_E_Y_MM) * c - TOF_E_X_MM * s;
     }
     if (mov.tof.parede_direita && d > 0 && d < TOF_D_MIN_CONFIAVEL_MM) {
@@ -428,7 +475,17 @@ static void centralizar(float giro_encoders, float avanco_mm, float restante_mm)
     mov.desde_medida_mm += avanco_mm;
     if (mov.tof_novo) {
         float medida;
-        bool valida = mov.tem_anterior && lateral_pelas_paredes(mov.theta_anterior, &medida);
+        bool mediu = lateral_pelas_paredes(mov.theta_anterior, &medida);
+        /*
+         * Fim ou começo de parede: a leitura sobe ou desce aos poucos (30, 59, 90...) e cada passo cabia no portão
+         * contra a estimativa, que ia junto. Na pista (26/11/2026) isso levou a lateral a +30 mm com o robô perto
+         * da parede direita, e ele virou para cima dela. Entre duas leituras o robô não muda de lado mais que
+         * poucos mm: salto maior que isso é borda de parede, não posição.
+         */
+        bool salto = mediu && mov.tem_medida && fabsf(medida - mov.medida_anterior) > MOV_CENTRO_SALTO_MM;
+        mov.tem_medida = mediu;
+        mov.medida_anterior = medida;
+        bool valida = mov.tem_anterior && mediu && !salto;
         if (valida && fabsf(medida - mov.lateral_anterior) > MOV_CENTRO_PORTAO_MM) {
             /* Uma leitura isolada fora do portão é de poste ou de abertura; várias seguidas, não. */
             if (++mov.fora_do_portao >= MOV_CENTRO_PORTAO_LEITURAS) {
@@ -498,13 +555,63 @@ static void corrigir_pela_frente(void)
     }
 }
 
+/*
+ * Ré reta: o robô anda no próprio eixo e não centraliza. Se entrou torto no beco, a parede do lado se afasta
+ * (ou chega) na proporção do ângulo: 44 mm em 180 mm de ré são 14° (pista 2, 27/11/2026, com os encoders
+ * dizendo 2°). A soma dessas variações dá o rumo de verdade no fim da ré, e o giro seguinte o desconta.
+ * Salto entre duas leituras é poste ou abertura, não ângulo.
+ */
+static bool re_lado_serve(uint16_t mm)
+{
+    return mm >= 15 && mm <= 130;
+}
+
+static void medir_rumo_na_re(float andado_mm)
+{
+    uint16_t e = mov.tof.esquerda_mm;
+    uint16_t d = mov.tof.direita_mm;
+    float passo = andado_mm - mov.re_andado_mm;
+    if (passo >= 2.0f) {
+        if (re_lado_serve(e) && re_lado_serve(mov.re_esq_mm) && abs((int)e - (int)mov.re_esq_mm) <= 8) {
+            mov.re_soma_lado_mm += (float)e - (float)mov.re_esq_mm;
+            mov.re_soma_andado_mm += passo;
+        }
+        if (re_lado_serve(d) && re_lado_serve(mov.re_dir_mm) && abs((int)d - (int)mov.re_dir_mm) <= 8) {
+            mov.re_soma_lado_mm -= (float)d - (float)mov.re_dir_mm;
+            mov.re_soma_andado_mm += passo;
+        }
+    }
+    mov.re_andado_mm = andado_mm;
+    mov.re_esq_mm = e;
+    mov.re_dir_mm = d;
+}
+
 /* O rumo no fim do avanço: o do início, o que as rodas giraram e a deriva (que troca de lado na ré). */
 static void fechar_rumo_do_avanco(float esquerda, float direita)
 {
     float feito = (esquerda + direita) / 2.0f;
     float andado_mm = (mov.total < 0.0f ? -feito : feito) * MM_POR_PULSO;
-    mov.rumo_rad = mov.rumo_inicio + (direita - esquerda) * MM_POR_PULSO / BITOLA_MM - mov.giro_previsto_rad +
-                   mov.deriva * andado_mm;
+    /*
+     * As rodas chegam aqui como avanço no sentido pedido: na ré, a diferença entre elas gira o robô para o
+     * outro lado. Sem a troca, o arco de ré deixava o rumo ~165° errado e a nova tentativa saía para o lado
+     * contrário (pista, 26/11/2026).
+     */
+    float sentido = mov.total < 0.0f ? -1.0f : 1.0f;
+    mov.rumo_rad = mov.rumo_inicio + sentido * (direita - esquerda) * MM_POR_PULSO / BITOLA_MM -
+                   mov.giro_previsto_rad + mov.deriva * andado_mm;
+    if (mov.re_mede && mov.total < 0.0f && mov.giro_previsto_rad == 0.0f && -mov.total * MM_POR_PULSO >= MOV_RE_RUMO_MIN_MM &&
+        mov.re_soma_andado_mm >= MOV_RE_RUMO_LEITURAS_MM) {
+        float medido = atanf(mov.re_soma_lado_mm / mov.re_soma_andado_mm);
+        /*
+         * Ré curta (a de antes do arco): poucas leituras, e 1 mm de erro em 60 mm já é 1°. Só vale quando acusa
+         * um torto grande; um ângulo pequeno medido assim é ruído, e trocar a estimativa por ele fazia a meia
+         * volta no beco encostar (simulador, 27/11/2026).
+         */
+        bool longa = -mov.total * MM_POR_PULSO >= MOV_RE_RUMO_LONGA_MM;
+        if (longa || fabsf(medido) >= MOV_RE_RUMO_CURTA_MIN_RAD) {
+            mov.rumo_rad = fmaxf(-MOV_RE_RUMO_MAX_RAD, fminf(MOV_RE_RUMO_MAX_RAD, medido));
+        }
+    }
     if (mov.celula && mov.correcoes >= 4 && andado_mm > 100.0f) {
         mov.deriva += MOV_DERIVA_APRENDIZADO * mov.rumo_corrigido / andado_mm;
         mov.deriva = fmaxf(-MOV_DERIVA_MAX_RAD_POR_MM, fminf(MOV_DERIVA_MAX_RAD_POR_MM, mov.deriva));
@@ -656,6 +763,8 @@ mov_estado_t mov_atualizar(void)
                 corrigir_pela_frente();
                 total = mov.total;
             }
+        } else if (mov.re_mede && mov.tof_novo) {
+            medir_rumo_na_re(mov.andado * MM_POR_PULSO);
         }
     }
     mov.tof_novo = false;

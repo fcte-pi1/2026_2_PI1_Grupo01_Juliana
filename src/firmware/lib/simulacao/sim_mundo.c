@@ -270,12 +270,12 @@ bool sim_tof_medir(int tof, uint16_t *distancia_mm)
                 d = 0;
             }
             /*
-             * O esquerdo do robô, com o erro descontado, mede bem de perto: só o frontal e o direito comprimem. A
-             * compressão é do sensor, na leitura bruta (antes do desconto do erro, TOF_*_DESVIO_MM): o mundo
-             * devolve a leitura já descontada, como o driver real.
+             * Os três comprimem de perto (o esquerdo também: medido em 25/11/2026). A compressão é do sensor, na
+             * leitura bruta (antes do desconto do erro, TOF_*_DESVIO_MM): o mundo devolve a leitura já
+             * descontada, como o driver real.
              */
-            if (m.tof_curto && tof != 1) {
-                int desvio = tof == 0 ? TOF_F_DESVIO_MM : TOF_D_DESVIO_MM;
+            if (m.tof_curto) {
+                int desvio = tof == 0 ? TOF_F_DESVIO_MM : tof == 1 ? TOF_E_DESVIO_MM : TOF_D_DESVIO_MM;
                 int bruto = d + desvio;
                 if (bruto < TOF_MIN_CONFIAVEL_MM) {
                     /* bruto de 20 mm vira 30, 30 vira 35: perto, a leitura não mede */

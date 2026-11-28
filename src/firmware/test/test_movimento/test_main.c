@@ -3,9 +3,9 @@
  * simulado: os pulsos contados batem com os calculados para 180 mm e 90°.
  *
  * Pulsos esperados, com a roda de 34 mm, 574 pulsos por volta e bitola de 87 mm (medidos no robô):
- *   avanço de 180 mm:  180 / (pi x 34 / 574)                ~ 967,3 -> 967
- *   giro de 90°:       (pi x 87 / 4) / (pi x 34 / 574)      ~ 367,2 -> 367
- *   giro de 180°:      o dobro do arco                      ~ 734,4 -> 734
+ *   avanço de 180 mm:  180 / (pi x 33 / 574)                ~ 996,6 -> 997
+ *   giro de 90°:       (pi x 85,5 / 4) / (pi x 33 / 574)    ~ 371,8 -> 372
+ *   giro de 180°:      o dobro do arco                      ~ 743,6 -> 744
  *
  * O robô montado gira em volta do eixo, que fica atrás do centro do chassi, e a quina da frente varre ~100 mm:
  * os testes giram no meio de um labirinto aberto, longe das paredes.
@@ -20,9 +20,9 @@
 #include "movimento.h"
 #include "sim_mundo.h"
 
-#define PULSOS_180_MM  967
-#define PULSOS_90_GRAUS 367
-#define PULSOS_180_GRAUS 734
+#define PULSOS_180_MM  997
+#define PULSOS_90_GRAUS 372
+#define PULSOS_180_GRAUS 744
 
 /* 4x4 sem paredes internas: partindo de (1, 1), o robô anda e gira sem encostar em nada. */
 static const char LABIRINTO_ABERTO[] =
@@ -142,6 +142,33 @@ static void test_girar_90_conta_os_pulsos_de_90_graus(void)
     TEST_ASSERT_FLOAT_WITHIN(0.02f, PI_F, fabsf(angulo_normalizado(p.theta_rad)));
     TEST_ASSERT_FLOAT_WITHIN(0.5f, CENTRO_MM, p.x_mm);
     TEST_ASSERT_FLOAT_WITHIN(0.5f, EIXO_Y_MM, p.y_mm);
+}
+
+/* Meio arco para a frente e o mesmo meio arco de ré: o robô volta para onde estava (a nova tentativa da curva). */
+static void test_arco_de_re_desfaz_o_arco(void)
+{
+    /* Como na corrida: primeiro a ré que leva o eixo para trás do centro da célula. */
+    TEST_ASSERT_TRUE(mov_avancar_mm(-(GIRO_RAIO_ARCO_MM - EIXO_RECUO_MM), false));
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    sim_pose_t antes = sim_pose();
+    float rumo_antes = mov_rumo_rad();
+    TEST_ASSERT_TRUE(mov_arco(45.0f, GIRO_RAIO_ARCO_MM));
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    sim_pose_t meio = sim_pose();
+    TEST_ASSERT_FLOAT_WITHIN(0.06f, PI_F / 4.0f, fabsf(angulo_normalizado(meio.theta_rad - antes.theta_rad)));
+
+    float mm, graus;
+    mov_ultimo_percurso(&mm, &graus);
+    TEST_ASSERT_FLOAT_WITHIN(3.0f, 45.0f, graus);
+
+    TEST_ASSERT_TRUE(mov_arco_re(graus, GIRO_RAIO_ARCO_MM));
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar(NULL));
+    sim_pose_t depois = sim_pose();
+    TEST_ASSERT_FLOAT_WITHIN(0.06f, 0.0f, angulo_normalizado(depois.theta_rad - antes.theta_rad));
+    TEST_ASSERT_FLOAT_WITHIN(5.0f, antes.x_mm, depois.x_mm);
+    TEST_ASSERT_FLOAT_WITHIN(5.0f, antes.y_mm, depois.y_mm);
+    /* A estimativa do rumo também volta: a nova tentativa do arco parte dela. */
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, rumo_antes, mov_rumo_rad());
 }
 
 static void test_andado_acompanha_o_avanco_e_fica_em_zero_no_giro(void)
@@ -456,6 +483,34 @@ static const char LABIRINTO_CORREDOR_NORTE[] =
     "|           |\n"
     "+---+---+---+\n";
 
+/* Ré de uma casa com o robô torto no corredor: as paredes do lado dizem o rumo que os encoders não veem. */
+static void re_torta_no_corredor(float torto_rad)
+{
+    sim_mundo_iniciar(LABIRINTO_CORREDOR_NORTE);
+    sim_mundo_no_centro_da_celula(1, 1, 0);
+    mov_iniciar();
+    historico_n = 0;
+    sim_pose_t p0 = sim_pose();
+    sim_definir_pose(p0.x_mm + 175.0f * cosf(p0.theta_rad), p0.y_mm + 175.0f * sinf(p0.theta_rad),
+                     p0.theta_rad + torto_rad);
+    for (int i = 0; i < 3; i++) {
+        informar_tof_do_mundo();
+    }
+    mov_medir_rumo_na_re();
+    TEST_ASSERT_TRUE(mov_avancar_mm(-CELULA_MM, false));
+    TEST_ASSERT_EQUAL(MOV_CONCLUIDO, rodar_lendo_tof(true));
+    float real = angulo_normalizado(sim_pose().theta_rad - p0.theta_rad);
+    TEST_ASSERT_FLOAT_WITHIN(0.03f, torto_rad, real); /* a ré não desentorta sozinha */
+    TEST_ASSERT_FLOAT_WITHIN(0.04f, real, mov_rumo_rad());
+}
+
+static void test_re_mede_o_rumo_pelas_paredes(void)
+{
+    re_torta_no_corredor(0.10f);
+    re_torta_no_corredor(-0.10f);
+    re_torta_no_corredor(0.0f);
+}
+
 /* Um avanço de (1, 1) com o eixo deslocado para a direita, lendo os ToF do mundo com ruído; devolve o erro final. */
 static float avancar_deslocado_a_direita(const char *labirinto, float deslocamento_mm, uint32_t semente)
 {
@@ -631,5 +686,7 @@ int main(void)
     RUN_TEST(test_corredor_de_4_celulas_com_deriva_centraliza_pelos_tof);
     RUN_TEST(test_parar_corta_o_movimento);
     RUN_TEST(test_parede_na_frente_faz_o_avanco_falhar);
+    RUN_TEST(test_re_mede_o_rumo_pelas_paredes);
+    RUN_TEST(test_arco_de_re_desfaz_o_arco);
     return UNITY_END();
 }

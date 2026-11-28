@@ -147,8 +147,9 @@ void corrida_movimento_falhou(corrida_t *c, corrida_efeitos_t *ef)
     ef->tem_falha = true;
     ef->falha.motivo = CONTRATO_MOTIVO_STUCK;
     ef->falha.origem = CONTRATO_ORIGEM_AUTOMATICA;
-    ef->falha.x = (uint8_t)c->nav.x;
-    ef->falha.y = (uint8_t)c->nav.y;
+    /* O movimento não terminou: a falha é na célula de onde o robô saiu, não na de destino (D4). */
+    ef->falha.x = (uint8_t)c->ultimo_x;
+    ef->falha.y = (uint8_t)c->ultimo_y;
     ef->falha.componente = CONTRATO_COMPONENTE_NENHUM;
 }
 

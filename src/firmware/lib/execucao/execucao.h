@@ -7,6 +7,7 @@
  *   FRENTE      avança uma célula
  *   DIREITA     recua, faz um arco de 90° para a direita e avança até a célula seguinte
  *   ESQUERDA    recua, faz um arco de 90° para a esquerda e avança até a célula seguinte
+ *   RE          anda uma célula de ré, sem girar (beco no fim de uma reta)
  *   MEIA_VOLTA  gira 20°, dá ré para levar o eixo ao lado, completa os 180° e avança até a célula
  *
  * O eixo das rodas fica atrás do centro do chassi (config/robo.h, docs/decisoes/024): girar no lugar
@@ -42,6 +43,21 @@ void exec_iniciar(void);
 bool exec_comecar(nav_acao_t acao);
 
 /* Um ciclo: avança as etapas da ação e devolve o estado depois dele. */
+/*
+ * Parado na célula com a parede da frente a `frente_mm` no ToF: se isso mostra que o robô parou antes do repouso,
+ * começa o avanço que falta e devolve true. Fora da faixa de ajuste (ou em movimento), não faz nada.
+ */
+bool exec_aproximar_da_parede(uint16_t frente_mm);
+
+/* Antes de exec_comecar: há parede à frente na célula atual? Muda quanto o robô recua antes do arco de 90°. */
+void exec_informar_frente(bool parede);
+
+/* Antes de exec_comecar: quanto o sensor da frente lê, parado. Define a ré antes do arco com parede à frente. */
+void exec_informar_frente_mm(uint16_t mm);
+
+/* Antes de exec_comecar: há parede de cada lado? A meia-volta gira pelo lado aberto, quando há um. */
+void exec_informar_lados(bool parede_esquerda, bool parede_direita);
+
 exec_estado_t exec_atualizar(void);
 
 exec_estado_t exec_estado(void);

@@ -108,7 +108,8 @@ typedef enum {
     NAV_ACAO_ESQUERDA,
     NAV_ACAO_MEIA_VOLTA,
     NAV_ACAO_SUCESSO,   /* chegou a uma célula de objetivo */
-    NAV_ACAO_SEM_PASSO  /* nenhum caminho possível (mapa inconsistente) */
+    NAV_ACAO_SEM_PASSO, /* nenhum caminho possível (mapa inconsistente) */
+    NAV_ACAO_RE         /* volta uma célula de ré, sem girar: o rumo não muda (só com nav_permitir_re) */
 } nav_acao_t;
 
 typedef struct {
@@ -143,7 +144,16 @@ typedef struct {
     uint8_t bloqueios;          /* chamadas da nav_bloqueado, até NAV_BLOQUEIOS_MAX */
     bool terminou;              /* já devolveu SUCESSO ou SEM_PASSO */
     nav_acao_t acao_terminal;
+    bool de_re;                 /* o movimento pendente é uma ré: o robô andou contra o rumo */
 } nav_estado_t;
+
+/*
+ * Liga a ré no lugar da meia-volta (desligada por padrão). O giro de 180° do robô montado tem ~3 mm de folga
+ * no corredor e bateu a quina na pista (26/11/2026). Com a ré ligada, quando o caminho é para trás, a célula de
+ * trás já foi visitada e a seguinte a ela, na mesma linha, está aberta (a curva em arco precisa recuar para lá),
+ * a navegação devolve NAV_ACAO_RE; nos outros casos, a meia-volta de sempre.
+ */
+void nav_permitir_re(bool permitir);
 
 /* Largada: célula (0, 0), virado para o norte, num labirinto do tipo dado. */
 void nav_iniciar(nav_estado_t *estado, nav_tipo_t tipo);

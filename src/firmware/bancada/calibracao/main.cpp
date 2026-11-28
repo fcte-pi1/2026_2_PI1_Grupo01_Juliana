@@ -279,8 +279,15 @@ static void preparar_tof(void)
     }
 }
 
+/* Encoders a cada 50 ms durante o movimento: mostra se as rodas seguem a proporção pedida (arco). */
+#define HISTORICO_ENC_MAX 80
+static int32_t historico_esq[HISTORICO_ENC_MAX];
+static int32_t historico_dir[HISTORICO_ENC_MAX];
+static int historico_enc_n;
+
 static void rodar_movimento(resultado_t *r)
 {
+    historico_enc_n = 0;
     int32_t esq0 = hal_encoder_ler(MOTOR_ESQ);
     int32_t dir0 = hal_encoder_ler(MOTOR_DIR);
     uint32_t inicio = millis();
@@ -296,6 +303,11 @@ static void rodar_movimento(resultado_t *r)
         if (++ciclos_tof >= 10) {
             ciclos_tof = 0;
             informar_tof_ao_movimento();
+            if (historico_enc_n < HISTORICO_ENC_MAX) {
+                historico_esq[historico_enc_n] = hal_encoder_ler(MOTOR_ESQ) - esq0;
+                historico_dir[historico_enc_n] = hal_encoder_ler(MOTOR_DIR) - dir0;
+                historico_enc_n++;
+            }
         }
         mov_atualizar();
         proximo += MOV_PERIODO_MS * 1000UL;
@@ -376,6 +388,21 @@ static void girar(int graus)
     mov_girar(graus);
     rodar_movimento(&r);
     imprimir_giro(r, graus);
+}
+
+/* Arco de 90° com o raio da corrida (GIRO_RAIO_ARCO_MM), sem a ré antes: o robô precisa de espaço livre. */
+static void arco(int graus)
+{
+    resultado_t r;
+    mov_arco((float)graus, GIRO_RAIO_ARCO_MM);
+    rodar_movimento(&r);
+    console.print("# pulsos esq/dir a cada 50 ms:");
+    for (int i = 0; i < historico_enc_n; i++) {
+        console.printf(" %ld/%ld", (long)historico_esq[i], (long)historico_dir[i]);
+    }
+    float girado = (r.dir - r.esq) * MM_POR_PULSO / BITOLA_MM * 180.0f / PI_F;
+    console.printf("\narco: %s esq=%ld dir=%ld pulsos = %.1f graus pelos pulsos (pedido %d, raio %.0f mm)\n",
+                  nome_estado(r.estado), (long)r.esq, (long)r.dir, girado, graus, (double)GIRO_RAIO_ARCO_MM);
 }
 
 static void girar_dez(void)
@@ -526,6 +553,8 @@ void loop()
     case 'G': girar(-90); break;
     case 'h': girar(180); break;
     case 'Q': girar_dez(); break;
+    case 'o': arco(90); break;
+    case 'O': arco(-90); break;
     case 'v': velocidade(); break;
     case 's': stuck(); break;
     case 't': mostrar_tof(); break;

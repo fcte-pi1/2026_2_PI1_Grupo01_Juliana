@@ -152,6 +152,13 @@ static void acompanhar_celula(const nav_estado_t *nav)
  * Diagnóstico na pista: ao fim de cada etapa de movimento, uma linha "# mov" com o que o robô fez e estimou; a
  * cada decisão, uma linha "# dec" com o que ele viu. A ponte grava no log e não manda ao backend.
  */
+/* Um ajuste por parada: o frontal filtrado diz se o robô ficou para trás na célula. */
+static bool aproximar_da_parede(void)
+{
+    uint16_t frente = 0;
+    return sensores_distancia_mm(TOF_FRONTAL, &frente) && exec_aproximar_da_parede(frente);
+}
+
 static void publicar_diagnostico_movimento(void)
 {
     mov_diag_t d;
@@ -169,10 +176,17 @@ static void publicar_diagnostico_movimento(void)
     app_publicar_diagnostico(linha);
 }
 
+/* A ação leva o robô para um lado onde o sensor vê parede agora? (De ré não há sensor.) */
+static bool vai_contra_parede(nav_acao_t acao, nav_leitura_t leitura)
+{
+    return (acao == NAV_ACAO_FRENTE && leitura.frente) || (acao == NAV_ACAO_ESQUERDA && leitura.esquerda) ||
+           (acao == NAV_ACAO_DIREITA && leitura.direita);
+}
+
 static void publicar_diagnostico_decisao(const nav_estado_t *nav, nav_leitura_t leitura, nav_acao_t acao,
                                          uint16_t bateria_mv)
 {
-    static const char *const ACOES[] = {"frente", "direita", "esquerda", "meia_volta", "sucesso", "sem_passo"};
+    static const char *const ACOES[] = {"frente", "direita", "esquerda", "meia_volta", "sucesso", "sem_passo", "re"};
     static const char RUMOS[] = {'N', 'L', 'S', 'O'};
     uint16_t f = 0, e = 0, d = 0;
     sensores_distancia_mm(TOF_FRONTAL, &f);
@@ -184,7 +198,7 @@ static void publicar_diagnostico_decisao(const nav_estado_t *nav, nav_leitura_t 
              " lat=%.1f rumo_est=%.1f bat=%u\n",
              (unsigned long)hal_tempo_ms(), nav->x, nav->y, RUMOS[(int)nav->direcao & 3], leitura.frente,
              leitura.esquerda, leitura.direita, f, e, d,
-             (unsigned)acao < 6 ? ACOES[acao] : "?", (double)mov_lateral_mm(),
+             (unsigned)acao < 7 ? ACOES[acao] : "?", (double)mov_lateral_mm(),
              (double)(mov_rumo_rad() * 57.2958f), (unsigned)bateria_mv);
     app_publicar_diagnostico(linha);
 }
@@ -213,9 +227,11 @@ void tarefa_navegacao(void *parametro)
     botao_iniciar(&botao);
     sinal_iniciar(&sinal);
     exec_iniciar();
+    nav_permitir_re(true); /* beco no fim de uma reta: volta de ré em vez de girar 180° */
     corrida_iniciar(&corrida, dip_tipo_nav(hal_dip_ler()));
 
     uint32_t parado_desde = hal_tempo_ms();
+    bool ajustado = false; /* já se aproximou da parede da frente nesta parada */
 
     /* Executa o que a lib pediu depois de um evento. */
     auto aplicar = [&](const corrida_efeitos_t &ef) {
@@ -253,10 +269,19 @@ void tarefa_navegacao(void *parametro)
 
     auto evento = [&](maq_evento_t ev) {
         corrida_efeitos_t ef;
+        bool andava = maq_andando(&corrida.maq);
         corrida_evento(&corrida, ev, &ef);
         aplicar(ef);
         if (ev == MAQ_EV_CMD_LARGAR || ev == MAQ_EV_CMD_LARGAR_FORCADO) {
             parado_desde = hal_tempo_ms();
+            /*
+             * Largada: o operador acabou de pôr o robô no meio da célula, então a lateral e o rumo estimados
+             * voltam a zero. Sem isto, depois de um sucesso a corrida seguinte partia com a estimativa da anterior
+             * (pista, 25/11/2026: largou com lat=36.8 e rumo=-3.8° e foi raspando a parede esquerda).
+             */
+            if (!andava && maq_andando(&corrida.maq)) {
+                exec_parar();
+            }
         }
         if (ef.rodar_health_check) {
             health_check();
@@ -339,7 +364,13 @@ void tarefa_navegacao(void *parametro)
 
         if (exec != EXEC_OCIOSO) {
             parado_desde = hal_tempo_ms();
+        } else if (maq_andando(&corrida.maq) && hal_tempo_ms() - parado_desde >= ESPERA_PARADO_MS && !ajustado &&
+                   aproximar_da_parede()) {
+            /* Parou antes do repouso: primeiro chega perto da parede da frente; a decisão vem depois. */
+            ajustado = true;
+            parado_desde = hal_tempo_ms();
         } else if (maq_andando(&corrida.maq) && hal_tempo_ms() - parado_desde >= ESPERA_PARADO_MS) {
+            ajustado = false;
             /*
              * Parado na célula, com os ToF estabilizados: as três paredes são as lidas agora. Com os laterais a 90°,
              * o sensor parado olha a própria célula; a leitura em movimento errava na troca de célula (24/11/2026).
@@ -367,8 +398,28 @@ void tarefa_navegacao(void *parametro)
                     break;
                 }
             }
+            /*
+             * O sensor manda: se a ação vai para um lado onde ele vê parede agora, o robô não anda para lá. A
+             * navegação recebe o bloqueio e escolhe de novo; se insistir, a corrida falha parada, em vez de o
+             * robô empurrar a parede (pista, 26/11/2026: "frente" com parede a 3 cm).
+             */
+            bool contra_parede = vai_contra_parede(corrida.acao, leitura);
+            for (int i = 0; i < 4 && contra_parede; i++) {
+                corrida.acao = nav_bloqueado(&corrida.nav);
+                contra_parede = vai_contra_parede(corrida.acao, leitura);
+            }
             publicar_diagnostico_decisao(&corrida.nav, leitura, corrida.acao, bateria_mv(&bateria));
-            if (exec_eh_movimento(corrida.acao)) {
+            if (contra_parede) {
+                corrida_efeitos_t ef;
+                corrida_movimento_falhou(&corrida, &ef);
+                exec_parar();
+                aplicar(ef);
+            } else if (exec_eh_movimento(corrida.acao)) {
+                uint16_t frente_mm = 0;
+                sensores_distancia_mm(TOF_FRONTAL, &frente_mm);
+                exec_informar_frente_mm(frente_mm);
+                exec_informar_frente(leitura.frente);
+                exec_informar_lados(leitura.esquerda, leitura.direita);
                 exec_comecar(corrida.acao);
             }
             parado_desde = hal_tempo_ms();
@@ -383,8 +434,13 @@ void tarefa_navegacao(void *parametro)
 
             telemetria_amostra_t amostra = {};
             amostra.tel.estado = corrida_estado_contrato(&corrida);
-            amostra.tel.x = (uint8_t)corrida.nav.x;
-            amostra.tel.y = (uint8_t)corrida.nav.y;
+            /*
+             * A navegação já aponta a célula de destino quando devolve o movimento (D4). Em movimento, a tela mostra
+             * a célula de onde o robô saiu; a de destino só depois de ele chegar.
+             */
+            bool em_movimento = exec_estado() == EXEC_GIRANDO || exec_estado() == EXEC_AVANCANDO;
+            amostra.tel.x = (uint8_t)(em_movimento ? corrida.ultimo_x : corrida.nav.x);
+            amostra.tel.y = (uint8_t)(em_movimento ? corrida.ultimo_y : corrida.nav.y);
             amostra.tel.rumo = telemetria_rumo_do_nav(corrida.nav.direcao);
             amostra.tel.bat_mv = bateria_mv(&bateria);
             amostra.tel.vel_mm_s = 0;
